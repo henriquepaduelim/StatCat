@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.mypy_cache/
+*.pytest_cache/
+*.coverage
+.coverage*
+htmlcov/
+.env
+.venv/
+venv/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# OS
+.DS_Store
+.idea/
+.vscode/

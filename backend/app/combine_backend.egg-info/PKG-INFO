@@ -1,0 +1,21 @@
+Metadata-Version: 2.4
+Name: combine-backend
+Version: 0.1.0
+Summary: API backend for football combine testing platform
+Author: Henrique Machado
+Requires-Python: >=3.11
+Requires-Dist: fastapi>=0.110
+Requires-Dist: uvicorn[standard]>=0.27
+Requires-Dist: sqlmodel>=0.0.16
+Requires-Dist: alembic>=1.13
+Requires-Dist: python-multipart>=0.0.9
+Requires-Dist: pydantic[email]>=2.6
+Requires-Dist: passlib[bcrypt]>=1.7
+Requires-Dist: python-jose[cryptography]>=3.3.0
+Requires-Dist: boto3>=1.34
+Requires-Dist: jinja2>=3.1
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4; extra == "dev"
+Requires-Dist: httpx>=0.26; extra == "dev"
+Requires-Dist: ruff>=0.1.13; extra == "dev"
+Requires-Dist: mypy>=1.8; extra == "dev"
