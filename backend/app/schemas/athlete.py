@@ -5,6 +5,7 @@ from sqlmodel import SQLModel
 
 
 class AthleteBase(SQLModel):
+    client_id: int | None = None
     first_name: str
     last_name: str
     email: str | None = None
@@ -13,6 +14,7 @@ class AthleteBase(SQLModel):
     height_cm: float | None = None
     weight_kg: float | None = None
     club_affiliation: str | None = None
+    photo_url: str | None = None
 
 
 class AthleteCreate(AthleteBase):
@@ -26,6 +28,7 @@ class AthleteRead(AthleteBase):
 
 
 class AthleteUpdate(SQLModel):
+    client_id: int | None = None
     first_name: str | None = None
     last_name: str | None = None
     email: str | None = None

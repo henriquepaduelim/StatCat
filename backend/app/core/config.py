@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change-me"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
     BACKEND_CORS_ORIGINS: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
+    MEDIA_ROOT: str = "media"
 
     class Config:
         env_file = ".env"

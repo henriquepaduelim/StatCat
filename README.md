@@ -41,17 +41,25 @@ Stack inicial para coletar métricas de testes físicos e técnicos de atletas d
    ```bash
    cp .env.example .env
    ```
-4. (Opcional) Ajuste as origens de CORS no `.env` (`BACKEND_CORS_ORIGINS`) se o frontend rodar em outra URL.
+4. (Opcional) Ajuste as origens de CORS no `.env` (`BACKEND_CORS_ORIGINS`) se o frontend rodar em outra URL. Também é possível alterar `MEDIA_ROOT` para definir onde os uploads locais serão armazenados.
 
-5. Execute o servidor de desenvolvimento:
+5. Se estiver evoluindo o esquema e usando SQLite, remova `combine.db` antes de subir o servidor para que as novas colunas/tabelas sejam criadas automaticamente (futuramente migraremos para Alembic).
+
+6. Execute o servidor de desenvolvimento:
    ```bash
    uvicorn app.main:app --reload
    ```
-6. Documentação interativa disponível em `http://localhost:8000/docs`.
+7. Documentação interativa disponível em `http://localhost:8000/docs`.
+
+### Recursos de backend já disponíveis
+
+- CRUD de **clientes** com dados de identidade visual para aplicar temas.
+- Cadastro de **testes**, **sessões** e resultados dos atletas (dados seed gerados automaticamente).
+- Upload de foto de perfil (`POST /athletes/{id}/photo`) com armazenamento local em `MEDIA_ROOT`.
+- Endpoint de relatório consolidado por atleta (`GET /reports/athletes/{id}`) agrupando sessões e métricas.
 
 ### Próximos incrementos sugeridos
 
-- Criar modelos de **clientes**, **testes**, **métricas** e **sessões de avaliação**.
 - Configurar autenticação (JWT) e perfis por clube.
 - Integrar armazenamento de mídia (S3/MinIO) para fotos dos atletas.
 - Configurar Alembic para migrações do banco.
@@ -74,9 +82,9 @@ Stack inicial para coletar métricas de testes físicos e técnicos de atletas d
 
 ### Pontos de evolução
 
-- Conectar formulários aos endpoints reais do backend.
 - Criar componentes reutilizáveis para cards de métricas, tabelas e gráficos.
-- Implementar temas por cliente (cores, logos, fontes) via Tailwind + CSS vars.
+- Adicionar formulários de criação de sessões/testes direto no frontend.
+- Implementar upload de vídeos e anexos nos relatórios.
 - Adicionar testes unitários (React Testing Library) e checagens de qualidade (ESLint/Prettier).
 
 ---

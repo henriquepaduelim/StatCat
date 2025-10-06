@@ -16,6 +16,9 @@ venv/
 frontend/node_modules/
 frontend/dist/
 
+# Media uploads
+media/
+
 # OS
 .DS_Store
 .idea/

@@ -3,14 +3,16 @@ import { useQuery } from "@tanstack/react-query";
 import api from "../api/client";
 import type { Athlete } from "../types/athlete";
 
-const fetchAthletes = async (): Promise<Athlete[]> => {
-  const { data } = await api.get<Athlete[]>("/athletes");
+const fetchAthletes = async (clientId?: number): Promise<Athlete[]> => {
+  const { data } = await api.get<Athlete[]>("/athletes", {
+    params: clientId ? { client_id: clientId } : undefined,
+  });
   return data;
 };
 
-export const useAthletes = () =>
+export const useAthletes = (clientId?: number) =>
   useQuery({
-    queryKey: ["athletes"],
-    queryFn: fetchAthletes,
-    staleTime: 1000 * 30,
+    queryKey: ["athletes", clientId ?? "all"],
+    queryFn: () => fetchAthletes(clientId),
+    staleTime: 1000 * 60,
   });

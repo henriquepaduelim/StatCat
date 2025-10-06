@@ -1,4 +1,7 @@
+from pathlib import Path
+
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import api_router
@@ -6,6 +9,11 @@ from app.core.config import settings
 from app.db.session import init_db
 
 app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION)
+
+media_path = Path(settings.MEDIA_ROOT)
+media_path.mkdir(parents=True, exist_ok=True)
+
+app.mount("/media", StaticFiles(directory=media_path), name="media")
 
 app.add_middleware(
     CORSMiddleware,
