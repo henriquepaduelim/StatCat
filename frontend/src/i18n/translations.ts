@@ -1,5 +1,7 @@
 export type Locale = "en" | "fr";
 
+type DashboardTimeRange = "30d" | "90d" | "180d" | "365d" | "all";
+
 export type TranslationDictionary = {
   common: {
     appName: string;
@@ -55,11 +57,66 @@ export type TranslationDictionary = {
   dashboard: {
     title: string;
     description: string;
+    demoNotice: string;
     cards: Array<{ label: string; description: string }>;
     nextStepsTitle: string;
     nextStepsDescription: string;
     actionNewAthlete: string;
     actionNewSession: string;
+    emptyState: string;
+    comparisonLabel: string;
+    filters: {
+      timeRangeLabel: string;
+      timeRangeDescription: string;
+      rangeOptions: Array<{ value: DashboardTimeRange; label: string }>;
+      athleteLabel: string;
+      athletePlaceholder: string;
+    };
+    overview: {
+      sessionsTitle: string;
+      sessionsSubtitle: string;
+      testsTitle: string;
+      testsSubtitle: string;
+      testsFallbackLabel: string;
+      clubsTitle: string;
+      clubsSubtitle: string;
+      clubsFallbackLabel: string;
+      categoryTrendTitle: string;
+      categoryTrendSubtitle: string;
+      radarTitle: string;
+      radarSubtitle: string;
+      radarLatestLabel: string;
+      radarPreviousLabel: string;
+      sessionLoadTitle: string;
+      sessionLoadSubtitle: string;
+      spotlightTitle: string;
+      spotlightSubtitle: string;
+      spotlightLatest: (value: string, unit: string) => string;
+    };
+    athleteReport: {
+      title: string;
+      subtitle: string;
+      noAthlete: string;
+      chartTitle: string;
+      chartEmpty: string;
+      selectTestLabel: string;
+      bestValueLabel: string;
+      lastValueLabel: string;
+      averageLabel: string;
+      metricsTitle: string;
+      recentSessionsTitle: string;
+      printButton: string;
+      printHelper: string;
+      ageLabel: string;
+      bmiLabel: string;
+      restingHeartRateLabel: string;
+      restingHeartRateUnit: string;
+      sittingHeightLabel: string;
+      sittingHeightUnit: string;
+      legLengthLabel: string;
+      legLengthUnit: string;
+      notAvailable: string;
+    };
   };
   athletes: {
     title: string;
@@ -285,10 +342,11 @@ export const translations: Record<Locale, TranslationDictionary> = {
       title: "Overview",
       description:
         "Keep track of the main performance indicators and tailor the experience to each club.",
+      demoNotice: "Interactive preview using synthetic metrics until live combine data is synced.",
       cards: [
         {
           label: "Registered athletes",
-          description: "Active athletes in current combines",
+          description: "Active athletes linked to this client",
         },
         {
           label: "Configured tests",
@@ -296,7 +354,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
         },
         {
           label: "Recorded sessions",
-          description: "Assessment events with stored results",
+          description: "Sessions scheduled in the selected period",
         },
       ],
       nextStepsTitle: "Next steps",
@@ -304,6 +362,67 @@ export const translations: Record<Locale, TranslationDictionary> = {
         "Register athletes, configure battery templates and deliver personalised reports.",
       actionNewAthlete: "Register athlete",
       actionNewSession: "Create assessment session",
+      emptyState: "No data available yet.",
+      comparisonLabel: "vs previous period",
+      filters: {
+        timeRangeLabel: "Time range",
+        timeRangeDescription: "Adjust the horizon to explore the training load.",
+        rangeOptions: [
+          { value: "30d", label: "Last 30 days" },
+          { value: "90d", label: "Last 90 days" },
+          { value: "180d", label: "Last 180 days" },
+          { value: "365d", label: "Last 12 months" },
+          { value: "all", label: "All time" },
+        ],
+        athleteLabel: "Athlete focus",
+        athletePlaceholder: "Select an athlete",
+      },
+      overview: {
+        sessionsTitle: "Sessions over time",
+        sessionsSubtitle: "Monthly cadence of scheduled assessments.",
+        testsTitle: "Test categories",
+        testsSubtitle: "Distribution of configured protocols.",
+        testsFallbackLabel: "Uncategorised",
+        clubsTitle: "Athletes per club",
+        clubsSubtitle: "Main affiliations registered on the platform.",
+        clubsFallbackLabel: "Without club",
+        categoryTrendTitle: "Category progression",
+        categoryTrendSubtitle: "Normalized performance index (baseline = 100).",
+        radarTitle: "Baseline vs latest",
+        radarSubtitle: "Compare the most recent session with the previous checkpoint.",
+        radarLatestLabel: "Latest session",
+        radarPreviousLabel: "Previous session",
+        sessionLoadTitle: "Session load balance",
+        sessionLoadSubtitle: "Tests executed per dimension across the selected window.",
+        spotlightTitle: "Performance signals",
+        spotlightSubtitle: "Biggest gains captured in the latest assessment.",
+        spotlightLatest: (value: string, unit: string) =>
+          `Latest: ${value}${unit ? ` ${unit}` : ""}`,
+      },
+      athleteReport: {
+        title: "Athlete focus",
+        subtitle: "Select an athlete to explore individual progression.",
+        noAthlete: "Select an athlete to see the report card.",
+        chartTitle: "Progression",
+        chartEmpty: "There are no recorded results for this metric yet.",
+        selectTestLabel: "Metric",
+        bestValueLabel: "Best value",
+        lastValueLabel: "Last result",
+        averageLabel: "Average",
+        metricsTitle: "At a glance",
+        recentSessionsTitle: "Recent sessions",
+        printButton: "Print PDF",
+        printHelper: "Only the report card is included in the print view.",
+        ageLabel: "Age",
+        bmiLabel: "BMI",
+        restingHeartRateLabel: "Resting HR",
+        restingHeartRateUnit: "bpm",
+        sittingHeightLabel: "Sitting height",
+        sittingHeightUnit: "cm",
+        legLengthLabel: "Leg length",
+        legLengthUnit: "cm",
+        notAvailable: "N/A",
+      },
     },
     athletes: {
       title: "Athletes",
@@ -540,10 +659,11 @@ export const translations: Record<Locale, TranslationDictionary> = {
       title: "Vue d’ensemble",
       description:
         "Suivez les principaux indicateurs de performance et adaptez l’expérience pour chaque club.",
+      demoNotice: "Aperçu interactif alimenté par des données synthétiques en attendant la synchronisation temps réel.",
       cards: [
         {
           label: "Athlètes enregistrés",
-          description: "Athlètes actifs dans les combines en cours",
+          description: "Athlètes actifs rattachés à ce client",
         },
         {
           label: "Tests configurés",
@@ -551,7 +671,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
         },
         {
           label: "Sessions enregistrées",
-          description: "Évaluations avec résultats stockés",
+          description: "Sessions planifiées sur la période sélectionnée",
         },
       ],
       nextStepsTitle: "Prochaines actions",
@@ -559,6 +679,67 @@ export const translations: Record<Locale, TranslationDictionary> = {
         "Enregistrez des athlètes, configurez vos batteries et livrez des rapports personnalisés.",
       actionNewAthlete: "Ajouter un athlète",
       actionNewSession: "Créer une session",
+      emptyState: "Aucune donnée pour le moment.",
+      comparisonLabel: "par rapport à la période précédente",
+      filters: {
+        timeRangeLabel: "Période",
+        timeRangeDescription: "Ajustez l’horizon pour explorer la charge d’évaluations.",
+        rangeOptions: [
+          { value: "30d", label: "30 derniers jours" },
+          { value: "90d", label: "90 derniers jours" },
+          { value: "180d", label: "180 derniers jours" },
+          { value: "365d", label: "12 derniers mois" },
+          { value: "all", label: "Toute la période" },
+        ],
+        athleteLabel: "Athlète en focus",
+        athletePlaceholder: "Sélectionnez un athlète",
+      },
+      overview: {
+        sessionsTitle: "Sessions dans le temps",
+        sessionsSubtitle: "Cadence mensuelle des évaluations planifiées.",
+        testsTitle: "Catégories de tests",
+        testsSubtitle: "Répartition des protocoles configurés.",
+        testsFallbackLabel: "Sans catégorie",
+        clubsTitle: "Athlètes par club",
+        clubsSubtitle: "Principales affiliations enregistrées sur la plateforme.",
+        clubsFallbackLabel: "Sans club",
+        categoryTrendTitle: "Progression par pilier",
+        categoryTrendSubtitle: "Indice normalisé des performances (baseline = 100).",
+        radarTitle: "Baseline vs dernier contrôle",
+        radarSubtitle: "Comparez la session récente avec la précédente.",
+        radarLatestLabel: "Session récente",
+        radarPreviousLabel: "Session précédente",
+        sessionLoadTitle: "Répartition des charges",
+        sessionLoadSubtitle: "Nombre de tests par dimension sur la période sélectionnée.",
+        spotlightTitle: "Signaux de performance",
+        spotlightSubtitle: "Principales progressions mesurées au dernier passage.",
+        spotlightLatest: (value: string, unit: string) =>
+          `Dernier relevé : ${value}${unit ? ` ${unit}` : ""}`,
+      },
+      athleteReport: {
+        title: "Focus athlète",
+        subtitle: "Sélectionnez un athlète pour explorer sa progression individuelle.",
+        noAthlete: "Sélectionnez un athlète pour afficher la fiche de rapport.",
+        chartTitle: "Progression",
+        chartEmpty: "Aucun résultat enregistré pour cette mesure pour le moment.",
+        selectTestLabel: "Mesure",
+        bestValueLabel: "Meilleure valeur",
+        lastValueLabel: "Dernier résultat",
+        averageLabel: "Moyenne",
+        metricsTitle: "En un coup d’œil",
+        recentSessionsTitle: "Sessions récentes",
+        printButton: "Imprimer en PDF",
+        printHelper: "Seule la fiche de rapport est incluse dans l’impression.",
+        ageLabel: "Âge",
+        bmiLabel: "IMC",
+        restingHeartRateLabel: "FC assise au repos",
+        restingHeartRateUnit: "bpm",
+        sittingHeightLabel: "Hauteur assise",
+        sittingHeightUnit: "cm",
+        legLengthLabel: "Longueur de jambe",
+        legLengthUnit: "cm",
+        notAvailable: "N/D",
+      },
     },
     athletes: {
       title: "Athlètes",

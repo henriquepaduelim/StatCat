@@ -3,24 +3,40 @@
 @tailwind utilities;
 
 :root {
-  --color-primary: 51 153 137;
-  --color-accent: 125 226 209;
-  --color-background: 255 250 251;
-  --color-surface: 43 44 40;
-  --color-muted: 87 88 83;
-  --color-on-primary: 19 21 21;
-  --color-on-surface: 255 250 251;
+  --color-primary: 0 200 255;
+  --color-accent: 123 97 255;
+  --color-background: 6 12 24;
+  --color-surface: 15 24 46;
+  --color-muted: 130 146 185;
+  --color-on-primary: 8 13 24;
+  --color-on-surface: 232 245 255;
 }
 
 body {
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: linear-gradient(to bottom right, rgba(19, 21, 21, 0.65), rgba(51, 153, 137, 0.35)),
-    url('/media/bg-home.jpg');
-  background-size: cover;
-  background-position: center;
+  background:
+    radial-gradient(circle at 20% 18%, rgba(0, 200, 255, 0.18), transparent 55%),
+    radial-gradient(circle at 80% -10%, rgba(123, 97, 255, 0.22), transparent 45%),
+    linear-gradient(135deg, rgba(6, 12, 24, 1), rgba(12, 21, 40, 0.92));
   background-attachment: fixed;
   color: rgb(var(--color-on-surface));
   transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
+}
+
+input,
+select,
+textarea {
+  color: rgb(var(--color-on-surface));
+  background-color: rgba(15, 24, 46, 0.85);
+  border: 1px solid rgba(0, 200, 255, 0.25);
+  box-shadow: 0 10px 32px rgba(0, 200, 255, 0.08);
+  caret-color: rgb(var(--color-primary));
+  backdrop-filter: blur(12px);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: rgba(226, 242, 255, 0.55);
 }
 
 @media print {
@@ -35,5 +51,17 @@ body {
 
   #report-print-area {
     page-break-inside: avoid;
+  }
+
+  #athlete-report-card {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    border: 1px solid #d1d5db;
+    page-break-inside: avoid;
+  }
+
+  #athlete-report-card * {
+    color: #000000 !important;
   }
 }
