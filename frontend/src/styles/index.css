@@ -18,3 +18,18 @@ body {
   color: rgb(var(--color-on-surface));
   transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
 }
+
+@media print {
+  body {
+    background-color: #ffffff;
+    color: #000000;
+  }
+
+  .print-hidden {
+    display: none !important;
+  }
+
+  #report-print-area {
+    page-break-inside: avoid;
+  }
+}

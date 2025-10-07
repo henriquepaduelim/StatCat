@@ -5,12 +5,14 @@ from random import randint, uniform
 
 from sqlmodel import Session, select
 
+from app.core.security import get_password_hash
 from app.models import (
     AssessmentSession,
     Athlete,
     Client,
     SessionResult,
     TestDefinition,
+    User,
 )
 
 
@@ -68,6 +70,34 @@ def seed_database(session: Session) -> None:
 
     clients = [Client(**data) for data in clients_data]
     session.add_all(clients)
+    session.commit()
+
+    users = [
+        User(
+            email="admin@combine.dev",
+            hashed_password=get_password_hash("admin123"),
+            full_name="Administrador Combine",
+            role="staff",
+            is_active=True,
+        ),
+        User(
+            email="auriverde@combine.dev",
+            hashed_password=get_password_hash("auriverde123"),
+            full_name="Coordenador Auriverde",
+            role="club",
+            client_id=clients[1].id,
+            is_active=True,
+        ),
+        User(
+            email="urban@combine.dev",
+            hashed_password=get_password_hash("urban123"),
+            full_name="Analista Urban Fut",
+            role="club",
+            client_id=clients[2].id,
+            is_active=True,
+        ),
+    ]
+    session.add_all(users)
     session.commit()
 
     tests_by_client: dict[int, list[TestDefinition]] = {}

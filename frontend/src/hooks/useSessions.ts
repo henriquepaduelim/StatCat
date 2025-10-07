@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import api from "../api/client";
+import { useAuthStore } from "../stores/useAuthStore";
 
 export interface SessionRecord {
   id: number;
@@ -18,9 +19,13 @@ const fetchSessions = async (clientId?: number): Promise<SessionRecord[]> => {
   return data;
 };
 
-export const useSessions = (clientId?: number) =>
-  useQuery({
+export const useSessions = (clientId?: number) => {
+  const token = useAuthStore((state) => state.token);
+
+  return useQuery({
     queryKey: ["sessions", clientId ?? "all"],
     queryFn: () => fetchSessions(clientId),
     staleTime: 1000 * 60,
+    enabled: Boolean(token),
   });
+};

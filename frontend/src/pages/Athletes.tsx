@@ -2,25 +2,25 @@ import { Link } from "react-router-dom";
 
 import { useAthletes } from "../hooks/useAthletes";
 import { useThemeStore } from "../theme/useThemeStore";
+import { useTranslation } from "../i18n/useTranslation";
 
 const Athletes = () => {
   const clientId = useThemeStore((state) => state.theme.clientId);
   const { data, isLoading, isError } = useAthletes(clientId);
+  const t = useTranslation();
 
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-on-surface">Atletas</h1>
-          <p className="text-sm text-muted">
-            Registre participantes e acompanhe o desempenho de cada teste realizado.
-          </p>
+          <h1 className="text-2xl font-semibold text-on-surface">{t.athletes.title}</h1>
+          <p className="text-sm text-muted">{t.athletes.description}</p>
         </div>
         <Link
           to="/athletes/new"
           className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-on-primary shadow-sm"
         >
-          Adicionar atleta
+          {t.athletes.add}
         </Link>
       </header>
 
@@ -29,16 +29,16 @@ const Athletes = () => {
           <thead className="bg-background/80">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
-                Nome
+                {t.athletes.table.name}
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
-                Clube
+                {t.athletes.table.club}
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
-                E-mail
+                {t.athletes.table.email}
               </th>
               <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">
-                Ações
+                {t.athletes.table.action}
               </th>
             </tr>
           </thead>
@@ -46,21 +46,21 @@ const Athletes = () => {
             {isLoading && (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center text-sm text-muted">
-                  Carregando atletas...
+                  {t.athletes.loading}
                 </td>
               </tr>
             )}
             {isError && (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center text-sm text-red-500">
-                  Não foi possível carregar os atletas.
+                  {t.athletes.error}
                 </td>
               </tr>
             )}
             {!isLoading && !isError && data?.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center text-sm text-muted">
-                  Nenhum atleta cadastrado ainda.
+                  {t.athletes.empty}
                 </td>
               </tr>
             )}
@@ -78,7 +78,7 @@ const Athletes = () => {
                     to={`/athletes/${athlete.id}`}
                     className="font-semibold text-primary hover:underline"
                   >
-                    Ver detalhes
+                    {t.athletes.table.viewDetails}
                   </Link>
                 </td>
               </tr>

@@ -40,17 +40,17 @@ export const fallbackTheme: ThemeDefinition = {
   name: "Combine Geral",
   description: "Paleta padrão do evento",
   colors: {
-    primary: hexToRgb("#0E4C92"),
+    primary: hexToRgb("#449DD1"),
     accent: hexToRgb("#F97316"),
-    background: hexToRgb("#F1F5F9"),
-    surface: hexToRgb("#FFFFFF"),
-    muted: hexToRgb("#64748B"),
+    background: hexToRgb("#B8BACF"),
+    surface: hexToRgb("#0E0E52"),
+    muted: hexToRgb("#ffffff"),
     onPrimary: hexToRgb("#FFFFFF"),
     onSurface: hexToRgb("#111827"),
   },
   logo: {
-    label: "Combine",
-    background: hexToRgb("#0E4C92"),
+    label: "Marvin Soccer Analytics",
+    background: hexToRgb("#78C0E0"),
     color: hexToRgb("#FFFFFF"),
   },
 };

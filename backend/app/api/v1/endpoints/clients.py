@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
+from app.api.deps import get_current_active_user
 from app.db.session import get_session
 from app.models.client import Client
+from app.models.user import User
 from app.schemas.client import ClientBranding, ClientCreate, ClientRead
 
 router = APIRouter()
@@ -31,13 +33,25 @@ def serialize_client(client: Client) -> ClientRead:
 
 
 @router.get("/", response_model=list[ClientRead])
-def list_clients(session: Session = Depends(get_session)) -> list[ClientRead]:
-    clients = session.exec(select(Client)).all()
+def list_clients(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> list[ClientRead]:
+    statement = select(Client)
+    if current_user.role == "club":
+        statement = statement.where(Client.id == current_user.client_id)
+    clients = session.exec(statement).all()
     return [serialize_client(client) for client in clients]
 
 
 @router.post("/", response_model=ClientRead, status_code=status.HTTP_201_CREATED)
-def create_client(payload: ClientCreate, session: Session = Depends(get_session)) -> ClientRead:
+def create_client(
+    payload: ClientCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> ClientRead:
+    if current_user.role != "staff":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
     if session.exec(select(Client).where(Client.slug == payload.slug)).first():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Slug already exists")
 
@@ -64,8 +78,14 @@ def create_client(payload: ClientCreate, session: Session = Depends(get_session)
 
 
 @router.get("/{client_id}", response_model=ClientRead)
-def get_client(client_id: int, session: Session = Depends(get_session)) -> ClientRead:
+def get_client(
+    client_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> ClientRead:
     client = session.get(Client, client_id)
     if not client:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
+    if current_user.role == "club" and current_user.client_id != client.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
     return serialize_client(client)

@@ -57,10 +57,14 @@ Stack inicial para coletar métricas de testes físicos e técnicos de atletas d
 - Cadastro de **testes**, **sessões** e resultados dos atletas (dados seed gerados automaticamente).
 - Upload de foto de perfil (`POST /athletes/{id}/photo`) com armazenamento local em `MEDIA_ROOT`.
 - Endpoint de relatório consolidado por atleta (`GET /reports/athletes/{id}`) agrupando sessões e métricas.
+- Autenticação JWT com papéis (staff x club) e escopo automático filtrado pelo cliente logado.
+- Landing page e painel com suporte bilíngue (inglês/francês) e troca dinâmica de identidade visual.
+- Formulários para criação de sessões e testes diretamente no frontend, integrados ao backend.
+
+> Usuários seed: `admin@combine.dev` (staff), `auriverde@combine.dev`, `urban@combine.dev`. As senhas padrão estão descritas na seção do frontend.
 
 ### Próximos incrementos sugeridos
 
-- Configurar autenticação (JWT) e perfis por clube.
 - Integrar armazenamento de mídia (S3/MinIO) para fotos dos atletas.
 - Configurar Alembic para migrações do banco.
 
@@ -79,6 +83,10 @@ Stack inicial para coletar métricas de testes físicos e técnicos de atletas d
    npm run dev
    ```
    O Vite sobe em `http://localhost:5173` com proxy para a API (`/api` → `http://localhost:8000`).
+3. Acesse `http://localhost:5173/` para ver a landing page pública (botões EN/FR) e, ao clicar em "Club area", use uma das credenciais seed:
+   - `admin@combine.dev` / `admin123`
+   - `auriverde@combine.dev` / `auriverde123`
+   - `urban@combine.dev` / `urban123`
 
 ### Pontos de evolução
 

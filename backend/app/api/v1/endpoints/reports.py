@@ -3,11 +3,13 @@ from collections import defaultdict
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
+from app.api.deps import get_current_active_user
 from app.db.session import get_session
 from app.models.assessment_session import AssessmentSession
 from app.models.athlete import Athlete
 from app.models.session_result import SessionResult
 from app.models.test_definition import TestDefinition
+from app.models.user import User
 from app.schemas.athlete import AthleteRead
 from app.schemas.report import AthleteReport, MetricResult, SessionReport
 
@@ -16,11 +18,15 @@ router = APIRouter()
 
 @router.get("/athletes/{athlete_id}", response_model=AthleteReport)
 def athlete_report(
-    athlete_id: int, session: Session = Depends(get_session)
+    athlete_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
 ) -> AthleteReport:
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+    if current_user.role == "club" and athlete.client_id != current_user.client_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
 
     statement = (
         select(SessionResult, AssessmentSession, TestDefinition)

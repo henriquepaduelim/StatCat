@@ -4,39 +4,38 @@ import { useAthletes } from "../hooks/useAthletes";
 import { useSessions } from "../hooks/useSessions";
 import { useTests } from "../hooks/useTests";
 import { useThemeStore } from "../theme/useThemeStore";
+import { useTranslation } from "../i18n/useTranslation";
 
 const Dashboard = () => {
   const clientId = useThemeStore((state) => state.theme.clientId);
   const { data: athletes } = useAthletes(clientId);
   const { data: sessions } = useSessions(clientId);
   const { data: tests } = useTests(clientId);
+  const t = useTranslation();
 
   const statCards = [
     {
-      label: "Atletas cadastrados",
+      label: t.dashboard.cards[0].label,
       value: athletes?.length ?? 0,
-      description: "Total de atletas ativos no evento",
+      description: t.dashboard.cards[0].description,
     },
     {
-      label: "Testes configurados",
+      label: t.dashboard.cards[1].label,
       value: tests?.length ?? 0,
-      description: "Quantidade de provas disponíveis para este cliente",
+      description: t.dashboard.cards[1].description,
     },
     {
-      label: "Sessões registradas",
+      label: t.dashboard.cards[2].label,
       value: sessions?.length ?? 0,
-      description: "Eventos de combine armazenados com resultados",
+      description: t.dashboard.cards[2].description,
     },
   ];
 
   return (
     <div className="space-y-8">
       <section>
-        <h1 className="text-3xl font-semibold text-on-surface">Painel Geral</h1>
-        <p className="mt-2 text-muted">
-          Acompanhe os principais indicadores do combine e personalize o layout para cada
-          clube parceiro.
-        </p>
+        <h1 className="text-3xl font-semibold text-on-surface">{t.dashboard.title}</h1>
+        <p className="mt-2 text-muted">{t.dashboard.description}</p>
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
@@ -52,23 +51,21 @@ const Dashboard = () => {
       <section className="rounded-xl bg-surface p-6 shadow-sm">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-on-surface">Próximos passos</h2>
-            <p className="text-sm text-muted">
-              Cadastre atletas, configure baterias de testes e gere relatórios personalizados.
-            </p>
+            <h2 className="text-xl font-semibold text-on-surface">{t.dashboard.nextStepsTitle}</h2>
+            <p className="text-sm text-muted">{t.dashboard.nextStepsDescription}</p>
           </div>
           <div className="flex gap-2">
             <Link
               to="/athletes/new"
               className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-on-primary shadow-sm"
             >
-              Cadastrar atleta
+              {t.dashboard.actionNewAthlete}
             </Link>
             <Link
               to="/sessions/new"
               className="rounded-md border border-primary px-4 py-2 text-sm font-semibold text-primary"
             >
-              Criar sessão de testes
+              {t.dashboard.actionNewSession}
             </Link>
           </div>
         </div>

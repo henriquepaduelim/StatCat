@@ -3,6 +3,7 @@ from app.models.athlete import Athlete
 from app.models.client import Client
 from app.models.session_result import SessionResult
 from app.models.test_definition import TestDefinition
+from app.models.user import User
 
 __all__ = [
     "Athlete",
@@ -10,4 +11,5 @@ __all__ = [
     "TestDefinition",
     "AssessmentSession",
     "SessionResult",
+    "User",
 ]
