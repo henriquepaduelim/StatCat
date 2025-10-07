@@ -3,18 +3,22 @@
 @tailwind utilities;
 
 :root {
-  --color-primary: 14 76 146;
-  --color-accent: 249 115 22;
-  --color-background: 241 245 249;
-  --color-surface: 255 255 255;
-  --color-muted: 100 116 139;
-  --color-on-primary: 255 255 255;
-  --color-on-surface: 17 24 39;
+  --color-primary: 51 153 137;
+  --color-accent: 125 226 209;
+  --color-background: 255 250 251;
+  --color-surface: 43 44 40;
+  --color-muted: 87 88 83;
+  --color-on-primary: 19 21 21;
+  --color-on-surface: 255 250 251;
 }
 
 body {
   font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background-color: rgb(var(--color-background));
+  background: linear-gradient(to bottom right, rgba(19, 21, 21, 0.65), rgba(51, 153, 137, 0.35)),
+    url('/media/bg-home.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
   color: rgb(var(--color-on-surface));
   transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
 }

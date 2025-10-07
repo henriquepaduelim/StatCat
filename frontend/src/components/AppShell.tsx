@@ -35,7 +35,7 @@ const AppShell = ({ children }: PropsWithChildren) => {
   }, [clients, setThemesFromClients]);
 
   return (
-    <div className="min-h-screen bg-background text-on-surface">
+    <div className="min-h-screen bg-transparent text-on-surface backdrop-blur">
       <header className="print-hidden border-b border-black/5 bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/80">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-4 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">

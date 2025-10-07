@@ -37,21 +37,21 @@ const hexToRgb = (hex: string) => {
 export const fallbackTheme: ThemeDefinition = {
   id: "combine",
   clientId: undefined,
-  name: "Combine Geral",
-  description: "Paleta padrão do evento",
+  name: "Combine Football",
+  description: "Default palette for Combine Football",
   colors: {
-    primary: hexToRgb("#449DD1"),
-    accent: hexToRgb("#F97316"),
-    background: hexToRgb("#B8BACF"),
-    surface: hexToRgb("#0E0E52"),
+    primary: hexToRgb("#339989"),
+    accent: hexToRgb("#7de2d1"),
+    background: hexToRgb("#000"),
+    surface: hexToRgb("#2b2c28"),
     muted: hexToRgb("#ffffff"),
-    onPrimary: hexToRgb("#FFFFFF"),
-    onSurface: hexToRgb("#111827"),
+    onPrimary: hexToRgb("#131515"),
+    onSurface: hexToRgb("#fffafb"),
   },
   logo: {
-    label: "Marvin Soccer Analytics",
-    background: hexToRgb("#78C0E0"),
-    color: hexToRgb("#FFFFFF"),
+    label: "Combine Football",
+    background: hexToRgb("#339989"),
+    color: hexToRgb("#131515"),
   },
 };
 
