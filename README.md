@@ -99,7 +99,7 @@ frontend/
 - `npm run lint` – frontend ESLint.
 - `npm run build` – frontend production build (outputs `dist/`).
 
-## Suggested Next Steps
+## Next Steps
 - Configure Alembic migrations instead of recreating SQLite on schema changes.
 - Integrate external storage (S3/MinIO) for photos and future attachments.
 - Implement automated tests on the backend (pytest + httpx) and frontend (React Testing Library).
