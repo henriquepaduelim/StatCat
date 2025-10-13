@@ -1,106 +1,107 @@
-# Plataforma Combine Futebol
+# Combine Football Platform
 
-Stack inicial para coletar métricas de testes físicos e técnicos de atletas de futebol, gerar relatórios e disponibilizar um painel personalizável para clubes.
+End-to-end platform for tracking physical and technical tests, centralizing reports, and serving customizable dashboards for partner clubs.
 
-## Visão geral do monorepo
+## Monorepo Overview
 
 ```
 .
-├── backend/   # API FastAPI + SQLModel
-└── frontend/  # Dashboard React + TypeScript
+├── backend/   # FastAPI + SQLModel API (SQLite by default)
+└── frontend/  # Dashboard and marketing site in React/Vite/TypeScript
 ```
 
----
+## Current Status
 
-## Requisitos de ferramentas
+### Backend (FastAPI)
+- JWT authentication (`/api/v1/auth`) supporting `staff` and `club` roles, hashed passwords, and OAuth2-issued tokens.
+- CRUD for clients, athletes (photo upload in `/media/athletes/<id>`), physical tests, and assessment sessions.
+- Consolidated athlete report endpoint (`GET /api/v1/reports/athletes/{id}`) grouping sessions and recorded metrics.
+- SQLite database bootstrapped automatically with seeds (clients, users, tests, athletes, sessions, results) in `combine.db`.
+- Static file server rooted at `MEDIA_ROOT`, with configuration driven by `.env` variables.
 
-- **Python 3.11+** – recomendado usar [`pyenv`](https://github.com/pyenv/pyenv) ou [`uv`](https://github.com/astral-sh/uv) para gerenciar versões/virtualenv.
-- **Node.js 18+** – instale via [nvm](https://github.com/nvm-sh/nvm) para alternar versões facilmente.
-- **npm** (vem com o Node) ou **pnpm** (opcional) para instalar dependências do frontend.
-- **Poetry** ou **pip** padrão para gerenciar dependências do backend.
-- **Docker** (opcional) caso queira orquestrar com containers mais adiante.
-- **PostgreSQL** (opcional neste momento; o projeto inicia com SQLite, mas já está preparado para migração).
+### Frontend (React + Vite)
+- Bilingual landing page (English/French) with media assets stored in `public/media`. (NOT FUNCTIONAL YET)
+- Authenticated area (Dashboard → Athletes → Sessions → Reports) guarded by `RequireAuth` with state persisted through Zustand.
+- Dashboard built with Recharts, heatmaps, and comparison widgets; consumes live API data and a fallback dataset to keep the UI functional offline.
+- Athlete management flows: list, create, detail, and photo upload.
+- Forms to create sessions and tests directly from the dashboard, wired to the backend endpoints.
+- Client-driven theming (colors, logo, description) supplied by the clients endpoint.
 
----
+## Running Locally
 
-## Backend (FastAPI)
+### Requirements
+- **Python 3.11+** (recommend using `pyenv` or `uv`).
+- **Node.js 18+** (using `nvm` makes version switching easier).
+- **npm** (or `pnpm`/`yarn`, if preferred).
 
-1. Entre na pasta e crie um ambiente virtual:
-   ```bash
-   cd backend
-   python -m venv .venv
-   source .venv/bin/activate  # Windows: .venv\Scripts\activate
-   ```
-2. Instale dependências:
-   ```bash
-   pip install --upgrade pip
-   pip install -e .
-   ```
-   > Alternativa: `pip install fastapi uvicorn[standard] sqlmodel alembic python-multipart pydantic[email] passlib[bcrypt] python-jose[cryptography] boto3 jinja2`
-3. Copie o arquivo de variáveis e ajuste conforme o ambiente:
-   ```bash
-   cp .env.example .env
-   ```
-4. (Opcional) Ajuste as origens de CORS no `.env` (`BACKEND_CORS_ORIGINS`) se o frontend rodar em outra URL. Também é possível alterar `MEDIA_ROOT` para definir onde os uploads locais serão armazenados.
+### Backend
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install --upgrade pip
+pip install -e ".[dev]"  # installs development deps (pytest, httpx, ruff, mypy)
+cp .env.example .env       # adjust SECRET_KEY, BACKEND_CORS_ORIGINS, MEDIA_ROOT, etc.
+uvicorn app.main:app --reload
+```
+- The SQLite database (`combine.db`) is created/seeded on the first startup. Delete the file before launching to regenerate the sample data.
+- Interactive docs: http://localhost:8000/docs
+- Simple healthcheck: http://localhost:8000/health
 
-5. Se estiver evoluindo o esquema e usando SQLite, remova `combine.db` antes de subir o servidor para que as novas colunas/tabelas sejam criadas automaticamente (futuramente migraremos para Alembic).
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+- Vite runs on http://localhost:5173 with an automatic proxy to `http://localhost:8000/api`.
+- Production build: `npm run build`; preview build: `npm run preview`.
 
-6. Execute o servidor de desenvolvimento:
-   ```bash
-   uvicorn app.main:app --reload
-   ```
-7. Documentação interativa disponível em `http://localhost:8000/docs`.
+### Seed Credentials
+| User | Role | Password | Notes |
+|------|------|----------|-------|
+| admin@mvp.ca | staff | admin123 | full access, can switch client themes |
+| jodie@playerstopro.com | club | ptp123456 | scoped to Players To Pro Football |
+| urban@combine.dev | club | urban123 | scoped to Urban Fut |
 
-### Recursos de backend já disponíveis
+## Directory Layout
 
-- CRUD de **clientes** com dados de identidade visual para aplicar temas.
-- Cadastro de **testes**, **sessões** e resultados dos atletas (dados seed gerados automaticamente).
-- Upload de foto de perfil (`POST /athletes/{id}/photo`) com armazenamento local em `MEDIA_ROOT`.
-- Endpoint de relatório consolidado por atleta (`GET /reports/athletes/{id}`) agrupando sessões e métricas.
-- Autenticação JWT com papéis (staff x club) e escopo automático filtrado pelo cliente logado.
-- Landing page e painel com suporte bilíngue (inglês/francês) e troca dinâmica de identidade visual.
-- Formulários para criação de sessões e testes diretamente no frontend, integrados ao backend.
+```
+backend/
+├── app/
+│   ├── api/            # v1 routes (auth, athletes, clients, sessions, tests, reports)
+│   ├── core/           # configuration and security helpers (JWT, password hashing)
+│   ├── db/             # SQLModel session and seeding utilities
+│   ├── models/         # SQLModel tables
+│   ├── schemas/        # Pydantic/SQLModel DTOs
+│   └── services/       # placeholder for future utilities
+├── media/              # local uploads (e.g., athlete photos)
+├── combine.db          # auto-generated SQLite database
+└── pyproject.toml      # dependencies and dev extras
 
-> Usuários seed: `admin@combine.dev` (staff), `auriverde@combine.dev`, `urban@combine.dev`. As senhas padrão estão descritas na seção do frontend.
+frontend/
+├── src/
+│   ├── api/            # axios client and request wrappers (auth, sessions, tests)
+│   ├── components/     # AppShell, charts, heatmap, etc.
+│   ├── hooks/          # React Query hooks (athletes, sessions, reports...)
+│   ├── i18n/           # EN/FR translations
+│   ├── pages/          # Home, Dashboard, Athletes, Sessions, Reports
+│   ├── stores/         # Zustand stores (auth, theme)
+│   └── theme/          # theme generation driven by client metadata
+├── public/             # static assets (videos, images)
+└── vite.config.ts
+```
 
-### Próximos incrementos sugeridos
+## Useful Scripts
+- `uvicorn app.main:app --reload` – backend dev server.
+- `pytest` – backend test suite (httpx already included).
+- `ruff check app` / `mypy app` – backend linting and type checks.
+- `npm run lint` – frontend ESLint.
+- `npm run build` – frontend production build (outputs `dist/`).
 
-- Integrar armazenamento de mídia (S3/MinIO) para fotos dos atletas.
-- Configurar Alembic para migrações do banco.
-
----
-
-## Frontend (React + Vite + Tailwind)
-
-1. Entre na pasta e instale as dependências:
-   ```bash
-   cd frontend
-   npm install
-   # ou: pnpm install / yarn install
-   ```
-2. Rode o servidor local:
-   ```bash
-   npm run dev
-   ```
-   O Vite sobe em `http://localhost:5173` com proxy para a API (`/api` → `http://localhost:8000`).
-3. Acesse `http://localhost:5173/` para ver a landing page pública (botões EN/FR) e, ao clicar em "Club area", use uma das credenciais seed:
-   - `admin@combine.dev` / `admin123`
-   - `auriverde@combine.dev` / `auriverde123`
-   - `urban@combine.dev` / `urban123`
-
-### Pontos de evolução
-
-- Criar componentes reutilizáveis para cards de métricas, tabelas e gráficos.
-- Adicionar formulários de criação de sessões/testes direto no frontend.
-- Implementar upload de vídeos e anexos nos relatórios.
-- Adicionar testes unitários (React Testing Library) e checagens de qualidade (ESLint/Prettier).
-
----
-
-## Próximos passos gerais
-
-- Desenhar o modelo de dados completo (Atleta, Teste, Sessão, Métrica, Cliente, Avaliador).
-- Definir estratégia de geração de relatórios (HTML → PDF com WeasyPrint/ReportLab ou serviço externo).
-- Implementar upload e versionamento de imagens (perfil, provas) usando S3 ou armazenamento compatível.
-- Planejar deploy (Docker + Render/Railway/Heroku) com banco gerenciado.
-- Criar um roadmap do MVP para validar com clubes antes de ampliar funcionalidades.
+## Suggested Next Steps
+- Configure Alembic migrations instead of recreating SQLite on schema changes.
+- Integrate external storage (S3/MinIO) for photos and future attachments.
+- Implement automated tests on the backend (pytest + httpx) and frontend (React Testing Library).
+- Expand report exports (PDF/CSV) and enable real printing from the frontend.
+- Prepare deployment scripts (Docker Compose, CI/CD) and client-specific environments.
