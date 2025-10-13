@@ -20,7 +20,7 @@ End-to-end platform for tracking physical and technical tests, centralizing repo
 - Static file server rooted at `MEDIA_ROOT`, with configuration driven by `.env` variables.
 
 ### Frontend (React + Vite)
-- Bilingual landing page (English/French) with media assets stored in `public/media`. (NOT FUNCTIONAL YET)
+- Bilingual landing page (English/French) with media assets stored in `public/media`.
 - Authenticated area (Dashboard → Athletes → Sessions → Reports) guarded by `RequireAuth` with state persisted through Zustand.
 - Dashboard built with Recharts, heatmaps, and comparison widgets; consumes live API data and a fallback dataset to keep the UI functional offline.
 - Athlete management flows: list, create, detail, and photo upload.
