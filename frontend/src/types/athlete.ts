@@ -1,15 +1,18 @@
+export type AthleteStatus = "active" | "inactive";
+
 export interface Athlete {
   id: number;
   client_id?: number | null;
   first_name: string;
   last_name: string;
-  email?: string | null;
-  birth_date?: string | null;
+  email: string;
+  birth_date: string;
   dominant_foot?: string | null;
   height_cm?: number | null;
   weight_kg?: number | null;
   club_affiliation?: string | null;
   photo_url?: string | null;
+  status: AthleteStatus;
 }
 
 export type AthletePayload = Omit<Athlete, "id">;

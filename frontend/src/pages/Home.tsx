@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
-import { useLocale, useTranslation } from "../i18n/useTranslation";
+import { useTranslation } from "../i18n/useTranslation";
 
 const videoSource = "/media/hero-tech.mp4";
 const posterSource = "/media/hero-tech-poster.jpg";
 
 const Home = () => {
   const t = useTranslation();
-  const [locale, setLocale] = useLocale();
   const [isVideoReady, setIsVideoReady] = useState(false);
 
   return (
@@ -22,33 +21,9 @@ const Home = () => {
       </div>
 
       <header className="border-b border-white/5 bg-surface/70 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-          <span className="text-xl font-semibold text-primary">{t.common.appName}</span>
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-10">
+          <span className="text-xl text-white font-semibold text-primary">{t.common.appName}</span>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-xs font-medium text-muted">
-              <button
-                type="button"
-                onClick={() => setLocale("en")}
-                className={`rounded-md px-2 py-1 transition-colors ${
-                  locale === "en"
-                    ? "bg-primary text-on-primary shadow-sm"
-                    : "border border-black/10 text-muted hover:border-primary/40 hover:text-primary"
-                }`}
-              >
-                EN
-              </button>
-              <button
-                type="button"
-                onClick={() => setLocale("fr")}
-                className={`rounded-md px-2 py-1 transition-colors ${
-                  locale === "fr"
-                    ? "bg-primary text-on-primary shadow-sm"
-                    : "border border-black/10 text-muted hover:border-primary/40 hover:text-primary"
-                }`}
-              >
-                FR
-              </button>
-            </div>
             <Link
               to="/login"
               className="rounded-md border border-primary/60 px-4 py-2 text-sm font-semibold text-primary shadow-sm transition hover:border-primary hover:text-on-primary hover:bg-primary"

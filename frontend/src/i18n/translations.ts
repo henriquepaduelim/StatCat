@@ -1,6 +1,11 @@
-export type Locale = "en" | "fr";
+export type Locale = "en";
 
 type DashboardTimeRange = "30d" | "90d" | "180d" | "365d" | "all";
+
+type RangeOption<T extends string> = {
+  value: T;
+  label: string;
+};
 
 export type TranslationDictionary = {
   common: {
@@ -58,40 +63,31 @@ export type TranslationDictionary = {
     title: string;
     description: string;
     demoNotice: string;
-    cards: Array<{ label: string; description: string }>;
-    nextStepsTitle: string;
-    nextStepsDescription: string;
-    actionNewAthlete: string;
-    actionNewSession: string;
-    emptyState: string;
-    comparisonLabel: string;
     filters: {
       timeRangeLabel: string;
       timeRangeDescription: string;
-      rangeOptions: Array<{ value: DashboardTimeRange; label: string }>;
+      rangeOptions: Array<RangeOption<DashboardTimeRange>>;
       athleteLabel: string;
       athletePlaceholder: string;
     };
-    overview: {
-      sessionsTitle: string;
-      sessionsSubtitle: string;
-      testsTitle: string;
-      testsSubtitle: string;
-      testsFallbackLabel: string;
-      clubsTitle: string;
-      clubsSubtitle: string;
-      clubsFallbackLabel: string;
-      categoryTrendTitle: string;
-      categoryTrendSubtitle: string;
-      radarTitle: string;
-      radarSubtitle: string;
-      radarLatestLabel: string;
-      radarPreviousLabel: string;
-      sessionLoadTitle: string;
-      sessionLoadSubtitle: string;
-      spotlightTitle: string;
-      spotlightSubtitle: string;
-      spotlightLatest: (value: string, unit: string) => string;
+    mainSkills: {
+      currentLabel: string;
+      deltaLabel: string;
+      noPrevious: string;
+      remainingLabel: string;
+      labels: {
+        physical: string;
+        technical: string;
+      };
+    };
+    sessionComparison: {
+      title: string;
+      subtitle: string;
+      previousLabel: string;
+      currentLabel: string;
+      deltaLabel: string;
+      noDelta: string;
+      noData: string;
     };
     athleteReport: {
       title: string;
@@ -117,6 +113,14 @@ export type TranslationDictionary = {
       legLengthUnit: string;
       notAvailable: string;
     };
+    summary: {
+      title: string;
+      totalAthletes: string;
+      activeAthletes: string;
+      inactiveAthletes: string;
+      error: string;
+      empty: string;
+    };
   };
   athletes: {
     title: string;
@@ -130,8 +134,20 @@ export type TranslationDictionary = {
       club: string;
       email: string;
       action: string;
-      viewDetails: string;
+      status: string;
     };
+    actions: {
+      delete: string;
+      edit: string;
+      view: string;
+      deleteLabel: (name: string) => string;
+      editLabel: (name: string) => string;
+      viewLabel: (name: string) => string;
+    };
+    deleteConfirmTitle: (firstName: string, lastName: string) => string;
+    deleteConfirmDescription: string;
+    deleteSuccess: string;
+    deleteError: string;
   };
   newAthlete: {
     title: string;
@@ -145,7 +161,16 @@ export type TranslationDictionary = {
     height: string;
     weight: string;
     dominantFoot: string;
-    dominantFootOptions: { default: string; right: string; left: string; both: string };
+    dominantFootOptions: {
+      default: string;
+      right: string;
+      left: string;
+      both: string;
+    };
+    photo: string;
+    photoHint: string;
+    status: string;
+    statusOptions: { active: string; inactive: string };
     submit: string;
     layoutApplied: string;
     error: string;
@@ -165,6 +190,20 @@ export type TranslationDictionary = {
       dominantFoot: string;
     };
     backToList: string;
+  };
+  athleteAssessment: {
+    title: string;
+    profileSectionTitle: string;
+    profileSaved: string;
+    sessionHeading: string;
+    sessionDescription: string;
+    testsHeading: string;
+    testsDescription: string;
+    submit: string;
+    success: string;
+    errorNoValues: string;
+    noTests: string;
+    viewReport: string;
   };
   sessions: {
     title: string;
@@ -188,8 +227,8 @@ export type TranslationDictionary = {
     summary: string;
     summarySessions: (count: number) => string;
     metricsBadge: (count: number) => string;
-    sessionDate: (date: string | null) => string;
     metricFallback: string;
+    sessionDate: (value: string | null) => string;
   };
   forms: {
     session: {
@@ -218,6 +257,43 @@ export type TranslationDictionary = {
       success: string;
       error: string;
     };
+  };
+  admin: {
+    title: string;
+    subtitle: string;
+    filters: {
+      periodLabel: string;
+      statusLabel: string;
+      periods: Array<{ value: string; label: string }>;
+      statuses: Array<{ value: string; label: string }>;
+    };
+    kpis: {
+      activeClients: string;
+      sessions: string;
+      adhesion: string;
+      performanceDelta: string;
+    };
+    tables: {
+      clients: string;
+      headers: {
+        client: string;
+        sessions: string;
+        adhesion: string;
+        delta: string;
+        actions: string;
+      };
+      actions: {
+        view: string;
+        settings: string;
+        reports: string;
+      };
+    };
+    charts: {
+      topClients: string;
+      sessionsTrend: string;
+      calendar: string;
+    };
+    empty: string;
   };
 };
 
@@ -339,31 +415,10 @@ export const translations: Record<Locale, TranslationDictionary> = {
         "Seed accounts: admin@combine.dev / admin123, auriverde@combine.dev / auriverde123, urban@combine.dev / urban123",
     },
     dashboard: {
-      title: "Overview",
+      title: "Club Performance Dashboard",
       description:
-        "Keep track of the main performance indicators and tailor the experience to each club.",
+        "Monitor your athletes’ performance data and build insights that help your club grow.",
       demoNotice: "Interactive preview using synthetic metrics until live combine data is synced.",
-      cards: [
-        {
-          label: "Registered athletes",
-          description: "Active athletes linked to this client",
-        },
-        {
-          label: "Configured tests",
-          description: "Protocols available for this client",
-        },
-        {
-          label: "Recorded sessions",
-          description: "Sessions scheduled in the selected period",
-        },
-      ],
-      nextStepsTitle: "Next steps",
-      nextStepsDescription:
-        "Register athletes, configure battery templates and deliver personalised reports.",
-      actionNewAthlete: "Register athlete",
-      actionNewSession: "Create assessment session",
-      emptyState: "No data available yet.",
-      comparisonLabel: "vs previous period",
       filters: {
         timeRangeLabel: "Time range",
         timeRangeDescription: "Adjust the horizon to explore the training load.",
@@ -377,34 +432,31 @@ export const translations: Record<Locale, TranslationDictionary> = {
         athleteLabel: "Athlete focus",
         athletePlaceholder: "Select an athlete",
       },
-      overview: {
-        sessionsTitle: "Sessions over time",
-        sessionsSubtitle: "Monthly cadence of scheduled assessments.",
-        testsTitle: "Test categories",
-        testsSubtitle: "Distribution of configured protocols.",
-        testsFallbackLabel: "Uncategorised",
-        clubsTitle: "Athletes per club",
-        clubsSubtitle: "Main affiliations registered on the platform.",
-        clubsFallbackLabel: "Without club",
-        categoryTrendTitle: "Category progression",
-        categoryTrendSubtitle: "Normalized performance index (baseline = 100).",
-        radarTitle: "Baseline vs latest",
-        radarSubtitle: "Compare the most recent session with the previous checkpoint.",
-        radarLatestLabel: "Latest session",
-        radarPreviousLabel: "Previous session",
-        sessionLoadTitle: "Session load balance",
-        sessionLoadSubtitle: "Tests executed per dimension across the selected window.",
-        spotlightTitle: "Performance signals",
-        spotlightSubtitle: "Biggest gains captured in the latest assessment.",
-        spotlightLatest: (value: string, unit: string) =>
-          `Latest: ${value}${unit ? ` ${unit}` : ""}`,
+      mainSkills: {
+        currentLabel: "Current",
+        deltaLabel: "vs previous",
+        noPrevious: "No previous checkpoint",
+        remainingLabel: "Remaining",
+        labels: {
+          physical: "Physical index",
+          technical: "Technical index",
+        },
       },
-      athleteReport: {
-        title: "Athlete focus",
-        subtitle: "Select an athlete to explore individual progression.",
-        noAthlete: "Select an athlete to see the report card.",
+      sessionComparison: {
+        title: "Latest vs previous checkpoint",
+        subtitle: "Compare aggregated indexes across performance categories.",
+        previousLabel: "Previous",
+        currentLabel: "Current",
+        deltaLabel: "change",
+        noDelta: "No change recorded",
+        noData: "Not enough sessions to compare yet.",
+      },
+    athleteReport: {
+      title: "Athlete focus",
+      subtitle: "Select an athlete to explore individual progression.",
+      noAthlete: "Select an athlete to see the report card.",
         chartTitle: "Progression",
-        chartEmpty: "There are no recorded results for this metric yet.",
+        chartEmpty: "There are no recorded results for this athlete.",
         selectTestLabel: "Metric",
         bestValueLabel: "Best value",
         lastValueLabel: "Last result",
@@ -419,57 +471,84 @@ export const translations: Record<Locale, TranslationDictionary> = {
         restingHeartRateUnit: "bpm",
         sittingHeightLabel: "Sitting height",
         sittingHeightUnit: "cm",
-        legLengthLabel: "Leg length",
-        legLengthUnit: "cm",
-        notAvailable: "N/A",
-      },
+      legLengthLabel: "Leg length",
+      legLengthUnit: "cm",
+      notAvailable: "N/A",
+    },
+    summary: {
+      title: "Athlete overview",
+      totalAthletes: "Registered",
+      activeAthletes: "Active",
+      inactiveAthletes: "Inactive",
+      error: "Unable to load summary.",
+      empty: "No athletes recorded yet.",
+    },
     },
     athletes: {
       title: "Athletes",
-      description: "Register participants and follow the performance of each test.",
-      empty: "No athletes yet. Start by registering one.",
+      description: "Manage profiles and media captured during assessments.",
+      empty: "No athletes registered yet.",
       loading: "Loading athletes...",
-      error: "Unable to load athletes.",
-      add: "Add athlete",
+      error: "Unable to load athletes right now.",
+      add: "New athlete",
       table: {
         name: "Name",
         club: "Club",
         email: "Email",
+        status: "Status",
         action: "Actions",
-        viewDetails: "View details",
       },
+      actions: {
+        delete: "Delete",
+        edit: "Session",
+        view: "View card",
+        deleteLabel: (name: string) => `Delete ${name}`,
+        editLabel: (name: string) => `Session ${name}`,
+        viewLabel: (name: string) => `View profile of ${name}`,
+      },
+      deleteConfirmTitle: (firstName: string, lastName: string) =>
+        `Delete athlete ${firstName} ${lastName}?`,
+      deleteConfirmDescription:
+        "This action is permanent and removes all associated data for the athlete.",
+      deleteSuccess: "Athlete removed successfully.",
+      deleteError: "We couldn't remove this athlete. Try again in a moment.",
     },
     newAthlete: {
-      title: "Register athlete",
-      subtitle:
-        "Add participants to the combine and link them to personalised test batteries.",
-      client: "Club / client",
+      title: "New athlete",
+      subtitle: "Let's get it started.",
+      client: "Club",
       firstName: "First name",
       lastName: "Last name",
       email: "Email",
-      club: "Club / institution",
-      birthDate: "Date of birth",
+      club: "Club",
+      birthDate: "Birthday",
       height: "Height (cm)",
       weight: "Weight (kg)",
       dominantFoot: "Dominant foot",
-      dominantFootOptions: {
-        default: "Select",
-        right: "Right",
-        left: "Left",
-        both: "Both",
-      },
+    dominantFootOptions: {
+      default: "Select",
+      right: "Right",
+      left: "Left",
+      both: "Both",
+    },
+    photo: "Profile photo",
+    photoHint: "Upload from your device or use the camera. JPEG, PNG or HEIC up to 5 MB.",
+    status: "Status",
+    statusOptions: {
+      active: "Active",
+      inactive: "Inactive",
+    },
       submit: "Save athlete",
-      layoutApplied: "Applied layout:",
-      error: "Unable to save the athlete. Please review the information.",
+      layoutApplied: "Theme applied",
+      error: "Unable to save the athlete. Please review the fields.",
     },
     athleteDetail: {
-      profileSubtitle:
-        "Athlete profile with consolidated results and personalised reports.",
+      profileSubtitle: "Athlete details",
       infoTitle: "General information",
       lastReportTitle: "Latest report",
-      upload: "Update photo",
+      upload: "Upload photo",
       uploadPending: "Uploading...",
-      uploadError: "Unable to upload photo.",
+      uploadError: "Upload failed. Try a different file.",
       metrics: {
         email: "Email",
         club: "Club",
@@ -477,48 +556,61 @@ export const translations: Record<Locale, TranslationDictionary> = {
         weight: "Weight",
         dominantFoot: "Dominant foot",
       },
-      backToList: "Back to list",
+      backToList: "Back to athletes",
+    },
+    athleteAssessment: {
+      title: "Assessment & data capture",
+      profileSectionTitle: "Update athlete information",
+      profileSaved: "Profile updated successfully.",
+      sessionHeading: "New assessment session",
+      sessionDescription:
+        "Define when and where this assessment happens. Notes are saved with the session report.",
+      testsHeading: "Record test results",
+      testsDescription:
+        "Enter the values collected in the field. Leave blank if a protocol was skipped.",
+      submit: "Save session and results",
+      success: "Session created and results stored.",
+      errorNoValues: "Add at least one measurement before saving the assessment.",
+      noTests: "No tests available for this client yet.",
+      viewReport: "Open athlete report",
     },
     sessions: {
-      title: "Assessment sessions",
-      description:
-        "Plan personalised test batteries and review the history of athlete performance.",
+      title: "Sessions",
+      description: "Plan upcoming assessments and monitor the pipeline of tests.",
       nextSessions: "Upcoming sessions",
-      newSession: "New session (coming soon)",
+      newSession: "New session",
       loading: "Loading sessions...",
-      empty: "No sessions found for this client.",
+      empty: "No sessions yet. Create the first one to begin tracking.",
       notesEmpty: "No notes",
     },
     reports: {
       title: "Reports",
-      description:
-        "Choose an athlete to review key insights and prepare branded deliverables.",
+      description: "Analyse individual results and export branded deliverables.",
       selectAthlete: "Select athlete",
       selectPlaceholder: "Choose an athlete",
-      export: "Export PDF",
-    soon: "coming soon",
-    loading: "Loading report data...",
-    error: "Unable to load this report at the moment. Please try again.",
-    noAthlete: "Select an athlete to display the report.",
-    summary: "Automatic summary recorded after each test.",
-    summarySessions: (count) =>
-      count === 0
-        ? "No sessions recorded yet."
-        : `Consolidated report with ${count} ${count === 1 ? "session" : "sessions"}.`,
-    metricsBadge: (count) => `${count} metrics`,
-    sessionDate: (date) =>
-      date ? formatDate(new Date(date), "en") : "Date not provided",
-    metricFallback: "Metric",
-  },
+      export: "Export",
+      soon: "coming soon",
+      loading: "Loading report...",
+      error: "Unable to load the report.",
+      noAthlete: "Select an athlete to display the report.",
+      summary: "Automatic summary registered after each session.",
+      summarySessions: (count: number) =>
+        count === 0
+          ? "No sessions recorded."
+          : `${count} ${count === 1 ? "session" : "sessions"} analysed in this report.`,
+      metricsBadge: (count: number) => `${count} metric${count === 1 ? "" : "s"}`,
+      metricFallback: "Metric",
+      sessionDate: (value: string | null) =>
+        value ? formatDate(new Date(value), "en") : "Date not available",
+    },
     forms: {
       session: {
-        title: "Create assessment session",
-        subtitle:
-          "Organise a new battery of tests, set the location and share with your staff.",
+        title: "Create session",
+        subtitle: "Define the group, location and notes for this assessment.",
         client: "Club / client",
         name: "Session name",
         location: "Location",
-        date: "Scheduled date",
+        date: "Date & time",
         notes: "Notes",
         submit: "Save session",
         success: "Session created successfully!",
@@ -526,8 +618,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       },
       test: {
         title: "Create test",
-        subtitle:
-          "Define the metrics and direction used in your customised combine protocols.",
+        subtitle: "Define the parameters for your custom protocol.",
         client: "Club / client",
         name: "Test name",
         category: "Category",
@@ -543,322 +634,50 @@ export const translations: Record<Locale, TranslationDictionary> = {
         error: "Unable to create the test. Please try again.",
       },
     },
-  },
-  fr: {
-    common: {
-      appName: "Combine Football",
-      dashboard: "Tableau de bord",
-      athletes: "Athlètes",
-      newAthlete: "Nouvel athlète",
-      sessions: "Sessions",
-      reports: "Rapports",
-      logout: "Déconnexion",
-      loading: "Chargement",
-      cancel: "Annuler",
-      save: "Enregistrer",
-      create: "Créer",
-      edit: "Modifier",
-      delete: "Supprimer",
-      back: "Retour",
-      select: "Sélectionner",
-      customerArea: "Espace club",
-      learnMore: "Découvrir les fonctionnalités",
-      signIn: "Se connecter",
-      heroBadge: "Plateforme SaaS pour combines de football",
-      theme: "Thème",
-    },
-    home: {
-      heroBullets: [
-        "Capture en temps réel depuis tablettes et appareils mobiles.",
-        "Benchmarks automatisés par poste et par rôle.",
-        "Médiathèque sécurisée avec livrables aux couleurs du club.",
-      ],
-      heroTitle:
-        "Captez des données décisives et livrez des rapports aux couleurs de votre club.",
-      heroDescription:
-        "Planifiez des évaluations physiques, techniques et cognitives, stockez les médias, générez des rapports personnalisés et partagez-les en quelques secondes.",
-      ctaPrimary: "Accéder à l’espace de gestion",
-      ctaSecondary: "Explorer les fonctionnalités",
-      highlightTitle: "Rapport personnalisé",
-      highlightDescription:
-        "Mise en page adaptée à l’identité du club, métriques consolidées et liens directs vers les médias capturés sur le terrain.",
-      highlightFooter: "Envoi automatique aux clubs partenaires",
-      stats: [
-        {
-          label: "Athlètes évalués",
-          value: "+1 200",
-          description: "Résultats historiques des combines officiels",
-        },
-        {
-          label: "Clubs accompagnés",
-          value: "18",
-          description: "Clubs professionnels et académies avec identité dédiée",
-        },
-        {
-          label: "Tests personnalisés",
-          value: "45",
-          description: "Protocoles physiques, techniques et cognitifs",
-        },
-      ],
-      videoTitle: "Highlight immersif",
-      videoDescription:
-        "Faites défiler la page pendant que la vidéo reste visible. Remplacez ce clip de démonstration en déposant votre vidéo dans public/media/hero-tech.mp4.",
-      videoCTA: "Accéder à la plateforme",
-      videoCaption:
-        "Déposez votre vidéo de présentation dans public/media/hero-tech.mp4 (et éventuellement l’image public/media/hero-tech-poster.jpg).",
-      quickInfoTitle: "Pourquoi les clubs choisissent Combine Football",
-      quickInfo: [
-        {
-          title: "Flux de données en direct",
-          description:
-            "Saisissez les métriques depuis le terrain et synchronisez-les immédiatement avec les tableaux de bord.",
-        },
-        {
-          title: "Identité maîtrisée",
-          description:
-            "Livrez des rapports aux couleurs du club, avec vos typographies et vos sponsors en un clic.",
-        },
-        {
-          title: "Coffre-fort média",
-          description:
-            "Archivez vidéos et ralentis, partagez des liens sécurisés avec les recruteurs et le staff.",
-        },
-      ],
-      featuresTitle: "Pensé pour la haute performance",
-      featuresSubtitle: "Une plateforme modulaire pour camps d’évaluation, journées de détection et centres de formation.",
-      features: [
-        {
-          title: "Designer de tests",
-          description:
-            "Assemblez des KPIs physiques, techniques et cognitifs, définissez unités, seuils et règles de notation.",
-        },
-        {
-          title: "Orchestration des sessions",
-          description:
-            "Assignez les évaluateurs, planifiez les stations et capturez les notes depuis tablettes ou smartphones.",
-        },
-        {
-          title: "Rapports automatisés",
-          description:
-            "Générez des PDF brandés avec classements, tendances et médias intégrés en quelques secondes.",
-        },
-      ],
-      footer: "L’intelligence du combine au service du football d’élite.",
-    },
-    login: {
-      title: "Connexion au Combine",
-      subtitle:
-        "Accédez aux tableaux de bord, gérez les sessions et partagez les rapports avec vos partenaires.",
-      email: "Email",
-      password: "Mot de passe",
-      error: "Identifiants invalides. Veuillez réessayer.",
-      seeds:
-        "Comptes de démonstration : admin@combine.dev / admin123, auriverde@combine.dev / auriverde123, urban@combine.dev / urban123",
-    },
-    dashboard: {
-      title: "Vue d’ensemble",
-      description:
-        "Suivez les principaux indicateurs de performance et adaptez l’expérience pour chaque club.",
-      demoNotice: "Aperçu interactif alimenté par des données synthétiques en attendant la synchronisation temps réel.",
-      cards: [
-        {
-          label: "Athlètes enregistrés",
-          description: "Athlètes actifs rattachés à ce client",
-        },
-        {
-          label: "Tests configurés",
-          description: "Protocoles disponibles pour ce client",
-        },
-        {
-          label: "Sessions enregistrées",
-          description: "Sessions planifiées sur la période sélectionnée",
-        },
-      ],
-      nextStepsTitle: "Prochaines actions",
-      nextStepsDescription:
-        "Enregistrez des athlètes, configurez vos batteries et livrez des rapports personnalisés.",
-      actionNewAthlete: "Ajouter un athlète",
-      actionNewSession: "Créer une session",
-      emptyState: "Aucune donnée pour le moment.",
-      comparisonLabel: "par rapport à la période précédente",
+    admin: {
+      title: "Client performance",
+      subtitle: "Monitor adoption, session volume and engagement across all accounts.",
       filters: {
-        timeRangeLabel: "Période",
-        timeRangeDescription: "Ajustez l’horizon pour explorer la charge d’évaluations.",
-        rangeOptions: [
-          { value: "30d", label: "30 derniers jours" },
-          { value: "90d", label: "90 derniers jours" },
-          { value: "180d", label: "180 derniers jours" },
-          { value: "365d", label: "12 derniers mois" },
-          { value: "all", label: "Toute la période" },
+        periodLabel: "Period",
+        statusLabel: "Status",
+        periods: [
+          { value: "7", label: "Last 7 days" },
+          { value: "30", label: "Last 30 days" },
+          { value: "90", label: "Last 90 days" },
         ],
-        athleteLabel: "Athlète en focus",
-        athletePlaceholder: "Sélectionnez un athlète",
+        statuses: [
+          { value: "all", label: "All" },
+          { value: "active", label: "Active" },
+          { value: "inactive", label: "Inactive" },
+        ],
       },
-      overview: {
-        sessionsTitle: "Sessions dans le temps",
-        sessionsSubtitle: "Cadence mensuelle des évaluations planifiées.",
-        testsTitle: "Catégories de tests",
-        testsSubtitle: "Répartition des protocoles configurés.",
-        testsFallbackLabel: "Sans catégorie",
-        clubsTitle: "Athlètes par club",
-        clubsSubtitle: "Principales affiliations enregistrées sur la plateforme.",
-        clubsFallbackLabel: "Sans club",
-        categoryTrendTitle: "Progression par pilier",
-        categoryTrendSubtitle: "Indice normalisé des performances (baseline = 100).",
-        radarTitle: "Baseline vs dernier contrôle",
-        radarSubtitle: "Comparez la session récente avec la précédente.",
-        radarLatestLabel: "Session récente",
-        radarPreviousLabel: "Session précédente",
-        sessionLoadTitle: "Répartition des charges",
-        sessionLoadSubtitle: "Nombre de tests par dimension sur la période sélectionnée.",
-        spotlightTitle: "Signaux de performance",
-        spotlightSubtitle: "Principales progressions mesurées au dernier passage.",
-        spotlightLatest: (value: string, unit: string) =>
-          `Dernier relevé : ${value}${unit ? ` ${unit}` : ""}`,
+      kpis: {
+        activeClients: "Active clients",
+        sessions: "Sessions in period",
+        adhesion: "Average adoption",
+        performanceDelta: "Average Δ vs previous period",
       },
-      athleteReport: {
-        title: "Focus athlète",
-        subtitle: "Sélectionnez un athlète pour explorer sa progression individuelle.",
-        noAthlete: "Sélectionnez un athlète pour afficher la fiche de rapport.",
-        chartTitle: "Progression",
-        chartEmpty: "Aucun résultat enregistré pour cette mesure pour le moment.",
-        selectTestLabel: "Mesure",
-        bestValueLabel: "Meilleure valeur",
-        lastValueLabel: "Dernier résultat",
-        averageLabel: "Moyenne",
-        metricsTitle: "En un coup d’œil",
-        recentSessionsTitle: "Sessions récentes",
-        printButton: "Imprimer en PDF",
-        printHelper: "Seule la fiche de rapport est incluse dans l’impression.",
-        ageLabel: "Âge",
-        bmiLabel: "IMC",
-        restingHeartRateLabel: "FC assise au repos",
-        restingHeartRateUnit: "bpm",
-        sittingHeightLabel: "Hauteur assise",
-        sittingHeightUnit: "cm",
-        legLengthLabel: "Longueur de jambe",
-        legLengthUnit: "cm",
-        notAvailable: "N/D",
-      },
-    },
-    athletes: {
-      title: "Athlètes",
-      description: "Enregistrez les participants et suivez la performance de chaque test.",
-      empty: "Aucun athlète pour l’instant. Commencez par en ajouter un.",
-      loading: "Chargement des athlètes...",
-      error: "Impossible de charger les athlètes.",
-      add: "Ajouter un athlète",
-      table: {
-        name: "Nom",
-        club: "Club",
-        email: "Email",
-        action: "Actions",
-        viewDetails: "Voir les détails",
-      },
-    },
-    newAthlete: {
-      title: "Ajouter un athlète",
-      subtitle:
-        "Ajoutez des participants au combine et associez-les à vos batteries personnalisées.",
-      client: "Club / client",
-      firstName: "Prénom",
-      lastName: "Nom",
-      email: "Email",
-      club: "Club / institution",
-      birthDate: "Date de naissance",
-      height: "Taille (cm)",
-      weight: "Poids (kg)",
-      dominantFoot: "Pied dominant",
-      dominantFootOptions: {
-        default: "Sélectionner",
-        right: "Droit",
-        left: "Gauche",
-        both: "Deux pieds",
-      },
-      submit: "Enregistrer l’athlète",
-      layoutApplied: "Identité appliquée :",
-      error: "Impossible d’enregistrer l’athlète. Vérifiez les informations.",
-    },
-    athleteDetail: {
-      profileSubtitle:
-        "Profil de l’athlète avec résultats consolidés et rapports personnalisés.",
-      infoTitle: "Informations générales",
-      lastReportTitle: "Dernier rapport",
-      upload: "Mettre à jour la photo",
-      uploadPending: "Envoi...",
-      uploadError: "Échec de l’envoi de la photo.",
-      metrics: {
-        email: "Email",
-        club: "Club",
-        height: "Taille",
-        weight: "Poids",
-        dominantFoot: "Pied dominant",
-      },
-      backToList: "Retour à la liste",
-    },
-    sessions: {
-      title: "Sessions d’évaluation",
-      description:
-        "Planifiez des batteries personnalisées et consultez l’historique des performances.",
-      nextSessions: "Sessions à venir",
-      newSession: "Nouvelle session (bientôt)",
-      loading: "Chargement des sessions...",
-      empty: "Aucune session trouvée pour ce client.",
-      notesEmpty: "Pas de remarques",
-    },
-    reports: {
-      title: "Rapports",
-      description:
-        "Choisissez un athlète pour analyser les points clés et préparer vos livrables.",
-      selectAthlete: "Sélectionner un athlète",
-      selectPlaceholder: "Choisissez un athlète",
-      export: "Exporter en PDF",
-    soon: "bientôt",
-    loading: "Chargement des données du rapport...",
-    error: "Impossible de charger ce rapport pour le moment. Réessayez plus tard.",
-    noAthlete: "Sélectionnez un athlète pour afficher le rapport.",
-    summary: "Résumé automatique enregistré après chaque test.",
-    summarySessions: (count) =>
-      count === 0
-        ? "Aucune session enregistrée pour le moment."
-        : `${count} session${count > 1 ? "s" : ""} consolidée${count > 1 ? "s" : ""}.`,
-    metricsBadge: (count) => `${count} métriques`,
-    sessionDate: (date) =>
-      date ? formatDate(new Date(date), "fr") : "Date non renseignée",
-    metricFallback: "Métrique",
-  },
-    forms: {
-      session: {
-        title: "Créer une session",
-        subtitle:
-          "Organisez une nouvelle batterie de tests, définissez le lieu et partagez-la avec votre staff.",
-        client: "Club / client",
-        name: "Nom de la session",
-        location: "Lieu",
-        date: "Date prévue",
-        notes: "Remarques",
-        submit: "Enregistrer la session",
-        success: "Session créée avec succès !",
-        error: "Impossible de créer la session. Veuillez réessayer.",
-      },
-      test: {
-        title: "Créer un test",
-        subtitle:
-          "Définissez les métriques et la cible pour vos protocoles personnalisés.",
-        client: "Club / client",
-        name: "Nom du test",
-        category: "Catégorie",
-        unit: "Unité",
-        description: "Description",
-        targetDirection: "Sens de la performance",
-        targetOptions: {
-          higher: "Plus élevé est meilleur",
-          lower: "Plus bas est meilleur",
+      tables: {
+        clients: "Clients",
+        headers: {
+          client: "Client",
+          sessions: "Sessions",
+          adhesion: "Adoption",
+          delta: "Δ vs previous",
+          actions: "Actions",
         },
-        submit: "Enregistrer le test",
-        success: "Test créé avec succès !",
-        error: "Impossible de créer le test. Veuillez réessayer.",
+        actions: {
+          view: "View",
+          settings: "Settings",
+          reports: "Reports",
+        },
       },
+      charts: {
+        topClients: "Top clients by assessments",
+        sessionsTrend: "Sessions moving average",
+        calendar: "Session calendar heatmap",
+      },
+      empty: "No client data for the selected filters.",
     },
   },
 };

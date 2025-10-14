@@ -15,6 +15,8 @@ media_root = Path(settings.MEDIA_ROOT)
 athlete_media_root = media_root / "athletes"
 athlete_media_root.mkdir(parents=True, exist_ok=True)
 
+MAX_PHOTO_SIZE = 5 * 1024 * 1024  # 5 MB
+
 router = APIRouter()
 
 
@@ -114,21 +116,28 @@ async def upload_photo(
     if current_user.role == "club" and athlete.client_id != current_user.client_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
 
-    content_type = file.content_type or ""
-    if content_type not in {"image/jpeg", "image/png", "image/webp"}:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported file type")
-
-    extension = {
+    content_type = (file.content_type or "").lower()
+    allowed_types = {
         "image/jpeg": ".jpg",
         "image/png": ".png",
-        "image/webp": ".webp",
-    }[content_type]
+        "image/heic": ".heic",
+        "image/heif": ".heif",
+    }
+    if content_type not in allowed_types:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported file type")
+
+    extension = allowed_types[content_type]
 
     athlete_dir = athlete_media_root / str(athlete_id)
     athlete_dir.mkdir(parents=True, exist_ok=True)
     destination = athlete_dir / f"profile{extension}"
 
     data = await file.read()
+    if len(data) > MAX_PHOTO_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Image exceeds 5MB limit",
+        )
     destination.write_bytes(data)
 
     relative_path = destination.relative_to(media_root)

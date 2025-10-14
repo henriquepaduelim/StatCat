@@ -31,3 +31,4 @@ const ThemeProvider = ({ children }: PropsWithChildren): JSX.Element => {
 };
 
 export default ThemeProvider;
+

@@ -1,6 +1,13 @@
 from datetime import date
 
+from enum import Enum
+
 from sqlmodel import Field, SQLModel
+
+
+class AthleteStatus(str, Enum):
+    active = "active"
+    inactive = "inactive"
 
 
 class Athlete(SQLModel, table=True):
@@ -10,10 +17,11 @@ class Athlete(SQLModel, table=True):
     client_id: int | None = Field(default=None, foreign_key="client.id", index=True)
     first_name: str
     last_name: str
-    email: str | None = Field(default=None, index=True)
-    birth_date: date | None = None
+    email: str = Field(index=True)
+    birth_date: date
     dominant_foot: str | None = Field(default=None, index=True)
     height_cm: float | None = None
     weight_kg: float | None = None
     club_affiliation: str | None = None
     photo_url: str | None = None
+    status: AthleteStatus = Field(default=AthleteStatus.active, index=True)

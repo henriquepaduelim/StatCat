@@ -4,7 +4,7 @@ import { NavLink } from "react-router-dom";
 import { useClients } from "../hooks/useClients";
 import { useThemeStore } from "../theme/useThemeStore";
 import { useAuthStore } from "../stores/useAuthStore";
-import { useTranslation, useLocale } from "../i18n/useTranslation";
+import { useTranslation } from "../i18n/useTranslation";
 
 const linkClasses = ({ isActive }: { isActive: boolean }) =>
   `px-4 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -26,7 +26,6 @@ const AppShell = ({ children }: PropsWithChildren) => {
     })
   );
   const t = useTranslation();
-  const [locale, setLocale] = useLocale();
 
   useEffect(() => {
     if (clients) {
@@ -35,25 +34,11 @@ const AppShell = ({ children }: PropsWithChildren) => {
   }, [clients, setThemesFromClients]);
 
   return (
-    <div className="min-h-screen bg-transparent text-on-surface backdrop-blur">
-      <header className="print-hidden border-b border-black/5 bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/80">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-4 md:flex-row md:items-center md:justify-between">
+    <div className="min-h-screen bg-background text-on-surface">
+      <header className="print-hidden border-b border-black/5 bg-primary backdrop-blur supports-[backdrop-filter]:bg-surface/80">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-6 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <div
-              className="flex h-11 w-11 items-center justify-center rounded-full text-sm font-semibold uppercase tracking-tight shadow-sm"
-              style={{
-                backgroundColor: `rgb(${theme.logo.background})`,
-                color: `rgb(${theme.logo.color})`,
-              }}
-            >
-              {theme.logo.label.slice(0, 2)}
-            </div>
-            <div className="space-y-1">
-              <span className="block text-lg font-semibold text-primary">
-                {theme.logo.label}
-              </span>
-              <p className="text-xs text-muted">{theme.description}</p>
-            </div>
+            <img src="/media/logo.png" alt="Logo" className="h-12 w-auto" />
           </div>
           <div className="flex flex-col-reverse gap-3 md:flex-row md:items-center md:gap-6">
             <nav className="flex gap-2">
@@ -62,9 +47,6 @@ const AppShell = ({ children }: PropsWithChildren) => {
               </NavLink>
               <NavLink to="/athletes" className={linkClasses}>
                 {t.common.athletes}
-              </NavLink>
-              <NavLink to="/sessions" className={linkClasses}>
-                {t.common.sessions}
               </NavLink>
               <NavLink to="/reports" className={linkClasses}>
                 {t.common.reports}
@@ -86,30 +68,6 @@ const AppShell = ({ children }: PropsWithChildren) => {
                 </select>
               </label>
             ) : null}
-            <div className="flex items-center gap-2 text-xs font-medium text-muted">
-              <button
-                type="button"
-                onClick={() => setLocale("en")}
-                className={`rounded-md px-2 py-1 ${
-                  locale === "en"
-                    ? "bg-primary text-on-primary"
-                    : "border border-black/10 text-muted"
-                }`}
-              >
-                EN
-              </button>
-              <button
-                type="button"
-                onClick={() => setLocale("fr")}
-                className={`rounded-md px-2 py-1 ${
-                  locale === "fr"
-                    ? "bg-primary text-on-primary"
-                    : "border border-black/10 text-muted"
-                }`}
-              >
-                FR
-              </button>
-            </div>
             <button
               type="button"
               onClick={() => {

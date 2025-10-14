@@ -131,7 +131,8 @@ def add_results(
 
     created: list[SessionResult] = []
     for result in payload:
-        entity = SessionResult.model_validate(result)
+        data = result.model_dump(exclude_none=True)
+        entity = SessionResult.model_validate(data)
         session.add(entity)
         created.append(entity)
 

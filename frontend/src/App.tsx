@@ -3,13 +3,16 @@ import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import AppShell from "./components/AppShell";
 import RequireAuth from "./components/RequireAuth";
 import Athletes from "./pages/Athletes";
-import AthleteDetail from "./pages/AthleteDetail";
+import AthleteEdit from "./pages/AthleteEdit";
+import AthleteReport from "./pages/AthleteReport";
 import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import NewAthlete from "./pages/NewAthlete";
 import Reports from "./pages/Reports";
-import Sessions from "./pages/Sessions";
+import ClientDetail from "./pages/ClientDetail";
+import ClientSettings from "./pages/ClientSettings";
+import ClientReportsPage from "./pages/ClientReports";
 
 const ProtectedLayout = () => (
   <RequireAuth>
@@ -27,9 +30,12 @@ const App = () => (
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/athletes" element={<Athletes />} />
       <Route path="/athletes/new" element={<NewAthlete />} />
-      <Route path="/athletes/:id" element={<AthleteDetail />} />
-      <Route path="/sessions" element={<Sessions />} />
+      <Route path="/athletes/:id" element={<AthleteReport />} />
+      <Route path="/athletes/:id/edit" element={<AthleteEdit />} />
       <Route path="/reports" element={<Reports />} />
+      <Route path="/clients/:id" element={<ClientDetail />} />
+      <Route path="/clients/:id/settings" element={<ClientSettings />} />
+      <Route path="/clients/:id/reports" element={<ClientReportsPage />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Route>
   </Routes>

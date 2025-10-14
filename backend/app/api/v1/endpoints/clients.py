@@ -89,3 +89,5 @@ def get_client(
     if current_user.role == "club" and current_user.client_id != client.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
     return serialize_client(client)
+
+

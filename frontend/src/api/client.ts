@@ -1,7 +1,27 @@
-import axios from "axios";
+import axios, { AxiosHeaders } from "axios";
 
 import { useAuthStore } from "../stores/useAuthStore";
-import { useThemeStore } from "../theme/useThemeStore";
+
+const AUTH_STORAGE_KEY = "combine-auth";
+
+const readPersistedToken = (): string | null => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw);
+    return parsed?.state?.token ?? null;
+  } catch (error) {
+    console.error("Failed to read persisted auth token", error);
+    return null;
+  }
+};
 
 export const api = axios.create({
   baseURL: "/api/v1",
@@ -9,9 +29,27 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = useAuthStore.getState().token;
-  if (token && config.headers) {
-    config.headers.Authorization = `Bearer ${token}`;
+  let token = useAuthStore.getState().token;
+  if (!token) {
+    token = readPersistedToken();
+  }
+
+  if (token) {
+    const headers = AxiosHeaders.from(config.headers ?? {});
+    headers.set("Authorization", `Bearer ${token}`);
+    config.headers = headers;
+
+    const params = config.params;
+    if (params instanceof URLSearchParams) {
+      params.set("access_token", token);
+      config.params = params;
+    } else if (Array.isArray(params)) {
+      config.params = [...params, ["access_token", token]];
+    } else if (typeof params === "object" && params !== null) {
+      config.params = { ...params, access_token: token };
+    } else {
+      config.params = { access_token: token };
+    }
   }
   return config;
 });
@@ -20,8 +58,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Quando o token expira ou a sessão cai, deixamos o fluxo tratar o erro
-      // sem deslogar automaticamente; o RequireAuth redireciona na próxima navegação.
+      // Handle expired tokens via the normal flow without forcing a logout.
+      // RequireAuth will redirect on the next navigation attempt.
     }
     return Promise.reject(error);
   }

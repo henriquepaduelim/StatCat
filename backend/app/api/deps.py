@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from pydantic import ValidationError
@@ -10,7 +10,10 @@ from app.db.session import get_session
 from app.models.user import User
 from app.schemas.user import TokenPayload
 
-reusable_oauth2 = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_PREFIX}/auth/login")
+reusable_oauth2 = OAuth2PasswordBearer(
+    tokenUrl=f"{settings.API_V1_PREFIX}/auth/login",
+    auto_error=False,
+)
 
 
 def authenticate_user(session: Session, email: str, password: str) -> User | None:
@@ -21,14 +24,26 @@ def authenticate_user(session: Session, email: str, password: str) -> User | Non
 
 
 def get_current_user(
-    session: Session = Depends(get_session), token: str = Depends(reusable_oauth2)
+    request: Request,
+    session: Session = Depends(get_session),
+    token: str | None = Depends(reusable_oauth2),
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    if token is None:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.lower().startswith("bearer "):
+            token = auth_header[7:]
+
+    if token is None:
+        token = request.query_params.get("access_token")
+
     try:
+        if token is None:
+            raise credentials_exception
         payload = jwt.decode(
             token,
             settings.SECRET_KEY,

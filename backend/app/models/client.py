@@ -13,6 +13,7 @@ class Client(SQLModel, table=True):
     muted_color: str = "#64748B"
     on_primary_color: str = "#FFFFFF"
     on_surface_color: str = "#111827"
-    logo_label: str = "Combine"
-    logo_background_color: str = "#0E4C92"
+    logo_label: str = "MVP ANALYTICS"
+    logo_background_color: str = "#B9C8D8"
     logo_text_color: str = "#FFFFFF"
+    
