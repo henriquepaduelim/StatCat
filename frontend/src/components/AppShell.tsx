@@ -38,7 +38,7 @@ const AppShell = ({ children }: PropsWithChildren) => {
       <header className="print-hidden border-b border-black/5 bg-primary backdrop-blur supports-[backdrop-filter]:bg-surface/80">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-6 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
-            <img src="/media/logo.png" alt="Logo" className="h-12 w-auto" />
+            <img src="/media/logo.png" alt="Logo" className="max-h-16 w-auto" />
           </div>
           <div className="flex flex-col-reverse gap-3 md:flex-row md:items-center md:gap-6">
             <nav className="flex gap-2">

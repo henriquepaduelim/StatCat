@@ -11,6 +11,6 @@ export type CreateTestPayload = {
 };
 
 export const createTest = async (payload: CreateTestPayload): Promise<TestDefinition> => {
-  const { data } = await api.post<TestDefinition>("/tests", payload);
+  const { data } = await api.post<TestDefinition>("/tests/", payload);
   return data;
 };

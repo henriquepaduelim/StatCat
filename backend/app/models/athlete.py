@@ -10,6 +10,11 @@ class AthleteStatus(str, Enum):
     inactive = "inactive"
 
 
+class AthleteGender(str, Enum):
+    male = "male"
+    female = "female"
+
+
 class Athlete(SQLModel, table=True):
     """Basic athlete profile captured during registration."""
 
@@ -20,6 +25,7 @@ class Athlete(SQLModel, table=True):
     email: str = Field(index=True)
     birth_date: date
     dominant_foot: str | None = Field(default=None, index=True)
+    gender: AthleteGender | None = Field(default=AthleteGender.male, index=True)
     height_cm: float | None = None
     weight_kg: float | None = None
     club_affiliation: str | None = None

@@ -7,7 +7,7 @@ from sqlmodel import Session, select
 from app.api.deps import get_current_active_user
 from app.core.config import settings
 from app.db.session import get_session
-from app.models.athlete import Athlete
+from app.models.athlete import Athlete, AthleteGender
 from app.models.user import User
 from app.schemas.athlete import AthleteCreate, AthleteRead, AthleteUpdate
 
@@ -23,6 +23,7 @@ router = APIRouter()
 @router.get("/", response_model=list[AthleteRead])
 def list_athletes(
     client_id: int | None = None,
+    gender: AthleteGender | None = None,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
 ) -> list[AthleteRead]:
@@ -31,6 +32,8 @@ def list_athletes(
         statement = statement.where(Athlete.client_id == current_user.client_id)
     elif client_id is not None:
         statement = statement.where(Athlete.client_id == client_id)
+    if gender is not None:
+        statement = statement.where(Athlete.gender == gender)
     return session.exec(statement).all()
 
 

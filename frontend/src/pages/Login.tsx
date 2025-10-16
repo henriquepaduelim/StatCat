@@ -13,7 +13,7 @@ const Login = () => {
   const token = useAuthStore((state) => state.token);
   const t = useTranslation();
 
-  const [email, setEmail] = useState("admin@combine.dev");
+  const [email, setEmail] = useState("admin@mvp.ca");
   const [password, setPassword] = useState("admin123");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);

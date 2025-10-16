@@ -2,8 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useAthletes } from "../hooks/useAthletes";
 import { useAthleteReport } from "../hooks/useAthleteReport";
+import { useAthlete } from "../hooks/useAthlete";
+import { useTests } from "../hooks/useTests";
 import { useThemeStore } from "../theme/useThemeStore";
 import { useTranslation } from "../i18n/useTranslation";
+import AthleteReportCard from "../components/AthleteReportCard";
 
 const Reports = () => {
   const clientId = useThemeStore((state) => state.theme.clientId);
@@ -18,6 +21,10 @@ const Reports = () => {
   }, [athletes, currentAthleteId]);
 
   const reportQuery = useAthleteReport(currentAthleteId);
+  const testsQuery = useTests(clientId);
+  const detailedAthleteQuery = useAthlete(
+    currentAthleteId !== undefined ? currentAthleteId : Number.NaN
+  );
 
   const currentAthlete = useMemo(
     () => athletes?.find((athlete) => athlete.id === currentAthleteId),
@@ -61,7 +68,7 @@ const Reports = () => {
         </button>
       </div>
 
-      <section className="rounded-xl bg-surface p-6 shadow-sm print:bg-white">
+      <section className="rounded-xl bg-background/40 p-6 shadow-sm print:bg-white">
         {!currentAthlete && <p className="text-sm text-muted">{t.reports.noAthlete}</p>}
 
         {currentAthlete && reportQuery.isLoading && (
@@ -72,55 +79,64 @@ const Reports = () => {
           <p className="text-sm text-red-500">{t.reports.error}</p>
         )}
 
-        {currentAthlete && reportQuery.data && (
+        {currentAthlete && (
           <div className="space-y-6" id="report-print-area">
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-on-surface">
-                  {currentAthlete.first_name} {currentAthlete.last_name}
-                </h2>
+            <AthleteReportCard
+              athlete={currentAthlete}
+              detailedAthlete={detailedAthleteQuery.data}
+              report={reportQuery.data}
+              tests={testsQuery.data ?? []}
+              hideRecentSessions
+            />
+            {reportQuery.data ? (
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <p className="text-sm text-muted">
                   {t.reports.summarySessions(reportQuery.data.sessions.length)}
                 </p>
-              </div>
-              <div className="rounded-lg bg-primary/10 px-4 py-2 text-sm text-primary">
-                {t.reports.summary}
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {reportQuery.data.sessions.map((session) => (
-                <div key={session.session_id} className="rounded-lg border border-black/10 p-4">
-                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-on-surface">{session.session_name}</h3>
-                      <p className="text-xs text-muted">
-                        {t.reports.sessionDate(session.scheduled_at ?? null)}
-                        {session.location ? ` • ${session.location}` : ""}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase text-primary">
-                      {t.reports.metricsBadge(session.results.length)}
-                    </span>
-                  </div>
-
-                  <div className="mt-4 grid gap-3 md:grid-cols-3">
-                    {session.results.map((metric) => (
-                      <div key={`${session.session_id}-${metric.test_id}-${metric.recorded_at}`} className="rounded-lg bg-background px-4 py-3 text-sm">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                          {metric.category ?? t.reports.metricFallback}
-                        </p>
-                        <p className="mt-1 text-lg font-semibold text-on-surface">
-                          {metric.value}
-                          {metric.unit ? <span className="text-sm text-muted"> {metric.unit}</span> : null}
-                        </p>
-                        <p className="text-xs text-muted">{metric.test_name}</p>
-                      </div>
-                    ))}
-                  </div>
+                <div className="rounded-lg bg-primary/10 px-4 py-2 text-sm text-primary">
+                  {t.reports.summary}
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : null}
+
+            {reportQuery.data ? (
+              <div className="space-y-4">
+                {reportQuery.data.sessions.map((session) => (
+                  <div key={session.session_id} className="rounded-lg border border-black/10 bg-background/60 p-4">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-on-surface">{session.session_name}</h3>
+                        <p className="text-xs text-muted">
+                          {t.reports.sessionDate(session.scheduled_at ?? null)}
+                          {session.location ? ` • ${session.location}` : ""}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase text-primary">
+                        {t.reports.metricsBadge(session.results.length)}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 grid gap-3 md:grid-cols-3">
+                      {session.results.map((metric) => (
+                        <div
+                          key={`${session.session_id}-${metric.test_id}-${metric.recorded_at}`}
+                          className="rounded-lg bg-surface px-4 py-3 text-sm"
+                        >
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                            {metric.category ?? t.reports.metricFallback}
+                          </p>
+                          <p className="mt-1 text-lg font-semibold text-on-surface">
+                            {metric.value}
+                            {metric.unit ? <span className="text-sm text-muted"> {metric.unit}</span> : null}
+                          </p>
+                          <p className="text-xs text-muted">{metric.test_name}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
         )}
       </section>

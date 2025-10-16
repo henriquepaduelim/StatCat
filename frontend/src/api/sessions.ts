@@ -21,7 +21,7 @@ export type CreateSessionPayload = {
 };
 
 export const createSession = async (payload: CreateSessionPayload): Promise<SessionRecord> => {
-  const { data } = await api.post<SessionRecord>("/sessions", payload);
+  const { data } = await api.post<SessionRecord>("/sessions/", payload);
   return data;
 };
 

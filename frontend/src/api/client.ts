@@ -38,18 +38,6 @@ api.interceptors.request.use((config) => {
     const headers = AxiosHeaders.from(config.headers ?? {});
     headers.set("Authorization", `Bearer ${token}`);
     config.headers = headers;
-
-    const params = config.params;
-    if (params instanceof URLSearchParams) {
-      params.set("access_token", token);
-      config.params = params;
-    } else if (Array.isArray(params)) {
-      config.params = [...params, ["access_token", token]];
-    } else if (typeof params === "object" && params !== null) {
-      config.params = { ...params, access_token: token };
-    } else {
-      config.params = { access_token: token };
-    }
   }
   return config;
 });

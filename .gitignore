@@ -16,10 +16,17 @@ venv/
 frontend/node_modules/
 frontend/dist/
 
-# Media uploads
-media/
+# Database files
+combine.db
+backend/combine.db
 
-# OS
+# Media uploads and build artefacts
+media/
+backend/media/
+backend/app/combine_backend.egg-info/
+backend/=2.3
+
+# OS / IDE
 .DS_Store
 .idea/
 .vscode/

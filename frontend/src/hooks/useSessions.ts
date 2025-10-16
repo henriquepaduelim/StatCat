@@ -13,7 +13,7 @@ export interface SessionRecord {
 }
 
 const fetchSessions = async (clientId?: number): Promise<SessionRecord[]> => {
-  const { data } = await api.get<SessionRecord[]>("/sessions", {
+  const { data } = await api.get<SessionRecord[]>("/sessions/", {
     params: clientId ? { client_id: clientId } : undefined,
   });
   return data;

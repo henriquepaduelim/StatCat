@@ -2,7 +2,7 @@ import api from "./client";
 import type { Athlete, AthletePayload } from "../types/athlete";
 
 export const createAthlete = async (payload: AthletePayload): Promise<Athlete> => {
-  const { data } = await api.post<Athlete>("/athletes", payload);
+  const { data } = await api.post<Athlete>("/athletes/", payload);
   return data;
 };
 

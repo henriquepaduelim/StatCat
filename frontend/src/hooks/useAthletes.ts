@@ -5,7 +5,7 @@ import type { Athlete } from "../types/athlete";
 import { useAuthStore } from "../stores/useAuthStore";
 
 const fetchAthletes = async (clientId?: number): Promise<Athlete[]> => {
-  const { data } = await api.get<Athlete[]>("/athletes", {
+  const { data } = await api.get<Athlete[]>("/athletes/", {
     params: clientId ? { client_id: clientId } : undefined,
   });
   return data;

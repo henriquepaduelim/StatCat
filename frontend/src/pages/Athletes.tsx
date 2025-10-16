@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -9,6 +9,29 @@ import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 import { deleteAthlete } from "../api/athletes";
 import type { Athlete } from "../types/athlete";
 
+const normalizeText = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+const calculateAge = (birthDate?: string | null): number | null => {
+  if (!birthDate) {
+    return null;
+  }
+  const parsed = new Date(birthDate);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+  const today = new Date();
+  let age = today.getFullYear() - parsed.getFullYear();
+  const monthDiff = today.getMonth() - parsed.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < parsed.getDate())) {
+    age -= 1;
+  }
+  return age;
+};
+
 const Athletes = () => {
   const clientId = useThemeStore((state) => state.theme.clientId);
   const { data, isLoading, isError } = useAthletes(clientId);
@@ -18,6 +41,78 @@ const Athletes = () => {
   const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(
     null
   );
+  const [nameFilter, setNameFilter] = useState("");
+  const [emailFilter, setEmailFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">("all");
+  const [ageFilter, setAgeFilter] = useState<{ min: string; max: string }>({ min: "", max: "" });
+  const [sortConfig, setSortConfig] = useState<{
+    column: "name" | "age" | "gender" | "email" | "status";
+    direction: "asc" | "desc";
+  }>({ column: "name", direction: "asc" });
+  const [activePopover, setActivePopover] = useState<
+    null | "name" | "age" | "gender" | "email" | "status"
+  >(null);
+  const tableContainerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!activePopover) {
+      return;
+    }
+    const handleClick = (event: MouseEvent) => {
+      if (
+        tableContainerRef.current &&
+        !tableContainerRef.current.contains(event.target as Node)
+      ) {
+        setActivePopover(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+    };
+  }, [activePopover]);
+
+  const togglePopover = (
+    column: "name" | "age" | "gender" | "email" | "status"
+  ) => {
+    setActivePopover((current) => (current === column ? null : column));
+  };
+
+  const applySort = (
+    column: "name" | "age" | "gender" | "email" | "status",
+    direction: "asc" | "desc"
+  ) => {
+    setSortConfig({ column, direction });
+    setActivePopover(null);
+  };
+
+  const clearFilter = (
+    column: "name" | "age" | "gender" | "email" | "status"
+  ) => {
+    switch (column) {
+      case "name":
+        setNameFilter("");
+        break;
+      case "age":
+        setAgeFilter({ min: "", max: "" });
+        break;
+      case "gender":
+        setGenderFilter("all");
+        break;
+      case "email":
+        setEmailFilter("");
+        break;
+      case "status":
+        setStatusFilter("all");
+        break;
+    }
+  };
+
+  const isSortActive = (
+    column: "name" | "age" | "gender" | "email" | "status",
+    direction: "asc" | "desc"
+  ) => sortConfig.column === column && sortConfig.direction === direction;
 
   const deleteMutation = useMutation({
     mutationFn: deleteAthlete,
@@ -34,7 +129,138 @@ const Athletes = () => {
     },
   });
 
-  const tableRows = useMemo(() => data ?? [], [data]);
+  const tableRows = useMemo(() => {
+    if (!data) {
+      return [];
+    }
+
+    const normalizedName = nameFilter ? normalizeText(nameFilter.trim()) : "";
+    const normalizedEmail = emailFilter ? normalizeText(emailFilter.trim()) : "";
+    const rawMinAge = ageFilter.min.trim();
+    const rawMaxAge = ageFilter.max.trim();
+    const parsedMinAge = rawMinAge !== "" ? Number.parseInt(rawMinAge, 10) : null;
+    const parsedMaxAge = rawMaxAge !== "" ? Number.parseInt(rawMaxAge, 10) : null;
+    const minAge = parsedMinAge !== null && !Number.isNaN(parsedMinAge) ? parsedMinAge : null;
+    const maxAge = parsedMaxAge !== null && !Number.isNaN(parsedMaxAge) ? parsedMaxAge : null;
+
+    const ageCache = new Map<number, number | null>();
+    const getAge = (athlete: Athlete) => {
+      if (ageCache.has(athlete.id)) {
+        return ageCache.get(athlete.id) ?? null;
+      }
+      const computed = calculateAge(athlete.birth_date ?? null);
+      ageCache.set(athlete.id, computed);
+      return computed;
+    };
+
+    const filtered = data.filter((athlete) => {
+      if (normalizedName) {
+        const haystack = normalizeText(`${athlete.first_name} ${athlete.last_name}`);
+        if (!haystack.includes(normalizedName)) {
+          return false;
+        }
+      }
+      if (normalizedEmail) {
+        const haystack = normalizeText(athlete.email ?? "");
+        if (!haystack.includes(normalizedEmail)) {
+          return false;
+        }
+      }
+      if (statusFilter !== "all" && athlete.status !== statusFilter) {
+        return false;
+      }
+      if (genderFilter !== "all") {
+        const normalizedGender = (athlete.gender ?? "male").toLowerCase();
+        if (normalizedGender !== genderFilter) {
+          return false;
+        }
+      }
+      const age = getAge(athlete);
+      if (minAge !== null && (age == null || age < minAge)) {
+        return false;
+      }
+      if (maxAge !== null && (age == null || age > maxAge)) {
+        return false;
+      }
+      return true;
+    });
+
+    const sorted = [...filtered].sort((left, right) => {
+      const directionFactor = sortConfig.direction === "asc" ? 1 : -1;
+      switch (sortConfig.column) {
+        case "name": {
+          const leftName = `${left.first_name} ${left.last_name}`.toLowerCase();
+          const rightName = `${right.first_name} ${right.last_name}`.toLowerCase();
+          return leftName.localeCompare(rightName) * directionFactor;
+        }
+        case "email": {
+          const leftEmail = (left.email ?? "").toLowerCase();
+          const rightEmail = (right.email ?? "").toLowerCase();
+          return leftEmail.localeCompare(rightEmail) * directionFactor;
+        }
+        case "age": {
+          const leftAge = getAge(left);
+          const rightAge = getAge(right);
+          if (leftAge == null && rightAge == null) {
+            return 0;
+          }
+          if (leftAge == null) {
+            return directionFactor === 1 ? 1 : -1;
+          }
+          if (rightAge == null) {
+            return directionFactor === 1 ? -1 : 1;
+          }
+          if (leftAge === rightAge) {
+            return 0;
+          }
+          return leftAge < rightAge ? -1 * directionFactor : 1 * directionFactor;
+        }
+        case "gender": {
+          const weight = (value: string | null | undefined) =>
+            value?.toLowerCase() === "female" ? 1 : 0;
+          const leftWeight = weight(left.gender ?? null);
+          const rightWeight = weight(right.gender ?? null);
+          if (leftWeight !== rightWeight) {
+            return (leftWeight - rightWeight) * directionFactor;
+          }
+          const leftName = `${left.first_name} ${left.last_name}`.toLowerCase();
+          const rightName = `${right.first_name} ${right.last_name}`.toLowerCase();
+          return leftName.localeCompare(rightName) * directionFactor;
+        }
+        case "status": {
+          const weight = (status: string) => (status === "active" ? 0 : 1);
+          const diff = weight(left.status) - weight(right.status);
+          if (diff !== 0) {
+            return diff * directionFactor;
+          }
+          const leftName = `${left.first_name} ${left.last_name}`.toLowerCase();
+          const rightName = `${right.first_name} ${right.last_name}`.toLowerCase();
+          return leftName.localeCompare(rightName) * directionFactor;
+        }
+        default:
+          return 0;
+      }
+    });
+
+    return sorted;
+  }, [
+    data,
+    nameFilter,
+    emailFilter,
+    statusFilter,
+    genderFilter,
+    ageFilter.min,
+    ageFilter.max,
+    sortConfig.column,
+    sortConfig.direction,
+  ]);
+
+  const hasNameFilter = nameFilter.trim().length > 0;
+  const hasEmailFilter = emailFilter.trim().length > 0;
+  const hasAgeFilter =
+    ageFilter.min.trim().length > 0 || ageFilter.max.trim().length > 0;
+  const hasStatusSelection = statusFilter !== "all";
+  const hasGenderFilter = genderFilter !== "all";
 
   return (
     <div className="space-y-6">
@@ -64,58 +290,660 @@ const Athletes = () => {
         </div>
       ) : null}
 
-      <section className="overflow-hidden rounded-xl bg-surface shadow-sm">
-        <table className="min-w-full divide-y divide-black/5">
-          <thead className="bg-background/80">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
-                {t.athletes.table.name}
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
-                {t.athletes.table.club}
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
-                {t.athletes.table.email}
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
-                {t.athletes.table.status}
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">
-                {t.athletes.table.action}
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-black/5">
+      <section
+        ref={tableContainerRef}
+        className="overflow-hidden rounded-xl bg-surface shadow-sm"
+      >
+        <div className="p-4">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-black/5">
+              <thead className="bg-background/80">
+                <tr>
+                  <th className="relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
+                    <div className="flex items-center gap-1">
+                      <span>{t.athletes.table.name}</span>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          togglePopover("name");
+                        }}
+                        aria-haspopup="dialog"
+                        aria-expanded={activePopover === "name"}
+                        className={`inline-flex items-center justify-center rounded p-1 text-muted transition hover:text-primary ${
+                          sortConfig.column === "name" || hasNameFilter
+                            ? "text-primary"
+                            : "text-muted"
+                        }`}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 10 6"
+                          aria-hidden="true"
+                          className={`h-2.5 w-2.5 transition-transform ${
+                            activePopover === "name" ? "rotate-180" : ""
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M1 1.5 5 5.5 9 1.5" />
+                        </svg>
+                        <span className="sr-only">{t.athletes.filters.openMenu}</span>
+                      </button>
+                    </div>
+                    {activePopover === "name" ? (
+                      <div
+                        className="absolute left-0 z-20 mt-2 w-64 rounded-lg border border-black/10 bg-white p-4 text-left shadow-xl"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-xs font-semibold text-muted">
+                              {t.athletes.filters.nameContains}
+                            </p>
+                            <input
+                              type="search"
+                              value={nameFilter}
+                              onChange={(event) => setNameFilter(event.target.value)}
+                              placeholder={t.athletes.filters.searchPlaceholder}
+                              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-sm text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-muted">
+                              {t.athletes.filters.sortLabel}
+                            </p>
+                            <div className="mt-2 flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => applySort("name", "asc")}
+                                className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-semibold transition ${
+                                  isSortActive("name", "asc")
+                                    ? "border-primary text-primary"
+                                    : "border-black/10 text-muted hover:border-primary hover:text-primary"
+                                }`}
+                              >
+                                {t.athletes.filters.sortAlphaAsc}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => applySort("name", "desc")}
+                                className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-semibold transition ${
+                                  isSortActive("name", "desc")
+                                    ? "border-primary text-primary"
+                                    : "border-black/10 text-muted hover:border-primary hover:text-primary"
+                                }`}
+                              >
+                                {t.athletes.filters.sortAlphaDesc}
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex justify-between gap-2 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => clearFilter("name")}
+                              className="rounded-md border border-black/10 px-3 py-1 text-xs font-semibold text-muted transition hover:border-primary hover:text-primary"
+                            >
+                              {t.athletes.filters.clear}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setActivePopover(null)}
+                              className="rounded-md bg-primary px-3 py-1 text-xs font-semibold text-on-primary shadow-sm"
+                            >
+                              {t.athletes.filters.close}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </th>
+                  <th className="relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
+                    <div className="flex items-center gap-1">
+                      <span>{t.athletes.table.age}</span>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          togglePopover("age");
+                        }}
+                        aria-haspopup="dialog"
+                        aria-expanded={activePopover === "age"}
+                        className={`inline-flex items-center justify-center rounded p-1 text-muted transition hover:text-primary ${
+                          sortConfig.column === "age" || hasAgeFilter
+                            ? "text-primary"
+                            : "text-muted"
+                        }`}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 10 6"
+                          aria-hidden="true"
+                          className={`h-2.5 w-2.5 transition-transform ${
+                            activePopover === "age" ? "rotate-180" : ""
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M1 1.5 5 5.5 9 1.5" />
+                        </svg>
+                        <span className="sr-only">{t.athletes.filters.openMenu}</span>
+                      </button>
+                    </div>
+                    {activePopover === "age" ? (
+                      <div
+                        className="absolute left-0 z-20 mt-2 w-72 rounded-lg border border-black/10 bg-white p-4 text-left shadow-xl"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-xs font-semibold text-muted">
+                              {t.athletes.filters.ageRange}
+                            </p>
+                            <p className="text-[10px] text-muted">
+                              {t.athletes.filters.ageHint}
+                            </p>
+                            <div className="mt-2 grid grid-cols-2 gap-2">
+                              <label className="text-xs text-muted">
+                                {t.athletes.filters.ageMin}
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={ageFilter.min}
+                                  onChange={(event) =>
+                                    setAgeFilter((prev) => ({
+                                      ...prev,
+                                      min: event.target.value,
+                                    }))
+                                  }
+                                  placeholder="13"
+                                  className="mt-1 w-full rounded-md border border-black/10 px-2 py-1 text-sm text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                              </label>
+                              <label className="text-xs text-muted">
+                                {t.athletes.filters.ageMax}
+                                <input
+                                  type="number"
+                                  min={0}
+                                  value={ageFilter.max}
+                                  onChange={(event) =>
+                                    setAgeFilter((prev) => ({
+                                      ...prev,
+                                      max: event.target.value,
+                                    }))
+                                  }
+                                  placeholder="17"
+                                  className="mt-1 w-full rounded-md border border-black/10 px-2 py-1 text-sm text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                              </label>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-muted">
+                              {t.athletes.filters.sortLabel}
+                            </p>
+                            <div className="mt-2 flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => applySort("age", "asc")}
+                                className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-semibold transition ${
+                                  isSortActive("age", "asc")
+                                    ? "border-primary text-primary"
+                                    : "border-black/10 text-muted hover:border-primary hover:text-primary"
+                                }`}
+                              >
+                                {t.athletes.filters.sortAgeAsc}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => applySort("age", "desc")}
+                                className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-semibold transition ${
+                                  isSortActive("age", "desc")
+                                    ? "border-primary text-primary"
+                                    : "border-black/10 text-muted hover:border-primary hover:text-primary"
+                                }`}
+                              >
+                                {t.athletes.filters.sortAgeDesc}
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex justify-between gap-2 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => clearFilter("age")}
+                              className="rounded-md border border-black/10 px-3 py-1 text-xs font-semibold text-muted transition hover:border-primary hover:text-primary"
+                            >
+                              {t.athletes.filters.clear}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setActivePopover(null)}
+                              className="rounded-md bg-primary px-3 py-1 text-xs font-semibold text-on-primary shadow-sm"
+                            >
+                              {t.athletes.filters.close}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </th>
+                  <th className="relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
+                    <div className="flex items-center gap-1">
+                      <span>{t.athletes.table.gender}</span>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          togglePopover("gender");
+                        }}
+                        aria-haspopup="dialog"
+                        aria-expanded={activePopover === "gender"}
+                        className={`inline-flex items-center justify-center rounded p-1 text-muted transition hover:text-primary ${
+                          sortConfig.column === "gender" || hasGenderFilter
+                            ? "text-primary"
+                            : "text-muted"
+                        }`}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 10 6"
+                          aria-hidden="true"
+                          className={`h-2.5 w-2.5 transition-transform ${
+                            activePopover === "gender" ? "rotate-180" : ""
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M1 1.5 5 5.5 9 1.5" />
+                        </svg>
+                        <span className="sr-only">{t.athletes.filters.openMenu}</span>
+                      </button>
+                    </div>
+                    {activePopover === "gender" ? (
+                      <div
+                        className="absolute left-0 z-20 mt-2 w-60 rounded-lg border border-black/10 bg-white p-4 text-left shadow-xl"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <p className="text-xs font-semibold text-muted">
+                              {t.athletes.filters.gender}
+                            </p>
+                            <div className="space-y-1">
+                              <label className="flex items-center gap-2 text-xs text-muted">
+                                <input
+                                  type="radio"
+                                  name="gender-filter"
+                                  value="all"
+                                  checked={genderFilter === "all"}
+                                  onChange={() => setGenderFilter("all")}
+                                  className="h-3 w-3 text-primary focus:ring-primary"
+                                />
+                                <span>{t.athletes.filters.genderAll}</span>
+                              </label>
+                              <label className="flex items-center gap-2 text-xs text-muted">
+                                <input
+                                  type="radio"
+                                  name="gender-filter"
+                                  value="male"
+                                  checked={genderFilter === "male"}
+                                  onChange={() => setGenderFilter("male")}
+                                  className="h-3 w-3 text-primary focus:ring-primary"
+                                />
+                                <span>{t.athletes.filters.genderMale}</span>
+                              </label>
+                              <label className="flex items-center gap-2 text-xs text-muted">
+                                <input
+                                  type="radio"
+                                  name="gender-filter"
+                                  value="female"
+                                  checked={genderFilter === "female"}
+                                  onChange={() => setGenderFilter("female")}
+                                  className="h-3 w-3 text-primary focus:ring-primary"
+                                />
+                                <span>{t.athletes.filters.genderFemale}</span>
+                              </label>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-muted">
+                              {t.athletes.filters.sortLabel}
+                            </p>
+                            <div className="mt-2 flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => applySort("gender", "asc")}
+                                className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-semibold transition ${
+                                  isSortActive("gender", "asc")
+                                    ? "border-primary text-primary"
+                                    : "border-black/10 text-muted hover:border-primary hover:text-primary"
+                                }`}
+                              >
+                                {t.athletes.filters.sortGenderAsc}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => applySort("gender", "desc")}
+                                className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-semibold transition ${
+                                  isSortActive("gender", "desc")
+                                    ? "border-primary text-primary"
+                                    : "border-black/10 text-muted hover:border-primary hover:text-primary"
+                                }`}
+                              >
+                                {t.athletes.filters.sortGenderDesc}
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex justify-between gap-2 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => clearFilter("gender")}
+                              className="rounded-md border border-black/10 px-3 py-1 text-xs font-semibold text-muted transition hover:border-primary hover:text-primary"
+                            >
+                              {t.athletes.filters.clear}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setActivePopover(null)}
+                              className="rounded-md bg-primary px-3 py-1 text-xs font-semibold text-on-primary shadow-sm"
+                            >
+                              {t.athletes.filters.close}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </th>
+                  <th className="relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
+                    <div className="flex items-center gap-1">
+                      <span>{t.athletes.table.email}</span>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          togglePopover("email");
+                        }}
+                        aria-haspopup="dialog"
+                        aria-expanded={activePopover === "email"}
+                        className={`inline-flex items-center justify-center rounded p-1 text-muted transition hover:text-primary ${
+                          sortConfig.column === "email" || hasEmailFilter
+                            ? "text-primary"
+                            : "text-muted"
+                        }`}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 10 6"
+                          aria-hidden="true"
+                          className={`h-2.5 w-2.5 transition-transform ${
+                            activePopover === "email" ? "rotate-180" : ""
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M1 1.5 5 5.5 9 1.5" />
+                        </svg>
+                        <span className="sr-only">{t.athletes.filters.openMenu}</span>
+                      </button>
+                    </div>
+                    {activePopover === "email" ? (
+                      <div
+                        className="absolute left-0 z-20 mt-2 w-64 rounded-lg border border-black/10 bg-white p-4 text-left shadow-xl"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-xs font-semibold text-muted">
+                              {t.athletes.filters.emailContains}
+                            </p>
+                            <input
+                              type="search"
+                              value={emailFilter}
+                              onChange={(event) => setEmailFilter(event.target.value)}
+                              placeholder="athlete@example.com"
+                              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-sm text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-muted">
+                              {t.athletes.filters.sortLabel}
+                            </p>
+                            <div className="mt-2 flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => applySort("email", "asc")}
+                                className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-semibold transition ${
+                                  isSortActive("email", "asc")
+                                    ? "border-primary text-primary"
+                                    : "border-black/10 text-muted hover:border-primary hover:text-primary"
+                                }`}
+                              >
+                                {t.athletes.filters.sortAlphaAsc}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => applySort("email", "desc")}
+                                className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-semibold transition ${
+                                  isSortActive("email", "desc")
+                                    ? "border-primary text-primary"
+                                    : "border-black/10 text-muted hover:border-primary hover:text-primary"
+                                }`}
+                              >
+                                {t.athletes.filters.sortAlphaDesc}
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex justify-between gap-2 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => clearFilter("email")}
+                              className="rounded-md border border-black/10 px-3 py-1 text-xs font-semibold text-muted transition hover:border-primary hover:text-primary"
+                            >
+                              {t.athletes.filters.clear}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setActivePopover(null)}
+                              className="rounded-md bg-primary px-3 py-1 text-xs font-semibold text-on-primary shadow-sm"
+                            >
+                              {t.athletes.filters.close}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </th>
+                  <th className="relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
+                    <div className="flex items-center gap-1">
+                      <span>{t.athletes.table.status}</span>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          togglePopover("status");
+                        }}
+                        aria-haspopup="dialog"
+                        aria-expanded={activePopover === "status"}
+                        className={`inline-flex items-center justify-center rounded p-1 text-muted transition hover:text-primary ${
+                          sortConfig.column === "status" || hasStatusSelection
+                            ? "text-primary"
+                            : "text-muted"
+                        }`}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 10 6"
+                          aria-hidden="true"
+                          className={`h-2.5 w-2.5 transition-transform ${
+                            activePopover === "status" ? "rotate-180" : ""
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M1 1.5 5 5.5 9 1.5" />
+                        </svg>
+                        <span className="sr-only">{t.athletes.filters.openMenu}</span>
+                      </button>
+                    </div>
+                    {activePopover === "status" ? (
+                      <div
+                        className="absolute left-0 z-20 mt-2 w-60 rounded-lg border border-black/10 bg-white p-4 text-left shadow-xl"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <p className="text-xs font-semibold text-muted">
+                              {t.athletes.filters.status}
+                            </p>
+                            <div className="space-y-1">
+                              <label className="flex items-center gap-2 text-xs text-muted">
+                                <input
+                                  type="radio"
+                                  name="status-filter"
+                                  value="all"
+                                  checked={statusFilter === "all"}
+                                  onChange={() => setStatusFilter("all")}
+                                  className="h-3 w-3 text-primary focus:ring-primary"
+                                />
+                                <span>{t.athletes.filters.statusAll}</span>
+                              </label>
+                              <label className="flex items-center gap-2 text-xs text-muted">
+                                <input
+                                  type="radio"
+                                  name="status-filter"
+                                  value="active"
+                                  checked={statusFilter === "active"}
+                                  onChange={() => setStatusFilter("active")}
+                                  className="h-3 w-3 text-primary focus:ring-primary"
+                                />
+                                <span>{t.athletes.filters.statusActive}</span>
+                              </label>
+                              <label className="flex items-center gap-2 text-xs text-muted">
+                                <input
+                                  type="radio"
+                                  name="status-filter"
+                                  value="inactive"
+                                  checked={statusFilter === "inactive"}
+                                  onChange={() => setStatusFilter("inactive")}
+                                  className="h-3 w-3 text-primary focus:ring-primary"
+                                />
+                                <span>{t.athletes.filters.statusInactive}</span>
+                              </label>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-muted">
+                              {t.athletes.filters.sortLabel}
+                            </p>
+                            <div className="mt-2 flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => applySort("status", "asc")}
+                                className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-semibold transition ${
+                                  isSortActive("status", "asc")
+                                    ? "border-primary text-primary"
+                                    : "border-black/10 text-muted hover:border-primary hover:text-primary"
+                                }`}
+                              >
+                                {t.athletes.filters.sortStatusAsc}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => applySort("status", "desc")}
+                                className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-semibold transition ${
+                                  isSortActive("status", "desc")
+                                    ? "border-primary text-primary"
+                                    : "border-black/10 text-muted hover:border-primary hover:text-primary"
+                                }`}
+                              >
+                                {t.athletes.filters.sortStatusDesc}
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex justify-between gap-2 pt-2">
+                            <button
+                              type="button"
+                              onClick={() => clearFilter("status")}
+                              className="rounded-md border border-black/10 px-3 py-1 text-xs font-semibold text-muted transition hover:border-primary hover:text-primary"
+                            >
+                              {t.athletes.filters.clear}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setActivePopover(null)}
+                              className="rounded-md bg-primary px-3 py-1 text-xs font-semibold text-on-primary shadow-sm"
+                            >
+                              {t.athletes.filters.close}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">
+                    {t.athletes.table.action}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black/5">
             {isLoading && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-sm text-muted">
+                <td colSpan={6} className="px-4 py-6 text-center text-sm text-muted">
                   {t.athletes.loading}
                 </td>
               </tr>
             )}
             {isError && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-sm text-red-500">
+                <td colSpan={6} className="px-4 py-6 text-center text-sm text-red-500">
                   {t.athletes.error}
                 </td>
               </tr>
             )}
             {!isLoading && !isError && data?.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-sm text-muted">
+                <td colSpan={6} className="px-4 py-6 text-center text-sm text-muted">
                   {t.athletes.empty}
+                </td>
+              </tr>
+            )}
+            {!isLoading && !isError && (data?.length ?? 0) > 0 && tableRows.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-6 text-center text-sm text-muted">
+                  {t.athletes.filters.noResults}
                 </td>
               </tr>
             )}
             {tableRows.map((athlete) => {
               const displayName = `${athlete.first_name} ${athlete.last_name}`;
               const isPending = deleteMutation.isPending && selected?.id === athlete.id;
+              const age = calculateAge(athlete.birth_date ?? null);
+              const ageLabel = age != null ? `U${Math.max(age + 1, 0)}` : "-";
+              const genderValue = (athlete.gender ?? "male").toLowerCase();
+              const genderLabel =
+                genderValue === "female"
+                  ? t.athletes.filters.genderFemale
+                  : t.athletes.filters.genderMale;
               return (
                 <tr key={athlete.id} className="hover:bg-background/60">
                   <td className="px-4 py-4 text-sm font-medium text-on-surface">{displayName}</td>
-                  <td className="px-4 py-4 text-sm text-muted">
-                    {athlete.club_affiliation ?? "-"}
-                  </td>
+                  <td className="px-4 py-4 text-sm text-muted">{ageLabel}</td>
+                  <td className="px-4 py-4 text-sm text-muted">{genderLabel}</td>
                   <td className="px-4 py-4 text-sm text-muted">{athlete.email ?? "-"}</td>
                   <td className="px-4 py-4 text-sm">
                     <span
@@ -182,7 +1010,7 @@ const Athletes = () => {
                           aria-hidden="true"
                           focusable="false"
                         >
-                          <path d="M96 128C60.7 128 32 156.7 32 192L32 448C32 483.3 60.7 512 96 512L544 512C579.3 512 608 483.3 608 448L608 192C608 156.7 579.3 128 544 128L96 128zM112 192L144 192C152.8 192 160 199.2 160 208L160 240C160 248.8 152.8 256 144 256L112 256C103.2 256 96 248.8 96 240L96 208C96 199.2 103.2 192 112 192zM96 304C96 295.2 103.2 288 112 288L144 288C152.8 288 160 295.2 160 304L160 336C160 344.8 152.8 352 144 352L112 352C103.2 352 96 344.8 96 336L96 304zM208 192L240 192C248.8 192 256 199.2 256 208L256 240C256 248.8 248.8 256 240 256L208 256C199.2 256 192 248.8 192 240L192 208C192 199.2 199.2 192 208 192zM192 304C192 295.2 199.2 288 208 288L240 288C248.8 288 256 295.2 256 304L256 336C256 344.8 248.8 352 240 352L208 352C199.2 352 192 344.8 192 336L192 304zM208 384L432 384C440.8 384 448 391.2 448 400L448 432C448 440.8 440.8 448 432 448L208 448C199.2 448 192 440.8 192 432L192 400C192 391.2 199.2 384 208 384zM288 208C288 199.2 295.2 192 304 192L336 192C344.8 192 352 199.2 352 208L352 240C352 248.8 344.8 256 336 256L304 256C295.2 256 288 248.8 288 240L288 208zM304 288L336 288C344.8 288 352 295.2 352 304L352 336C352 344.8 344.8 352 336 352L304 352C295.2 352 288 344.8 288 336L288 304C288 295.2 295.2 288 304 288zM384 208C384 199.2 391.2 192 400 192L432 192C440.8 192 448 199.2 448 208L448 240C448 248.8 440.8 256 432 256L400 256C391.2 256 384 248.8 384 240L384 208zM400 288L432 288C440.8 288 448 295.2 448 304L448 336C448 344.8 440.8 352 432 352L400 352C391.2 352 384 344.8 384 336L384 304C384 295.2 391.2 288 400 288zM480 208C480 199.2 487.2 192 496 192L528 192C536.8 192 544 199.2 544 208L544 240C544 248.8 536.8 256 528 256L496 256C487.2 256 480 248.8 480 240L480 208zM496 288L528 288C536.8 288 544 295.2 544 304L544 336C544 344.8 536.8 352 528 352L496 352C487.2 352 480 344.8 480 336L480 304C480 295.2 487.2 288 496 288z" />
+                          <path d="M320 96C239.2 96 174.5 132.8 127.4 176.6C80.6 220.1 49.3 272 34.4 307.7C31.1 315.6 31.1 324.4 34.4 332.3C49.3 368 80.6 420 127.4 463.4C174.5 507.1 239.2 544 320 544C400.8 544 465.5 507.2 512.6 463.4C559.4 419.9 590.7 368 605.6 332.3C608.9 324.4 608.9 315.6 605.6 307.7C590.7 272 559.4 220 512.6 176.6C465.5 132.9 400.8 96 320 96zM176 320C176 240.5 240.5 176 320 176C399.5 176 464 240.5 464 320C464 399.5 399.5 464 320 464C240.5 464 176 399.5 176 320zM320 256C320 291.3 291.3 320 256 320C244.5 320 233.7 317 224.3 311.6C223.3 322.5 224.2 333.7 227.2 344.8C240.9 396 293.6 426.4 344.8 412.7C396 399 426.4 346.3 412.7 295.1C400.5 249.4 357.2 220.3 311.6 224.3C316.9 233.6 320 244.4 320 256z" />
                         </svg>
                       </Link>
                     </div>
@@ -190,8 +1018,10 @@ const Athletes = () => {
                 </tr>
               );
             })}
-          </tbody>
-        </table>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </section>
 
       <ConfirmDeleteModal

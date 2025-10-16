@@ -8,6 +8,7 @@ export interface Athlete {
   email: string;
   birth_date: string;
   dominant_foot?: string | null;
+  gender?: "male" | "female" | null;
   height_cm?: number | null;
   weight_kg?: number | null;
   club_affiliation?: string | null;
@@ -25,6 +26,7 @@ export interface AthleteReportMetric {
   unit?: string | null;
   recorded_at?: string | null;
   notes?: string | null;
+  peer_average?: number | null;
 }
 
 export interface AthleteReportSession {

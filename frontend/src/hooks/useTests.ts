@@ -5,7 +5,7 @@ import type { TestDefinition } from "../types/test";
 import { useAuthStore } from "../stores/useAuthStore";
 
 const fetchTests = async (clientId?: number): Promise<TestDefinition[]> => {
-  const { data } = await api.get<TestDefinition[]>("/tests", {
+  const { data } = await api.get<TestDefinition[]>("/tests/", {
     params: clientId ? { client_id: clientId } : undefined,
   });
   return data;

@@ -3,7 +3,7 @@ from datetime import date
 from pydantic import ConfigDict
 from sqlmodel import SQLModel
 
-from app.models.athlete import AthleteStatus
+from app.models.athlete import AthleteGender, AthleteStatus
 
 
 class AthleteBase(SQLModel):
@@ -13,6 +13,7 @@ class AthleteBase(SQLModel):
     email: str
     birth_date: date
     dominant_foot: str | None = None
+    gender: AthleteGender | None = AthleteGender.male
     height_cm: float | None = None
     weight_kg: float | None = None
     club_affiliation: str | None = None
@@ -37,6 +38,7 @@ class AthleteUpdate(SQLModel):
     email: str | None = None
     birth_date: date | None = None
     dominant_foot: str | None = None
+    gender: AthleteGender | None = None
     height_cm: float | None = None
     weight_kg: float | None = None
     club_affiliation: str | None = None

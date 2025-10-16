@@ -14,7 +14,7 @@ from app.models import (
     TestDefinition,
     User,
 )
-from app.models.athlete import AthleteStatus
+from app.models.athlete import AthleteGender, AthleteStatus
 from app.services.testing_sheet_loader import (
     infer_target_direction,
     load_testing_sheet,
@@ -103,6 +103,7 @@ def seed_ptp_rich_data(session: Session, clients: list[Client]):
         weight_kg=62,
         birth_date=datetime(2001, 5, 22).date(),
         status=AthleteStatus.active,
+        gender=AthleteGender.female,
     )
     session.add(livia_ferraz)
     session.commit()
@@ -224,14 +225,14 @@ def seed_database(session: Session) -> None:
             "name": "Players To Pro Football",
             "slug": "PTP Football",
             "description": "Tradition and high performance",
-            "primary_color": "#2B47FD",
-            "accent_color": "#2BFD78",
-            "background_color": "#000000",
-            "surface_color": "#FFFFFF",
+            "primary_color": "#2191FB",
+            "accent_color": "#C3E1FE",
+            "background_color": "#F3F9FF",
+            "surface_color": "#C3E1FE",
             "muted_color": "#000000",
-            "on_primary_color": "#FFFFFF",
+            "on_primary_color": "#000000",
             "on_surface_color": "#000000",
-            "logo_label": "Auriverde",
+            "logo_label": "PTP Football",
             "logo_background_color": "#000000",
             "logo_text_color": "#FFFFFF",
         },
@@ -321,7 +322,9 @@ def seed_database(session: Session) -> None:
                 dominant_foot="right" if idx % 2 else "left",
                 height_cm=175 + randint(-5, 6),
                 weight_kg=70 + randint(-5, 6),
+                birth_date=(datetime.utcnow() - timedelta(days=16 * 365 + randint(0, 365))).date(),
                 status=AthleteStatus.inactive if idx == 3 else AthleteStatus.active,
+                gender=AthleteGender.male if idx % 2 else AthleteGender.female,
             )
             session.add(athlete)
             athletes.append(athlete)

@@ -99,6 +99,7 @@ export type TranslationDictionary = {
       bestValueLabel: string;
       lastValueLabel: string;
       averageLabel: string;
+      peerAverageLabel: string;
       metricsTitle: string;
       recentSessionsTitle: string;
       printButton: string;
@@ -131,10 +132,47 @@ export type TranslationDictionary = {
     add: string;
     table: {
       name: string;
-      club: string;
+      age: string;
+      gender: string;
       email: string;
       action: string;
       status: string;
+    };
+    filters: {
+      search: string;
+      searchPlaceholder: string;
+      status: string;
+      statusAll: string;
+      statusActive: string;
+      statusInactive: string;
+      sortBy: string;
+      sortName: string;
+      sortAge: string;
+      sortAsc: string;
+      sortDesc: string;
+      noResults: string;
+      nameContains: string;
+      emailContains: string;
+      ageRange: string;
+      ageHint: string;
+      ageMin: string;
+      ageMax: string;
+      sortLabel: string;
+      sortAlphaAsc: string;
+      sortAlphaDesc: string;
+      sortAgeAsc: string;
+      sortAgeDesc: string;
+      sortStatusAsc: string;
+      sortStatusDesc: string;
+      gender: string;
+      genderAll: string;
+      genderMale: string;
+      genderFemale: string;
+      sortGenderAsc: string;
+      sortGenderDesc: string;
+      clear: string;
+      close: string;
+      openMenu: string;
     };
     actions: {
       delete: string;
@@ -167,6 +205,8 @@ export type TranslationDictionary = {
       left: string;
       both: string;
     };
+    gender: string;
+    genderOptions: { male: string; female: string };
     photo: string;
     photoHint: string;
     status: string;
@@ -188,6 +228,7 @@ export type TranslationDictionary = {
       height: string;
       weight: string;
       dominantFoot: string;
+      gender: string;
     };
     backToList: string;
   };
@@ -307,13 +348,13 @@ const formatDate = (date: Date, locale: Locale) =>
 export const translations: Record<Locale, TranslationDictionary> = {
   en: {
     common: {
-      appName: "Combine Football",
-      dashboard: "Dashboard",
-      athletes: "Athletes",
+      appName: "StatCat",
+      dashboard: "HOME",
+      athletes: "ATHLETES",
       newAthlete: "New Athlete",
       sessions: "Sessions",
-      reports: "Reports",
-      logout: "Sign out",
+      reports: "REPORTS",
+      logout: "SIGN OUT",
       loading: "Loading",
       cancel: "Cancel",
       save: "Save",
@@ -324,7 +365,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       select: "Select",
       customerArea: "Club area",
       learnMore: "Discover features",
-      signIn: "Sign in",
+      signIn: "SIGN IN",
       heroBadge: "SaaS platform for football combines",
       theme: "Theme",
     },
@@ -461,6 +502,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
         bestValueLabel: "Best value",
         lastValueLabel: "Last result",
         averageLabel: "Average",
+        peerAverageLabel: "Age-group average",
         metricsTitle: "At a glance",
         recentSessionsTitle: "Recent sessions",
         printButton: "Print PDF",
@@ -493,10 +535,47 @@ export const translations: Record<Locale, TranslationDictionary> = {
       add: "New athlete",
       table: {
         name: "Name",
-        club: "Club",
+        age: "Age",
+        gender: "Category",
         email: "Email",
         status: "Status",
         action: "Actions",
+      },
+      filters: {
+        search: "Search",
+        searchPlaceholder: "Search by name or email",
+        status: "Status",
+        statusAll: "All statuses",
+        statusActive: "Active",
+        statusInactive: "Inactive",
+        sortBy: "Sort",
+        sortName: "Name",
+        sortAge: "Age",
+        sortAsc: "Ascending",
+        sortDesc: "Descending",
+        noResults: "No athletes match the current filters.",
+        nameContains: "Name contains",
+        emailContains: "Email contains",
+        ageRange: "Age range (years)",
+        ageHint: "Enter ages in years (e.g. 13 for U14).",
+        ageMin: "Minimum age",
+        ageMax: "Maximum age",
+        sortLabel: "Order",
+        sortAlphaAsc: "A → Z",
+        sortAlphaDesc: "Z → A",
+        sortAgeAsc: "Youngest first",
+        sortAgeDesc: "Oldest first",
+        sortStatusAsc: "Active first",
+        sortStatusDesc: "Inactive first",
+        gender: "Category",
+        genderAll: "All categories",
+        genderMale: "Boys",
+        genderFemale: "Girls",
+        sortGenderAsc: "Boys first",
+        sortGenderDesc: "Girls first",
+        clear: "Clear",
+        close: "Close",
+        openMenu: "Toggle column menu",
       },
       actions: {
         delete: "Delete",
@@ -531,9 +610,11 @@ export const translations: Record<Locale, TranslationDictionary> = {
       left: "Left",
       both: "Both",
     },
-    photo: "Profile photo",
-    photoHint: "Upload from your device or use the camera. JPEG, PNG or HEIC up to 5 MB.",
-    status: "Status",
+      gender: "Category",
+      genderOptions: { male: "Boys", female: "Girls" },
+      photo: "Profile photo",
+      photoHint: "Upload from your device or use the camera. JPEG, PNG or HEIC up to 5 MB.",
+      status: "Status",
     statusOptions: {
       active: "Active",
       inactive: "Inactive",
@@ -555,6 +636,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
         height: "Height",
         weight: "Weight",
         dominantFoot: "Dominant foot",
+        gender: "Category",
       },
       backToList: "Back to athletes",
     },

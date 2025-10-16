@@ -13,6 +13,7 @@ class MetricResult(BaseModel):
     unit: str | None
     recorded_at: datetime | None
     notes: str | None
+    peer_average: float | None = None
 
 
 class SessionReport(BaseModel):
