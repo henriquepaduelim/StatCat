@@ -1,3 +1,21 @@
+
+
+
+https://github.com/user-attachments/assets/95990c81-d890-492f-ab60-bdde2d61d656
+
+
+https://github.com/user-attachments/assets/9117c132-41aa-49d3-880c-c0807bf84613
+
+
+
+https://github.com/user-attachments/assets/64ffa3b6-6f6b-4ceb-b0b0-b3f4f46c0f39
+
+
+
+https://github.com/user-attachments/assets/b00076a5-a800-456d-8b51-d1b5bc87f177
+
+
+
 # Combine Football Platform
 
 End-to-end platform for tracking physical and technical tests, centralizing reports, and serving customizable dashboards for partner clubs.
