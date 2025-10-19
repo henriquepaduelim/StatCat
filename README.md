@@ -18,39 +18,47 @@ https://github.com/user-attachments/assets/b00076a5-a800-456d-8b51-d1b5bc87f177
 
 # Combine Football Platform
 
-End-to-end platform for tracking physical and technical tests, centralizing reports, and serving customizable dashboards for partner clubs.
+Internal pilot build that centralises physical and technical assessments, branded reporting, and client-facing dashboards for football combines.
 
-## Monorepo Overview
+## Monorepo Layout
 
 ```
 .
-├── backend/   # FastAPI + SQLModel API (SQLite by default)
-└── frontend/  # Dashboard and marketing site in React/Vite/TypeScript
+├── backend/   # FastAPI + SQLModel API (SQLite seed, media uploads, JWT auth)
+└── frontend/  # Vite/React dashboard and marketing site with shared assets
 ```
 
-## Current Status
+## Phase Snapshot — Pilot Ready
+- Authenticated multi-tenant experience for `staff` (HQ) and `club` operators sharing the same API.
+- Scheduling, athlete management, and reporting flows are wired end-to-end with live FastAPI endpoints.
+- Admin area lists partner clubs and surfaces activity metrics; settings/report pages are placeholders for upcoming configuration work.
+- Marketing landing page, dashboard, athletes, sessions, reports, and admin routes are styled with the current theme system and sample content.
+- SQLite seed data ships realistic clients, users, tests, sessions, and KPI results; optional rich data loader available for Players To Pro.
 
-### Backend (FastAPI)
-- JWT authentication (`/api/v1/auth`) supporting `staff` and `club` roles, hashed passwords, and OAuth2-issued tokens.
-- CRUD for clients, athletes (photo upload in `/media/athletes/<id>`), physical tests, and assessment sessions.
-- Consolidated athlete report endpoint (`GET /api/v1/reports/athletes/{id}`) grouping sessions and recorded metrics.
-- SQLite database bootstrapped automatically with seeds (clients, users, tests, athletes, sessions, results) in `combine.db`.
-- Static file server rooted at `MEDIA_ROOT`, with configuration driven by `.env` variables.
+## Backend Highlights (FastAPI + SQLModel)
+- JWT/OAuth2 authentication (`/api/v1/auth`) for `staff`, `club`, and future `athlete` roles; tokens issued through `/auth/login` with an expanded profile available from `/auth/login/full`.
+- CRUD endpoints for clients, athletes (including `/media/athletes/<id>` photo upload with 5 MB cap), test definitions, assessment sessions, and session results.
+- Athlete report generator (`GET /api/v1/reports/athletes/{id}`) groups sessions, computes trend-friendly metrics, and adds peer averages by age band.
+- Dashboard summary (`/api/v1/dashboard/summary`) counts active/inactive athletes, respecting role-based scoping.
+- SQLite database initialised on startup with seeds for three demo clubs plus command-line helpers in `backend/scripts/` for generating more data.
+- Configurable media root and CORS via `.env` variables; static assets served from `/media`.
 
-### Frontend (React + Vite)
-- Bilingual landing page (English/French) with media assets stored in `public/media`.
-- Authenticated area (Dashboard → Athletes → Sessions → Reports) guarded by `RequireAuth` with state persisted through Zustand.
-- Dashboard built with Recharts, heatmaps, and comparison widgets; consumes live API data and a fallback dataset to keep the UI functional offline.
-- Athlete management flows: list, create, detail, and photo upload.
-- Forms to create sessions and tests directly from the dashboard, wired to the backend endpoints.
-- Client-driven theming (colors, logo, description) supplied by the clients endpoint.
+## Frontend Highlights (React + Vite + Tailwind)
+- App shell with Zustand stores for auth, locale, and client-driven theming (colours/logo pulled from the API).
+- Landing page in `frontend/src/pages/Home.tsx` showcases hero video, feature highlights, and CTA copy tailored for club decision-makers.
+- Dashboard and admin views use Recharts/Tremor widgets for KPIs, top client charts, trend lines, and calendar heatmaps.
+- Athlete area supports filtering, sorting, creation, detail view, and photo uploads with optimistic UI states.
+- Session workflows cover creation, inline edits, drag-and-drop scheduling on a FullCalendar grid, and quick starts that deep-link into athlete assessments.
+- Athlete report page renders printable performance cards, timeframe filters, and comparison charts against peer averages.
+- Client detail, settings, and reports pages are scaffolded with copy and layout, ready for upcoming integrations (no API mutations yet).
+- React Query powers data fetching with persisted tokens; API wrapper lives in `frontend/src/api` with dedicated modules per resource.
 
-## Running Locally
+## Local Development
 
 ### Requirements
-- **Python 3.11+** (recommend using `pyenv` or `uv`).
-- **Node.js 18+** (using `nvm` makes version switching easier).
-- **npm** (or `pnpm`/`yarn`, if preferred).
+- Python 3.11+
+- Node.js 18+
+- npm (or yarn/pnpm if you update scripts accordingly)
 
 ### Backend
 ```bash
@@ -58,13 +66,12 @@ cd backend
 python3 -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install --upgrade pip
-pip install -e ".[dev]"  # installs development deps (pytest, httpx, ruff, mypy)
-cp .env.example .env       # adjust SECRET_KEY, BACKEND_CORS_ORIGINS, MEDIA_ROOT, etc.
+pip install -e ".[dev]"
+cp .env.example .env  # set SECRET_KEY, BACKEND_CORS_ORIGINS, MEDIA_ROOT as needed
 uvicorn app.main:app --reload
 ```
-- The SQLite database (`combine.db`) is created/seeded on the first startup. Delete the file before launching to regenerate the sample data.
-- Interactive docs: http://localhost:8000/docs
-- Simple healthcheck: http://localhost:8000/health
+- First startup creates `combine.db` and seeds demo data; delete the file to regenerate a clean dataset.
+- Interactive docs: http://localhost:8000/docs — Health check: http://localhost:8000/health
 
 ### Frontend
 ```bash
@@ -72,54 +79,27 @@ cd frontend
 npm install
 npm run dev
 ```
-- Vite runs on http://localhost:5173 with an automatic proxy to `http://localhost:8000/api`.
-- Production build: `npm run build`; preview build: `npm run preview`.
+- Vite serves the app on http://localhost:5173 with a dev proxy to `http://localhost:8000/api`.
+- Production bundle: `npm run build` → `dist/`; preview with `npm run preview`.
 
 ### Seed Credentials
-| User | Role | Password | Notes |
-|------|------|----------|-------|
-| admin@mvp.ca | staff | admin123 | full access, can switch client themes |
-| jodie@playerstopro.com | club | ptp123456 | scoped to Players To Pro Football |
-| urban@combine.dev | club | urban123 | scoped to Urban Fut |
+| Email | Role | Password | Notes |
+|-------|------|----------|-------|
+| admin@mvp.ca | staff | admin123 | Full access, switches client themes |
+| jodie@playerstopro.com | club | ptp123456 | Restricted to Players To Pro data |
+| urban@combine.dev | club | urban123 | Restricted to Urban Fut data |
 
-## Directory Layout
+## Tooling & Useful Commands
+- `uvicorn app.main:app --reload` — Run API locally.
+- `pytest` — Placeholder for backend tests (none committed yet).
+- `ruff check app` / `mypy app` — Static analysis and type checking.
+- `npm run lint` — ESLint over `frontend/src`.
+- `npm run build` — Frontend production output.
+- `backend/scripts/*` — Utilities for generating or inspecting demo records.
 
-```
-backend/
-├── app/
-│   ├── api/            # v1 routes (auth, athletes, clients, sessions, tests, reports)
-│   ├── core/           # configuration and security helpers (JWT, password hashing)
-│   ├── db/             # SQLModel session and seeding utilities
-│   ├── models/         # SQLModel tables
-│   ├── schemas/        # Pydantic/SQLModel DTOs
-│   └── services/       # placeholder for future utilities
-├── media/              # local uploads (e.g., athlete photos)
-├── combine.db          # auto-generated SQLite database
-└── pyproject.toml      # dependencies and dev extras
-
-frontend/
-├── src/
-│   ├── api/            # axios client and request wrappers (auth, sessions, tests)
-│   ├── components/     # AppShell, charts, heatmap, etc.
-│   ├── hooks/          # React Query hooks (athletes, sessions, reports...)
-│   ├── i18n/           # EN/FR translations
-│   ├── pages/          # Home, Dashboard, Athletes, Sessions, Reports
-│   ├── stores/         # Zustand stores (auth, theme)
-│   └── theme/          # theme generation driven by client metadata
-├── public/             # static assets (videos, images)
-└── vite.config.ts
-```
-
-## Useful Scripts
-- `uvicorn app.main:app --reload` – backend dev server.
-- `pytest` – backend test suite (httpx already included).
-- `ruff check app` / `mypy app` – backend linting and type checks.
-- `npm run lint` – frontend ESLint.
-- `npm run build` – frontend production build (outputs `dist/`).
-
-## Next Steps
-- Configure Alembic migrations instead of recreating SQLite on schema changes.
-- Integrate external storage (S3/MinIO) for photos and future attachments.
-- Implement automated tests on the backend (pytest + httpx) and frontend (React Testing Library).
-- Expand report exports (PDF/CSV) and enable real printing from the frontend.
-- Prepare deployment scripts (Docker Compose, CI/CD) and client-specific environments.
+## Known Gaps & Next Up
+- Replace ad-hoc seed migrations with Alembic-managed migrations.
+- Wire client settings/report admin pages to real endpoints and add mutations.
+- Expand automated test coverage on both backend (pytest/httpx) and frontend (RTL/Cypress).
+- Finalise PDF/CSV exports plus scheduled deliveries from the reporting module.
+- Integrate external storage (S3/MinIO) for high-resolution media and automate cleanup.
