@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
@@ -13,6 +14,7 @@ from app.models.user import User
 from app.schemas.assessment_session import (
     AssessmentSessionCreate,
     AssessmentSessionRead,
+    AssessmentSessionUpdate,
 )
 from app.schemas.session_result import SessionResultCreate, SessionResultRead
 
@@ -63,6 +65,8 @@ def ensure_related_entities(
 @router.get("/", response_model=list[AssessmentSessionRead])
 def list_sessions(
     client_id: int | None = None,
+    start: date | None = None,
+    end: date | None = None,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
 ) -> list[AssessmentSessionRead]:
@@ -71,6 +75,12 @@ def list_sessions(
         statement = statement.where(AssessmentSession.client_id == current_user.client_id)
     elif client_id is not None:
         statement = statement.where(AssessmentSession.client_id == client_id)
+
+    if start:
+        statement = statement.where(AssessmentSession.scheduled_at >= start)
+    if end:
+        statement = statement.where(AssessmentSession.scheduled_at <= end)
+
     return session.exec(statement).all()
 
 
@@ -106,6 +116,43 @@ def get_session_detail(
     if current_user.role == "club" and assessment_session.client_id != current_user.client_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
     return assessment_session
+
+
+@router.put("/{session_id}", response_model=AssessmentSessionRead)
+def update_session(
+    session_id: int,
+    payload: AssessmentSessionUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> AssessmentSessionRead:
+    assessment_session = session.get(AssessmentSession, session_id)
+    if not assessment_session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+    if current_user.role == "club" and assessment_session.client_id != current_user.client_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+
+    update_data = payload.model_dump(exclude_unset=True)
+    assessment_session.sqlmodel_update(update_data)
+    session.add(assessment_session)
+    session.commit()
+    session.refresh(assessment_session)
+    return assessment_session
+
+
+@router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_session(
+    session_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> None:
+    assessment_session = session.get(AssessmentSession, session_id)
+    if not assessment_session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+    if current_user.role == "club" and assessment_session.client_id != current_user.client_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+
+    session.delete(assessment_session)
+    session.commit()
 
 
 @router.post("/{session_id}/results", response_model=list[SessionResultRead])

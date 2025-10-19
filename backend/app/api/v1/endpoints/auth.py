@@ -5,8 +5,9 @@ from sqlmodel import Session, select
 from app.api.deps import authenticate_user, get_current_active_user
 from app.core.security import create_access_token, get_password_hash
 from app.db.session import get_session
+from app.models.athlete import Athlete
 from app.models.user import User
-from app.schemas.user import Token, UserCreate, UserRead, UserReadWithToken
+from app.schemas.user import Token, UserCreate, UserRead, UserReadWithToken, UserSignup
 
 router = APIRouter()
 
@@ -43,13 +44,50 @@ def register_user(
     if exists:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
 
+    client_id = payload.client_id
+    if payload.role == "athlete":
+        if payload.athlete_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Athlete users must reference an athlete",
+            )
+        athlete = session.get(Athlete, payload.athlete_id)
+        if not athlete:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Athlete not found")
+        client_id = athlete.client_id
+
     user = User(
         email=payload.email,
         hashed_password=get_password_hash(payload.password),
         full_name=payload.full_name,
         role=payload.role,
-        client_id=payload.client_id,
+        client_id=client_id,
+        athlete_id=payload.athlete_id,
         is_active=payload.is_active,
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
+
+
+@router.post("/signup", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+def signup_user(
+    payload: UserSignup,
+    session: Session = Depends(get_session),
+) -> User:
+    exists = session.exec(select(User).where(User.email == payload.email)).first()
+    if exists:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+
+    user = User(
+        email=payload.email,
+        hashed_password=get_password_hash(payload.password),
+        full_name=payload.full_name,
+        role=payload.role,
+        client_id=None,
+        athlete_id=None,
+        is_active=True,
     )
     session.add(user)
     session.commit()
@@ -75,6 +113,7 @@ def login_with_profile(
         full_name=user.full_name,
         role=user.role,
         client_id=user.client_id,
+        athlete_id=user.athlete_id,
         is_active=user.is_active,
         access_token=token,
     )

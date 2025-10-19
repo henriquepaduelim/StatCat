@@ -63,7 +63,7 @@ const NewAthlete = () => {
   return (
     <div className="max-w-2xl space-y-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold text-on-surface">{t.newAthlete.title}</h1>
+        <h1 className="text-2xl font-semibold text-container-foreground">{t.newAthlete.title}</h1>
         <p className="text-sm text-muted">{t.newAthlete.subtitle}</p>
       </header>
 

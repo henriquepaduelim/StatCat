@@ -17,7 +17,7 @@ const RequireAuth = ({ children }: PropsWithChildren): JSX.Element => {
 
   if (!isInitialized) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-muted">
+      <div className="flex min-h-screen items-center justify-center bg-page text-muted">
         {t.common.loading}...
       </div>
     );

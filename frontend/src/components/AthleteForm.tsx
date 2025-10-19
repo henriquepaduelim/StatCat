@@ -159,7 +159,7 @@ const AthleteForm = ({
               required
               value={formState.client_id}
               onChange={handleChange}
-              className="mt-1 w-full max-w-lg rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 w-full max-w-lg rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             >
               <option value="">{t.common.select}</option>
               {clientOptions.map((option) => (
@@ -171,7 +171,7 @@ const AthleteForm = ({
           </label>
         ) : resolvedClientName ? (
           <div className="text-sm text-muted">
-            <p className="font-medium text-on-surface">{t.newAthlete.client}</p>
+            <p className="font-medium text-container-foreground">{t.newAthlete.client}</p>
             <p>{resolvedClientName}</p>
           </div>
         ) : null}
@@ -185,7 +185,7 @@ const AthleteForm = ({
               name="first_name"
               value={formState.first_name}
               onChange={handleChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             />
           </label>
           <label className="block text-sm font-medium text-muted">
@@ -196,7 +196,7 @@ const AthleteForm = ({
               name="last_name"
               value={formState.last_name}
               onChange={handleChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             />
           </label>
         </div>
@@ -209,7 +209,7 @@ const AthleteForm = ({
               name="gender"
               value={formState.gender}
               onChange={handleChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             >
               <option value="male">{t.newAthlete.genderOptions.male}</option>
               <option value="female">{t.newAthlete.genderOptions.female}</option>
@@ -223,7 +223,7 @@ const AthleteForm = ({
               name="email"
               value={formState.email}
               onChange={handleChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             />
           </label>
         </div>
@@ -237,7 +237,7 @@ const AthleteForm = ({
               name="birth_date"
               value={formState.birth_date}
               onChange={handleChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             />
           </label>
           <label className="block text-sm font-medium text-muted">
@@ -248,7 +248,7 @@ const AthleteForm = ({
               name="height_cm"
               value={formState.height_cm}
               onChange={handleChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             />
           </label>
           <label className="block text-sm font-medium text-muted">
@@ -259,7 +259,7 @@ const AthleteForm = ({
               name="weight_kg"
               value={formState.weight_kg}
               onChange={handleChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             />
           </label>
         </div>
@@ -273,7 +273,7 @@ const AthleteForm = ({
             accept="image/jpeg,image/png,image/heic,image/heif"
             capture="environment"
             onChange={handlePhotoInput}
-            className="mt-1 w-full max-w-md rounded-md border border-black/10 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="mt-1 w-full max-w-md rounded-md border border-black/10 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
           />
           <span className="mt-1 block text-xs text-muted">{t.newAthlete.photoHint}</span>
         </label>
@@ -290,7 +290,7 @@ const AthleteForm = ({
 
       <button
         type="submit"
-        className="w-full max-w-md rounded-md bg-primary px-4 py-2 text-sm font-semibold text-on-primary shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full max-w-md rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60"
         disabled={isSubmitting}
       >
         {isSubmitting ? `${t.common.loading}...` : submitLabel}

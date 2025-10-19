@@ -110,16 +110,16 @@ const Sessions = () => {
   return (
     <div className="space-y-10">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold text-on-surface">{t.sessions.title}</h1>
+        <h1 className="text-2xl font-semibold text-container-foreground">{t.sessions.title}</h1>
         <p className="text-sm text-muted">{t.sessions.description}</p>
       </header>
 
       <section className="grid gap-6 md:grid-cols-2 print-hidden">
         <form
           onSubmit={handleSessionSubmit}
-          className="space-y-4 rounded-xl bg-surface p-6 shadow-sm"
+          className="space-y-4 rounded-xl bg-container p-6 shadow-sm"
         >
-          <h2 className="text-lg font-semibold text-on-surface">{t.forms.session.title}</h2>
+          <h2 className="text-lg font-semibold text-container-foreground">{t.forms.session.title}</h2>
           <p className="text-xs text-muted">{t.forms.session.subtitle}</p>
           {hasMultipleClients ? (
             <label className="text-sm font-medium text-muted">
@@ -133,7 +133,7 @@ const Sessions = () => {
                   }))
                 }
                 required
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               >
                 <option value="">{t.common.select}</option>
                 {clientOptions.map((item) => (
@@ -151,7 +151,7 @@ const Sessions = () => {
               type="text"
               value={sessionForm.name}
               onChange={(event) => setSessionForm((prev) => ({ ...prev, name: event.target.value }))}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -160,7 +160,7 @@ const Sessions = () => {
               type="text"
               value={sessionForm.location ?? ""}
               onChange={(event) => setSessionForm((prev) => ({ ...prev, location: event.target.value }))}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             />
           </label>
           {sessionForm.location?.trim() && (
@@ -180,7 +180,7 @@ const Sessions = () => {
               type="datetime-local"
               value={sessionForm.scheduled_at ?? ""}
               onChange={(event) => setSessionForm((prev) => ({ ...prev, scheduled_at: event.target.value }))}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -188,13 +188,13 @@ const Sessions = () => {
             <textarea
               value={sessionForm.notes ?? ""}
               onChange={(event) => setSessionForm((prev) => ({ ...prev, notes: event.target.value }))}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               rows={3}
             />
           </label>
           <button
             type="submit"
-            className="w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-on-primary shadow-sm disabled:opacity-60"
+            className="w-full rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm disabled:opacity-60"
             disabled={sessionMutation.isPending}
           >
             {sessionMutation.isPending ? `${t.common.loading}...` : t.forms.session.submit}
@@ -203,9 +203,9 @@ const Sessions = () => {
 
         <form
           onSubmit={handleTestSubmit}
-          className="space-y-4 rounded-xl bg-surface p-6 shadow-sm"
+          className="space-y-4 rounded-xl bg-container p-6 shadow-sm"
         >
-          <h2 className="text-lg font-semibold text-on-surface">{t.forms.test.title}</h2>
+          <h2 className="text-lg font-semibold text-container-foreground">{t.forms.test.title}</h2>
           <p className="text-xs text-muted">{t.forms.test.subtitle}</p>
           {hasMultipleClients ? (
             <label className="text-sm font-medium text-muted">
@@ -219,7 +219,7 @@ const Sessions = () => {
                   }))
                 }
                 required
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               >
                 <option value="">{t.common.select}</option>
                 {clientOptions.map((item) => (
@@ -237,7 +237,7 @@ const Sessions = () => {
               type="text"
               value={testForm.name}
               onChange={(event) => setTestForm((prev) => ({ ...prev, name: event.target.value }))}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -246,7 +246,7 @@ const Sessions = () => {
               type="text"
               value={testForm.category ?? ""}
               onChange={(event) => setTestForm((prev) => ({ ...prev, category: event.target.value }))}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -255,7 +255,7 @@ const Sessions = () => {
               type="text"
               value={testForm.unit ?? ""}
               onChange={(event) => setTestForm((prev) => ({ ...prev, unit: event.target.value }))}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -263,7 +263,7 @@ const Sessions = () => {
             <textarea
               value={testForm.description ?? ""}
               onChange={(event) => setTestForm((prev) => ({ ...prev, description: event.target.value }))}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               rows={3}
             />
           </label>
@@ -277,7 +277,7 @@ const Sessions = () => {
                   target_direction: event.target.value as "higher" | "lower",
                 }))
               }
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             >
               <option value="higher">{t.forms.test.targetOptions.higher}</option>
               <option value="lower">{t.forms.test.targetOptions.lower}</option>
@@ -285,7 +285,7 @@ const Sessions = () => {
           </label>
           <button
             type="submit"
-            className="w-full rounded-md bg-primary px-4 py-2 text-sm font-semibold text-on-primary shadow-sm disabled:opacity-60"
+            className="w-full rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm disabled:opacity-60"
             disabled={testMutation.isPending}
           >
             {testMutation.isPending ? `${t.common.loading}...` : t.forms.test.submit}
@@ -293,10 +293,10 @@ const Sessions = () => {
         </form>
       </section>
 
-      <section className="rounded-xl bg-surface p-6 shadow-sm">
+      <section className="bg-container-gradient">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-on-surface">{t.sessions.nextSessions}</h2>
+            <h2 className="text-lg font-semibold text-container-foreground">{t.sessions.nextSessions}</h2>
             <p className="text-xs text-muted">{t.reports.summary}</p>
           </div>
         </div>
@@ -310,7 +310,7 @@ const Sessions = () => {
             <div key={session.id} className="rounded-lg border border-black/10 p-4">
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <h3 className="text-lg font-semibold text-on-surface">{session.name}</h3>
+                  <h3 className="text-lg font-semibold text-container-foreground">{session.name}</h3>
                   <p className="text-xs text-muted">
                     {session.scheduled_at ? t.reports.sessionDate(session.scheduled_at) : t.forms.session.date}
                     {session.location ? ` • ${session.location}` : ""}

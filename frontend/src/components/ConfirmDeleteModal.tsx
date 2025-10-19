@@ -64,9 +64,9 @@ const ConfirmDeleteModal = ({
         aria-labelledby="confirm-delete-title"
         aria-describedby="confirm-delete-description"
         tabIndex={-1}
-        className="relative z-10 w-full max-w-sm rounded-xl bg-surface p-6 shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className="relative z-10 w-full max-w-sm rounded-xl bg-container p-6 shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
       >
-        <h2 id="confirm-delete-title" className="text-lg font-semibold text-on-surface">
+        <h2 id="confirm-delete-title" className="text-lg font-semibold text-container-foreground">
           {title}
         </h2>
         <p id="confirm-delete-description" className="mt-2 text-sm text-muted">
@@ -76,7 +76,7 @@ const ConfirmDeleteModal = ({
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-md border border-black/10 px-4 py-2 text-sm font-medium text-muted transition hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="rounded-md border border-black/10 px-4 py-2 text-sm font-medium text-muted transition hover:border-action-primary hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
           >
             {cancelLabel}
           </button>

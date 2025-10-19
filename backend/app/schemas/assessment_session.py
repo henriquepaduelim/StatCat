@@ -6,6 +6,7 @@ from sqlmodel import SQLModel
 
 class AssessmentSessionBase(SQLModel):
     client_id: int
+    athlete_id: int | None = None
     name: str
     location: str | None = None
     scheduled_at: datetime | None = None
@@ -20,3 +21,11 @@ class AssessmentSessionRead(AssessmentSessionBase):
     id: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class AssessmentSessionUpdate(SQLModel):
+    name: str | None = None
+    location: str | None = None
+    scheduled_at: datetime | None = None
+    notes: str | None = None
+    athlete_id: int | None = None

@@ -19,7 +19,7 @@ const ClientDetail = () => {
     return (
       <div className="space-y-3">
         <p className="text-sm text-red-500">Client not found.</p>
-        <Link to="/dashboard" className="text-sm font-semibold text-primary hover:underline">
+        <Link to="/dashboard" className="text-sm font-semibold text-accent hover:underline">
           {t.common.back}
         </Link>
       </div>
@@ -29,16 +29,15 @@ const ClientDetail = () => {
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold text-on-surface">{client.name}</h1>
+        <h1 className="text-2xl font-semibold text-container-foreground">{client.name}</h1>
         <p className="text-sm text-muted">{client.description ?? "No description provided."}</p>
       </header>
 
       <section className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-xl border border-black/10 bg-surface p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">Slug</p>
-          <p className="mt-2 text-lg font-semibold text-on-surface">{client.slug}</p>
+        <div className="rounded-xl border border-black/10 bg-container-gradient p-4">
+          <p className="mt-2 text-lg font-semibold text-container-foreground">{client.slug}</p>
         </div>
-        <div className="rounded-xl border border-black/10 bg-surface p-4">
+        <div className="rounded-xl border border-black/10 bg-container-gradient p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">Primary colour</p>
           <div className="mt-2 h-10 rounded-md" style={{ backgroundColor: client.branding.primary_color }} />
         </div>
@@ -46,7 +45,7 @@ const ClientDetail = () => {
 
       <Link
         to="/dashboard"
-        className="inline-flex items-center rounded-md border border-black/10 px-3 py-2 text-xs font-semibold text-muted transition hover:border-primary hover:text-primary"
+        className="inline-flex items-center rounded-md border border-black/10 px-3 py-2 text-xs font-semibold text-muted transition hover:border-action-primary hover:text-accent"
       >
         {t.common.back}
       </Link>

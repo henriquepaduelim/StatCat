@@ -303,10 +303,10 @@ const Dashboard = () => {
   
 
 <section className="grid gap-4 md:grid-cols-3">
-  <div className="rounded-xl border border-primary/25 bg-surface/80 p-6 shadow-xl backdrop-blur">
+  <div className="rounded-xl border border-action-primary/25 bg-container-gradient p-6 shadow-xl backdrop-blur">
     <div className="flex flex-col gap-6">
       <div>
-        <h2 className="text-lg font-semibold text-on-surface">{t.dashboard.summary.title}</h2>
+        <h2 className="text-lg font-semibold text-container-foreground">{t.dashboard.summary.title}</h2>
         {athletesSummary ? (
           <p className="text-xs text-muted">
             {t.dashboard.summary.totalAthletes}: {numberFormatter.format(athletesSummary.total)}
@@ -353,13 +353,13 @@ const Dashboard = () => {
         {athleteSummaryData.map((entry) => (
           <div
             key={entry.name}
-            className="flex items-center justify-between rounded-lg border border-black/10 bg-background/60 px-4 py-2 text-sm"
+            className="flex items-center justify-between rounded-lg border border-black/10 bg-container/60 px-4 py-2 text-sm"
           >
             <span className="inline-flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
               {entry.name}
             </span>
-            <span className="font-semibold text-on-surface">{numberFormatter.format(entry.value)}</span>
+            <span className="font-semibold text-container-foreground">{numberFormatter.format(entry.value)}</span>
           </div>
         ))}
       </div>
@@ -382,7 +382,7 @@ const Dashboard = () => {
     return (
       <div
         key={skill.category}
-        className="rounded-xl border border-primary/25 bg-surface/80 p-6 shadow-xl backdrop-blur"
+        className="rounded-xl border border-action-primary/25 bg-container-gradient p-6 shadow-xl backdrop-blur"
       >
         <div className="mx-auto h-56 w-full max-w-[240px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -405,7 +405,7 @@ const Dashboard = () => {
         </div>
         <div className="mt-4 flex flex-col items-center text-center">
           <span className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</span>
-          <span className="mt-2 text-3xl font-semibold text-on-surface">
+          <span className="mt-2 text-3xl font-semibold text-container-foreground">
             {currentValue != null
               ? numberFormatter.format(currentValue)
               : t.dashboard.athleteReport.notAvailable}
@@ -428,7 +428,7 @@ const Dashboard = () => {
 return (
     <div className="space-y-8">
       <section className="print-hidden space-y-2">
-        <h1 className="text-3xl font-semibold text-on-surface">{t.dashboard.title}</h1>
+        <h1 className="text-3xl font-semibold text-container-foreground">{t.dashboard.title}</h1>
         <p className="text-sm text-muted">{t.dashboard.description}</p>
       </section>
 
@@ -444,7 +444,7 @@ return (
           <select
             value={timeframe}
             onChange={(event) => setTimeframe(event.target.value as TimeframeValue)}
-            className="ml-2 rounded-md border border-primary/30 bg-background/80 px-3 py-2 text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="ml-2 rounded-md border border-action-primary/30 bg-container/80 px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
           >
             {timeframeOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -461,7 +461,7 @@ return (
               const value = event.target.value;
               setSelectedAthleteId(value ? Number(value) : null);
             }}
-            className="ml-2 rounded-md border border-primary/30 bg-background/80 px-3 py-2 text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="ml-2 rounded-md border border-action-primary/30 bg-container/80 px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
           >
             <option value="">{t.dashboard.filters.athletePlaceholder}</option>
             {displayAthletes.map((athlete) => (
@@ -474,10 +474,10 @@ return (
       </section>
 
       <section className="print-hidden grid gap-4 md:grid-cols-3">
-        <div className="rounded-xl border border-primary/25 bg-surface/80 p-6 shadow-xl backdrop-blur">
+        <div className="rounded-xl border border-action-primary/25 bg-container-gradient p-6 shadow-xl backdrop-blur">
           <div className="flex flex-col gap-6">
             <div>
-              <h2 className="text-lg font-semibold text-on-surface">{t.dashboard.summary.title}</h2>
+              <h2 className="text-lg font-semibold text-container-foreground">{t.dashboard.summary.title}</h2>
               {athletesSummary ? (
                 <p className="text-xs text-muted">
                   {t.dashboard.summary.totalAthletes}: {numberFormatter.format(athletesSummary.total)}
@@ -524,13 +524,13 @@ return (
             {athleteSummaryData.map((entry) => (
               <div
                 key={entry.name}
-                className="flex items-center justify-between rounded-lg border border-black/10 bg-background/60 px-4 py-2 text-sm"
+                className="flex items-center justify-between rounded-lg border border-black/10 bg-container/60 px-4 py-2 text-sm"
               >
                 <span className="inline-flex items-center gap-2">
                   <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
                   {entry.name}
                 </span>
-                <span className="font-semibold text-on-surface">{numberFormatter.format(entry.value)}</span>
+                <span className="font-semibold text-container-foreground">{numberFormatter.format(entry.value)}</span>
               </div>
             ))}
             </div>
@@ -553,7 +553,7 @@ return (
           return (
             <div
               key={skill.category}
-              className="rounded-xl border border-primary/25 bg-surface/80 p-5 shadow-xl backdrop-blur"
+              className="rounded-xl border border-action-primary/25 bg-container-gradient p-5 shadow-xl backdrop-blur"
             >
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
@@ -576,7 +576,7 @@ return (
               </div>
               <div className="mt-4 flex flex-col items-center text-center">
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</span>
-                <span className="mt-2 text-3xl font-semibold text-on-surface">
+                <span className="mt-2 text-3xl font-semibold text-container-foreground">
                   {currentValue != null
                     ? numberFormatter.format(currentValue)
                     : t.dashboard.athleteReport.notAvailable}
@@ -597,9 +597,9 @@ return (
         })}
       </section>
 
-      <section className="rounded-xl border border-primary/25 bg-surface/80 p-6 shadow-xl backdrop-blur space-y-4">
+      <section className="rounded-xl border border-action-primary/25 bg-container-gradient p-6 shadow-xl backdrop-blur space-y-4">
         <div>
-          <h2 className="text-xl font-semibold text-on-surface">{t.dashboard.sessionComparison.title}</h2>
+          <h2 className="text-xl font-semibold text-container-foreground">{t.dashboard.sessionComparison.title}</h2>
           <p className="text-sm text-muted">{t.dashboard.sessionComparison.subtitle}</p>
         </div>
         {latestStat && previousStat ? (
@@ -615,14 +615,14 @@ return (
               return (
                 <div
                   key={`session-comparison-${category}`}
-                  className="rounded-lg border border-white/10 bg-background/70 p-4"
+                  className="rounded-lg border border-white/10 bg-container/70 p-4"
                 >
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                     {mainSkillLabels[category]}
                   </p>
                   <div className="mt-3 flex items-center justify-between text-sm">
                     <span className="text-muted">{t.dashboard.sessionComparison.previousLabel}</span>
-                    <span className="font-semibold text-on-surface">
+                    <span className="font-semibold text-container-foreground">
                       {previous != null
                         ? numberFormatter.format(previous)
                         : t.dashboard.athleteReport.notAvailable}
@@ -630,7 +630,7 @@ return (
                   </div>
                   <div className="mt-2 flex items-center justify-between text-sm">
                     <span className="text-muted">{t.dashboard.sessionComparison.currentLabel}</span>
-                    <span className="font-semibold text-on-surface">
+                    <span className="font-semibold text-container-foreground">
                       {current != null
                         ? numberFormatter.format(current)
                         : t.dashboard.athleteReport.notAvailable}

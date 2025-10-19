@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { fallbackTheme, themeFromClient } from "./themes";
+import { fallbackTheme } from "./themes";
+import { DEFAULT_THEME_ID, THEME_PRESETS } from "./presets";
 import type { ThemeDefinition } from "./themes";
 import type { Client } from "../types/client";
 
@@ -13,10 +14,13 @@ export type ThemeState = {
   setThemesFromClients: (clients: Client[]) => void;
 };
 
+const defaultPreset =
+  THEME_PRESETS.find((preset) => preset.id === DEFAULT_THEME_ID) ?? THEME_PRESETS[0] ?? fallbackTheme;
+
 const fallbackState: ThemeState = {
-  themes: [fallbackTheme],
+  themes: THEME_PRESETS,
   theme: fallbackTheme,
-  selectedThemeId: fallbackTheme.id,
+  selectedThemeId: defaultPreset.id,
   setTheme: () => undefined,
   setThemesFromClients: () => undefined,
 };
@@ -34,16 +38,12 @@ export const useThemeStore = create<ThemeState>()(
       },
       setThemesFromClients: (clients: Client[]) => {
         if (!clients.length) {
-          set({ themes: [fallbackTheme], theme: fallbackTheme, selectedThemeId: fallbackTheme.id });
+          set({ themes: THEME_PRESETS, theme: fallbackTheme, selectedThemeId: fallbackTheme.id });
           return;
         }
 
-        const themes = clients.map(themeFromClient);
-        const storedId = get().selectedThemeId;
-        const defaultTheme =
-          themes.find((item) => item.id === storedId) ?? themes[0] ?? fallbackTheme;
-
-        set({ themes, theme: defaultTheme, selectedThemeId: defaultTheme.id });
+        // Temporariamente ignoramos as cores vindas do backend para facilitar o ajuste do preset.
+        set({ themes: THEME_PRESETS, theme: fallbackTheme, selectedThemeId: fallbackTheme.id });
       },
     }),
     {

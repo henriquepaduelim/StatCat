@@ -2,41 +2,130 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  input, select, textarea {
+    @apply w-full rounded-md border-black/10 bg-container px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary;
+  }
+}
+
+@layer components {
+  .interactive-hover {
+    @apply relative overflow-hidden bg-action-primary text-action-primary-foreground;
+  }
+
+  .interactive-hover::before,
+  .interactive-hover::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 150ms ease-in-out;
+  }
+
+  .interactive-hover::before {
+    background: radial-gradient(120% 120% at 10% 10%, rgba(255, 255, 255, 0.35), transparent 70%);
+    transform: translate(-30%, -30%) scale(0.6);
+  }
+
+  .interactive-hover::after {
+    background: linear-gradient(
+      120deg,
+      transparent,
+      rgba(255, 255, 255, 0.35),
+      transparent
+    );
+    transform: translateX(-120%);
+  }
+
+  .interactive-hover:hover::before {
+    opacity: 0.4;
+    animation: interactive-hover-pulse 2s ease-in-out infinite;
+  }
+
+  .interactive-hover:hover::after {
+    opacity: 0.9;
+    animation: interactive-hover-sweep 1.8s ease-in-out infinite;
+  }
+
+  .interactive-hover > span {
+    position: relative;
+    z-index: 10;
+  }
+}
+
+@keyframes interactive-hover-sweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  50% {
+    transform: translateX(120%);
+  }
+  100% {
+    transform: translateX(-120%);
+  }
+}
+
+@keyframes interactive-hover-pulse {
+  0%,
+  100% {
+    transform: translate(-30%, -30%) scale(0.55);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translate(-30%, -30%) scale(0.7);
+    opacity: 0.45;
+  }
+}
+
 :root {
-  --color-primary: 0 200 255;
-  --color-accent: 123 97 255;
-  --color-background: 6 12 24;
-  --color-surface: 15 24 46;
-  --color-muted: 130 146 185;
-  --color-on-primary: 8 13 24;
-  --color-on-surface: 232 245 255;
+  --color-page-background: 247 255 226;
+  --color-page-foreground: 20 20 20;
+  --color-container-background: 255 255 255;
+  --color-container-foreground: 31 41 51;
+  --color-header-background: 3 153 3;
+  --color-header-foreground: 240 248 235;
+  --color-sidebar-background: 3 153 3;
+  --color-sidebar-foreground: 240 248 235;
+  --color-footer-background: 195 225 254;
+  --color-footer-foreground: 11 11 11;
+  --color-action-primary-background: 221 247 156;
+  --color-action-primary-foreground: 0 0 0;
+  --color-accent: 33 145 251;
+  --color-border: 156 198 248;
+  --color-muted: 107 114 128;
+  --color-logo-background: 33 145 251;
+  --color-logo-foreground: 255 255 255;
+
+  /* FullCalendar Theme Overrides */
+  --fc-border-color: rgb(var(--color-action-primary-background) / 0.2);
+  --fc-button-bg-color: rgb(var(--color-container-background));
+  --fc-button-text-color: rgb(var(--color-container-foreground));
+  --fc-button-border-color: rgb(var(--color-action-primary-background) / 0.5);
+  --fc-button-hover-bg-color: rgb(var(--color-container-background) / 0.8);
+  --fc-button-active-bg-color: rgb(var(--color-action-primary-background));
+  --fc-today-bg-color: rgb(var(--color-action-primary-background) / 0.15);
 }
 
 body {
   font-family: "Geist", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background:
-    radial-gradient(circle at 20% 18%, rgba(255, 255, 86, 0.733), transparent 55%),
-    radial-gradient(circle at 80% -10%, rgba(119, 232, 39, 0.22), transparent 45%),
-    linear-gradient(135deg, rgba(6, 12, 24, 1), rgba(12, 21, 40, 0.92));
-  background-attachment: fixed;
-  color: rgb(var(--color-on-surface));
+  background-color: rgb(var(--color-page-background));
+  color: rgb(var(--color-page-foreground));
   transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
-}
-
-input,
-select,
-textarea {
-  color: rgb(var(--color-on-surface));
-  background-color: rgba(228, 240, 203, 0.504);
-  border: 1px solid rgba(0, 200, 255, 0.25);
-  box-shadow: 0 10px 32px rgba(0, 200, 255, 0.08);
-  caret-color: rgb(var(--color-primary));
-  backdrop-filter: blur(12px);
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: rgba(226, 242, 255, 0.55);
+  color: rgba(20, 20, 20, 0.4);
+}
+
+@layer utilities {
+  .bg-container-gradient {
+    background-image: linear-gradient(
+      135deg,
+      rgb(var(--color-container-background) / 0.95),
+      rgb(var(--color-container-background) / 0.75)
+    );
+  }
 }
 
 @media print {
@@ -65,5 +154,3 @@ textarea::placeholder {
     color: #000000 !important;
   }
 }
-
-

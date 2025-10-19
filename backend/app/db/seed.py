@@ -378,4 +378,4 @@ def seed_database(session: Session) -> None:
     session.commit()
 
     # Enrich Players To Pro dataset with the detailed sheet (runs only on empty DB).
-    seed_ptp_rich_data(session, clients)
+    # seed_ptp_rich_data(session, clients)

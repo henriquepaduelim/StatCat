@@ -20,9 +20,26 @@ export type CreateSessionPayload = {
   notes?: string;
 };
 
+export type UpdateSessionPayload = Partial<CreateSessionPayload>;
+
 export const createSession = async (payload: CreateSessionPayload): Promise<SessionRecord> => {
   const { data } = await api.post<SessionRecord>("/sessions/", payload);
   return data;
+};
+
+export const updateSession = async (
+  sessionId: number,
+  payload: UpdateSessionPayload
+): Promise<SessionRecord> => {
+  const { data } = await api.put<SessionRecord>(
+    `/sessions/${sessionId}`,
+    payload
+  );
+  return data;
+};
+
+export const deleteSession = async (sessionId: number): Promise<void> => {
+  await api.delete(`/sessions/${sessionId}`);
 };
 
 export type SessionResultPayload = {

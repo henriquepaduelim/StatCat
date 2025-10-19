@@ -7,6 +7,7 @@ export type AuthUser = {
   full_name: string;
   role: "staff" | "club" | string;
   client_id?: number | null;
+  athlete_id?: number | null;
   is_active: boolean;
 };
 

@@ -38,17 +38,17 @@ const Reports = () => {
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold text-on-surface">{t.reports.title}</h1>
+        <h1 className="text-2xl font-semibold text-container-foreground">{t.reports.title}</h1>
         <p className="text-sm text-muted">{t.reports.description}</p>
       </header>
 
-      <div className="print-hidden flex flex-col gap-4 rounded-xl bg-surface p-6 shadow-sm md:flex-row md:items-end md:justify-between">
+      <div className="print-hidden flex flex-col gap-4 rounded-xl bg-container p-6 shadow-sm md:flex-row md:items-end md:justify-between">
         <label className="flex-1 text-sm font-medium text-muted">
           {t.reports.selectAthlete}
           <select
             value={currentAthleteId ?? ""}
             onChange={(event) => setCurrentAthleteId(Number(event.target.value))}
-            className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
           >
             <option value="">{t.reports.selectPlaceholder}</option>
             {athletes?.map((athlete) => (
@@ -61,14 +61,14 @@ const Reports = () => {
         <button
           type="button"
           onClick={handlePrint}
-          className="rounded-md border border-primary px-4 py-2 text-sm font-semibold text-primary shadow-sm"
+          className="rounded-md border border-action-primary px-4 py-2 text-sm font-semibold text-accent shadow-sm"
           disabled={!currentAthlete || reportQuery.isError || reportQuery.isLoading}
         >
           {t.reports.export} ({t.reports.soon})
         </button>
       </div>
 
-      <section className="rounded-xl bg-background/40 p-6 shadow-sm print:bg-white">
+      <section className="rounded-xl bg-container/40 p-6 shadow-sm print:bg-white">
         {!currentAthlete && <p className="text-sm text-muted">{t.reports.noAthlete}</p>}
 
         {currentAthlete && reportQuery.isLoading && (
@@ -93,7 +93,7 @@ const Reports = () => {
                 <p className="text-sm text-muted">
                   {t.reports.summarySessions(reportQuery.data.sessions.length)}
                 </p>
-                <div className="rounded-lg bg-primary/10 px-4 py-2 text-sm text-primary">
+                <div className="rounded-lg bg-action-primary/10 px-4 py-2 text-sm text-accent">
                   {t.reports.summary}
                 </div>
               </div>
@@ -102,16 +102,16 @@ const Reports = () => {
             {reportQuery.data ? (
               <div className="space-y-4">
                 {reportQuery.data.sessions.map((session) => (
-                  <div key={session.session_id} className="rounded-lg border border-black/10 bg-background/60 p-4">
+                  <div key={session.session_id} className="rounded-lg border border-black/10 bg-container/60 p-4">
                     <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                       <div>
-                        <h3 className="text-lg font-semibold text-on-surface">{session.session_name}</h3>
+                        <h3 className="text-lg font-semibold text-container-foreground">{session.session_name}</h3>
                         <p className="text-xs text-muted">
                           {t.reports.sessionDate(session.scheduled_at ?? null)}
                           {session.location ? ` • ${session.location}` : ""}
                         </p>
                       </div>
-                      <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase text-primary">
+                      <span className="rounded-full bg-action-primary/10 px-3 py-1 text-xs font-semibold uppercase text-accent">
                         {t.reports.metricsBadge(session.results.length)}
                       </span>
                     </div>
@@ -120,12 +120,12 @@ const Reports = () => {
                       {session.results.map((metric) => (
                         <div
                           key={`${session.session_id}-${metric.test_id}-${metric.recorded_at}`}
-                          className="rounded-lg bg-surface px-4 py-3 text-sm"
+                          className="rounded-lg bg-container px-4 py-3 text-sm"
                         >
                           <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                             {metric.category ?? t.reports.metricFallback}
                           </p>
-                          <p className="mt-1 text-lg font-semibold text-on-surface">
+                          <p className="mt-1 text-lg font-semibold text-container-foreground">
                             {metric.value}
                             {metric.unit ? <span className="text-sm text-muted"> {metric.unit}</span> : null}
                           </p>

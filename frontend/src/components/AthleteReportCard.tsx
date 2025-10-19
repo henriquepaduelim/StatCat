@@ -285,7 +285,7 @@ const AthleteReportCard = ({
   const athletePhoto = detailedAthlete?.photo_url ?? athlete?.photo_url ?? null;
 
   const sectionClassName = [
-    "mx-auto w-full overflow-hidden rounded-2xl border border-white/10 bg-surface/80 p-8 shadow-xl backdrop-blur print:bg-white",
+    "mx-auto w-full overflow-hidden rounded-2xl border border-white/10 bg-container/80 p-8 shadow-xl backdrop-blur print:bg-white",
     className,
   ]
     .filter(Boolean)
@@ -303,7 +303,7 @@ const AthleteReportCard = ({
                 className="h-full w-full object-cover"
               />
             ) : athlete ? (
-              <div className="flex h-full w-full items-center justify-center bg-primary/20 text-5xl font-semibold text-primary">
+              <div className="flex h-full w-full items-center justify-center bg-action-primary/20 text-5xl font-semibold text-accent">
                 {athlete.first_name.slice(0, 1)}
                 {athlete.last_name.slice(0, 1)}
               </div>
@@ -311,7 +311,7 @@ const AthleteReportCard = ({
           </div>
           {athlete ? (
             <div className="text-center lg:text-left">
-              <h3 className="text-2xl font-semibold text-on-surface">
+              <h3 className="text-2xl font-semibold text-container-foreground">
                 {athlete.first_name} {athlete.last_name}
               </h3>
               <p className="text-base text-muted">
@@ -327,18 +327,18 @@ const AthleteReportCard = ({
             {metricsSummary.map((item) => (
               <div
                 key={item.label}
-                className="min-w-0 rounded-xl border border-white/10 bg-background/60 px-5 py-4 text-base"
+                className="min-w-0 rounded-xl border border-white/10 bg-container/60 px-5 py-4 text-base"
               >
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">{item.label}</p>
-                <p className="mt-2 text-xl font-semibold text-on-surface">{item.value}</p>
+                <p className="mt-2 text-xl font-semibold text-container-foreground">{item.value}</p>
               </div>
             ))}
           </div>
 
-          <div className="space-y-4 overflow-hidden rounded-xl border border-white/10 bg-background/60 p-6">
+          <div className="space-y-4 overflow-hidden rounded-xl border border-white/10 bg-container/60 p-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h4 className="text-xl font-semibold text-on-surface">
+                <h4 className="text-xl font-semibold text-container-foreground">
                   {t.dashboard.athleteReport.chartTitle}
                 </h4>
                 <p className="text-sm text-muted">
@@ -351,7 +351,7 @@ const AthleteReportCard = ({
                   <select
                     value={timeframe}
                     onChange={(event) => setTimeframe(event.target.value as TimeframeValue)}
-                    className="ml-2 w-32 rounded-md border border-primary/30 bg-background/80 px-2 py-1 text-sm text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="ml-2 w-32 rounded-md border border-action-primary/30 bg-container/80 px-2 py-1 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                   >
                     {timeframeOptions.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -368,7 +368,7 @@ const AthleteReportCard = ({
                       const value = event.target.value;
                       setSelectedTestId(value ? Number(value) : null);
                     }}
-                    className="ml-2 w-40 rounded-md border border-primary/30 bg-background/80 px-2 py-1 text-sm text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="ml-2 w-40 rounded-md border border-action-primary/30 bg-container/80 px-2 py-1 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                   >
                     {testOptions.map((option) => (
                       <option key={option.id} value={option.id}>
@@ -458,7 +458,7 @@ const AthleteReportCard = ({
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                   {t.dashboard.athleteReport.bestValueLabel}
                 </p>
-                <p className="mt-1 text-lg font-semibold text-on-surface">
+                <p className="mt-1 text-lg font-semibold text-container-foreground">
                   {bestValue !== null
                     ? `${decimalFormatter.format(bestValue)}${selectedTestUnit ? ` ${selectedTestUnit}` : ""}`
                     : t.dashboard.athleteReport.notAvailable}
@@ -468,7 +468,7 @@ const AthleteReportCard = ({
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                   {t.dashboard.athleteReport.lastValueLabel}
                 </p>
-                <p className="mt-1 text-lg font-semibold text-on-surface">
+                <p className="mt-1 text-lg font-semibold text-container-foreground">
                   {lastValue !== null
                     ? `${decimalFormatter.format(lastValue)}${selectedTestUnit ? ` ${selectedTestUnit}` : ""}`
                     : t.dashboard.athleteReport.notAvailable}
@@ -478,7 +478,7 @@ const AthleteReportCard = ({
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                   {t.dashboard.athleteReport.averageLabel}
                 </p>
-                <p className="mt-1 text-lg font-semibold text-on-surface">
+                <p className="mt-1 text-lg font-semibold text-container-foreground">
                   {averageValue !== null
                     ? `${decimalFormatter.format(averageValue)}${selectedTestUnit ? ` ${selectedTestUnit}` : ""}`
                     : t.dashboard.athleteReport.notAvailable}
@@ -489,16 +489,16 @@ const AthleteReportCard = ({
 
           {hideRecentSessions ? null : (
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-on-surface">
+              <h4 className="text-sm font-semibold text-container-foreground">
                 {t.dashboard.athleteReport.recentSessionsTitle}
               </h4>
               {recentSessions.length ? (
                 <div className="space-y-3">
                   {recentSessions.map((session) => (
-                    <div key={session.id} className="rounded-lg border border-white/10 bg-background/60 p-4">
+                    <div key={session.id} className="rounded-lg border border-white/10 bg-container/60 p-4">
                       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                          <p className="text-sm font-semibold text-on-surface">{session.name}</p>
+                          <p className="text-sm font-semibold text-container-foreground">{session.name}</p>
                           <p className="text-xs text-muted">
                             {session.date ?? t.dashboard.athleteReport.notAvailable}
                             {session.location ? ` • ${session.location}` : ""}

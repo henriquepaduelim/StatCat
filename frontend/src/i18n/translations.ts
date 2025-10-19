@@ -363,7 +363,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       delete: "Delete",
       back: "Back",
       select: "Select",
-      customerArea: "Club area",
+      customerArea: "START",
       learnMore: "Discover features",
       signIn: "SIGN IN",
       heroBadge: "SaaS platform for football combines",
@@ -453,7 +453,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       password: "Password",
       error: "Invalid credentials. Please try again.",
       seeds:
-        "Seed accounts: admin@combine.dev / admin123, auriverde@combine.dev / auriverde123, urban@combine.dev / urban123",
+        "Seed accounts: admin@mvp.com / admin123, jodie@playerstopro.com / ptp123456, urban@combine.dev / urban123",
     },
     dashboard: {
       title: "Club Performance Dashboard",

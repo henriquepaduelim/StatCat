@@ -7,11 +7,19 @@ class UserBase(SQLModel):
     full_name: str
     role: str = "staff"
     client_id: int | None = None
+    athlete_id: int | None = None
     is_active: bool = True
 
 
 class UserCreate(UserBase):
     password: str
+
+
+class UserSignup(SQLModel):
+    email: EmailStr
+    full_name: str
+    password: str
+    role: str
 
 
 class UserRead(UserBase):

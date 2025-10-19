@@ -179,7 +179,7 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold text-on-surface">{t.admin.title}</h1>
+        <h1 className="text-2xl font-semibold text-container-foreground">{t.admin.title}</h1>
         <p className="text-sm text-muted">{t.admin.subtitle}</p>
       </header>
 
@@ -194,13 +194,13 @@ const AdminDashboard = () => {
         />
       </section>
 
-      <section className="flex flex-col gap-4 rounded-xl bg-surface p-4 shadow-sm md:flex-row md:items-end">
+      <section className="flex flex-col gap-4 rounded-xl bg-container-gradient p-4 shadow-sm md:flex-row md:items-end">
         <label className="text-xs font-medium text-muted">
           {t.admin.filters.periodLabel}
           <select
             value={period}
             onChange={(event) => setPeriod(event.target.value as "7" | "30" | "90")}
-            className="mt-1 rounded-md border border-black/10 bg-background px-3 py-2 text-sm text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="mt-1 rounded-md border border-black/10 bg-container px-3 py-2 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
           >
             {t.admin.filters.periods.map((option) => (
               <option key={option.value} value={option.value}>
@@ -214,7 +214,7 @@ const AdminDashboard = () => {
           <select
             value={status}
             onChange={(event) => setStatus(event.target.value as "all" | "active" | "inactive")}
-            className="mt-1 rounded-md border border-black/10 bg-background px-3 py-2 text-sm text-on-surface shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="mt-1 rounded-md border border-black/10 bg-container px-3 py-2 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
           >
             {t.admin.filters.statuses.map((option) => (
               <option key={option.value} value={option.value}>
@@ -229,9 +229,9 @@ const AdminDashboard = () => {
         <p className="text-sm text-muted">{t.admin.empty}</p>
       ) : (
         <>
-          <section className="overflow-hidden rounded-xl bg-surface shadow-sm">
+          <section className="overflow-hidden rounded-xl bg-container-gradient shadow-sm">
             <table className="min-w-full divide-y divide-black/5">
-              <thead className="bg-background/70">
+              <thead className="bg-container/70">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted">
                     {t.admin.tables.headers.client}
@@ -252,8 +252,8 @@ const AdminDashboard = () => {
               </thead>
               <tbody className="divide-y divide-black/5">
                 {metricsByClient.map((metric) => (
-                  <tr key={metric.id} className="hover:bg-background/60">
-                    <td className="px-4 py-3 text-sm font-medium text-on-surface">{metric.name}</td>
+                  <tr key={metric.id} className="hover:bg-container/60">
+                    <td className="px-4 py-3 text-sm font-medium text-container-foreground">{metric.name}</td>
                     <td className="px-4 py-3 text-sm text-muted">{metric.sessions}</td>
                     <td className="px-4 py-3 text-sm text-muted">{metric.adhesion}%</td>
                     <td
@@ -284,8 +284,8 @@ const AdminDashboard = () => {
           </section>
 
           <section className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-xl bg-surface p-4 shadow-sm">
-              <h2 className="text-lg font-semibold text-on-surface">{t.admin.charts.topClients}</h2>
+            <div className="rounded-xl bg-container-gradient p-4 shadow-sm">
+              <h2 className="text-lg font-semibold text-container-foreground">{t.admin.charts.topClients}</h2>
               <div className="mt-4 h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={topClientsData} layout="vertical">
@@ -306,8 +306,8 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            <div className="rounded-xl bg-surface p-4 shadow-sm">
-              <h2 className="text-lg font-semibold text-on-surface">{t.admin.charts.sessionsTrend}</h2>
+            <div className="rounded-xl bg-container-gradient p-4 shadow-sm">
+              <h2 className="text-lg font-semibold text-container-foreground">{t.admin.charts.sessionsTrend}</h2>
               <div className="mt-4 h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={trendData}>
@@ -344,8 +344,8 @@ const AdminDashboard = () => {
             </div>
           </section>
 
-          <section className="rounded-xl bg-surface p-4 shadow-sm">
-            <h2 className="text-lg font-semibold text-on-surface">{t.admin.charts.calendar}</h2>
+          <section className="rounded-xl bg-container-gradient p-4 shadow-sm">
+            <h2 className="text-lg font-semibold text-container-foreground">{t.admin.charts.calendar}</h2>
             <div className="mt-4 grid grid-cols-7 gap-2 text-xs">
               {heatmapData.map((day) => {
                 const intensity = Math.min(day.value, 4);
@@ -402,11 +402,11 @@ const KpiCard = ({
   value: number | string;
   tone?: "positive" | "negative";
 }) => (
-  <div className="rounded-xl border border-black/10 bg-surface/80 p-4 shadow-sm">
+  <div className="rounded-xl border border-black/10 bg-container-gradient p-4 shadow-sm">
     <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
     <p
       className={`mt-3 text-3xl font-semibold ${
-        tone === "positive" ? "text-emerald-500" : tone === "negative" ? "text-red-500" : "text-on-surface"
+        tone === "positive" ? "text-emerald-500" : tone === "negative" ? "text-red-500" : "text-container-foreground"
       }`}
     >
       {value}
@@ -417,7 +417,7 @@ const KpiCard = ({
 const ClientActionLink = ({ to, children }: { to: string; children: string }) => (
   <Link
     to={to}
-    className="inline-flex items-center rounded-md border border-black/10 bg-background px-3 py-1.5 text-xs font-semibold text-muted transition hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    className="inline-flex items-center rounded-md border border-black/10 bg-container px-3 py-1.5 text-xs font-semibold text-muted transition hover:border-action-primary hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
   >
     {children}
   </Link>
