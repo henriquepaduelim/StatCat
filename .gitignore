@@ -30,3 +30,6 @@ backend/=2.3
 .DS_Store
 .idea/
 .vscode/
+
+client_secret_*.json
+*.env
