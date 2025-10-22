@@ -10,7 +10,9 @@ from app.models import (
     AssessmentSession,
     Athlete,
     Client,
+    MatchStat,
     SessionResult,
+    Team,
     TestDefinition,
     User,
 )
@@ -310,26 +312,203 @@ def seed_database(session: Session) -> None:
         session.commit()
         tests_by_client[client.id] = tests
 
-    athletes: list[Athlete] = []
-    for client in clients:
-        for idx in range(1, 4):
-            athlete = Athlete(
-                client_id=client.id,
-                first_name=f"Athlete {idx}",
-                last_name=client.slug.replace("-", " ").title(),
-                email=f"athlete{idx}_{client.slug}@combine.dev",
-                club_affiliation=client.name,
-                dominant_foot="right" if idx % 2 else "left",
-                height_cm=175 + randint(-5, 6),
-                weight_kg=70 + randint(-5, 6),
-                birth_date=(datetime.utcnow() - timedelta(days=16 * 365 + randint(0, 365))).date(),
-                status=AthleteStatus.inactive if idx == 3 else AthleteStatus.active,
-                gender=AthleteGender.male if idx % 2 else AthleteGender.female,
-            )
-            session.add(athlete)
-            athletes.append(athlete)
-    session.commit()
+    age_categories = {
+        "U12": 11,
+        "U13": 13,
+        "U14": 14,
+        "U15": 15,
+        "U16": 16,
+        "U19": 18,
+    }
+    team_suffixes = ["A", "B", "C"]
+    primary_positions = [
+        "Goalkeeper",
+        "Center Back",
+        "Full Back",
+        "Defensive Midfielder",
+        "Central Midfielder",
+        "Attacking Midfielder",
+        "Winger",
+        "Striker",
+    ]
+    first_names = [
+        "Alex",
+        "Aria",
+        "Blake",
+        "Briar",
+        "Cameron",
+        "Colby",
+        "Drew",
+        "Elliot",
+        "Emerson",
+        "Finn",
+        "Gray",
+        "Harlan",
+        "Hayden",
+        "Isa",
+        "Jordan",
+        "Jules",
+        "Kai",
+        "Kendall",
+        "Logan",
+        "Luca",
+        "Mason",
+        "Morgan",
+        "Noa",
+        "Owen",
+        "Parker",
+        "Quinn",
+        "Reese",
+        "Riley",
+        "Sawyer",
+        "Sage",
+        "Taylor",
+        "Tatum",
+        "Urban",
+        "Vale",
+        "Winter",
+        "Zion",
+    ]
+    last_names = [
+        "Anders",
+        "Bennett",
+        "Brooks",
+        "Carter",
+        "Dalton",
+        "Ellis",
+        "Foster",
+        "Grayson",
+        "Hughes",
+        "Iverson",
+        "Jensen",
+        "Keane",
+        "Lennon",
+        "Monroe",
+        "Nolan",
+        "Osborn",
+        "Pryce",
+        "Quincy",
+        "Rowe",
+        "Serrano",
+        "Sullivan",
+        "Tanner",
+        "Vaughn",
+        "Whitaker",
+        "Wilder",
+        "York",
+        "Zimmer",
+    ]
 
+    client_owner_lookup = {client.id: None for client in clients}
+    for user in users:
+        if user.client_id:
+            client_owner_lookup[user.client_id] = user.id
+    default_owner_id = next((user.id for user in users if user.role == "staff"), None)
+
+    athletes: list[Athlete] = []
+    roster_by_team: dict[int, list[Athlete]] = {}
+
+    for client in clients:
+        team_owner_id = client_owner_lookup.get(client.id) or default_owner_id
+        client_teams: list[Team] = []
+        for age_label in age_categories:
+            for suffix in team_suffixes:
+                team = Team(
+                    client_id=client.id,
+                    name=f"{age_label} Team {suffix}",
+                    age_category=age_label,
+                    description=f"{age_label} development squad",
+                    created_by_id=team_owner_id,
+                )
+                session.add(team)
+        session.commit()
+        client_teams = session.exec(select(Team).where(Team.client_id == client.id)).all()
+
+        name_index = 0
+        for team in client_teams:
+            target_age = age_categories.get(team.age_category, 16)
+            roster: list[Athlete] = []
+            for idx in range(11):
+                first = first_names[name_index % len(first_names)]
+                last = last_names[(name_index // len(first_names)) % len(last_names)]
+                name_index += 1
+                email_slug = f"{team.name.lower().replace(' ', '_')}_{idx}_{team.id}"
+
+                primary = primary_positions[(idx + team.id) % len(primary_positions)]
+                secondary_pool = [pos for pos in primary_positions if pos != primary]
+                secondary = secondary_pool[(idx * 3) % len(secondary_pool)] if idx % 2 else None
+
+                birth_date = (
+                    datetime.utcnow() - timedelta(days=target_age * 365 + randint(0, 330))
+                ).date()
+                athlete = Athlete(
+                    client_id=client.id,
+                    team_id=team.id,
+                    first_name=first,
+                    last_name=last,
+                    email=f"{email_slug}@{client.slug}.dev",
+                    club_affiliation=team.name,
+                    dominant_foot="right" if idx % 3 else "left",
+                    height_cm=170 + randint(-7, 8),
+                    weight_kg=65 + randint(-6, 7),
+                    birth_date=birth_date,
+                    status=AthleteStatus.active,
+                    gender=AthleteGender.male if idx % 2 == 0 else AthleteGender.female,
+                    primary_position=primary,
+                    secondary_position=secondary,
+                )
+                session.add(athlete)
+                session.flush()
+                roster.append(athlete)
+                athletes.append(athlete)
+            roster_by_team[team.id] = roster
+        session.commit()
+
+        opponents = [
+            "Academy Lions",
+            "River United",
+            "City Select",
+            "Metro FC",
+            "Valley Rovers",
+            "Capital SC",
+        ]
+        match_stats: list[MatchStat] = []
+        for team in client_teams:
+            roster = roster_by_team.get(team.id, [])
+            if not roster:
+                continue
+            if not team.coach_name:
+                surname = roster[0].last_name
+                team.coach_name = f"{roster[0].first_name[0]}. {surname}"
+                session.add(team)
+            for _ in range(12):
+                match_date = datetime.utcnow() - timedelta(days=randint(1, 240))
+                opponent = opponents[randint(0, len(opponents) - 1)]
+                for athlete in roster:
+                    if randint(0, 100) < 55:
+                        goals = 1 if randint(0, 100) < 12 else (2 if randint(0, 100) < 3 else 0)
+                        shootout_attempts = 1 if randint(0, 100) < 6 else 0
+                        shootout_goals = shootout_attempts if randint(0, 100) < 70 else 0
+                        minutes_played = 90 if randint(0, 100) < 60 else 60
+                        if goals == 0 and shootout_goals == 0 and randint(0, 100) < 75:
+                            continue
+                        match_stats.append(
+                            MatchStat(
+                                athlete_id=athlete.id,
+                                team_id=team.id,
+                                match_date=match_date,
+                                competition="League",
+                                opponent=opponent,
+                                goals=goals,
+                                assists=randint(0, 2) if goals == 0 else randint(0, 1),
+                                minutes_played=minutes_played,
+                                shootout_attempts=shootout_attempts,
+                                shootout_goals=shootout_goals,
+                            )
+                        )
+        if match_stats:
+            session.add_all(match_stats)
+            session.commit()
     sessions_by_client: dict[int, list[AssessmentSession]] = {}
     for client in clients:
         sessions_payload = [

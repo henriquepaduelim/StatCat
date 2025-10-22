@@ -135,6 +135,10 @@ export type TranslationDictionary = {
       age: string;
       gender: string;
       email: string;
+      team: string;
+      coachLabel: string;
+      coachUnknown: string;
+      teamUnknown: string;
       action: string;
       status: string;
     };
@@ -194,10 +198,12 @@ export type TranslationDictionary = {
     firstName: string;
     lastName: string;
     email: string;
+    phone: string;
     club: string;
     birthDate: string;
     height: string;
     weight: string;
+    team: string;
     dominantFoot: string;
     dominantFootOptions: {
       default: string;
@@ -207,6 +213,9 @@ export type TranslationDictionary = {
     };
     gender: string;
     genderOptions: { male: string; female: string };
+    primaryPosition: string;
+    secondaryPosition: string;
+    secondaryPositionHint: string;
     photo: string;
     photoHint: string;
     status: string;
@@ -214,6 +223,64 @@ export type TranslationDictionary = {
     submit: string;
     layoutApplied: string;
     error: string;
+    stepOneTitle: string;
+    stepOneSubtitle: string;
+    identitySection: string;
+    registrationSection: string;
+    registrationYear: string;
+    registrationCategory: string;
+    playerStatus: string;
+    preferredPosition: string;
+    desiredNumber: string;
+    submitStepOne: string;
+    selectTeamPlaceholder: string;
+    stepTwoTitle: string;
+    stepTwoSubtitle: (name: string) => string;
+    stepTwoDefaultSubtitle: string;
+    stepTwoSuccess: string;
+    contactSection: string;
+    addressSection: string;
+    addressStreet: string;
+    addressNumber: string;
+    addressCity: string;
+    addressProvince: string;
+    addressPostal: string;
+    addressCountry: string;
+    guardianSection: string;
+    enableSecondGuardian: string;
+    guardianName: string;
+    guardianRelationship: string;
+    guardianEmail: string;
+    guardianPhone: string;
+    secondGuardianName: string;
+    secondGuardianRelationship: string;
+    secondGuardianEmail: string;
+    secondGuardianPhone: string;
+    emergencySection: string;
+    emergencyName: string;
+    emergencyRelationship: string;
+    emergencyPhone: string;
+    medicalSection: string;
+    medicalAllergies: string;
+    medicalConditions: string;
+    physicianName: string;
+    physicianPhone: string;
+    documentsSection: string;
+    addDocument: string;
+    noDocuments: string;
+    documentLabel: string;
+    documentFile: string;
+    documentLink: string;
+    documentUploadError: string;
+    paymentSection: string;
+    paymentAmount: string;
+    paymentCurrency: string;
+    paymentMethod: string;
+    paymentReference: string;
+    paymentDate: string;
+    paymentReceipt: string;
+    fileSaved: string;
+    stepTwoSubmit: string;
   };
   athleteDetail: {
     profileSubtitle: string;
@@ -255,19 +322,20 @@ export type TranslationDictionary = {
     empty: string;
     notesEmpty: string;
   };
-  reports: {
-    title: string;
-    description: string;
-    selectAthlete: string;
-    selectPlaceholder: string;
-    export: string;
-    soon: string;
-    loading: string;
-    error: string;
-    noAthlete: string;
-    summary: string;
-    summarySessions: (count: number) => string;
-    metricsBadge: (count: number) => string;
+    reports: {
+      title: string;
+      description: string;
+      selectAthlete: string;
+      selectPlaceholder: string;
+      export: string;
+      soon: string;
+      loading: string;
+      error: string;
+      noAthlete: string;
+      assessmentSelectAthlete: string;
+      summary: string;
+      summarySessions: (count: number) => string;
+      metricsBadge: (count: number) => string;
     metricFallback: string;
     sessionDate: (value: string | null) => string;
   };
@@ -538,6 +606,10 @@ export const translations: Record<Locale, TranslationDictionary> = {
         age: "Age",
         gender: "Category",
         email: "Email",
+        team: "Team",
+        coachLabel: "Coach:",
+        coachUnknown: "Coach not set",
+        teamUnknown: "Team not assigned",
         status: "Status",
         action: "Actions",
       },
@@ -599,29 +671,92 @@ export const translations: Record<Locale, TranslationDictionary> = {
       firstName: "First name",
       lastName: "Last name",
       email: "Email",
+      phone: "Phone",
       club: "Club",
       birthDate: "Birthday",
       height: "Height (cm)",
       weight: "Weight (kg)",
+      team: "Team",
       dominantFoot: "Dominant foot",
-    dominantFootOptions: {
-      default: "Select",
-      right: "Right",
-      left: "Left",
-      both: "Both",
-    },
+      dominantFootOptions: {
+        default: "Select",
+        right: "Right",
+        left: "Left",
+        both: "Both",
+      },
       gender: "Category",
       genderOptions: { male: "Boys", female: "Girls" },
+      primaryPosition: "Primary position",
+      secondaryPosition: "Secondary position",
+      secondaryPositionHint: "Optional second role",
       photo: "Profile photo",
       photoHint: "Upload from your device or use the camera. JPEG, PNG or HEIC up to 5 MB.",
       status: "Status",
-    statusOptions: {
-      active: "Active",
-      inactive: "Inactive",
-    },
+      statusOptions: {
+        active: "Active",
+        inactive: "Inactive",
+      },
       submit: "Save athlete",
       layoutApplied: "Theme applied",
       error: "Unable to save the athlete. Please review the fields.",
+      stepOneTitle: "Register athlete",
+      stepOneSubtitle: "Capture the essentials to link this athlete to the current season.",
+      identitySection: "Identity",
+      registrationSection: "Registration",
+      registrationYear: "Season / year",
+      registrationCategory: "Registration category",
+      playerStatus: "Player status",
+      preferredPosition: "Preferred position",
+      desiredNumber: "Preferred shirt number",
+      submitStepOne: "Continue",
+      selectTeamPlaceholder: "Select a team",
+      stepTwoTitle: "Complete athlete registration",
+      stepTwoSubtitle: (name: string) => `Provide contact and administrative details for ${name}.`,
+      stepTwoDefaultSubtitle: "Provide contact and administrative details to finish this registration.",
+      stepTwoSuccess: "Registration saved successfully.",
+      contactSection: "Primary contact",
+      addressSection: "Address",
+      addressStreet: "Street",
+      addressNumber: "Number / apartment",
+      addressCity: "City",
+      addressProvince: "State / province",
+      addressPostal: "Postal code",
+      addressCountry: "Country",
+      guardianSection: "Guardians",
+      enableSecondGuardian: "Add a second guardian",
+      guardianName: "Guardian name",
+      guardianRelationship: "Relationship",
+      guardianEmail: "Guardian email",
+      guardianPhone: "Guardian phone",
+      secondGuardianName: "Second guardian name",
+      secondGuardianRelationship: "Second guardian relationship",
+      secondGuardianEmail: "Second guardian email",
+      secondGuardianPhone: "Second guardian phone",
+      emergencySection: "Emergency contact",
+      emergencyName: "Emergency contact name",
+      emergencyRelationship: "Relationship",
+      emergencyPhone: "Phone",
+      medicalSection: "Medical information",
+      medicalAllergies: "Allergies",
+      medicalConditions: "Relevant conditions",
+      physicianName: "Doctor name",
+      physicianPhone: "Doctor phone",
+      documentsSection: "Documents",
+      addDocument: "Add document",
+      noDocuments: "No documents added yet.",
+      documentLabel: "Document label",
+      documentFile: "Upload file",
+      documentLink: "Stored link",
+      documentUploadError: "Upload failed. Try again.",
+      paymentSection: "Registration fee",
+      paymentAmount: "Amount",
+      paymentCurrency: "Currency",
+      paymentMethod: "Payment method",
+      paymentReference: "Reference",
+      paymentDate: "Payment date",
+      paymentReceipt: "Receipt",
+      fileSaved: "File saved",
+      stepTwoSubmit: "Save and finish",
     },
     athleteDetail: {
       profileSubtitle: "Athlete details",
@@ -675,6 +810,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       loading: "Loading report...",
       error: "Unable to load the report.",
       noAthlete: "Select an athlete to display the report.",
+      assessmentSelectAthlete: "Select an athlete before adding a new assessment session.",
       summary: "Automatic summary registered after each session.",
       summarySessions: (count: number) =>
         count === 0

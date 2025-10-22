@@ -47,9 +47,36 @@
     animation: interactive-hover-sweep 1.8s ease-in-out infinite;
   }
 
-  .interactive-hover > span {
+.interactive-hover > span {
     position: relative;
     z-index: 10;
+  }
+
+  .glass-panel {
+    position: relative;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.75));
+    overflow: hidden;
+  }
+
+  .glass-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top left, rgba(26, 115, 232, 0.25), transparent 55%);
+    opacity: 0.9;
+  }
+
+  .glass-panel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, rgba(255, 255, 255, 0.4), transparent 60%);
+    opacity: 0.6;
+  }
+
+  .glass-panel > * {
+    position: relative;
+    z-index: 5;
   }
 }
 
@@ -126,6 +153,111 @@ textarea::placeholder {
       rgb(var(--color-container-background) / 0.75)
     );
   }
+}
+
+/* FullCalendar Google-like styling */
+.fc {
+  font-family: "Roboto", "Geist", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: rgb(var(--color-container-foreground));
+}
+
+.fc .fc-toolbar {
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.fc .fc-toolbar-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: rgb(var(--color-container-foreground));
+}
+
+.fc .fc-button {
+  border-radius: 9999px;
+  border: 1px solid rgba(26, 115, 232, 0.35);
+  background-color: transparent;
+  color: #1a73e8;
+  text-transform: capitalize;
+  font-weight: 600;
+  padding: 0.35rem 1.1rem;
+  transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+.fc .fc-button:hover,
+.fc .fc-button:focus {
+  background-color: rgba(26, 115, 232, 0.12);
+  color: #1a73e8;
+  box-shadow: inset 0 0 0 1px rgba(26, 115, 232, 0.4);
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  background-color: #1a73e8;
+  border-color: #1a73e8;
+  color: white;
+}
+
+.fc .fc-daygrid-day-frame {
+  padding: 0.4rem;
+}
+
+.fc .fc-daygrid-day-number {
+  font-weight: 600;
+  color: rgb(var(--color-container-foreground));
+  padding: 0.35rem 0.5rem;
+  border-radius: 9999px;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+  background-color: #1a73e8;
+  color: white;
+}
+
+.fc .fc-col-header-cell-cushion {
+  color: rgba(31, 41, 51, 0.65);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 0;
+}
+
+.fc .fc-daygrid-day:hover .fc-daygrid-day-number {
+  background-color: rgba(26, 115, 232, 0.08);
+}
+
+.fc .fc-daygrid-event {
+  border-radius: 10px;
+  padding: 0.35rem 0.5rem;
+  border: none;
+  background-color: #1a73e8;
+  color: #fff;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.15);
+}
+
+.fc .fc-daygrid-event:hover {
+  background-color: #1764c2;
+}
+
+.fc .fc-daygrid-dot-event.fc-event-mirror,
+.fc .fc-daygrid-dot-event.fc-event-mirror .fc-event-title {
+  color: #1a73e8;
+}
+
+.fc .fc-daygrid-more-link {
+  color: #1a73e8;
+  font-weight: 600;
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border-color: rgba(26, 115, 232, 0.12);
+}
+
+.fc .fc-scrollgrid-section-sticky > * {
+  backdrop-filter: blur(4px);
 }
 
 @media print {

@@ -15,7 +15,7 @@ const Sessions = () => {
     themes: state.themes,
   }));
   const clientId = theme.clientId ?? null;
-  const { data: sessions, isLoading } = useSessions(clientId ?? undefined);
+  const { data: sessions, isLoading } = useSessions(clientId ? { clientId } : undefined);
   const queryClient = useQueryClient();
   const t = useTranslation();
   const clientOptions = useMemo(

@@ -32,7 +32,8 @@ const App = () => (
     <Route element={<ProtectedLayout />}>
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/athletes" element={<Athletes />} />
-      <Route path="/athletes/new" element={<NewAthlete />} />
+      <Route path="/athletes/register/:id/details" element={<NewAthlete />} />
+      <Route path="/athletes/new" element={<Navigate to="/athletes" replace />} />
       <Route path="/athletes/:id" element={<AthleteReport />} />
       <Route path="/athletes/:id/edit" element={<AthleteEdit />} />
       <Route path="/reports" element={<Reports />} />

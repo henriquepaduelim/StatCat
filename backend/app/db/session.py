@@ -19,6 +19,52 @@ def _ensure_optional_columns() -> None:
         connection.exec_driver_sql(
             "UPDATE athlete SET gender = 'male' WHERE gender IS NULL"
         )
+        if "team_id" not in columns:
+            connection.exec_driver_sql("ALTER TABLE athlete ADD COLUMN team_id INTEGER")
+        if "primary_position" not in columns:
+            connection.exec_driver_sql(
+                "ALTER TABLE athlete ADD COLUMN primary_position VARCHAR(50) DEFAULT 'unknown'"
+            )
+        if "secondary_position" not in columns:
+            connection.exec_driver_sql(
+                "ALTER TABLE athlete ADD COLUMN secondary_position VARCHAR(50)"
+            )
+        if "phone" not in columns:
+            connection.exec_driver_sql(
+                "ALTER TABLE athlete ADD COLUMN phone VARCHAR(30)"
+            )
+        if "registration_year" not in columns:
+            connection.exec_driver_sql(
+                "ALTER TABLE athlete ADD COLUMN registration_year VARCHAR(20)"
+            )
+        if "registration_category" not in columns:
+            connection.exec_driver_sql(
+                "ALTER TABLE athlete ADD COLUMN registration_category VARCHAR(50)"
+            )
+        if "player_registration_status" not in columns:
+            connection.exec_driver_sql(
+                "ALTER TABLE athlete ADD COLUMN player_registration_status VARCHAR(50)"
+            )
+        if "preferred_position" not in columns:
+            connection.exec_driver_sql(
+                "ALTER TABLE athlete ADD COLUMN preferred_position VARCHAR(50)"
+            )
+        if "desired_shirt_number" not in columns:
+            connection.exec_driver_sql(
+                "ALTER TABLE athlete ADD COLUMN desired_shirt_number VARCHAR(10)"
+            )
+        connection.exec_driver_sql(
+            "UPDATE athlete SET primary_position = 'unknown' WHERE primary_position IS NULL OR primary_position = ''"
+        )
+
+        team_columns = {
+            row[1]
+            for row in connection.exec_driver_sql("PRAGMA table_info(team)").fetchall()
+        }
+        if "coach_name" not in team_columns:
+            connection.exec_driver_sql(
+                "ALTER TABLE team ADD COLUMN coach_name VARCHAR(100)"
+            )
 
         user_columns = {
             row[1]
@@ -36,6 +82,17 @@ def _ensure_optional_columns() -> None:
         if "athlete_id" not in assessment_session_columns:
             connection.exec_driver_sql(
                 "ALTER TABLE assessmentsession ADD COLUMN athlete_id INTEGER"
+            )
+
+        calendar_event_columns = {
+            row[1]
+            for row in connection.exec_driver_sql(
+                "PRAGMA table_info(calendar_event)"
+            ).fetchall()
+        }
+        if "selection_metadata" not in calendar_event_columns:
+            connection.exec_driver_sql(
+                "ALTER TABLE calendar_event ADD COLUMN selection_metadata JSON"
             )
 
 

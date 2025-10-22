@@ -4,7 +4,10 @@ import {
   useJsApiLoader,
   Marker,
   Autocomplete,
+  type Libraries,
 } from "@react-google-maps/api";
+
+const MAP_LIBRARIES: Libraries = ["places"];
 
 export interface LatLngLiteral {
   lat: number;
@@ -13,13 +16,14 @@ export interface LatLngLiteral {
 
 interface MapInputProps {
   onChange: (location: LatLngLiteral, address: string) => void;
+  height?: number;
 }
 
-const MapInput = ({ onChange }: MapInputProps) => {
+const MapInput = ({ onChange, height = 250 }: MapInputProps) => {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries: ["places"],
+    libraries: MAP_LIBRARIES,
   });
 
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -27,8 +31,7 @@ const MapInput = ({ onChange }: MapInputProps) => {
   const [autocomplete, setAutocomplete] =
     useState<google.maps.places.Autocomplete | null>(null);
 
-  const center = useMemo(() => ({ lat: -23.55052, lng: -46.633308 }), []); // Default to São Paulo
-
+  const center = useMemo(() => ({ lat: 43.6532, lng: -79.3832 }), []); // Default to Toronto
   const handleMapClick = useCallback(
     (event: google.maps.MapMouseEvent) => {
       if (event.latLng) {
@@ -76,7 +79,7 @@ const MapInput = ({ onChange }: MapInputProps) => {
           placeholder="Search for a location"
         />
       </Autocomplete>
-      <div style={{ height: "250px", width: "100%" }}>
+      <div style={{ height: `${height}px`, width: "100%" }}>
         <GoogleMap
           mapContainerStyle={{
             width: "100%",

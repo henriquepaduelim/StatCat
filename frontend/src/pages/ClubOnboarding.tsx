@@ -76,7 +76,7 @@ const ClubOnboarding = () => {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <Card className="w-full max-w-2xl">
         <h1 className="text-2xl font-semibold text-tremor-content-strong">
-          Welcome! Let's set up your club.
+          Welcome! Let&apos;s set up your club.
         </h1>
         <p className="mt-2 text-tremor-content">
           Please provide some details about your organization.
@@ -184,7 +184,7 @@ const ClubOnboarding = () => {
               <Checkbox
                 id="same-as-creator"
                 checked={isSameAsCreator}
-                onCheckedChange={setIsSameAsCreator}
+                onCheckedChange={(checked) => setIsSameAsCreator(checked === true)}
               />
               <label
                 htmlFor="same-as-creator"

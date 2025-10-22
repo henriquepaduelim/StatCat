@@ -13,13 +13,15 @@ export interface SessionRecord {
   notes?: string | null;
 }
 
-interface SessionFilters {
+export interface SessionFilters {
   clientId?: number;
   start?: string;
   end?: string;
 }
 
-const fetchSessions = async (filters: SessionFilters): Promise<SessionRecord[]> => {
+const defaultFilters: SessionFilters = {};
+
+const fetchSessions = async (filters: SessionFilters = defaultFilters): Promise<SessionRecord[]> => {
   const params = new URLSearchParams();
   if (filters.clientId) {
     params.append("client_id", String(filters.clientId));
@@ -35,7 +37,7 @@ const fetchSessions = async (filters: SessionFilters): Promise<SessionRecord[]> 
   return data;
 };
 
-export const useSessions = (filters: SessionFilters) => {
+export const useSessions = (filters: SessionFilters = defaultFilters) => {
   const token = useAuthStore((state) => state.token);
 
   return useQuery({

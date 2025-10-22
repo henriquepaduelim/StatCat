@@ -1,10 +1,15 @@
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import (
+    analytics,
     athletes,
     auth,
+    calendar_events,
     clients,
     dashboard,
+    groups,
+    google_calendar,
+    teams,
     # dev,
     reports,
     sessions,
@@ -12,9 +17,18 @@ from app.api.v1.endpoints import (
 )
 
 api_router = APIRouter()
+api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
 api_router.include_router(athletes.router, prefix="/athletes", tags=["Athletes"])
 api_router.include_router(auth.router, prefix="/auth", tags=["Auth"])
 api_router.include_router(clients.router, prefix="/clients", tags=["Clients"])
+api_router.include_router(groups.router, prefix="/groups", tags=["Groups"])
+api_router.include_router(calendar_events.router, prefix="/calendar/events", tags=["Calendar"])
+api_router.include_router(
+    google_calendar.router,
+    prefix="/calendar/google",
+    tags=["Calendar"],
+)
+api_router.include_router(teams.router, prefix="/teams", tags=["Teams"])
 api_router.include_router(tests.router, prefix="/tests", tags=["Tests"])
 api_router.include_router(sessions.router, prefix="/sessions", tags=["Sessions"])
 api_router.include_router(reports.router, prefix="/reports", tags=["Reports"])

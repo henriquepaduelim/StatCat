@@ -1,13 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Dialog, Transition } from "@headlessui/react";
 
 import { useAthletes } from "../hooks/useAthletes";
+import { useTeams } from "../hooks/useTeams";
 import { useThemeStore } from "../theme/useThemeStore";
 import { useTranslation } from "../i18n/useTranslation";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 import { deleteAthlete } from "../api/athletes";
 import type { Athlete } from "../types/athlete";
+import NewAthleteStepOneForm from "../components/NewAthleteStepOneForm";
 
 const normalizeText = (value: string) =>
   value
@@ -32,15 +35,20 @@ const calculateAge = (birthDate?: string | null): number | null => {
   return age;
 };
 
+const DEFAULT_ROW_HEIGHT = 56;
+
 const Athletes = () => {
   const clientId = useThemeStore((state) => state.theme.clientId);
   const { data, isLoading, isError } = useAthletes(clientId);
+  const teamsQuery = useTeams(clientId ?? undefined);
   const t = useTranslation();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [selected, setSelected] = useState<Athlete | null>(null);
   const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(
     null
   );
+  const [isNewAthleteOpen, setIsNewAthleteOpen] = useState(false);
   const [nameFilter, setNameFilter] = useState("");
   const [emailFilter, setEmailFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
@@ -54,6 +62,17 @@ const Athletes = () => {
     null | "name" | "age" | "gender" | "email" | "status"
   >(null);
   const tableContainerRef = useRef<HTMLElement | null>(null);
+  const tableWrapperRef = useRef<HTMLDivElement | null>(null);
+  const tableHeadRef = useRef<HTMLTableSectionElement | null>(null);
+  const firstDataRowRef = useRef<HTMLTableRowElement | null>(null);
+  const [fillerRowCount, setFillerRowCount] = useState(0);
+
+  const handleRegistrationSuccess = (athlete: Athlete) => {
+    setIsNewAthleteOpen(false);
+    queryClient.invalidateQueries({ queryKey: ["athletes"] });
+    queryClient.invalidateQueries({ queryKey: ["athlete", athlete.id] });
+    navigate(`/athletes/register/${athlete.id}/details`, { replace: true });
+  };
 
   useEffect(() => {
     if (!activePopover) {
@@ -255,6 +274,14 @@ const Athletes = () => {
     sortConfig.direction,
   ]);
 
+  const teamsById = useMemo(() => {
+    const map = new Map<number, { name: string; coach: string | null }>();
+    (teamsQuery.data ?? []).forEach((team) => {
+      map.set(team.id, { name: team.name, coach: team.coach_name ?? null });
+    });
+    return map;
+  }, [teamsQuery.data]);
+
   const hasNameFilter = nameFilter.trim().length > 0;
   const hasEmailFilter = emailFilter.trim().length > 0;
   const hasAgeFilter =
@@ -262,20 +289,120 @@ const Athletes = () => {
   const hasStatusSelection = statusFilter !== "all";
   const hasGenderFilter = genderFilter !== "all";
 
+  const updateFillerRows = useCallback(() => {
+    if (isLoading || isError) {
+      setFillerRowCount(0);
+      return;
+    }
+
+    const wrapper = tableWrapperRef.current;
+    if (!wrapper) {
+      setFillerRowCount(0);
+      return;
+    }
+
+    const headHeight = tableHeadRef.current?.offsetHeight ?? 0;
+    const availableHeight = wrapper.clientHeight - headHeight;
+    if (availableHeight <= 0) {
+      setFillerRowCount(0);
+      return;
+    }
+
+    const measuredRowHeight = firstDataRowRef.current?.offsetHeight ?? DEFAULT_ROW_HEIGHT;
+    const rowHeight = measuredRowHeight > 0 ? measuredRowHeight : DEFAULT_ROW_HEIGHT;
+    const visibleRows = Math.floor(availableHeight / rowHeight);
+    const missingRows = visibleRows - tableRows.length;
+
+    setFillerRowCount(missingRows > 0 ? missingRows : 0);
+  }, [isError, isLoading, tableRows.length]);
+
+  useEffect(() => {
+    updateFillerRows();
+  }, [tableRows.length, isError, isLoading, updateFillerRows]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      updateFillerRows();
+    };
+    window.addEventListener("resize", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [updateFillerRows]);
+
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-container-foreground">{t.athletes.title}</h1>
-          <p className="text-sm text-muted">{t.athletes.description}</p>
-        </div>
-        <Link
-          to="/athletes/new"
-          className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm"
-        >
-          {t.athletes.add}
-        </Link>
-      </header>
+    <>
+      <Transition appear show={isNewAthleteOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-40" onClose={setIsNewAthleteOpen}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-in duration-200"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-out duration-150"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/50" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-start justify-center p-4 sm:p-6">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-in duration-200"
+                enterFrom="opacity-0 translate-y-4 scale-95"
+                enterTo="opacity-100 translate-y-0 scale-100"
+                leave="ease-out duration-150"
+                leaveFrom="opacity-100 translate-y-0 scale-100"
+                leaveTo="opacity-0 translate-y-4 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-8xl sm:max-w-[92vw] transform overflow-hidden rounded-3xl bg-container-gradient shadow-2xl transition-all">
+                  <Dialog.Title className="sr-only">{t.newAthlete.title}</Dialog.Title>
+                  <div className="relative h-[95vh] overflow-y-invisible p-1 sm:p-6">
+                    <button
+                      type="button"
+                      onClick={() => setIsNewAthleteOpen(false)}
+                      className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/70 text-muted shadow-sm transition hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
+                      aria-label={t.common.cancel}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        className="h-4 w-4"
+                      >
+                        <path d="M5 5l10 10M15 5L5 15" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                    <NewAthleteStepOneForm
+                      onSuccess={handleRegistrationSuccess}
+                      onClose={() => setIsNewAthleteOpen(false)}
+                    />
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      <div className="flex flex-1 min-h-0 w-full flex-col gap-6">
+        <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-container-foreground">{t.athletes.title}</h1>
+            <p className="text-sm text-muted">{t.athletes.description}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsNewAthleteOpen(true)}
+            className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
+          >
+            {t.athletes.add}
+          </button>
+        </header>
 
       {alert ? (
         <div
@@ -292,12 +419,12 @@ const Athletes = () => {
 
       <section
         ref={tableContainerRef}
-        className="overflow-hidden rounded-xl bg-container-gradient shadow-sm"
+        className="flex min-h-0 flex-1 w-full flex-col rounded-xl bg-container-gradient shadow-sm md:ml-2 md:mr-2"
       >
-        <div className="p-4">
-          <div className="overflow-x-auto">
+        <div ref={tableWrapperRef} className="flex min-h-0 flex-1 flex-col p-4">
+          <div className="relative flex min-h-0 flex-1 flex-col overflow-x-auto overflow-y-visible">
             <table className="min-w-full divide-y divide-black/5">
-              <thead className="bg-container/80">
+              <thead ref={tableHeadRef} className="bg-container/80">
                 <tr>
                   <th className="relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
                     <div className="flex items-center gap-1">
@@ -929,7 +1056,7 @@ const Athletes = () => {
                 </td>
               </tr>
             )}
-            {tableRows.map((athlete) => {
+            {tableRows.map((athlete, index) => {
               const displayName = `${athlete.first_name} ${athlete.last_name}`;
               const isPending = deleteMutation.isPending && selected?.id === athlete.id;
               const age = calculateAge(athlete.birth_date ?? null);
@@ -939,9 +1066,24 @@ const Athletes = () => {
                 genderValue === "female"
                   ? t.athletes.filters.genderFemale
                   : t.athletes.filters.genderMale;
+              const teamInfo = athlete.team_id ? teamsById.get(athlete.team_id) : undefined;
+              const teamDisplay = teamInfo?.name ?? t.athletes.table.teamUnknown;
+              const coachDisplay = teamInfo?.coach
+                ? `${t.athletes.table.coachLabel} ${teamInfo.coach}`
+                : t.athletes.table.coachUnknown;
               return (
-                <tr key={athlete.id} className="hover:bg-container/60">
-                  <td className="px-4 py-4 text-sm font-medium text-container-foreground">{displayName}</td>
+                <tr
+                  key={athlete.id}
+                  ref={index === 0 ? firstDataRowRef : undefined}
+                  className="hover:bg-container/60"
+                >
+                  <td className="px-4 py-4 text-sm">
+                    <div className="flex flex-col">
+                      <span className="font-medium text-container-foreground">{displayName}</span>
+                      <span className="text-xs text-muted">{teamDisplay}</span>
+                      <span className="text-xs text-muted/70">{coachDisplay}</span>
+                    </div>
+                  </td>
                   <td className="px-4 py-4 text-sm text-muted">{ageLabel}</td>
                   <td className="px-4 py-4 text-sm text-muted">{genderLabel}</td>
                   <td className="px-4 py-4 text-sm text-muted">{athlete.email ?? "-"}</td>
@@ -1018,6 +1160,13 @@ const Athletes = () => {
                 </tr>
               );
             })}
+            {Array.from({ length: fillerRowCount }).map((_, index) => (
+              <tr key={`filler-${index}`} aria-hidden="true" className="bg-container/20">
+                <td colSpan={6} className="h-14 px-4 text-transparent">
+                  .
+                </td>
+              </tr>
+            ))}
               </tbody>
             </table>
           </div>
@@ -1043,6 +1192,7 @@ const Athletes = () => {
         }}
       />
     </div>
+    </>
   );
 };
 

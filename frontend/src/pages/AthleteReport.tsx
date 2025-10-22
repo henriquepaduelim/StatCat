@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { useAthlete } from "../hooks/useAthlete";
+import { useAthleteMetrics } from "../hooks/useAthleteMetrics";
 import { useAthleteReport } from "../hooks/useAthleteReport";
 import { useTranslation } from "../i18n/useTranslation";
 import { selectCurrentTheme } from "../theme/useThemeStore";
@@ -12,6 +13,7 @@ const AthleteReport = () => {
   const athleteId = Number(params.id);
   const { data: athlete, isLoading, isError } = useAthlete(athleteId);
   const reportQuery = useAthleteReport(Number.isNaN(athleteId) ? undefined : athleteId);
+  const metricsQuery = useAthleteMetrics(athleteId);
   const t = useTranslation();
   const theme = selectCurrentTheme();
 
@@ -91,6 +93,70 @@ const AthleteReport = () => {
             {athlete.weight_kg ? `${athlete.weight_kg} kg` : t.dashboard.athleteReport.notAvailable}
           </p>
         </div>
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-container-foreground">
+            {t.dashboard.athleteReport.metricsTitle}
+          </h2>
+          {metricsQuery.isFetching ? (
+            <span className="text-xs text-muted">{t.common.loading}...</span>
+          ) : null}
+        </div>
+        {metricsQuery.isError ? (
+          <p className="text-sm text-red-500">{t.athletes.error}</p>
+        ) : null}
+        {!metricsQuery.data?.metrics.length ? (
+          <p className="text-sm text-muted">{t.dashboard.athleteReport.chartEmpty}</p>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {metricsQuery.data.metrics.map((metric) => (
+              <article
+                key={metric.id}
+                className="rounded-xl border border-black/10 bg-container-gradient p-4 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                      {metric.category}
+                    </p>
+                    <h3 className="mt-1 text-base font-semibold text-container-foreground">
+                      {metric.name}
+                    </h3>
+                  </div>
+                  {metric.tags.length ? (
+                    <span className="rounded-full bg-action-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-action-primary">
+                      {metric.tags[0]}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="mt-4">
+                  <p className="text-3xl font-semibold text-accent">
+                    {metric.value !== null ? metric.value.toFixed(2) : "—"}
+                    {metric.unit ? (
+                      <span className="ml-1 text-xs text-muted">{metric.unit}</span>
+                    ) : null}
+                  </p>
+                  <p className="mt-2 text-xs text-muted">{metric.description}</p>
+                </div>
+                {metric.components.length ? (
+                  <ul className="mt-3 space-y-1 text-xs text-muted">
+                    {metric.components.map((component) => (
+                      <li key={`${metric.id}-${component.label}`} className="flex justify-between gap-2">
+                        <span className="truncate">{component.label}</span>
+                        <span className="font-semibold text-container-foreground">
+                          {component.value !== null ? component.value.toFixed(2) : "—"}
+                          {component.unit ? ` ${component.unit}` : ""}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="space-y-4">

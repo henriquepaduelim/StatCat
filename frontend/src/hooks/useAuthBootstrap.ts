@@ -73,5 +73,5 @@ export const useAuthBootstrap = () => {
     };
 
     void run();
-  }, [token, user, isInitialized]);
+  }, [token, user, isInitialized, setCredentials, setInitialized, clear]);
 };

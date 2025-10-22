@@ -14,6 +14,7 @@ export interface SessionResultRecord {
 
 export type CreateSessionPayload = {
   client_id?: number | null;
+  athlete_id?: number;
   name: string;
   location?: string;
   scheduled_at?: string;

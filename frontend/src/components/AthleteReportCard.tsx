@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   CartesianGrid,
+  Cell,
   Line,
   LineChart,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -14,6 +17,7 @@ import type { Athlete, AthleteReport } from "../types/athlete";
 import type { TestDefinition } from "../types/test";
 import {
   ATHLETE_CATEGORY_COLORS,
+  type CategoryKey,
   CATEGORY_KEYS,
   calculateAge,
   calculateSessionCategoryStats,
@@ -43,6 +47,12 @@ const timeframeDurations = {
 } as const;
 
 type TimeframeValue = keyof typeof timeframeDurations | "all";
+
+const MAX_INDEX = 160;
+
+const donutColors = {
+  remainder: "rgba(255, 255, 255, 0.45)",
+} as const;
 
 type AthleteReportCardProps = {
   athlete: Athlete | null | undefined;
@@ -97,6 +107,15 @@ const AthleteReportCard = ({
     [report, testMetaMap]
   );
 
+  const latestStat =
+    sessionCategoryStats.length > 0
+      ? sessionCategoryStats[sessionCategoryStats.length - 1]
+      : null;
+  const previousStat =
+    sessionCategoryStats.length > 1
+      ? sessionCategoryStats[sessionCategoryStats.length - 2]
+      : null;
+
   const sessionSummaries = useMemo(
     () =>
       sessionCategoryStats
@@ -113,6 +132,32 @@ const AthleteReportCard = ({
   );
 
   const recentSessions = sessionSummaries.slice(0, 3);
+
+  const mainSkillLabels: Record<CategoryKey, string> = useMemo(
+    () => ({
+      Physical: t.dashboard.mainSkills.labels.physical,
+      Technical: t.dashboard.mainSkills.labels.technical,
+    }),
+    [t.dashboard.mainSkills.labels.physical, t.dashboard.mainSkills.labels.technical]
+  );
+
+  const mainSkills = useMemo(
+    () => {
+      if (!latestStat) {
+        return [] as Array<{ category: CategoryKey; current: number | null; delta: number | null }>;
+      }
+      return CATEGORY_KEYS.map((category) => {
+        const current = latestStat.categoryIndexes[category] ?? null;
+        const previous = previousStat?.categoryIndexes[category] ?? null;
+        const delta =
+          current != null && previous != null
+            ? Number((current - previous).toFixed(1))
+            : null;
+        return { category, current, delta };
+      });
+    },
+    [latestStat, previousStat]
+  );
 
   const testOptions = useMemo(() => {
     if (!report) {
@@ -322,7 +367,7 @@ const AthleteReportCard = ({
           ) : null}
         </div>
 
-        <div className="flex-1 space-y-8 min-w-0">
+        <div className="flex-1 space-y-8 min-w-0 w-full">
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {metricsSummary.map((item) => (
               <div
@@ -335,7 +380,86 @@ const AthleteReportCard = ({
             ))}
           </div>
 
-          <div className="space-y-4 overflow-hidden rounded-xl border border-white/10 bg-container/60 p-6">
+          <div className="space-y-4">
+            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted">
+              {t.dashboard.mainSkills.currentLabel}
+            </h4>
+            {mainSkills.length ? (
+              <div className="rounded-xl border border-white/10 bg-container/60 p-4">
+                <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+                  <div className="h-56 w-full sm:w-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        {mainSkills.map((skill) => {
+                          const normalizedValue = Math.max(0, Math.min(skill.current ?? 0, MAX_INDEX));
+                          return (
+                            <Pie
+                              key={skill.category}
+                              data={[
+                                {
+                                  name: mainSkillLabels[skill.category],
+                                  value: normalizedValue,
+                                  fill: chartPalette[skill.category],
+                                },
+                                {
+                                  name: t.dashboard.mainSkills.remainingLabel,
+                                  value: Math.max(0, MAX_INDEX - normalizedValue),
+                                  fill: donutColors.remainder,
+                                },
+                              ]}
+                              dataKey="value"
+                              nameKey="name"
+                              startAngle={90}
+                              endAngle={-270}
+                              innerRadius={skill.category === "Physical" ? 60 : 35}
+                              outerRadius={skill.category === "Physical" ? 80 : 55}
+                              stroke="none"
+                            >
+                              <Cell key={`${skill.category}-fill`} fill={chartPalette[skill.category]} />
+                            </Pie>
+                          );
+                        })}
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="flex w-full flex-col gap-3 sm:max-w-xs">
+                    {mainSkills.map((skill) => {
+                      const label = mainSkillLabels[skill.category];
+                      const tone =
+                        skill.delta != null && skill.delta < 0 ? "text-red-400" : "text-emerald-400";
+                      return (
+                        <div
+                          key={`${skill.category}-summary`}
+                          className="rounded-lg border border-white/10 bg-container px-4 py-3 text-center"
+                        >
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
+                          <p className="mt-2 text-2xl font-semibold text-container-foreground">
+                            {skill.current != null
+                              ? numberFormatter.format(skill.current)
+                              : t.dashboard.athleteReport.notAvailable}
+                          </p>
+                          <p className="text-xs text-muted">{t.dashboard.mainSkills.currentLabel}</p>
+                          <p className="mt-1 text-xs font-semibold">
+                            {skill.delta != null ? (
+                              <span className={tone}>
+                                {decimalFormatter.format(skill.delta)} {t.dashboard.mainSkills.deltaLabel}
+                              </span>
+                            ) : (
+                              <span className="text-muted">{t.dashboard.mainSkills.noPrevious}</span>
+                            )}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-muted">{t.dashboard.sessionComparison.noData}</p>
+            )}
+          </div>
+
+          <div className="space-y-4 overflow-hidden rounded-xl border border-white/10 bg-container/60 px-0 py-3 sm:px-2 md:px-6 md:py-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h4 className="text-xl font-semibold text-container-foreground">
@@ -379,7 +503,7 @@ const AthleteReportCard = ({
                 </label>
               </div>
             </div>
-            <div className="h-56">
+            <div className="h-64">
               {performanceSeries.length ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={performanceSeries} margin={{ top: 10, right: 16, bottom: 0, left: 0 }}>
