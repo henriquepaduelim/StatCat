@@ -6,7 +6,6 @@ type LoginResponse = {
   email: string;
   full_name: string;
   role: string;
-  client_id?: number | null;
   athlete_id?: number | null;
   is_active: boolean;
   access_token: string;
@@ -35,7 +34,6 @@ export const login = async (
         email: payload.email,
         full_name: payload.full_name,
         role: payload.role,
-        client_id: payload.client_id,
         athlete_id: payload.athlete_id,
         is_active: payload.is_active,
       },
@@ -59,7 +57,6 @@ type SignupResponse = {
   email: string;
   full_name: string;
   role: string;
-  client_id?: number | null;
   athlete_id?: number | null;
   is_active: boolean;
 };

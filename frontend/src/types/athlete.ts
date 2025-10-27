@@ -4,7 +4,6 @@ export type PlayerRegistrationStatus = "new" | "transfer" | "return_player" | "g
 
 export interface Athlete {
   id: number;
-  client_id?: number | null;
   first_name: string;
   last_name: string;
   email: string;
@@ -37,7 +36,6 @@ export interface AthleteRegistrationPayload {
   email: string;
   phone: string;
   registration_year: string;
-  client_id?: number;
   team_id?: number | null;
   registration_category: RegistrationCategory;
   player_registration_status: PlayerRegistrationStatus;

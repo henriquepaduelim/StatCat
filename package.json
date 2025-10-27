@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@heroui/checkbox": "^2.3.27",
     "plotly": "^1.0.6"
   }
 }

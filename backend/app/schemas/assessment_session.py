@@ -5,7 +5,6 @@ from sqlmodel import SQLModel
 
 
 class AssessmentSessionBase(SQLModel):
-    client_id: int
     athlete_id: int | None = None
     name: str
     location: str | None = None

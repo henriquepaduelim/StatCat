@@ -1,10 +1,9 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
 import { registerAthlete } from "../api/athletes";
 import { useTeams } from "../hooks/useTeams";
-import { useThemeStore } from "../theme/useThemeStore";
 import { useTranslation } from "../i18n/useTranslation";
 import type {
   Athlete,
@@ -38,15 +37,6 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
   const t = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { theme, themes } = useThemeStore((state) => ({
-    theme: state.theme,
-    themes: state.themes,
-  }));
-
-  const defaultClientId = theme.clientId ?? undefined;
-  const [clientId, setClientId] = useState<string>(
-    defaultClientId ? String(defaultClientId) : ""
-  );
   const [teamId, setTeamId] = useState<string>("");
 
   const [form, setForm] = useState({
@@ -66,16 +56,7 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
     desired_shirt_number: "",
   });
 
-  const parsedClientId = clientId ? Number(clientId) : undefined;
-  const teamsQuery = useTeams(parsedClientId);
-
-  const clientOptions = useMemo(
-    () =>
-      themes
-        .filter((item) => item.clientId)
-        .map((item) => ({ value: String(item.clientId), label: item.name })),
-    [themes]
-  );
+  const teamsQuery = useTeams();
 
   const mutation = useMutation({
     mutationFn: (payload: AthleteRegistrationPayload) => registerAthlete(payload),
@@ -94,10 +75,7 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
   ) => {
     const { name, value } = event.target;
 
-    if (name === "client_id") {
-      setClientId(value);
-      setTeamId("");
-    } else if (name === "team_id") {
+    if (name === "team_id") {
       setTeamId(value);
     } else {
       setForm((prev) => ({ ...prev, [name]: value }));
@@ -119,7 +97,6 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
       player_registration_status: form.player_registration_status,
       preferred_position: form.preferred_position.trim() || undefined,
       desired_shirt_number: form.desired_shirt_number.trim() || undefined,
-      client_id: parsedClientId,
       team_id: teamId ? Number(teamId) : undefined,
     };
 
@@ -314,26 +291,6 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
           </label>
         </div>
 
-        {clientOptions.length > 1 ? (
-          <label className="text-sm font-medium text-muted">
-            {t.newAthlete.client}
-            <select
-              required
-              name="client_id"
-              value={clientId}
-              onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
-            >
-              <option value="">{t.common.select}</option>
-              {clientOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-
         <div className="grid gap-4 xl:grid-cols-5 md:grid-cols-3">
           <label className="text-sm font-medium text-muted">
             {t.newAthlete.team}
@@ -341,7 +298,7 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
               name="team_id"
               value={teamId}
               onChange={handleInputChange}
-              disabled={!parsedClientId || teamsQuery.isLoading}
+              disabled={teamsQuery.isLoading}
               className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 disabled:bg-muted/20"
             >
               <option value="">{t.newAthlete.selectTeamPlaceholder}</option>

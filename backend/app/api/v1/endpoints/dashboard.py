@@ -13,12 +13,9 @@ router = APIRouter()
 @router.get("/summary", response_model=DashboardSummary)
 def get_dashboard_summary(
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_active_user),
+    _current_user: User = Depends(get_current_active_user),
 ) -> DashboardSummary:
     statement = select(Athlete.status, func.count(Athlete.id)).group_by(Athlete.status)
-
-    if current_user.role == "club":
-        statement = statement.where(Athlete.client_id == current_user.client_id)
 
     results = session.exec(statement).all()
 

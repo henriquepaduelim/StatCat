@@ -116,11 +116,63 @@ export type TranslationDictionary = {
     };
     summary: {
       title: string;
-      totalAthletes: string;
-      activeAthletes: string;
-      inactiveAthletes: string;
+      subtitle: string;
+      teamLabel: string;
+      teamPlaceholder: string;
+      coachesTitle: string;
+      coachesSubtitle: string;
+      coachesEmpty: string;
+      addCoachButton: string;
+      removeCoachLabel: string;
+      columns: {
+        name: string;
+        contact: string;
+        availability: string;
+      };
+      availability: {
+        available: string;
+        unavailable: string;
+      };
+      loading: string;
       error: string;
+      emptyTeam: string;
       empty: string;
+      contactFallback: string;
+      positionFallback: string;
+      coachForm: {
+        nameLabel: string;
+        emailLabel: string;
+        passwordLabel: string;
+        submitLabel: string;
+        cancelLabel: string;
+        helper: string;
+        errorLabel: string;
+      };
+      calendar: {
+        title: string;
+        subtitle: string;
+        prevMonth: string;
+        nextMonth: string;
+        createButton: string;
+        upcomingTitle: string;
+        upcomingEmpty: string;
+        formTitle: string;
+        nameLabel: string;
+        dateLabel: string;
+        timeLabel: string;
+        locationLabel: string;
+        notesLabel: string;
+        teamLabel: string;
+        coachLabel: string;
+        coachLoading: string;
+        coachEmpty: string;
+        inviteLabel: string;
+        inviteHelper: string;
+        noAthletes: string;
+        submitLabel: string;
+        cancelLabel: string;
+        errorIncomplete: string;
+      };
     };
   };
   athletes: {
@@ -521,10 +573,10 @@ export const translations: Record<Locale, TranslationDictionary> = {
       password: "Password",
       error: "Invalid credentials. Please try again.",
       seeds:
-        "Seed accounts: admin@mvp.com / admin123, jodie@playerstopro.com / ptp123456, urban@combine.dev / urban123",
+        "Seed accounts: admin@mvp.com / admin123, admin@playerstopro.com / ptp123456, urban@combine.dev / urban123",
     },
     dashboard: {
-      title: "Club Performance Dashboard",
+      title: "Club Management Dashboard",
       description:
         "Monitor your athletes’ performance data and build insights that help your club grow.",
       demoNotice: "Interactive preview using synthetic metrics until live combine data is synced.",
@@ -532,10 +584,10 @@ export const translations: Record<Locale, TranslationDictionary> = {
         timeRangeLabel: "Time range",
         timeRangeDescription: "Adjust the horizon to explore the training load.",
         rangeOptions: [
-          { value: "30d", label: "Last 30 days" },
-          { value: "90d", label: "Last 90 days" },
-          { value: "180d", label: "Last 180 days" },
-          { value: "365d", label: "Last 12 months" },
+          { value: "30d", label: "30 days" },
+          { value: "90d", label: "90 days" },
+          { value: "180d", label: "180 days" },
+          { value: "365d", label: "12 months" },
           { value: "all", label: "All time" },
         ],
         athleteLabel: "Athlete focus",
@@ -586,12 +638,94 @@ export const translations: Record<Locale, TranslationDictionary> = {
       notAvailable: "N/A",
     },
     summary: {
-      title: "Athlete overview",
-      totalAthletes: "Registered",
-      activeAthletes: "Active",
-      inactiveAthletes: "Inactive",
-      error: "Unable to load summary.",
-      empty: "No athletes recorded yet.",
+      title: "Team availability",
+      subtitle: "View roster readiness one team at a time for matches, training or events.",
+      teamLabel: "Team",
+      teamPlaceholder: "Select a team",
+      coachesTitle: "Coach",
+      coachesSubtitle: "Invite coaches to access their roster and upcoming sessions.",
+      coachesEmpty: "No coaches assigned to this team yet.",
+      addCoachButton: "Coaching",
+      removeCoachLabel: "Remove",
+      columns: {
+        name: "Athlete",
+        contact: "Email ",
+        availability: "Availability",
+      },
+      availability: {
+        available: "Available",
+        unavailable: "Unavailable",
+      },
+      loading: "Loading roster...",
+      error: "Unable to load roster data.",
+      emptyTeam: "Select a team to display the roster.",
+      empty: "No athletes assigned to this team yet.",
+      contactFallback: "No email provided",
+      positionFallback: "Position not set",
+      coachForm: {
+        nameLabel: "Full name",
+        emailLabel: "Email",
+        passwordLabel: "Temporary password",
+        submitLabel: "Create coach",
+        cancelLabel: "Cancel",
+        helper: "Share the credentials manually. Passwords can be changed after the first login.",
+        errorLabel: "Please provide name, email and password.",
+      },
+      coachDirectory: {
+        title: "Coaching directory",
+        helper: "Review all coaches and manage team assignments.",
+        selectedTeamLabel: "Selected team",
+        listTitle: "All coaches",
+        coachCountSingular: "coach",
+        coachCountPlural: "coaches",
+        coachesLoading: "Loading coaches...",
+        coachesError: "Unable to load coaches.",
+        noCoaches: "No coaches registered yet.",
+        phoneFallback: "Phone not provided",
+        addTitle: "Add new coach",
+        nameLabel: "Full name",
+        emailLabel: "Email",
+        phoneLabel: "Phone",
+        passwordLabel: "Temporary password",
+        assignToggle: "Assign to selected team",
+        cancelLabel: "Cancel",
+        createSubmit: "Create coach",
+        createSuccess: "Coach added successfully.",
+        assignSuccess: "Coach assigned to the team.",
+        removeSuccess: "Coach removed from the team.",
+        createError: "Unable to create coach.",
+        assignError: "Unable to assign coach.",
+        removeError: "Unable to remove coach.",
+        assignButton: "Assign",
+        removeButton: "Remove",
+        assignDisabled: "Select a team to assign coaches.",
+        closeButton: "Close",
+      },
+      calendar: {
+        title: "Upcoming events",
+        subtitle: "Review fixtures and plan RSVP-driven sessions.",
+        prevMonth: "Prev",
+        nextMonth: "Next",
+        createButton: "New event",
+        upcomingTitle: "Next on deck",
+        upcomingEmpty: "No events scheduled yet.",
+        formTitle: "Create event",
+        nameLabel: "Event name",
+        dateLabel: "Date",
+        timeLabel: "Time",
+        locationLabel: "Location",
+        notesLabel: "Notes",
+        teamLabel: "Team",
+        coachLabel: "Coach",
+        coachLoading: "Loading coaches...",
+        coachEmpty: "No coaches assigned to this team.",
+        inviteLabel: "Invite athletes",
+        inviteHelper: "Select players to send RSVP invitations.",
+        noAthletes: "No athletes found for this team.",
+        submitLabel: "Save event",
+        cancelLabel: "Cancel",
+        errorIncomplete: "Event name and date are required.",
+      },
     },
     },
     athletes: {

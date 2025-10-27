@@ -1,3 +1,5 @@
+from collections.abc import Collection
+
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -7,7 +9,7 @@ from sqlmodel import Session, select
 from app.core.config import settings
 from app.core.security import verify_password
 from app.db.session import get_session
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.user import TokenPayload
 
 reusable_oauth2 = OAuth2PasswordBearer(
@@ -62,3 +64,10 @@ def get_current_active_user(current_user: User = Depends(get_current_user)) -> U
     if not current_user.is_active:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
     return current_user
+
+
+def ensure_roles(user: User, allowed_roles: Collection[UserRole]) -> None:
+    if not allowed_roles:
+        return
+    if user.role not in allowed_roles:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")

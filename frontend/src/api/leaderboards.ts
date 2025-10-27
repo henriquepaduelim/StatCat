@@ -22,7 +22,6 @@ export interface LeaderboardParams {
   limit?: number;
   gender?: string;
   age_category?: string;
-  client_id?: number;
 }
 
 export const fetchScoringLeaderboard = async (params: LeaderboardParams) => {

@@ -17,7 +17,6 @@ export const useScoringLeaderboard = (params: LeaderboardParams) => {
       params.limit ?? null,
       params.gender ?? null,
       params.age_category ?? null,
-      params.client_id ?? null,
     ],
     queryFn: () => fetchScoringLeaderboard(params),
     enabled: Boolean(token),

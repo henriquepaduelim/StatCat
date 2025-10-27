@@ -6,16 +6,9 @@ import Athletes from "./pages/Athletes";
 import AthleteEdit from "./pages/AthleteEdit";
 import AthleteReport from "./pages/AthleteReport";
 import Dashboard from "./pages/Dashboard";
-import Home from "./pages/Home";
 import Login from "./pages/Login";
 import NewAthlete from "./pages/NewAthlete";
 import Reports from "./pages/Reports";
-import ClientDetail from "./pages/ClientDetail";
-import ClientSettings from "./pages/ClientSettings";
-import ClientReportsPage from "./pages/ClientReports";
-import Scheduling from "./pages/Scheduling";
-import ClubOnboarding from "./pages/ClubOnboarding";
-import AthleteOnboarding from "./pages/AthleteOnboarding";
 
 const ProtectedLayout = () => (
   <RequireAuth>
@@ -27,7 +20,7 @@ const ProtectedLayout = () => (
 
 const App = () => (
   <Routes>
-    <Route path="/" element={<Home />} />
+    <Route path="/" element={<Navigate to="/dashboard" replace />} />
     <Route path="/login" element={<Login />} />
     <Route element={<ProtectedLayout />}>
       <Route path="/dashboard" element={<Dashboard />} />
@@ -37,12 +30,6 @@ const App = () => (
       <Route path="/athletes/:id" element={<AthleteReport />} />
       <Route path="/athletes/:id/edit" element={<AthleteEdit />} />
       <Route path="/reports" element={<Reports />} />
-      <Route path="/scheduling" element={<Scheduling />} />
-      <Route path="/clients/:id" element={<ClientDetail />} />
-      <Route path="/clients/:id/settings" element={<ClientSettings />} />
-      <Route path="/clients/:id/reports" element={<ClientReportsPage />} />
-      <Route path="/onboarding/club" element={<ClubOnboarding />} />
-      <Route path="/onboarding/athlete" element={<AthleteOnboarding />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Route>
   </Routes>

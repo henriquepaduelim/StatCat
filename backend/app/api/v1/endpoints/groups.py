@@ -5,30 +5,15 @@ from typing import Iterable
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, delete, select
 
-from app.api.deps import get_current_active_user
+from app.api.deps import ensure_roles, get_current_active_user
 from app.db.session import get_session
 from app.models.athlete import Athlete
 from app.models.group import Group, GroupMembership
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.group import GroupCreate, GroupRead, GroupUpdate
 
 router = APIRouter()
-
-
-def _resolve_client_id(current_user: User, requested_client_id: int | None) -> int:
-    if current_user.role == "club":
-        if current_user.client_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="User is not assigned to a client",
-            )
-        return current_user.client_id
-    if requested_client_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="client_id must be provided",
-        )
-    return requested_client_id
+MANAGE_GROUP_ROLES = {UserRole.ADMIN, UserRole.STAFF}
 
 
 def _load_memberships(
@@ -44,13 +29,10 @@ def _load_memberships(
     return mapping
 
 
-def _validate_athletes(session: Session, client_id: int, athlete_ids: list[int]) -> list[Athlete]:
+def _validate_athletes(session: Session, athlete_ids: list[int]) -> list[Athlete]:
     if not athlete_ids:
         return []
-    statement = select(Athlete).where(
-        Athlete.id.in_(tuple(athlete_ids)),
-        Athlete.client_id == client_id,
-    )
+    statement = select(Athlete).where(Athlete.id.in_(tuple(athlete_ids)))
     athletes = session.exec(statement).all()
     found_ids = {athlete.id for athlete in athletes}
     missing = sorted(set(athlete_ids) - found_ids)
@@ -65,18 +47,15 @@ def _validate_athletes(session: Session, client_id: int, athlete_ids: list[int])
 @router.get("/", response_model=list[GroupRead])
 def list_groups(
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_active_user),
-    client_id: int | None = None,
+    _current_user: User = Depends(get_current_active_user),
 ) -> list[GroupRead]:
-    resolved_client_id = _resolve_client_id(current_user, client_id)
-    statement = select(Group).where(Group.client_id == resolved_client_id).order_by(Group.name)
+    statement = select(Group).order_by(Group.name)
     groups = session.exec(statement).all()
     memberships = _load_memberships(session, [group.id for group in groups])
 
     return [
         GroupRead(
             id=group.id,
-            client_id=group.client_id,
             name=group.name,
             description=group.description,
             created_by_id=group.created_by_id,
@@ -94,11 +73,10 @@ def create_group(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
 ) -> GroupRead:
-    resolved_client_id = _resolve_client_id(current_user, payload.client_id)
-    _validate_athletes(session, resolved_client_id, payload.member_ids)
+    ensure_roles(current_user, MANAGE_GROUP_ROLES)
+    _validate_athletes(session, payload.member_ids)
 
     group = Group(
-        client_id=resolved_client_id,
         name=payload.name,
         description=payload.description,
         created_by_id=current_user.id,
@@ -123,7 +101,6 @@ def create_group(
 
     return GroupRead(
         id=group.id,
-        client_id=group.client_id,
         name=group.name,
         description=group.description,
         created_by_id=group.created_by_id,
@@ -144,9 +121,7 @@ def update_group(
     if not group:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
 
-    resolved_client_id = _resolve_client_id(current_user, group.client_id)
-    if group.client_id != resolved_client_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+    ensure_roles(current_user, MANAGE_GROUP_ROLES)
 
     if payload.name is not None:
         group.name = payload.name
@@ -154,7 +129,7 @@ def update_group(
         group.description = payload.description
 
     if payload.member_ids is not None:
-        _validate_athletes(session, resolved_client_id, payload.member_ids)
+        _validate_athletes(session, payload.member_ids)
         session.exec(delete(GroupMembership).where(GroupMembership.group_id == group.id))
         if payload.member_ids:
             session.add_all(
@@ -176,7 +151,6 @@ def update_group(
 
     return GroupRead(
         id=group.id,
-        client_id=group.client_id,
         name=group.name,
         description=group.description,
         created_by_id=group.created_by_id,
@@ -196,9 +170,7 @@ def delete_group(
     if not group:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
 
-    resolved_client_id = _resolve_client_id(current_user, group.client_id)
-    if group.client_id != resolved_client_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+    ensure_roles(current_user, MANAGE_GROUP_ROLES)
 
     session.exec(delete(GroupMembership).where(GroupMembership.group_id == group.id))
     session.delete(group)

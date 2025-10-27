@@ -33,7 +33,6 @@ class Athlete(SQLModel, table=True):
     """Basic athlete profile captured during registration."""
 
     id: int | None = Field(default=None, primary_key=True)
-    client_id: int | None = Field(default=None, foreign_key="client.id", index=True)
     team_id: int | None = Field(default=None, foreign_key="team.id", index=True)
     first_name: str
     last_name: str

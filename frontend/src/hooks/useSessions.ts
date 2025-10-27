@@ -5,7 +5,6 @@ import { useAuthStore } from "../stores/useAuthStore";
 
 export interface SessionRecord {
   id: number;
-  client_id: number;
   athlete_id?: number | null;
   name: string;
   location?: string | null;
@@ -14,7 +13,6 @@ export interface SessionRecord {
 }
 
 export interface SessionFilters {
-  clientId?: number;
   start?: string;
   end?: string;
 }
@@ -23,9 +21,6 @@ const defaultFilters: SessionFilters = {};
 
 const fetchSessions = async (filters: SessionFilters = defaultFilters): Promise<SessionRecord[]> => {
   const params = new URLSearchParams();
-  if (filters.clientId) {
-    params.append("client_id", String(filters.clientId));
-  }
   if (filters.start) {
     params.append("start", filters.start);
   }

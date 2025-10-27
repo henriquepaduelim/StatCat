@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import AthleteForm from "../components/AthleteForm";
 import { updateAthlete, uploadAthletePhoto } from "../api/athletes";
 import { useAthlete } from "../hooks/useAthlete";
-import { useClients } from "../hooks/useClients";
-import { useThemeStore } from "../theme/useThemeStore";
 import { useTranslation } from "../i18n/useTranslation";
 import type { AthletePayload } from "../types/athlete";
 
@@ -17,9 +15,7 @@ const AthleteEdit = () => {
   const rawId = Number(params.id);
   const athleteId = Number.isFinite(rawId) ? rawId : undefined;
 
-  const { theme } = useThemeStore((state) => ({ theme: state.theme }));
   const { data: athlete, isLoading, isError } = useAthlete(athleteId ?? -1);
-  const { data: clients } = useClients();
   const t = useTranslation();
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -30,17 +26,6 @@ const AthleteEdit = () => {
   useEffect(() => {
     setCurrentPhotoUrl(athlete?.photo_url ?? null);
   }, [athlete?.photo_url]);
-
-  const clientOptions = useMemo(
-    () =>
-      (clients ?? []).map((client) => ({
-        value: String(client.id),
-        label: client.name,
-      })),
-    [clients]
-  );
-
-  const allowClientSelection = clientOptions.length > 1;
 
   useEffect(() => {
     if (!profileMessage) return;
@@ -108,7 +93,6 @@ const AthleteEdit = () => {
   }
 
   const initialValues: Partial<AthletePayload> = {
-    client_id: athlete.client_id ?? undefined,
     first_name: athlete.first_name,
     last_name: athlete.last_name,
     email: athlete.email,
@@ -152,9 +136,6 @@ const AthleteEdit = () => {
         )}
         <AthleteForm
           initialValues={initialValues}
-          clientOptions={clientOptions}
-          allowClientSelection={allowClientSelection}
-          defaultClientId={String(athlete.client_id ?? theme.clientId ?? "")}
           submitLabel={t.common.save}
           onSubmit={handleProfileSubmit}
           isSubmitting={mutation.isPending || profilePending}

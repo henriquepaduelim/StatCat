@@ -27,7 +27,7 @@ const Login = () => {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"club" | "athlete">("club");
+  const [role, setRole] = useState<"coach" | "athlete">("coach");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -43,22 +43,11 @@ const Login = () => {
 
     try {
       if (isRegister) {
-        const registeredUser = await registerAccount(
-          fullName.trim(),
-          email.trim(),
-          password,
-          role
-        );
-        // After registration, log the user in and redirect to onboarding
+        await registerAccount(fullName.trim(), email.trim(), password, role);
         const { user, token } = await login(email.trim(), password, true);
         setCredentials({ user, token });
         setInitialized(true);
-
-        if (registeredUser.role === "club") {
-          navigate("/onboarding/club");
-        } else {
-          navigate("/onboarding/athlete");
-        }
+        navigate("/dashboard", { replace: true });
       } else {
         const { user, token } = await login(email.trim(), password, true);
         setCredentials({ user, token });
@@ -163,7 +152,7 @@ const Login = () => {
                   <div className="mt-2 grid grid-cols-2 gap-4">
                     <label
                       className={`flex cursor-pointer items-center justify-center rounded-md border p-4 text-sm font-medium transition ${
-                        role === "club"
+                        role === "coach"
                           ? "border-action-primary bg-action-primary/10 text-accent"
                           : "border-gray-300 hover:border-action-primary/50"
                       }`}
@@ -171,12 +160,12 @@ const Login = () => {
                       <input
                         type="radio"
                         name="role"
-                        value="club"
-                        checked={role === "club"}
-                        onChange={() => setRole("club")}
+                        value="coach"
+                        checked={role === "coach"}
+                        onChange={() => setRole("coach")}
                         className="sr-only"
                       />
-                      Club
+                      Coach
                     </label>
                     <label
                       className={`flex cursor-pointer items-center justify-center rounded-md border p-4 text-sm font-medium transition ${

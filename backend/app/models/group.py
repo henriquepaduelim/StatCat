@@ -8,7 +8,6 @@ from sqlmodel import Field, SQLModel
 class Group(SQLModel, table=True):
     __tablename__ = "athlete_group"
     id: int | None = Field(default=None, primary_key=True)
-    client_id: int = Field(foreign_key="client.id", index=True)
     name: str = Field(index=True)
     description: str | None = None
     created_by_id: int = Field(foreign_key="user.id", index=True)

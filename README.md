@@ -18,7 +18,7 @@ https://github.com/user-attachments/assets/b00076a5-a800-456d-8b51-d1b5bc87f177
 
 # Combine Football Platform
 
-Internal pilot build that centralises physical and technical assessments, branded reporting, and client-facing dashboards for football combines.
+Internal pilot build that centralises physical and technical assessments, branded reporting, and single-tenant dashboards for football combines.
 
 ## Monorepo Layout
 
@@ -29,28 +29,24 @@ Internal pilot build that centralises physical and technical assessments, brande
 ```
 
 ## Phase Snapshot — Pilot Ready
-- Authenticated multi-tenant experience for `staff` (HQ) and `club` operators sharing the same API.
-- Scheduling, athlete management, and reporting flows are wired end-to-end with live FastAPI endpoints.
-- Admin area lists partner clubs and surfaces activity metrics; settings/report pages are placeholders for upcoming configuration work.
-- Marketing landing page, dashboard, athletes, sessions, reports, and admin routes are styled with the current theme system and sample content.
-- SQLite seed data ships realistic clients, users, tests, sessions, and KPI results; optional rich data loader available for Players To Pro.
+- Authenticated single-tenant experience with distinct access levels for `admin`, `staff`, `coach`, and `athlete` accounts.
+- Athlete management and reporting flows are wired end-to-end with live FastAPI endpoints plus printable summaries.
+- Dashboard surfaces speed/technical trends, scoring leaderboards, and session insights without tenant switching overhead.
+- SQLite seed data ships realistic athletes, teams, tests, sessions, and KPI results for a single organisation.
 
 ## Backend Highlights (FastAPI + SQLModel)
-- JWT/OAuth2 authentication (`/api/v1/auth`) for `staff`, `club`, and future `athlete` roles; tokens issued through `/auth/login` with an expanded profile available from `/auth/login/full`.
-- CRUD endpoints for clients, athletes (including `/media/athletes/<id>` photo upload with 5 MB cap), test definitions, assessment sessions, and session results.
+- JWT/OAuth2 authentication (`/api/v1/auth`) for `admin`, `staff`, `coach`, and `athlete` roles; tokens issued through `/auth/login` with an expanded profile available from `/auth/login/full`.
+- CRUD endpoints for athletes (including `/media/athletes/<id>` photo upload with 5 MB cap), teams, tests, assessment sessions, and session results.
 - Athlete report generator (`GET /api/v1/reports/athletes/{id}`) groups sessions, computes trend-friendly metrics, and adds peer averages by age band.
-- Dashboard summary (`/api/v1/dashboard/summary`) counts active/inactive athletes, respecting role-based scoping.
-- SQLite database initialised on startup with seeds for three demo clubs plus command-line helpers in `backend/scripts/` for generating more data.
+- Dashboard summary (`/api/v1/dashboard/summary`) counts active/inactive athletes and feeds leaderboard views.
+- SQLite database initialised on startup with a single-organisation seed; delete `backend/combine.db` to regenerate a clean dataset.
 - Configurable media root and CORS via `.env` variables; static assets served from `/media`.
 
 ## Frontend Highlights (React + Vite + Tailwind)
-- App shell with Zustand stores for auth, locale, and client-driven theming (colours/logo pulled from the API).
-- Landing page in `frontend/src/pages/Home.tsx` showcases hero video, feature highlights, and CTA copy tailored for club decision-makers.
-- Dashboard and admin views use Recharts/Tremor widgets for KPIs, top client charts, trend lines, and calendar heatmaps.
+- App shell with Zustand stores for auth and lightweight theming (single-tenant branding baked in).
+- Dashboard, athletes, and reports routes share one cohesive UI shell with responsive layouts and printable views.
 - Athlete area supports filtering, sorting, creation, detail view, and photo uploads with optimistic UI states.
-- Session workflows cover creation, inline edits, drag-and-drop scheduling on a FullCalendar grid, and quick starts that deep-link into athlete assessments.
-- Athlete report page renders printable performance cards, timeframe filters, and comparison charts against peer averages.
-- Client detail, settings, and reports pages are scaffolded with copy and layout, ready for upcoming integrations (no API mutations yet).
+- Report builder records assessment sessions, captures metric inputs, and renders athlete cards ready for PDF export.
 - React Query powers data fetching with persisted tokens; API wrapper lives in `frontend/src/api` with dedicated modules per resource.
 
 ## Local Development
@@ -85,9 +81,9 @@ npm run dev
 ### Seed Credentials
 | Email | Role | Password | Notes |
 |-------|------|----------|-------|
-| admin@mvp.ca | staff | admin123 | Full access, switches client themes |
-| jodie@playerstopro.com | club | ptp123456 | Restricted to Players To Pro data |
-| urban@combine.dev | club | urban123 | Restricted to Urban Fut data |
+| admin@combine.local | admin | admin123 | Full access to all resources |
+| staff@combine.local | staff | staff123 | Manages athletes, sessions, and reports |
+| coach@combine.local | coach | coach123 | Read/write athletes, enter assessments |
 
 ## Tooling & Useful Commands
 - `uvicorn app.main:app --reload` — Run API locally.
@@ -96,10 +92,9 @@ npm run dev
 - `npm run lint` — ESLint over `frontend/src`.
 - `npm run build` — Frontend production output.
 - `backend/scripts/*` — Utilities for generating or inspecting demo records.
-
+    
 ## Known Gaps & Next Up
 - Replace ad-hoc seed migrations with Alembic-managed migrations.
-- Wire client settings/report admin pages to real endpoints and add mutations.
 - Expand automated test coverage on both backend (pytest/httpx) and frontend (RTL/Cypress).
-- Finalise PDF/CSV exports plus scheduled deliveries from the reporting module.
+- Finalise PDF/CSV exports plus automated report delivery.
 - Integrate external storage (S3/MinIO) for high-resolution media and automate cleanup.

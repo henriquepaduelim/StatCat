@@ -5,7 +5,6 @@ import { Dialog, Transition } from "@headlessui/react";
 
 import { useAthletes } from "../hooks/useAthletes";
 import { useTeams } from "../hooks/useTeams";
-import { useThemeStore } from "../theme/useThemeStore";
 import { useTranslation } from "../i18n/useTranslation";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 import { deleteAthlete } from "../api/athletes";
@@ -38,9 +37,8 @@ const calculateAge = (birthDate?: string | null): number | null => {
 const DEFAULT_ROW_HEIGHT = 56;
 
 const Athletes = () => {
-  const clientId = useThemeStore((state) => state.theme.clientId);
-  const { data, isLoading, isError } = useAthletes(clientId);
-  const teamsQuery = useTeams(clientId ?? undefined);
+  const { data, isLoading, isError } = useAthletes();
+  const teamsQuery = useTeams();
   const t = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -138,8 +136,7 @@ const Athletes = () => {
     onSuccess: (_, id) => {
       setAlert({ type: "success", message: t.athletes.deleteSuccess });
       setSelected(null);
-      queryClient.invalidateQueries({ queryKey: ["athletes", clientId ?? "all"] });
-      queryClient.invalidateQueries({ queryKey: ["athletes", "all"] });
+      queryClient.invalidateQueries({ queryKey: ["athletes"] });
       queryClient.removeQueries({ queryKey: ["athlete", id], exact: true });
       queryClient.removeQueries({ queryKey: ["athlete-report", id], exact: true });
     },

@@ -6,7 +6,7 @@ from app.api.deps import authenticate_user, get_current_active_user
 from app.core.security import create_access_token, get_password_hash
 from app.db.session import get_session
 from app.models.athlete import Athlete
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.user import Token, UserCreate, UserRead, UserReadWithToken, UserSignup
 
 router = APIRouter()
@@ -38,14 +38,13 @@ def register_user(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
 ) -> User:
-    if current_user.role != "staff":
+    if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
     exists = session.exec(select(User).where(User.email == payload.email)).first()
     if exists:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
 
-    client_id = payload.client_id
-    if payload.role == "athlete":
+    if payload.role == UserRole.ATHLETE:
         if payload.athlete_id is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -54,14 +53,13 @@ def register_user(
         athlete = session.get(Athlete, payload.athlete_id)
         if not athlete:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Athlete not found")
-        client_id = athlete.client_id
 
     user = User(
         email=payload.email,
         hashed_password=get_password_hash(payload.password),
         full_name=payload.full_name,
+        phone=payload.phone,
         role=payload.role,
-        client_id=client_id,
         athlete_id=payload.athlete_id,
         is_active=payload.is_active,
     )
@@ -84,8 +82,8 @@ def signup_user(
         email=payload.email,
         hashed_password=get_password_hash(payload.password),
         full_name=payload.full_name,
+        phone=payload.phone,
         role=payload.role,
-        client_id=None,
         athlete_id=None,
         is_active=True,
     )
@@ -112,7 +110,7 @@ def login_with_profile(
         email=user.email,
         full_name=user.full_name,
         role=user.role,
-        client_id=user.client_id,
+        phone=user.phone,
         athlete_id=user.athlete_id,
         is_active=user.is_active,
         access_token=token,

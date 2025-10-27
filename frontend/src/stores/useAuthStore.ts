@@ -5,8 +5,8 @@ export type AuthUser = {
   id: number;
   email: string;
   full_name: string;
-  role: "staff" | "club" | string;
-  client_id?: number | null;
+  phone?: string | null;
+  role: "admin" | "staff" | "coach" | "athlete" | string;
   athlete_id?: number | null;
   is_active: boolean;
 };

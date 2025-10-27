@@ -4,13 +4,13 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
-from app.api.deps import get_current_active_user
+from app.api.deps import ensure_roles, get_current_active_user
 from app.db.session import get_session
 from app.models.assessment_session import AssessmentSession
 from app.models.session_result import SessionResult
 from app.models.test_definition import TestDefinition
 from app.models.athlete import Athlete
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.assessment_session import (
     AssessmentSessionCreate,
     AssessmentSessionRead,
@@ -19,17 +19,23 @@ from app.schemas.assessment_session import (
 from app.schemas.session_result import SessionResultCreate, SessionResultRead
 
 router = APIRouter()
+MANAGE_SESSION_ROLES = {UserRole.ADMIN, UserRole.STAFF}
+READ_SESSION_ROLES = {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH}
 
 
-def ensure_related_entities(
-    session: Session, results: Sequence[SessionResultCreate], client_id: int | None
-) -> None:
+def _ensure_can_view(user: User) -> None:
+    ensure_roles(user, READ_SESSION_ROLES)
+
+
+def _ensure_can_edit(user: User) -> None:
+    ensure_roles(user, MANAGE_SESSION_ROLES)
+
+
+def ensure_related_entities(session: Session, results: Sequence[SessionResultCreate]) -> None:
     athlete_ids = {result.athlete_id for result in results}
     test_ids = {result.test_id for result in results}
     if athlete_ids:
-        athlete_query = select(Athlete.id, Athlete.client_id).where(
-            Athlete.id.in_(athlete_ids)
-        )
+        athlete_query = select(Athlete.id).where(Athlete.id.in_(athlete_ids))
         found_athletes = session.exec(athlete_query).all()
         found_ids = {row[0] for row in found_athletes}
         missing_athletes = athlete_ids.difference(found_ids)
@@ -38,15 +44,8 @@ def ensure_related_entities(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Athletes not found: {sorted(missing_athletes)}",
             )
-        if client_id is not None and any(db_client != client_id for _, db_client in found_athletes):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="One or more athletes belong to another client",
-            )
     if test_ids:
-        test_query = select(TestDefinition.id, TestDefinition.client_id).where(
-            TestDefinition.id.in_(test_ids)
-        )
+        test_query = select(TestDefinition.id).where(TestDefinition.id.in_(test_ids))
         found_tests = session.exec(test_query).all()
         found_test_ids = {row[0] for row in found_tests}
         missing_tests = test_ids.difference(found_test_ids)
@@ -55,26 +54,17 @@ def ensure_related_entities(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Tests not found: {sorted(missing_tests)}",
             )
-        if client_id is not None and any(db_client != client_id for _, db_client in found_tests):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="One or more tests belong to another client",
-            )
 
 
 @router.get("/", response_model=list[AssessmentSessionRead])
 def list_sessions(
-    client_id: int | None = None,
     start: date | None = None,
     end: date | None = None,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
 ) -> list[AssessmentSessionRead]:
+    _ensure_can_view(current_user)
     statement = select(AssessmentSession)
-    if current_user.role == "club":
-        statement = statement.where(AssessmentSession.client_id == current_user.client_id)
-    elif client_id is not None:
-        statement = statement.where(AssessmentSession.client_id == client_id)
 
     if start:
         statement = statement.where(AssessmentSession.scheduled_at >= start)
@@ -94,10 +84,8 @@ def create_session(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
 ) -> AssessmentSessionRead:
-    data = payload.model_dump()
-    if current_user.role == "club":
-        data["client_id"] = current_user.client_id
-    assessment_session = AssessmentSession.model_validate(data)
+    _ensure_can_edit(current_user)
+    assessment_session = AssessmentSession.model_validate(payload.model_dump())
     session.add(assessment_session)
     session.commit()
     session.refresh(assessment_session)
@@ -113,8 +101,7 @@ def get_session_detail(
     assessment_session = session.get(AssessmentSession, session_id)
     if not assessment_session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
-    if current_user.role == "club" and assessment_session.client_id != current_user.client_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+    _ensure_can_view(current_user)
     return assessment_session
 
 
@@ -128,8 +115,7 @@ def update_session(
     assessment_session = session.get(AssessmentSession, session_id)
     if not assessment_session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
-    if current_user.role == "club" and assessment_session.client_id != current_user.client_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+    _ensure_can_edit(current_user)
 
     update_data = payload.model_dump(exclude_unset=True)
     assessment_session.sqlmodel_update(update_data)
@@ -148,8 +134,7 @@ def delete_session(
     assessment_session = session.get(AssessmentSession, session_id)
     if not assessment_session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
-    if current_user.role == "club" and assessment_session.client_id != current_user.client_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+    _ensure_can_edit(current_user)
 
     session.delete(assessment_session)
     session.commit()
@@ -165,8 +150,7 @@ def add_results(
     assessment_session = session.get(AssessmentSession, session_id)
     if not assessment_session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
-    if current_user.role == "club" and assessment_session.client_id != current_user.client_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+    _ensure_can_edit(current_user)
 
     if not payload:
         return []
@@ -174,7 +158,7 @@ def add_results(
     for result in payload:
         result.session_id = session_id
 
-    ensure_related_entities(session, payload, assessment_session.client_id)
+    ensure_related_entities(session, payload)
 
     created: list[SessionResult] = []
     for result in payload:

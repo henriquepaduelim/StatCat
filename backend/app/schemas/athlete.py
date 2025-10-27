@@ -12,7 +12,6 @@ from app.models.athlete import (
 
 
 class AthleteBase(SQLModel):
-    client_id: int | None = None
     first_name: str
     last_name: str
     email: str | None = None
@@ -49,7 +48,6 @@ class AthleteRead(AthleteBase):
 
 
 class AthleteUpdate(SQLModel):
-    client_id: int | None = None
     first_name: str | None = None
     last_name: str | None = None
     email: str | None = None
@@ -80,7 +78,6 @@ class AthleteRegistrationCreate(SQLModel):
     email: str
     phone: str
     registration_year: str
-    client_id: int | None = None
     team_id: int | None = None
     registration_category: RegistrationCategory
     player_registration_status: PlayerRegistrationStatus

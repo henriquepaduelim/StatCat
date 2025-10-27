@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlmodel import Session, select
 
-from app.api.deps import get_current_active_user
+from app.api.deps import ensure_roles, get_current_active_user
 from app.core.config import settings
 from app.core.crypto import encrypt_text
 from app.db.session import get_session
@@ -16,7 +16,7 @@ from app.models.athlete import (
     AthletePayment,
 )
 from app.models.team import Team
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.athlete import (
     AthleteCreate,
     AthleteRead,
@@ -25,6 +25,9 @@ from app.schemas.athlete import (
     AthleteRegistrationCreate,
     AthleteUpdate,
 )
+
+MANAGE_ATHLETE_ROLES = {UserRole.ADMIN, UserRole.STAFF}
+READ_ATHLETE_ROLES = {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH}
 
 media_root = Path(settings.MEDIA_ROOT)
 athlete_media_root = media_root / "athletes"
@@ -64,19 +67,31 @@ def _store_file(athlete_id: int, file: UploadFile, base_dir: Path, max_size: int
 
 router = APIRouter()
 
-def _validate_team(
-    session: Session,
-    team_id: int | None,
-    client_id: int | None,
-) -> None:
-    if team_id is None or client_id is None:
+def _validate_team(session: Session, team_id: int | None) -> None:
+    if team_id is None:
         return
     team = session.get(Team, team_id)
-    if not team or team.client_id != client_id:
+    if not team:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Team does not exist for the selected client",
+            detail="Team not found",
         )
+
+
+def _ensure_can_view(current_user: User, athlete: Athlete) -> None:
+    if current_user.role in READ_ATHLETE_ROLES:
+        return
+    if current_user.role == UserRole.ATHLETE and current_user.athlete_id == athlete.id:
+        return
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+
+
+def _ensure_can_edit(current_user: User, athlete: Athlete) -> None:
+    if current_user.role in MANAGE_ATHLETE_ROLES:
+        return
+    if current_user.role == UserRole.ATHLETE and current_user.athlete_id == athlete.id:
+        return
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
 
 
 @router.post("/register", response_model=AthleteRead, status_code=status.HTTP_201_CREATED)
@@ -85,19 +100,11 @@ def register_athlete(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
 ) -> AthleteRead:
+    ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
     data = payload.model_dump()
 
-    client_id = data.get("client_id")
-    if current_user.role == "club":
-        client_id = current_user.client_id
-    if client_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="client_id is required for athlete registration",
-        )
-
     team_id = data.get("team_id")
-    _validate_team(session, team_id, client_id)
+    _validate_team(session, team_id)
 
     preferred_position = data.get("preferred_position")
 
@@ -117,7 +124,6 @@ def register_athlete(
         )
 
     athlete = Athlete(
-        client_id=client_id,
         team_id=team_id,
         first_name=data["first_name"].strip(),
         last_name=data["last_name"].strip(),
@@ -142,18 +148,20 @@ def register_athlete(
 
 @router.get("/", response_model=list[AthleteRead])
 def list_athletes(
-    client_id: int | None = None,
     gender: AthleteGender | None = None,
+    team_id: int | None = None,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
 ) -> list[AthleteRead]:
     statement = select(Athlete)
-    if current_user.role == "club":
-        statement = statement.where(Athlete.client_id == current_user.client_id)
-    elif client_id is not None:
-        statement = statement.where(Athlete.client_id == client_id)
+    if current_user.role == UserRole.ATHLETE:
+        if current_user.athlete_id is None:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+        statement = statement.where(Athlete.id == current_user.athlete_id)
     if gender is not None:
         statement = statement.where(Athlete.gender == gender)
+    if team_id is not None:
+        statement = statement.where(Athlete.team_id == team_id)
     return session.exec(statement).all()
 
 
@@ -163,15 +171,14 @@ def create_athlete(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
 ) -> AthleteRead:
+    ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
     data = payload.model_dump()
-    if current_user.role == "club":
-        data["client_id"] = current_user.client_id
     if not data.get("primary_position"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="primary_position is required",
         )
-    _validate_team(session, data.get("team_id"), data.get("client_id"))
+    _validate_team(session, data.get("team_id"))
     data["primary_position"] = data["primary_position"].strip()
     if data.get("secondary_position"):
         data["secondary_position"] = data["secondary_position"].strip()
@@ -196,8 +203,7 @@ def complete_registration(
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
-    if current_user.role == "club" and athlete.client_id != current_user.client_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+    _ensure_can_edit(current_user, athlete)
 
     detail = session.get(AthleteDetail, athlete_id)
     if not detail:
@@ -302,8 +308,7 @@ def get_athlete(
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
-    if current_user.role == "club" and athlete.client_id != current_user.client_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+    _ensure_can_view(current_user, athlete)
     return athlete
 
 
@@ -317,13 +322,11 @@ def update_athlete(
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
-    if current_user.role == "club" and athlete.client_id != current_user.client_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+    _ensure_can_edit(current_user, athlete)
 
     update_data = payload.model_dump(exclude_unset=True)
-    if "team_id" in update_data or "client_id" in update_data:
-        target_client_id = update_data.get("client_id", athlete.client_id)
-        _validate_team(session, update_data.get("team_id", athlete.team_id), target_client_id)
+    if "team_id" in update_data:
+        _validate_team(session, update_data.get("team_id"))
 
     if "primary_position" in update_data and update_data["primary_position"]:
         update_data["primary_position"] = update_data["primary_position"].strip()
@@ -345,11 +348,10 @@ def delete_athlete(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
 ) -> None:
+    ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
-    if current_user.role == "club" and athlete.client_id != current_user.client_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
 
     session.delete(athlete)
     session.commit()
@@ -366,8 +368,7 @@ async def upload_photo(
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
-    if current_user.role == "club" and athlete.client_id != current_user.client_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+    _ensure_can_edit(current_user, athlete)
 
     content_type = (file.content_type or "").lower()
     allowed_types = {
@@ -416,8 +417,7 @@ def upload_document(
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
-    if current_user.role == "club" and athlete.client_id != current_user.client_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+    _ensure_can_edit(current_user, athlete)
 
     file_url = _store_file(athlete_id, file, documents_root, MAX_DOCUMENT_SIZE)
 

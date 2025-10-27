@@ -8,15 +8,6 @@ from app.schemas.athlete import (
     AthleteRegistrationCreate,
     AthleteUpdate,
 )
-from app.schemas.calendar_event import (
-    CalendarEventAttendeeRead,
-    CalendarEventCreate,
-    CalendarEventFilters,
-    CalendarEventRead,
-    CalendarEventUpdate,
-)
-from app.schemas.client import ClientCreate, ClientRead
-from app.schemas.google import GoogleCredentialCreate, GoogleCredentialRead
 from app.schemas.analytics import (
     AthleteMetricsResponse,
     LeaderboardEntry,
@@ -40,13 +31,6 @@ __all__ = [
     "AthleteRegistrationCompletion",
     "AthleteDocumentRead",
     "AthletePaymentRead",
-    "CalendarEventCreate",
-    "CalendarEventRead",
-    "CalendarEventUpdate",
-    "CalendarEventAttendeeRead",
-    "CalendarEventFilters",
-    "ClientCreate",
-    "ClientRead",
     "GroupCreate",
     "GroupRead",
     "GroupUpdate",
@@ -58,8 +42,6 @@ __all__ = [
     "MetricRankingResponse",
     "LeaderboardEntry",
     "LeaderboardResponse",
-    "GoogleCredentialCreate",
-    "GoogleCredentialRead",
     "TestDefinitionCreate",
     "TestDefinitionRead",
     "AssessmentSessionCreate",

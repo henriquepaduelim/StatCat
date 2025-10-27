@@ -76,15 +76,12 @@ class _TestMeta:
 
 
 class MetricEngine:
-    def __init__(self, session: Session, client_id: int | None = None) -> None:
+    def __init__(self, session: Session) -> None:
         self.session = session
-        self.client_id = client_id
         self._tests = self._load_tests()
 
     def _load_tests(self) -> dict[str, _TestMeta]:
         statement = select(TestDefinition)
-        if self.client_id is not None:
-            statement = statement.where(TestDefinition.client_id == self.client_id)
         tests: dict[str, _TestMeta] = {}
         definitions = self.session.exec(statement).scalars().all()
         for definition in definitions:

@@ -10,7 +10,7 @@ from app.models.assessment_session import AssessmentSession
 from app.models.athlete import Athlete
 from app.models.session_result import SessionResult
 from app.models.test_definition import TestDefinition
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.athlete import AthleteRead
 from app.schemas.report import AthleteReport, MetricResult, SessionReport
 
@@ -35,11 +35,10 @@ def _age_band(age: int | None) -> int | None:
 
 def _compute_peer_averages(
     db: Session,
-    client_id: int | None,
     test_ids: set[int],
     target_band: int | None,
 ) -> dict[int, float]:
-    if not test_ids or target_band is None or client_id is None:
+    if not test_ids or target_band is None:
         return {}
 
     statement = (
@@ -51,7 +50,6 @@ def _compute_peer_averages(
         )
         .join(AssessmentSession, AssessmentSession.id == SessionResult.session_id)
         .join(Athlete, Athlete.id == SessionResult.athlete_id)
-        .where(AssessmentSession.client_id == client_id)
         .where(SessionResult.test_id.in_(tuple(test_ids)))
     )
 
@@ -84,7 +82,7 @@ def athlete_report(
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
-    if current_user.role == "club" and athlete.client_id != current_user.client_id:
+    if current_user.role == UserRole.ATHLETE and current_user.athlete_id != athlete.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
 
     statement = (
@@ -99,7 +97,7 @@ def athlete_report(
 
     test_ids = {test_definition.id for _, _, test_definition in rows}
     target_band = _age_band(_calculate_age(athlete.birth_date, date.today()))
-    peer_averages = _compute_peer_averages(session, athlete.client_id, test_ids, target_band)
+    peer_averages = _compute_peer_averages(session, test_ids, target_band)
 
     grouped: dict[int, dict[str, object]] = defaultdict(
         lambda: {"session": None, "results": []}

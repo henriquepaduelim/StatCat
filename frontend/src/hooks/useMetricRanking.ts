@@ -17,7 +17,6 @@ export const useMetricRanking = (metricId: string, params: MetricRankingParams) 
       params.limit ?? null,
       params.gender ?? null,
       params.age_category ?? null,
-      params.client_id ?? null,
     ],
     queryFn: () => fetchMetricRanking(metricId, params),
     enabled: Boolean(token) && Boolean(metricId),

@@ -28,7 +28,7 @@ export const THEME_PRESETS: ThemeDefinition[] = [
       },
       action: {
         primary: {
-          background: "#DDF79C",
+          background: "#E0F8A3",
           foreground: "#000000",
         },
       },

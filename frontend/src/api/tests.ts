@@ -2,7 +2,6 @@ import api from "./client";
 import type { TestDefinition } from "../types/test";
 
 export type CreateTestPayload = {
-  client_id?: number | null;
   name: string;
   category?: string;
   unit?: string;

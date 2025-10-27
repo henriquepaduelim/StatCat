@@ -12,7 +12,6 @@ class GroupBase(SQLModel):
 
 
 class GroupCreate(GroupBase):
-    client_id: int | None = None
     member_ids: list[int] = []
 
 
@@ -24,11 +23,9 @@ class GroupUpdate(SQLModel):
 
 class GroupRead(GroupBase):
     id: int
-    client_id: int
     created_by_id: int
     created_at: datetime
     updated_at: datetime
     member_ids: list[int]
 
     model_config = ConfigDict(from_attributes=True)
-

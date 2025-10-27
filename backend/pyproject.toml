@@ -2,7 +2,7 @@
 name = "combine-backend"
 version = "0.1.0"
 description = "API backend for football combine testing platform"
-authors = [{name = "Henrique Machado"}]
+authors = [{name = "Henrique Padueli"}]
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.110",

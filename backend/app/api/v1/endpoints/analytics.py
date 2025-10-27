@@ -12,7 +12,7 @@ from app.db.session import get_session
 from app.models.athlete import Athlete, AthleteStatus
 from app.models.match_stat import MatchStat
 from app.models.team import Team
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.analytics import (
     AthleteMetricsResponse,
     LeaderboardEntry,
@@ -32,10 +32,9 @@ def athlete_metrics(
     athlete = session.get(Athlete, athlete_id)
     if athlete is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
-    if current_user.role == "club" and athlete.client_id != current_user.client_id:
+    if current_user.role == UserRole.ATHLETE and current_user.athlete_id != athlete.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
-
-    engine = MetricEngine(session, client_id=athlete.client_id)
+    engine = MetricEngine(session)
     try:
         return engine.build_metric_response(athlete, metric_ids)
     except KeyError as exc:  # pragma: no cover - defensive
@@ -47,19 +46,11 @@ def metric_ranking(
     limit: int = Query(default=10, ge=1, le=50),
     gender: str | None = Query(default=None),
     age_category: str | None = Query(default=None),
-    client_id: int | None = Query(default=None),
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_active_user),
+    _current_user: User = Depends(get_current_active_user),
 ) -> MetricRankingResponse:
-    target_client_id = client_id
-    if current_user.role == "club":
-        target_client_id = current_user.client_id
-
     statement = select(Athlete).where(Athlete.status == AthleteStatus.active)
-    if target_client_id is not None:
-        statement = statement.where(Athlete.client_id == target_client_id)
-
-    engine = MetricEngine(session, client_id=target_client_id)
+    engine = MetricEngine(session)
     athletes = session.exec(statement).all()
     if not athletes:
         try:
@@ -93,14 +84,9 @@ def scoring_leaderboard(
     limit: int = Query(default=10, ge=1, le=50),
     gender: str | None = Query(default=None),
     age_category: str | None = Query(default=None),
-    client_id: int | None = Query(default=None),
     session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_active_user),
+    _current_user: User = Depends(get_current_active_user),
 ) -> LeaderboardResponse:
-    target_client_id = client_id
-    if current_user.role == "club":
-        target_client_id = current_user.client_id
-
     statement = (
         select(
             Athlete.id,
@@ -117,8 +103,6 @@ def scoring_leaderboard(
         .where(Athlete.status == AthleteStatus.active)
     )
 
-    if target_client_id is not None:
-        statement = statement.where(Athlete.client_id == target_client_id)
     if gender:
         statement = statement.where(Athlete.gender == gender.lower())
     if age_category:

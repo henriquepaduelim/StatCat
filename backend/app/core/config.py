@@ -21,9 +21,6 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str | None = None
     GOOGLE_CLIENT_SECRET: str | None = None
     GOOGLE_REDIRECT_URI: str | None = None
-    GOOGLE_OAUTH_SCOPES: list[str] = Field(
-        default_factory=lambda: ["https://www.googleapis.com/auth/calendar.events"]
-    )
 
     class Config:
         env_file = ".env"

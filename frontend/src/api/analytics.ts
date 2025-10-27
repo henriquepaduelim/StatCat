@@ -45,7 +45,6 @@ export interface MetricRankingParams {
   limit?: number;
   gender?: string;
   age_category?: string;
-  client_id?: number;
 }
 
 export const fetchAthleteMetrics = async (

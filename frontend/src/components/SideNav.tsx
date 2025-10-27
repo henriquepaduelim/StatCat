@@ -3,7 +3,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 
 import { useAuthStore } from "../stores/useAuthStore";
-import { useThemeStore } from "../theme/useThemeStore";
 import { useTranslation } from "../i18n/useTranslation";
 import { NAV_ITEMS } from "./navigationItems";
 
@@ -17,7 +16,6 @@ const linkClasses = ({ isActive }: { isActive: boolean }) =>
 const SideNav = () => {
   const t = useTranslation();
   const clearAuth = useAuthStore((state) => state.clear);
-  const setThemesFromClients = useThemeStore((state) => state.setThemesFromClients);
 
   return (
     <div className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:w-72 text-sidebar-foreground">
@@ -49,7 +47,6 @@ const SideNav = () => {
             type="button"
             onClick={() => {
               clearAuth();
-              setThemesFromClients([]);
             }}
             className="group relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-action-primary text-action-primary-foreground shadow-sm transition-all duration-200 ease-in-out hover:w-full"
           >

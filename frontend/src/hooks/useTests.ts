@@ -4,19 +4,17 @@ import api from "../api/client";
 import type { TestDefinition } from "../types/test";
 import { useAuthStore } from "../stores/useAuthStore";
 
-const fetchTests = async (clientId?: number): Promise<TestDefinition[]> => {
-  const { data } = await api.get<TestDefinition[]>("/tests/", {
-    params: clientId ? { client_id: clientId } : undefined,
-  });
+const fetchTests = async (): Promise<TestDefinition[]> => {
+  const { data } = await api.get<TestDefinition[]>("/tests/");
   return data;
 };
 
-export const useTests = (clientId?: number) => {
+export const useTests = () => {
   const token = useAuthStore((state) => state.token);
 
   return useQuery({
-    queryKey: ["tests", clientId ?? "all"],
-    queryFn: () => fetchTests(clientId),
+    queryKey: ["tests"],
+    queryFn: () => fetchTests(),
     staleTime: 1000 * 60 * 5,
     enabled: Boolean(token),
   });

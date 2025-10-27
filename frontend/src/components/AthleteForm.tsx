@@ -5,7 +5,6 @@ import type { AthletePayload } from "../types/athlete";
 import { useTeams } from "../hooks/useTeams";
 
 type FormState = {
-  client_id: string;
   first_name: string;
   last_name: string;
   email: string;
@@ -18,16 +17,8 @@ type FormState = {
   secondary_position: string;
 };
 
-type ClientOption = {
-  value: string;
-  label: string;
-};
-
 type AthleteFormProps = {
   initialValues?: Partial<AthletePayload>;
-  clientOptions: ClientOption[];
-  allowClientSelection: boolean;
-  defaultClientId?: string;
   submitLabel: string;
   onSubmit: (payload: AthletePayload) => Promise<void> | void;
   isSubmitting: boolean;
@@ -49,7 +40,6 @@ const POSITION_OPTIONS = [
 ];
 
 const INITIAL_STATE: FormState = {
-  client_id: "",
   first_name: "",
   last_name: "",
   email: "",
@@ -64,9 +54,6 @@ const INITIAL_STATE: FormState = {
 
 const AthleteForm = ({
   initialValues,
-  clientOptions,
-  allowClientSelection,
-  defaultClientId,
   submitLabel,
   onSubmit,
   isSubmitting,
@@ -75,12 +62,10 @@ const AthleteForm = ({
   initialPhotoUrl,
 }: AthleteFormProps) => {
   const t = useTranslation();
-  const [formState, setFormState] = useState<FormState>(() => populateState(initialValues, defaultClientId));
+  const [formState, setFormState] = useState<FormState>(() => populateState(initialValues));
   const [photoPreview, setPhotoPreview] = useState<string | null>(initialPhotoUrl ?? null);
   const objectUrlRef = useRef<string | null>(null);
-  const selectedClientId = formState.client_id || defaultClientId || "";
-  const selectedClientIdNumber = selectedClientId ? Number(selectedClientId) : undefined;
-  const teamsQuery = useTeams(selectedClientIdNumber);
+  const teamsQuery = useTeams();
 
   const teamOptions = useMemo(
     () =>
@@ -99,14 +84,6 @@ const AthleteForm = ({
       return prev;
     });
   }, [formState.primary_position]);
-
-  const resolvedClientName = useMemo(() => {
-    const targetClientId = formState.client_id || defaultClientId;
-    if (!targetClientId) {
-      return null;
-    }
-    return clientOptions.find((option) => option.value === targetClientId)?.label ?? null;
-  }, [clientOptions, defaultClientId, formState.client_id]);
 
   useEffect(() => {
     if (objectUrlRef.current) {
@@ -128,7 +105,6 @@ const AthleteForm = ({
     setFormState((prev) => ({
       ...prev,
       [name]: value,
-      team_id: name === "client_id" ? "" : prev.team_id,
     }));
   };
 
@@ -150,18 +126,7 @@ const AthleteForm = ({
   };
 
   const toPayload = (): AthletePayload => {
-    const resolveClientId = () => {
-      if (formState.client_id) {
-        return Number(formState.client_id);
-      }
-      if (defaultClientId) {
-        return Number(defaultClientId);
-      }
-      return undefined;
-    };
-
     return {
-      client_id: resolveClientId(),
       first_name: formState.first_name.trim(),
       last_name: formState.last_name.trim(),
       email: formState.email.trim(),
@@ -198,30 +163,6 @@ const AthleteForm = ({
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="flex-1 space-y-6">
           <section className="space-y-4 rounded-lg border border-black/5 bg-white p-4 shadow-sm">
-            {allowClientSelection ? (
-              <label className="block text-sm font-medium text-muted">
-                {t.newAthlete.client}
-                <select
-                  name="client_id"
-                  required
-                  value={formState.client_id}
-                  onChange={handleChange}
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                >
-                  <option value="">{t.common.select}</option>
-                  {clientOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : resolvedClientName ? (
-              <div className="rounded-md border border-black/5 bg-container px-3 py-2 text-sm text-muted">
-                <p className="font-medium text-container-foreground">{t.newAthlete.client}</p>
-                <p>{resolvedClientName}</p>
-              </div>
-            ) : null}
 
             <div className="grid gap-4 md:grid-cols-2">
               <label className="block text-sm font-medium text-muted">
@@ -256,10 +197,10 @@ const AthleteForm = ({
                   name="team_id"
                   value={formState.team_id}
                   onChange={handleChange}
-                  disabled={!selectedClientIdNumber || teamsQuery.isLoading}
+                  disabled={teamsQuery.isLoading}
                   className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <option value="">{selectedClientIdNumber ? t.common.select : "Select a client first"}</option>
+                  <option value="">{t.common.select}</option>
                   {teamOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -413,21 +354,15 @@ const AthleteForm = ({
 };
 
 const populateState = (
-  initialValues?: Partial<AthletePayload>,
-  defaultClientId?: string
+  initialValues?: Partial<AthletePayload>
 ): FormState => {
   if (!initialValues) {
     return {
       ...INITIAL_STATE,
-      client_id: defaultClientId ?? "",
     };
   }
 
   return {
-    client_id:
-      initialValues.client_id != null
-        ? String(initialValues.client_id)
-        : defaultClientId ?? "",
     first_name: initialValues.first_name ?? "",
     last_name: initialValues.last_name ?? "",
     email: initialValues.email ?? "",

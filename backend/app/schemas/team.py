@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, EmailStr
 from sqlmodel import SQLModel
 
 
@@ -14,15 +14,21 @@ class TeamBase(SQLModel):
 
 
 class TeamCreate(TeamBase):
-    client_id: int | None = None
+    pass
 
 
 class TeamRead(TeamBase):
     id: int
-    client_id: int
     created_by_id: int | None
     created_at: datetime
     updated_at: datetime
     athlete_count: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TeamCoachCreate(SQLModel):
+    full_name: str
+    email: EmailStr
+    password: str
+    phone: str | None = None

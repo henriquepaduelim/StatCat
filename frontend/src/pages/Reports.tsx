@@ -7,7 +7,6 @@ import { useAthletes } from "../hooks/useAthletes";
 import { useAthleteReport } from "../hooks/useAthleteReport";
 import { useAthlete } from "../hooks/useAthlete";
 import { useTests } from "../hooks/useTests";
-import { useThemeStore } from "../theme/useThemeStore";
 import { useTranslation } from "../i18n/useTranslation";
 import AthleteReportCard from "../components/AthleteReportCard";
 import MapInput from "../components/MapInput";
@@ -20,8 +19,7 @@ import {
 import type { TestDefinition } from "../types/test";
 
 const Reports = () => {
-  const clientId = useThemeStore((state) => state.theme.clientId);
-  const { data: athletes } = useAthletes(clientId);
+  const { data: athletes } = useAthletes();
   const [currentAthleteId, setCurrentAthleteId] = useState<number | undefined>(undefined);
   const t = useTranslation();
   const queryClient = useQueryClient();
@@ -33,7 +31,7 @@ const Reports = () => {
   }, [athletes, currentAthleteId]);
 
   const reportQuery = useAthleteReport(currentAthleteId);
-  const testsQuery = useTests(clientId);
+  const testsQuery = useTests();
   const detailedAthleteQuery = useAthlete(
     currentAthleteId !== undefined ? currentAthleteId : Number.NaN
   );
@@ -159,16 +157,13 @@ const Reports = () => {
     }));
   };
 
-  const sessionClientId = currentAthlete?.client_id ?? clientId;
-
   const handleSaveSession = async () => {
-    if (!sessionClientId || !currentAthleteId) {
-      setSessionMessage({ type: "error", text: "Client or Athlete not found" });
+    if (!currentAthleteId) {
+      setSessionMessage({ type: "error", text: "Athlete not found" });
       return;
     }
 
     const sessionPayload: CreateSessionPayload = {
-      client_id: sessionClientId,
       athlete_id: currentAthleteId,
       name: sessionForm.name.trim() || buildDefaultSessionName(),
       location: sessionForm.location.trim() || undefined,
@@ -187,7 +182,7 @@ const Reports = () => {
 
   const handleAssessmentSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!sessionClientId || !currentAthleteId) {
+    if (!currentAthleteId) {
       setAssessmentMessage({ type: "error", text: t.athleteAssessment.errorNoValues });
       return;
     }
@@ -215,7 +210,6 @@ const Reports = () => {
     }
 
     const sessionPayload: CreateSessionPayload = {
-      client_id: sessionClientId,
       athlete_id: currentAthleteId,
       name: sessionForm.name.trim() || buildDefaultSessionName(),
       location: sessionForm.location.trim() || undefined,

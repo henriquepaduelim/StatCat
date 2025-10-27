@@ -3,7 +3,6 @@ from sqlmodel import SQLModel
 
 
 class TestDefinitionBase(SQLModel):
-    client_id: int
     name: str
     category: str | None = None
     unit: str = ""

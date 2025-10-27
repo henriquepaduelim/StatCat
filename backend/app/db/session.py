@@ -74,6 +74,10 @@ def _ensure_optional_columns() -> None:
             connection.exec_driver_sql(
                 "ALTER TABLE user ADD COLUMN athlete_id INTEGER"
             )
+        if "phone" not in user_columns:
+            connection.exec_driver_sql(
+                "ALTER TABLE user ADD COLUMN phone VARCHAR(30)"
+            )
 
         assessment_session_columns = {
             row[1]
@@ -84,16 +88,6 @@ def _ensure_optional_columns() -> None:
                 "ALTER TABLE assessmentsession ADD COLUMN athlete_id INTEGER"
             )
 
-        calendar_event_columns = {
-            row[1]
-            for row in connection.exec_driver_sql(
-                "PRAGMA table_info(calendar_event)"
-            ).fetchall()
-        }
-        if "selection_metadata" not in calendar_event_columns:
-            connection.exec_driver_sql(
-                "ALTER TABLE calendar_event ADD COLUMN selection_metadata JSON"
-            )
 
 
 def init_db() -> None:
