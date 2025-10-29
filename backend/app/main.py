@@ -10,6 +10,8 @@ from app.db.session import init_db
 
 app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION)
 
+print(f"CORS Origins: {settings.BACKEND_CORS_ORIGINS}") # DEBUG LINE
+
 media_path = Path(settings.MEDIA_ROOT)
 media_path.mkdir(parents=True, exist_ok=True)
 
