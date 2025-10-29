@@ -21,7 +21,6 @@ combine.db
 backend/combine.db
 
 # Media uploads and build artefacts
-media/
 backend/media/
 backend/app/combine_backend.egg-info/
 backend/=2.3
@@ -33,3 +32,4 @@ backend/=2.3
 
 client_secret_*.json
 *.env
+.vercel
