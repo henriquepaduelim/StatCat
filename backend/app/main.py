@@ -15,10 +15,9 @@ media_path.mkdir(parents=True, exist_ok=True)
 
 app.mount("/media", StaticFiles(directory=media_path), name="media")
 
-# Re-adding CORSMiddleware with wildcard origin for testing
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Temporarily allow all origins for testing
+    allow_origins=settings.BACKEND_CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
