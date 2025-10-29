@@ -29,6 +29,7 @@ export type TranslationDictionary = {
     signIn: string;
     heroBadge: string;
     theme: string;
+    clear: string;
   };
   home: {
     heroBullets: string[];
@@ -137,6 +138,7 @@ export type TranslationDictionary = {
       error: string;
       emptyTeam: string;
       empty: string;
+      noEvents: string;
       contactFallback: string;
       positionFallback: string;
       coachForm: {
@@ -147,6 +149,36 @@ export type TranslationDictionary = {
         cancelLabel: string;
         helper: string;
         errorLabel: string;
+      };
+      coachDirectory: {
+        title: string;
+        helper: string;
+        selectedTeamLabel: string;
+        listTitle: string;
+        coachCountSingular: string;
+        coachCountPlural: string;
+        coachesLoading: string;
+        coachesError: string;
+        noCoaches: string;
+        phoneFallback: string;
+        addTitle: string;
+        nameLabel: string;
+        emailLabel: string;
+        phoneLabel: string;
+        passwordLabel: string;
+        assignToggle: string;
+        cancelLabel: string;
+        createSubmit: string;
+        createSuccess: string;
+        assignSuccess: string;
+        removeSuccess: string;
+        createError: string;
+        assignError: string;
+        removeError: string;
+        assignButton: string;
+        removeButton: string;
+        assignDisabled: string;
+        closeButton: string;
       };
       calendar: {
         title: string;
@@ -160,6 +192,7 @@ export type TranslationDictionary = {
         nameLabel: string;
         dateLabel: string;
         timeLabel: string;
+        timeTbd: string;
         locationLabel: string;
         notesLabel: string;
         teamLabel: string;
@@ -168,10 +201,15 @@ export type TranslationDictionary = {
         coachEmpty: string;
         inviteLabel: string;
         inviteHelper: string;
+        inviteHeaderSelect: string;
+        inviteHeaderAthlete: string;
         noAthletes: string;
         submitLabel: string;
         cancelLabel: string;
         errorIncomplete: string;
+        filterLabel: string;
+        filterHelper: string;
+        filterEmpty: string;
       };
     };
   };
@@ -488,6 +526,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       signIn: "SIGN IN",
       heroBadge: "SaaS platform for football combines",
       theme: "Theme",
+      clear: "Clear",
     },
     home: {
       heroBullets: [
@@ -645,7 +684,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       coachesTitle: "Coach",
       coachesSubtitle: "Invite coaches to access their roster and upcoming sessions.",
       coachesEmpty: "No coaches assigned to this team yet.",
-      addCoachButton: "Coaching",
+      addCoachButton: "Coaches",
       removeCoachLabel: "Remove",
       columns: {
         name: "Athlete",
@@ -660,6 +699,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       error: "Unable to load roster data.",
       emptyTeam: "Select a team to display the roster.",
       empty: "No athletes assigned to this team yet.",
+      noEvents: "No events scheduled. Create an event to view team availability.",
       contactFallback: "No email provided",
       positionFallback: "Position not set",
       coachForm: {
@@ -703,7 +743,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       },
       calendar: {
         title: "Upcoming events",
-        subtitle: "Review fixtures and plan RSVP-driven sessions.",
+        subtitle: "",
         prevMonth: "Prev",
         nextMonth: "Next",
         createButton: "New event",
@@ -713,6 +753,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
         nameLabel: "Event name",
         dateLabel: "Date",
         timeLabel: "Time",
+        timeTbd: "Time TBD",
         locationLabel: "Location",
         notesLabel: "Notes",
         teamLabel: "Team",
@@ -721,9 +762,14 @@ export const translations: Record<Locale, TranslationDictionary> = {
         coachEmpty: "No coaches assigned to this team.",
         inviteLabel: "Invite athletes",
         inviteHelper: "Select players to send RSVP invitations.",
+        inviteHeaderSelect: "Select",
+        inviteHeaderAthlete: "Athlete",
         noAthletes: "No athletes found for this team.",
         submitLabel: "Save event",
         cancelLabel: "Cancel",
+        filterLabel: "Events on this date",
+        filterHelper: "Only teams assigned to these events can be selected below.",
+        filterEmpty: "No teams are linked to events on this date.",
         errorIncomplete: "Event name and date are required.",
       },
     },
