@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response # Added Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
+from fastapi.responses import JSONResponse # Added this import
 
 from app.api.deps import authenticate_user, get_current_active_user
 from app.core.security import create_access_token, get_password_hash
@@ -8,6 +9,7 @@ from app.db.session import get_session
 from app.models.athlete import Athlete
 from app.models.user import User, UserRole
 from app.schemas.user import Token, UserCreate, UserRead, UserReadWithToken, UserSignup
+from app.core.config import settings # Import settings to get origins
 
 router = APIRouter()
 
@@ -93,11 +95,11 @@ def signup_user(
     return user
 
 
-@router.post("/login/full", response_model=UserReadWithToken)
+@router.post("/login/full", response_model=Response) # Changed return type
 def login_with_profile(
     session: Session = Depends(get_session),
     form_data: OAuth2PasswordRequestForm = Depends(),
-) -> UserReadWithToken:
+) -> Response: # Changed return type
     user = authenticate_user(session, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
@@ -105,7 +107,9 @@ def login_with_profile(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
 
     token = create_access_token(user.email)
-    return UserReadWithToken(
+    
+    # Manually construct JSONResponse and add CORS headers
+    response_data = UserReadWithToken(
         id=user.id,
         email=user.email,
         full_name=user.full_name,
@@ -114,4 +118,18 @@ def login_with_profile(
         athlete_id=user.athlete_id,
         is_active=user.is_active,
         access_token=token,
-    )
+    ).model_dump_json() # Use model_dump_json for Pydantic v2
+
+    response = Response(content=response_data, media_type="application/json")
+
+    # Determine the allowed origin from settings
+    # This logic assumes frontend origin will always be the second
+    # one in the list (after http://localhost:5173)
+    allowed_origin = settings.BACKEND_CORS_ORIGINS[1] if len(settings.BACKEND_CORS_ORIGINS) > 1 else settings.BACKEND_CORS_ORIGINS[0]
+
+    response.headers["Access-Control-Allow-Origin"] = allowed_origin
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+
+    return response
