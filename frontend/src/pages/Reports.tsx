@@ -281,7 +281,7 @@ const Reports = () => {
                       <button
                         type="button"
                         onClick={closeModal}
-                        className="rounded-md px-3 py-1 text-sm font-semibold text-muted hover:text-container-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary/60"
+                        className="rounded-md border border-action-primary/40 bg-action-primary px-3 py-1 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary/60"
                       >
                         Close
                       </button>
@@ -486,7 +486,7 @@ const Reports = () => {
                       <button
                         type="button"
                         onClick={closeModal}
-                        className="rounded-md px-3 py-1 text-sm font-semibold text-muted hover:text-container-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary/60"
+                        className="rounded-md border border-action-primary/40 bg-action-primary px-3 py-1 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary/60"
                       >
                         Close
                       </button>
@@ -577,7 +577,7 @@ const Reports = () => {
                         <button
                           type="button"
                           onClick={handleSaveSession}
-                          className="rounded-md bg-action-primary/80 px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm hover:bg-action-primary disabled:opacity-60"
+                          className="rounded-md border border-action-primary/40 bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
                           disabled={!currentAthlete}
                         >
                           Save Session
@@ -676,7 +676,7 @@ const Reports = () => {
                       <div className="flex justify-end">
                         <button
                           type="submit"
-                          className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm disabled:opacity-60"
+                          className="rounded-md border border-action-primary/40 bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
                           disabled={assessmentPending || !currentAthlete}
                         >
                           {assessmentPending
@@ -715,49 +715,45 @@ const Reports = () => {
             ))}
           </select>
         </label>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <button
-            type="button"
-            onClick={() => setOpenModal("game")}
-            className={`rounded-md border px-4 py-2 text-sm font-semibold shadow-sm transition ${
-              openModal === "game"
-                ? "border-action-primary bg-action-primary text-action-primary-foreground"
-                : "border-action-primary text-accent hover:bg-action-primary/10"
-            }`}
-          >
-            Game report
-          </button>
-          <button
-            type="button"
-            onClick={() => setOpenModal("assessment")}
-            className={`rounded-md border px-4 py-2 text-sm font-semibold shadow-sm transition ${
-              openModal === "assessment"
-                ? "border-action-primary bg-action-primary text-action-primary-foreground"
-                : "border-action-primary text-accent hover:bg-action-primary/10"
-            }`}
-          >
-            {t.athleteAssessment.sessionHeading}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowEventSummary((value) => !value)}
-            className={`rounded-md border px-4 py-2 text-sm font-semibold shadow-sm transition ${
-              showEventSummary
-                ? "border-action-primary bg-action-primary text-action-primary-foreground"
-                : "border-action-primary text-accent hover:bg-action-primary/10"
-            }`}
-          >
-            Event summary
-          </button>
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="rounded-md border border-action-primary px-4 py-2 text-sm font-semibold text-accent shadow-sm"
-            disabled={!currentAthlete || reportQuery.isError || reportQuery.isLoading}
-          >
-            {t.reports.export} ({t.reports.soon})
-          </button>
-        </div>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => setOpenModal("game")}
+              className={`rounded-md border px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition bg-action-primary hover:bg-action-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary/60 ${
+                openModal === "game" ? "border-action-primary" : "border-action-primary/40 opacity-90"
+              }`}
+            >
+              Game report
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpenModal("assessment")}
+              className={`rounded-md border px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition bg-action-primary hover:bg-action-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary/60 ${
+                openModal === "assessment"
+                  ? "border-action-primary"
+                  : "border-action-primary/40 opacity-90"
+              }`}
+            >
+              {t.athleteAssessment.sessionHeading}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowEventSummary((value) => !value)}
+              className={`rounded-md border px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition bg-action-primary hover:bg-action-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary/60 ${
+                showEventSummary ? "border-action-primary" : "border-action-primary/40 opacity-90"
+              }`}
+            >
+              Event summary
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="rounded-md border border-action-primary bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={!currentAthlete || reportQuery.isError || reportQuery.isLoading}
+            >
+              {t.reports.export} ({t.reports.soon})
+            </button>
+          </div>
       </div>
       {showEventSummary ? (
         <section className="print-hidden space-y-4 rounded-xl border border-black/10 bg-container p-6 shadow-sm">
@@ -782,14 +778,7 @@ const Reports = () => {
           </div>
         </section>
       ) : null}
-      <button
-        type="button"
-        onClick={handlePrint}
-        className="rounded-md border border-action-primary px-4 py-2 text-sm font-semibold text-accent shadow-sm"
-        disabled={!currentAthlete || reportQuery.isError || reportQuery.isLoading}
-      >
-        {t.reports.export} ({t.reports.soon})
-      </button>
+      
 
       <section className="rounded-xl bg-container/40 p-6 shadow-sm print:bg-white">
         {!currentAthlete && <p className="text-sm text-muted">{t.reports.noAthlete}</p>}

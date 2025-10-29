@@ -2,7 +2,7 @@ Metadata-Version: 2.4
 Name: combine-backend
 Version: 0.1.0
 Summary: API backend for football combine testing platform
-Author: Henrique Machado
+Author: Henrique Padueli
 Requires-Python: >=3.11
 Requires-Dist: fastapi>=0.110
 Requires-Dist: uvicorn[standard]>=0.27

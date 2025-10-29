@@ -9,7 +9,7 @@ import { NAV_ITEMS } from "./navigationItems";
 const LOGOUT_ICON = faRightFromBracket;
 
 const linkClasses = ({ isActive }: { isActive: boolean }) =>
-  `interactive-hover block w-full px-2 py-2 text-left text-sm font-medium shadow-lg transition-colors duration-100 ease-in-out ${
+  `interactive-hover block w-full px-3 py-2 text-left text-sm font-medium shadow-lg transition-colors duration-100 ease-in-out ${
     isActive ? "" : "hover:bg-action-primary/85"
   }`;
 
@@ -42,13 +42,13 @@ const SideNav = () => {
             ))}
           </nav>
         </div>
-        <div className="flex-shrink-0 flex border-t border-green-600 px-2 py-4">
+        <div className="flex-shrink-0 flex border-t border-yellow-600 px-2 py-4">
           <button
             type="button"
             onClick={() => {
               clearAuth();
             }}
-            className="group relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-action-primary text-action-primary-foreground shadow-sm transition-all duration-200 ease-in-out hover:w-full"
+            className="group relative inline-flex h-10 w-10 items-center justify-center overflow- rounded-full bg-action-primary text-action-primary-foreground shadow-sm transition-all duration-100 ease-in-out hover:w-full"
           >
             <span className="absolute inset-y-0 left-0 flex w-10 items-center justify-center text-base">
               <FontAwesomeIcon icon={LOGOUT_ICON} className="leading-none" />

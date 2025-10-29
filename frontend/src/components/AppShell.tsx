@@ -10,7 +10,6 @@ import { NAV_ITEMS } from "./navigationItems";
 
 const AppShell = ({ children }: PropsWithChildren) => {
   const location = useLocation();
-  const userRole = useAuthStore((state) => state.user?.role ?? "staff");
   const clearAuth = useAuthStore((state) => state.clear);
   const t = useTranslation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

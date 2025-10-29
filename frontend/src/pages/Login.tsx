@@ -85,7 +85,7 @@ const Login = () => {
         className="absolute top-0 left-0 h-full w-full object-cover"
         style={{ zIndex: -1 }}
       >
-        <source src="/public/media/login-bg.mp4" type="video/mp4" />
+        <source src="/media/hero-tech.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
       <div className="flex min-h-screen items-center justify-center bg-black/50 px-4 py-10">

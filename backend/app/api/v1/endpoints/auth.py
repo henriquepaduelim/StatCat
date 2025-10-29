@@ -95,7 +95,7 @@ def signup_user(
     return user
 
 
-@router.post("/login/full", response_model=Response) # Changed return type
+@router.post("/login/full", response_model=None) # Changed return type
 def login_with_profile(
     session: Session = Depends(get_session),
     form_data: OAuth2PasswordRequestForm = Depends(),

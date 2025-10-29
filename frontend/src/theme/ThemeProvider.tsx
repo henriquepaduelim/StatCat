@@ -1,14 +1,12 @@
 import { PropsWithChildren, useEffect } from "react";
 
-import { useThemeStore } from "./useThemeStore";
+import { activeTheme } from "./themes";
 import { mapThemeToCssVariables } from "./colorUtils";
 
 const ThemeProvider = ({ children }: PropsWithChildren): JSX.Element => {
-  const theme = useThemeStore((state) => state.theme);
-
   useEffect(() => {
     const root = document.documentElement;
-    const variables = mapThemeToCssVariables(theme);
+    const variables = mapThemeToCssVariables(activeTheme);
 
     Object.entries(variables).forEach(([token, value]) => {
       root.style.setProperty(token, value);
@@ -24,7 +22,7 @@ const ThemeProvider = ({ children }: PropsWithChildren): JSX.Element => {
     if (pageForeground) {
       document.body.style.color = `rgb(${pageForeground})`;
     }
-  }, [theme]);
+  }, []);
 
   return <>{children}</>;
 };

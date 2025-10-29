@@ -82,6 +82,9 @@ const Dashboard = () => {
   const teams = useMemo(() => teamsQuery.data ?? [], [teamsQuery.data]);
   const token = useAuthStore((state) => state.token);
   const teamNameById = useMemo(() => {
+    if (!Array.isArray(teams) || teams.length === 0) {
+      return {};
+    }
     return teams.reduce<Record<number, string>>((acc, team) => {
       acc[team.id] = team.name;
       return acc;
@@ -105,7 +108,6 @@ const Dashboard = () => {
   const [teamForm, setTeamForm] = useState<NewTeamFormState>(() => createEmptyTeamForm());
   const [teamFormError, setTeamFormError] = useState<string | null>(null);
   const t = useTranslation();
-  const userRole = useAuthStore((state) => state.user?.role ?? "staff");
   const queryClient = useQueryClient();
   const teamCoachesQuery = useTeamCoaches(selectedTeamId);
   const summaryLabels = t.dashboard.summary;
@@ -123,6 +125,8 @@ const Dashboard = () => {
     noCoaches: "No coaches available. Create coaches first.",
     athletesSection: "Assign athletes",
     athletesHelper: "Select players to include in this team.",
+    athletesHeaderSelect: "Select",
+    athletesHeaderAthlete: "Athlete",
     submitLabel: "Create team",
     cancelLabel: "Cancel",
     noAthletes: "No athletes available.",
@@ -138,7 +142,7 @@ const Dashboard = () => {
   });
   const availableCoaches = useMemo(() => {
     const coaches = allCoachesQuery.data ?? [];
-    return [...coaches].sort((a, b) => a.full_name.localeCompare(b.full_name));
+    return [...coaches].sort((a, b) => (a?.full_name || '').localeCompare(b?.full_name || ''));
   }, [allCoachesQuery.data]);
   const teamAgeOptions = ["U12", "U13", "U14", "U15", "U16", "U19"];
   const [calendarCursor, setCalendarCursor] = useState(() => {
@@ -146,6 +150,7 @@ const Dashboard = () => {
     return new Date(today.getFullYear(), today.getMonth(), 1);
   });
   const [events, setEvents] = useState<DashboardEvent[]>([]);
+  const [selectedEventDate, setSelectedEventDate] = useState<string | null>(null);
   const [eventFormOpen, setEventFormOpen] = useState(false);
   const [eventForm, setEventForm] = useState<EventFormState>({
     name: "",
@@ -159,8 +164,48 @@ const Dashboard = () => {
   });
   const [eventFormError, setEventFormError] = useState<string | null>(null);
   const eventIdRef = useRef(1);
+  const selectAllAthletesRef = useRef<HTMLInputElement | null>(null);
+  const selectAllInviteesRef = useRef<HTMLInputElement | null>(null);
   const eventTeamId = eventForm.teamId ?? selectedTeamId ?? null;
   const eventTeamCoachesQuery = useTeamCoaches(eventTeamId);
+
+  const eventsOnSelectedDate = useMemo(() => {
+    if (!selectedEventDate) {
+      return [];
+    }
+    return events.filter((event) => event.date === selectedEventDate);
+  }, [events, selectedEventDate]);
+
+  const eventTeamIdsForSelectedDate = useMemo(() => {
+    if (!selectedEventDate) {
+      return [];
+    }
+    const ids = new Set<number>();
+    eventsOnSelectedDate.forEach((event) => {
+      if (event.teamId !== null) {
+        ids.add(event.teamId);
+      }
+    });
+    return Array.from(ids);
+  }, [eventsOnSelectedDate, selectedEventDate]);
+  const teamsForSelectedDate = useMemo(() => {
+    if (!events.length) {
+      return [];
+    }
+    const teamsWithEvents = new Set<number>();
+    events.forEach((event) => {
+      if (event.teamId !== null) {
+        teamsWithEvents.add(event.teamId);
+      }
+    });
+    if (!teamsWithEvents.size) {
+      return [];
+    }
+    if (selectedEventDate) {
+      return teams.filter((team) => eventTeamIdsForSelectedDate.includes(team.id));
+    }
+    return teams.filter((team) => teamsWithEvents.has(team.id));
+  }, [teams, events, selectedEventDate, eventTeamIdsForSelectedDate]);
 
   const apiGender = speedGenderFilter === "girls" ? "female" : "male";
   const speedRankingQuery = useMetricRanking("top_end_speed", {
@@ -184,21 +229,34 @@ const Dashboard = () => {
   });
 
   useEffect(() => {
-    if (!teams.length) {
-      setSelectedTeamId(null);
+    if (!teams.length || !teamsForSelectedDate.length) {
+      if (selectedTeamId !== null) {
+        setSelectedTeamId(null);
+      }
       return;
     }
-    const teamStillExists = selectedTeamId ? teams.some((team) => team.id === selectedTeamId) : false;
-    if (!selectedTeamId || !teamStillExists) {
-      setSelectedTeamId(teams[0].id);
+
+    if (selectedEventDate) {
+      const nextId = selectedTeamId && eventTeamIdsForSelectedDate.includes(selectedTeamId)
+        ? selectedTeamId
+        : teamsForSelectedDate[0]?.id ?? null;
+      if (nextId !== selectedTeamId) {
+        setSelectedTeamId(nextId);
+      }
+      return;
     }
-  }, [selectedTeamId, teams]);
+
+    const stillValid =
+      selectedTeamId !== null &&
+      teamsForSelectedDate.some((team) => team.id === selectedTeamId);
+    const nextId = stillValid ? selectedTeamId : teamsForSelectedDate[0]?.id ?? null;
+    if (nextId !== selectedTeamId) {
+      setSelectedTeamId(nextId);
+    }
+  }, [teams, teamsForSelectedDate, selectedEventDate, eventTeamIdsForSelectedDate, selectedTeamId]);
 
   useEffect(() => {
-    setCoachForm((prev) => ({
-      ...createEmptyCoachForm(Boolean(selectedTeamId)),
-      assignToTeam: Boolean(selectedTeamId),
-    }));
+    setCoachForm(createEmptyCoachForm(Boolean(selectedTeamId)));
     setCoachFormError(null);
     setCoachFormSuccess(null);
   }, [selectedTeamId]);
@@ -210,12 +268,45 @@ const Dashboard = () => {
     return displayAthletes.filter((athlete) => athlete.team_id === selectedTeamId);
   }, [displayAthletes, selectedTeamId]);
 
+  const allAthleteIds = useMemo(() => {
+    if (!Array.isArray(displayAthletes)) {
+      return [];
+    }
+    return displayAthletes.map((athlete) => athlete.id)
+  }, [displayAthletes]);
+  const areAllAthletesSelected = useMemo(
+    () => allAthleteIds.length > 0 && allAthleteIds.every((id) => teamForm.athleteIds.includes(id)),
+    [allAthleteIds, teamForm.athleteIds]
+  );
+
+  useEffect(() => {
+    if (!selectAllAthletesRef.current) {
+      return;
+    }
+    const isIndeterminate = teamForm.athleteIds.length > 0 && !areAllAthletesSelected;
+    selectAllAthletesRef.current.indeterminate = isIndeterminate;
+  }, [teamForm.athleteIds, areAllAthletesSelected]);
+
   const eventTeamAthletes = useMemo(() => {
     if (!eventTeamId) {
       return [];
     }
     return displayAthletes.filter((athlete) => athlete.team_id === eventTeamId);
   }, [displayAthletes, eventTeamId]);
+
+  const allInviteeIds = useMemo(() => eventTeamAthletes.map((athlete) => athlete.id), [eventTeamAthletes]);
+  const areAllInviteesSelected = useMemo(
+    () => allInviteeIds.length > 0 && allInviteeIds.every((id) => eventForm.inviteeIds.includes(id)),
+    [allInviteeIds, eventForm.inviteeIds]
+  );
+
+  useEffect(() => {
+    if (!selectAllInviteesRef.current) {
+      return;
+    }
+    const isIndeterminate = eventForm.inviteeIds.length > 0 && !areAllInviteesSelected;
+    selectAllInviteesRef.current.indeterminate = isIndeterminate;
+  }, [eventForm.inviteeIds, areAllInviteesSelected]);
 
   const eventsByDate = useMemo(() => {
     const map = new Map<string, DashboardEvent[]>();
@@ -256,9 +347,6 @@ const Dashboard = () => {
     return { cells, year, month };
   }, [calendarCursor]);
 
-  const formatAvailability = (status: Athlete["status"]) =>
-    status === "active" ? t.dashboard.summary.availability.available : t.dashboard.summary.availability.unavailable;
-
   const availabilityBadgeClass = (status: Athlete["status"]) =>
     status === "active"
       ? "flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -266,7 +354,7 @@ const Dashboard = () => {
 
   const isRosterLoading = athletesQuery.isLoading || teamsQuery.isLoading;
   const rosterHasError = athletesQuery.isError || teamsQuery.isError;
-  const teamCoaches = teamCoachesQuery.data ?? [];
+  const teamCoaches = useMemo(() => teamCoachesQuery.data ?? [], [teamCoachesQuery.data]);
   const assignedCoachIds = useMemo(() => new Set(teamCoaches.map((coach) => coach.id)), [teamCoaches]);
   const selectedTeamName = useMemo(() => {
     if (!selectedTeamId) {
@@ -277,6 +365,7 @@ const Dashboard = () => {
   const isCoachListLoading = teamCoachesQuery.isLoading && Boolean(selectedTeamId);
   const coachListHasError = teamCoachesQuery.isError;
   const eventTeamCoaches = eventTeamCoachesQuery.data ?? [];
+  const isTeamSelectDisabled = !teamsForSelectedDate.length;
 
   const goToPrevMonth = () => {
     setCalendarCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
@@ -302,7 +391,16 @@ const Dashboard = () => {
       return;
     }
     const target = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth(), day);
-    openEventFormPanel(formatDateKey(target));
+    const dateKey = formatDateKey(target);
+    const dayEvents = eventsByDate.get(dateKey) ?? [];
+    if (dayEvents.length) {
+      setEventFormOpen(false);
+      setEventFormError(null);
+      setSelectedEventDate(dateKey);
+      return;
+    }
+    setSelectedEventDate(null);
+    openEventFormPanel(dateKey);
   };
 
   const handleEventInputChange = <T extends keyof EventFormState>(field: T, value: EventFormState[T]) => {
@@ -320,6 +418,13 @@ const Dashboard = () => {
         : [...prev.inviteeIds, athleteId];
       return { ...prev, inviteeIds: nextInvitees };
     });
+  };
+
+  const handleToggleAllInvitees = () => {
+    setEventForm((prev) => ({
+      ...prev,
+      inviteeIds: areAllInviteesSelected ? [] : allInviteeIds,
+    }));
   };
 
   const handleEventSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -341,6 +446,10 @@ const Dashboard = () => {
     };
     eventIdRef.current += 1;
     setEvents((prev) => [...prev, newEvent]);
+    setSelectedEventDate(newEvent.date);
+    if (newEvent.teamId) {
+      setSelectedTeamId(newEvent.teamId);
+    }
     setEventForm({
       name: "",
       date: "",
@@ -575,6 +684,14 @@ const Dashboard = () => {
     setTeamFormError(null);
   };
 
+  const handleToggleAllAthletes = () => {
+    setTeamForm((prev) => ({
+      ...prev,
+      athleteIds: areAllAthletesSelected ? [] : allAthleteIds,
+    }));
+    setTeamFormError(null);
+  };
+
   const handleTeamFormSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmedName = teamForm.name.trim();
@@ -647,7 +764,7 @@ const Dashboard = () => {
               <p className="mt-4 text-sm text-muted">{t.common.loading}...</p>
             ) : speedRankingQuery.isError ? (
               <p className="mt-4 text-sm text-red-500">Unable to load leaderboard.</p>
-            ) : !speedRankingQuery.data?.entries.length ? (
+            ) : !speedRankingQuery.data?.entries?.length ? (
               <p className="mt-4 text-sm text-muted">No athletes with recorded data.</p>
             ) : (
               <ol className="mt-4 flex-1 space-y-3 text-sm text-muted">
@@ -676,7 +793,7 @@ const Dashboard = () => {
               <p className="mt-4 text-sm text-muted">{t.common.loading}...</p>
             ) : scorersLeaderboard.isError ? (
               <p className="mt-4 text-sm text-red-500">Unable to load scoring leaderboard.</p>
-            ) : !scorersLeaderboard.data?.entries.length ? (
+            ) : !scorersLeaderboard.data?.entries?.length ? (
               <p className="mt-4 text-sm text-muted">No match data recorded yet.</p>
             ) : (
               <ol className="mt-4 flex-1 space-y-3 text-sm text-muted">
@@ -705,7 +822,7 @@ const Dashboard = () => {
               <p className="mt-4 text-sm text-muted">{t.common.loading}...</p>
             ) : shootoutsLeaderboard.isError ? (
               <p className="mt-4 text-sm text-red-500">Unable to load shootout leaderboard.</p>
-            ) : !shootoutsLeaderboard.data?.entries.length ? (
+            ) : !shootoutsLeaderboard.data?.entries?.length ? (
               <p className="mt-4 text-sm text-muted">No shootout data recorded yet.</p>
             ) : (
               <ol className="mt-4 flex-1 space-y-3 text-sm text-muted">
@@ -738,7 +855,7 @@ const Dashboard = () => {
               <button
                 type="button"
                 onClick={goToPrevMonth}
-                className="rounded-full border border-black/10 px-3 py-1 text-xs font-semibold text-muted hover:text-action-primary"
+                className="rounded-full border border-action-primary/40 bg-action-primary px-3 py-1 text-xs font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
               >
                 {summaryLabels.calendar.prevMonth}
               </button>
@@ -751,15 +868,15 @@ const Dashboard = () => {
               <button
                 type="button"
                 onClick={goToNextMonth}
-                className="rounded-full border border-black/10 px-3 py-1 text-xs font-semibold text-muted hover:text-action-primary"
+                className="rounded-full border border-action-primary/40 bg-action-primary px-3 py-1 text-xs font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
               >
                 {summaryLabels.calendar.nextMonth}
               </button>
             </div>
             <div className="mt-4">
               <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold uppercase tracking-wide text-muted">
-                {weekdayInitials.map((day) => (
-                  <span key={`weekday-${day}`}>{day}</span>
+                {weekdayInitials.map((day, index) => (
+                  <span key={`weekday-${day}-${index}`}>{day}</span>
                 ))}
               </div>
               <div className="mt-2 grid grid-cols-7 gap-2 text-sm">
@@ -769,6 +886,7 @@ const Dashboard = () => {
                     : null;
                   const hasEvents = Boolean(dateKey && eventsByDate.get(dateKey)?.length);
                   const isToday = dateKey === formatDateKey(new Date());
+                  const isSelected = Boolean(dateKey && selectedEventDate === dateKey);
                   return (
                     <button
                       key={`calendar-cell-${calendarGrid.year}-${calendarGrid.month}-${index}`}
@@ -777,9 +895,11 @@ const Dashboard = () => {
                       onClick={() => handleDayClick(cell)}
                       className={`flex h-14 flex-col items-center justify-center rounded-lg border px-1 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-action-primary/60 ${
                         cell
-                          ? isToday
-                            ? "border-action-primary/40 bg-white text-action-primary"
-                            : "border-black/10 bg-white/80 text-container-foreground hover:border-action-primary/40"
+                          ? isSelected
+                            ? "border-action-primary bg-action-primary/10 text-action-primary"
+                            : isToday
+                              ? "border-action-primary/40 bg-white text-action-primary"
+                              : "border-black/10 bg-white/80 text-container-foreground hover:border-action-primary/40"
                           : "border-transparent bg-transparent text-transparent"
                       }`}
                     >
@@ -801,27 +921,50 @@ const Dashboard = () => {
                 <button
                   type="button"
                   onClick={() => openEventFormPanel()}
-                  className="rounded-md border border-action-primary/40 px-3 py-1 text-xs font-semibold text-action-primary"
+                  className="rounded-md border border-action-primary/40 bg-action-primary px-3 py-1 text-xs font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
                 >
                   {summaryLabels.calendar.createButton}
                 </button>
               </div>
               {upcomingEvents.length ? (
                 <ul className="mt-3 space-y-3 text-sm">
-                  {upcomingEvents.map((event) => (
-                    <li
-                      key={event.id}
-                      className="rounded-lg border border-black/10 bg-white/70 px-3 py-2 shadow-sm"
-                    >
-                      <p className="font-semibold text-container-foreground">{event.name}</p>
-                      <p className="text-xs text-muted">
-                        {readableDate(event.date)} • {event.time || summaryLabels.calendar.timeTbd}
-                      </p>
-                      {event.location ? (
-                        <p className="text-xs text-muted">{event.location}</p>
-                      ) : null}
-                    </li>
-                  ))}
+                  {upcomingEvents.map((event) => {
+                    const handleUpcomingClick = () => {
+                      setSelectedEventDate(event.date);
+                      setEventFormOpen(false);
+                      setEventFormError(null);
+                      if (event.teamId) {
+                        setSelectedTeamId(event.teamId);
+                      }
+                      setCalendarCursor((prev) => {
+                        const eventDate = new Date(event.date);
+                        if (
+                          prev.getFullYear() === eventDate.getFullYear() &&
+                          prev.getMonth() === eventDate.getMonth()
+                        ) {
+                          return prev;
+                        }
+                        return new Date(eventDate.getFullYear(), eventDate.getMonth(), 1);
+                      });
+                    };
+                    return (
+                      <li key={event.id}>
+                        <button
+                          type="button"
+                          onClick={handleUpcomingClick}
+                          className="w-full rounded-lg border border-black/10 bg-white/70 px-3 py-2 text-left shadow-sm transition hover:border-action-primary/40 hover:shadow-md"
+                        >
+                          <p className="font-semibold text-container-foreground">{event.name}</p>
+                          <p className="text-xs text-muted">
+                            {readableDate(event.date)} • {event.time || summaryLabels.calendar.timeTbd}
+                          </p>
+                          {event.location ? (
+                            <p className="text-xs text-muted">{event.location}</p>
+                          ) : null}
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               ) : (
                 <p className="mt-3 text-xs text-muted">{summaryLabels.calendar.upcomingEmpty}</p>
@@ -934,27 +1077,67 @@ const Dashboard = () => {
                 </label>
                 <div className="md:col-span-2">
                   <p className="text-xs font-medium text-muted">{summaryLabels.calendar.inviteLabel}</p>
-                  <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-black/10 bg-white/70 p-3">
+                  <div className="mt-2 max-h-48 overflow-y-auto rounded-lg border border-black/10 bg-white/70">
                     {!eventTeamId ? (
-                      <p className="text-xs text-muted">{summaryLabels.emptyTeam}</p>
+                      <p className="px-3 py-2 text-xs text-muted">{summaryLabels.emptyTeam}</p>
                     ) : eventTeamAthletes.length ? (
-                      <div className="space-y-2">
-                        {eventTeamAthletes.map((athlete) => (
-                          <label key={`invite-${athlete.id}`} className="flex items-center gap-2 text-sm text-container-foreground">
-                            <input
-                              type="checkbox"
-                              checked={eventForm.inviteeIds.includes(athlete.id)}
-                              onChange={() => handleInviteToggle(athlete.id)}
-                              className="rounded border-gray-300 text-action-primary focus:ring-action-primary"
-                            />
-                            <span>
-                              {athlete.first_name} {athlete.last_name}
-                            </span>
-                          </label>
-                        ))}
+                      <div className="text-sm text-container-foreground">
+                        <div className="grid w-full min-w-full border border-black/10">
+                          <div className="grid grid-cols-[40px_1fr] items-center border-b border-black/10 bg-container/20 px-2 py-1 text-[0.7rem] font-semibold uppercase tracking-wide text-muted">
+                            <div className="flex items-center justify-center">
+                              <input
+                                ref={selectAllInviteesRef}
+                                type="checkbox"
+                                checked={areAllInviteesSelected}
+                                onChange={handleToggleAllInvitees}
+                                aria-label={summaryLabels.calendar.inviteHeaderSelect}
+                                className="h-4 w-4 rounded border-gray-300 text-action-primary focus:ring-action-primary"
+                              />
+                            </div>
+                            <span className="px-1">{summaryLabels.calendar.inviteHeaderAthlete}</span>
+                          </div>
+                          {eventTeamAthletes.map((athlete) => {
+                            const assignedTeamName =
+                              athlete.team_id && teamNameById[athlete.team_id]
+                                ? teamNameById[athlete.team_id]
+                                : null;
+                            const checkboxId = `event-invite-${athlete.id}`;
+                            return (
+                              <div
+                                key={checkboxId}
+                                className="grid grid-cols-[40px_1fr] items-stretch border-b border-black/10 last:border-b-0"
+                              >
+                                <div className="flex items-center justify-center border-r border-black/10 px-2 py-1">
+                                  <input
+                                    id={checkboxId}
+                                    type="checkbox"
+                                    checked={eventForm.inviteeIds.includes(athlete.id)}
+                                    onChange={() => handleInviteToggle(athlete.id)}
+                                    className="h-4 w-4 rounded border-gray-300 text-action-primary focus:ring-action-primary"
+                                  />
+                                </div>
+                                <label
+                                  htmlFor={checkboxId}
+                                  className="flex flex-col justify-center gap-0.5 px-3 py-1 leading-tight"
+                                >
+                                  <span>
+                                    {athlete.first_name} {athlete.last_name}
+                                  </span>
+                                  {athlete.team_id ? (
+                                    <span className="text-xs text-muted">
+                                      {assignedTeamName
+                                        ? `(Assigned • ${assignedTeamName})`
+                                        : "(Assigned)"}
+                                    </span>
+                                  ) : null}
+                                </label>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     ) : (
-                      <p className="text-xs text-muted">{summaryLabels.calendar.noAthletes}</p>
+                      <p className="px-3 py-2 text-xs text-muted">{summaryLabels.calendar.noAthletes}</p>
                     )}
                   </div>
                   <p className="mt-1 text-xs text-muted">{summaryLabels.calendar.inviteHelper}</p>
@@ -1006,113 +1189,161 @@ const Dashboard = () => {
                   setCoachFormSuccess(null);
                 }}
                 disabled={createCoachMutation.isPending}
-                className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60 "
               >
                 {summaryLabels.addCoachButton}
               </button>
             </div>
           </div>
           <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="flex items-center gap-2 text-sm font-medium text-muted">
-                <span>{summaryLabels.teamLabel}</span>
-                <select
-                  value={selectedTeamId ?? ""}
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    setSelectedTeamId(value ? Number(value) : null);
-                  }}
-                  disabled={!teams.length}
-                  className="rounded-md border border-action-primary/30 bg-container/80 px-3 py-2 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <option value="">{summaryLabels.teamPlaceholder}</option>
-                  {teams.map((team) => (
-                    <option key={team.id} value={team.id}>
-                      {team.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="ml-auto flex rounded-lg border border-black/5 bg-white/80 px-3 py-2 text-xs text-muted">
-                <div className="space-y-1">
-                  <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-container-foreground">
-                    {summaryLabels.coachesTitle}
+            {selectedEventDate ? (
+              <div className="rounded-lg border border-action-primary/30 bg-action-primary/5 px-3 py-2 text-xs text-container-foreground">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="font-semibold text-action-primary">
+                    {summaryLabels.calendar.filterLabel} • {readableDate(selectedEventDate)}
                   </p>
-                  {!selectedTeamId ? (
-                    <p>{summaryLabels.emptyTeam}</p>
-                  ) : isCoachListLoading ? (
-                    <p>{t.common.loading}...</p>
-                  ) : coachListHasError ? (
-                    <p className="text-red-500">{summaryLabels.error}</p>
-                  ) : teamCoaches.length ? (
-                    <ul className="space-y-1">
-                      {teamCoaches.map((coach) => (
-                        <li key={coach.id} className="flex items-center gap-2 text-xs text-container-foreground">
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate font-medium">{coach.full_name}</p>
-                            <p className="truncate text-muted">{coach.phone ?? coachDirectoryLabels.phoneFallback}</p>
-                            <p className="truncate text-muted">{coach.email}</p>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEventDate(null)}
+                    className="text-xs font-semibold text-action-primary transition hover:text-action-primary/80"
+                  >
+                    {t.common.clear}
+                  </button>
+                </div>
+                {eventsOnSelectedDate.length ? (
+                  <ul className="mt-2 space-y-1 text-left">
+                    {eventsOnSelectedDate.map((event) => (
+                      <li
+                        key={`selected-event-${event.id}`}
+                        className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted"
+                      >
+                        <span className="font-medium text-container-foreground">{event.name}</span>
+                        <span>
+                          {summaryLabels.teamLabel}:{" "}
+                          {event.teamId
+                            ? teamNameById[event.teamId] ?? summaryLabels.teamPlaceholder
+                            : summaryLabels.teamPlaceholder}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-xs text-muted">{summaryLabels.calendar.upcomingEmpty}</p>
+                )}
+                <p className="mt-2 text-[0.7rem] text-muted">{summaryLabels.calendar.filterHelper}</p>
+                {!eventTeamIdsForSelectedDate.length ? (
+                  <p className="mt-1 text-xs text-red-500">{summaryLabels.calendar.filterEmpty}</p>
+                ) : null}
+              </div>
+            ) : null}
+            {!teamsForSelectedDate.length ? (
+              <div className="rounded-lg border border-black/10 bg-white/70 px-3 py-2 text-xs text-muted">
+                {summaryLabels.noEvents}
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-muted">
+                    <span>{summaryLabels.teamLabel}</span>
+                    <select
+                      value={selectedTeamId ?? ""}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        setSelectedTeamId(value ? Number(value) : null);
+                      }}
+                      disabled={isTeamSelectDisabled}
+                      className="rounded-md border border-action-primary/30 bg-container/80 px-3 py-2 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <option value="">{summaryLabels.teamPlaceholder}</option>
+                      {teamsForSelectedDate.map((team) => (
+                        <option key={team.id} value={team.id}>
+                          {team.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="ml-auto flex rounded-lg border border-black/5 bg-white/80 px-3 py-2 text-xs text-muted">
+                    <div className="space-y-1">
+                      <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-container-foreground">
+                        {summaryLabels.coachesTitle}
+                      </p>
+                      {!selectedTeamId ? (
+                        <p>{summaryLabels.emptyTeam}</p>
+                      ) : isCoachListLoading ? (
+                        <p>{t.common.loading}...</p>
+                      ) : coachListHasError ? (
+                        <p className="text-red-500">{summaryLabels.error}</p>
+                      ) : teamCoaches.length ? (
+                        <ul className="space-y-1">
+                          {teamCoaches.map((coach) => (
+                            <li key={coach.id} className="flex items-center gap-2 text-xs text-container-foreground">
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate font-medium">{coach.full_name}</p>
+                                <p className="truncate text-muted">{coach.phone ?? coachDirectoryLabels.phoneFallback}</p>
+                                <p className="truncate text-muted">{coach.email}</p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleCoachRemove(coach.id)}
+                                disabled={removeCoachMutation.isPending}
+                                className="flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-[0.65rem] font-semibold text-red-500 transition hover:bg-red-200 disabled:opacity-50"
+                                aria-label={summaryLabels.removeCoachLabel}
+                              >
+                                ×
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p>{summaryLabels.coachesEmpty}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="overflow-hidden rounded-lg border border-white/10 bg-white/70">
+                  <div className="grid grid-cols-[max-content_minmax(0,1fr)_auto] gap-x-2 border-b border-black/5 bg-container/20 px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-wide text-muted">
+                    <span className="text-left">{summaryLabels.columns.name}</span>
+                    <span className="text-center">{summaryLabels.columns.contact}</span>
+                    <span className="text-right">{summaryLabels.columns.availability}</span>
+                  </div>
+                  {isRosterLoading ? (
+                    <div className="px-4 py-6 text-sm text-muted">{summaryLabels.loading}</div>
+                  ) : rosterHasError ? (
+                    <div className="px-4 py-6 text-sm text-red-500">{summaryLabels.error}</div>
+                  ) : !selectedTeamId ? (
+                    <div className="px-4 py-6 text-sm text-muted">{summaryLabels.emptyTeam}</div>
+                  ) : !rosterAthletes.length ? (
+                    <div className="px-4 py-6 text-sm text-muted">{summaryLabels.empty}</div>
+                  ) : (
+                    <ul className="divide-y divide-black/5">
+                      {rosterAthletes.map((athlete) => (
+                        <li
+                          key={athlete.id}
+                          className="grid min-w-0 grid-cols-[max-content_minmax(0,1fr)_auto] items-center gap-x-2 px-1 py-1 text-[0.95rem]"
+                        >
+                          <div className="w-max">
+                            <p className="font-semibold text-container-foreground">
+                              {athlete.first_name} {athlete.last_name}
+                            </p>
+                            <p className="text-xs text-muted">
+                              {athlete.primary_position ?? summaryLabels.positionFallback}
+                            </p>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleCoachRemove(coach.id)}
-                            disabled={removeCoachMutation.isPending}
-                            className="flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-[0.65rem] font-semibold text-red-500 transition hover:bg-red-200 disabled:opacity-50"
-                            aria-label={summaryLabels.removeCoachLabel}
-                          >
-                            ×
-                          </button>
+                          <div className="min-w-0 justify-self-start">
+                            <span className="block truncate text-left text-sm text-container-foreground">
+                              {athlete.email ?? summaryLabels.contactFallback}
+                            </span>
+                          </div>
+                          <span className={`${availabilityBadgeClass(athlete.status)} justify-self-end`}>
+                            {athlete.status === "active" ? "✔" : "✖"}
+                          </span>
                         </li>
                       ))}
                     </ul>
-                  ) : (
-                    <p>{summaryLabels.coachesEmpty}</p>
                   )}
                 </div>
-              </div>
-            </div>
-            <div className="overflow-hidden rounded-lg border border-white/10 bg-white/70">
-              <div className="grid grid-cols-[max-content_minmax(0,1fr)_auto] gap-x-2 border-b border-black/5 bg-container/20 px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-wide text-muted">
-                <span className="text-left">{summaryLabels.columns.name}</span>
-                <span className="text-center">{summaryLabels.columns.contact}</span>
-                <span className="text-right">{summaryLabels.columns.availability}</span>
-              </div>
-              {isRosterLoading ? (
-                <div className="px-4 py-6 text-sm text-muted">{summaryLabels.loading}</div>
-              ) : rosterHasError ? (
-                <div className="px-4 py-6 text-sm text-red-500">{summaryLabels.error}</div>
-              ) : !selectedTeamId ? (
-                <div className="px-4 py-6 text-sm text-muted">{summaryLabels.emptyTeam}</div>
-              ) : !rosterAthletes.length ? (
-                <div className="px-4 py-6 text-sm text-muted">{summaryLabels.empty}</div>
-              ) : (
-                <ul className="divide-y divide-black/5">
-                  {rosterAthletes.map((athlete) => (
-                    <li
-                      key={athlete.id}
-                      className="grid min-w-0 grid-cols-[max-content_minmax(0,1fr)_auto] items-center gap-x-2 px-1 py-1 text-[0.95rem]"
-                    >
-                      <div className="w-max">
-                        <p className="font-semibold text-container-foreground">
-                          {athlete.first_name} {athlete.last_name}
-                        </p>
-                        <p className="text-xs text-muted">
-                          {athlete.primary_position ?? summaryLabels.positionFallback}
-                        </p>
-                      </div>
-                      <div className="min-w-0 justify-self-start">
-                        <span className="block truncate text-left text-sm text-container-foreground">
-                          {athlete.email ?? summaryLabels.contactFallback}
-                        </span>
-                      </div>
-                      <span className={`${availabilityBadgeClass(athlete.status)} justify-self-end`}>
-                        {athlete.status === "active" ? "✔" : "✖"}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -1248,6 +1479,20 @@ const Dashboard = () => {
                   ) : (
                     <div className="text-sm text-container-foreground">
                       <div className="grid w-full min-w-full border border-black/10">
+                        <div className="grid grid-cols-[40px_1fr] items-center border-b border-black/10 bg-container/20 px-2 py-1 text-[0.7rem] font-semibold uppercase tracking-wide text-muted">
+                          <div className="flex items-center justify-center">
+                            <input
+                              ref={selectAllAthletesRef}
+                              type="checkbox"
+                              checked={areAllAthletesSelected}
+                              onChange={handleToggleAllAthletes}
+                              disabled={createTeamMutation.isPending}
+                              aria-label={createTeamLabels.athletesHeaderSelect}
+                              className="h-4 w-4 rounded border-gray-300 text-action-primary focus:ring-action-primary"
+                            />
+                          </div>
+                          <span className="px-1">{createTeamLabels.athletesHeaderAthlete}</span>
+                        </div>
                         {displayAthletes.map((athlete) => {
                           const assignedTeamName =
                             athlete.team_id && teamNameById[athlete.team_id]

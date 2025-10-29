@@ -1,78 +1,57 @@
-import type { AuthUser } from "../stores/useAuthStore";
-import api from "./client";
+import { useQuery } from "@tanstack/react-query";
 
-type LoginResponse = {
-  id: number;
-  email: string;
-  full_name: string;
-  role: string;
-  athlete_id?: number | null;
-  is_active: boolean;
-  access_token: string;
+import api from "./client";
+import type { User } from "../stores/useAuthStore";
+
+export type AuthResponse = {
+  user: User;
+  token: string;
+};
+
+export const fetchMe = async (): Promise<User> => {
+  const { data } = await api.get<User>("/auth/me");
+  return data;
 };
 
 export const login = async (
   email: string,
-  password: string,
-  withProfile = true
-): Promise<{ user: AuthUser; token: string }> => {
-  const url = withProfile ? "/auth/login/full" : "/auth/login";
-  const body = new URLSearchParams();
-  body.append("username", email);
-  body.append("password", password);
+  password?: string,
+  isPasswordLogin: boolean = false
+): Promise<AuthResponse> => {
+  const payload = isPasswordLogin
+    ? new URLSearchParams({ username: email, password: password ?? "" })
+    : { email };
+  const { data: tokenData } = await api.post<{access_token: string}>(
+    "/auth/login",
+    payload
+  );
 
-  const { data } = await api.post<LoginResponse | { access_token: string }>(url, body, {
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+  const { data: user } = await api.get<User>("/auth/me", {
+    headers: { Authorization: `Bearer ${tokenData.access_token}` },
   });
 
-  if (withProfile) {
-    const payload = data as LoginResponse;
-    return {
-      token: payload.access_token,
-      user: {
-        id: payload.id,
-        email: payload.email,
-        full_name: payload.full_name,
-        role: payload.role,
-        athlete_id: payload.athlete_id,
-        is_active: payload.is_active,
-      },
-    };
-  }
-
-  const token = (data as { access_token: string }).access_token;
-  return { token, user: await fetchMe(token) };
-};
-
-export const fetchMe = async (tokenOverride?: string): Promise<AuthUser> => {
-  const headers = tokenOverride
-    ? { Authorization: `Bearer ${tokenOverride}` }
-    : undefined;
-  const { data } = await api.get<AuthUser>("/auth/me", { headers });
-  return data;
-};
-
-type SignupResponse = {
-  id: number;
-  email: string;
-  full_name: string;
-  role: string;
-  athlete_id?: number | null;
-  is_active: boolean;
+  return { user, token: tokenData.access_token };
 };
 
 export const registerAccount = async (
   fullName: string,
   email: string,
-  password: string,
-  role: string
-): Promise<SignupResponse> => {
+  password?: string,
+  role: "coach" | "athlete" = "coach"
+) => {
   const payload = {
-    email,
     full_name: fullName,
-    password,
+    email,
+    password: password ?? "",
     role,
   };
-  const { data } = await api.post<SignupResponse>("/auth/signup", payload);
+  const { data } = await api.post("/users/register", payload);
   return data;
 };
+
+export const useUser = () =>
+  useQuery<User>({
+    queryKey: ["me"],
+    queryFn: fetchMe,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });

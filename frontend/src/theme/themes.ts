@@ -1,5 +1,4 @@
-import { DEFAULT_THEME_ID, THEME_PRESETS } from "./presets";
-
+// types.ts
 export type ThemeColorPair = {
   background: string;
   foreground: string;
@@ -33,25 +32,45 @@ export type ThemeDefinition = {
   logo: ThemeLogo;
 };
 
-const cloneTheme = (theme: ThemeDefinition): ThemeDefinition => ({
-  ...theme,
+// The single, final theme for the application
+export const activeTheme: ThemeDefinition = {
+  id: "players-to-pro",
+  name: "Players To Pro Football",
+  description: "Standard Colors",
   colors: {
-    page: { ...theme.colors.page },
-    container: { ...theme.colors.container },
-    header: { ...theme.colors.header },
-    sidebar: { ...theme.colors.sidebar },
-    footer: { ...theme.colors.footer },
-    action: {
-      primary: { ...theme.colors.action.primary },
+    page: {
+      background: "#F3F9FF",
+      foreground: "#141414",
     },
-    accent: theme.colors.accent,
-    border: theme.colors.border,
-    muted: theme.colors.muted,
+    container: {
+      background: "#FFFFFF",
+      foreground: "#1F2933",
+    },
+    header: {
+      background: "#264D1E",
+      foreground: "#F0F8EB",
+    },
+    sidebar: {
+      background: "#264D1E",
+      foreground: "#F0F8EB",
+    },
+    footer: {
+      background: "#C3E1FE",
+      foreground: "#0B0B0B",
+    },
+    action: {
+      primary: {
+        background: "#14213D",
+        foreground: "#E1E1E1",
+      },
+    },
+    accent: "#2191FB",
+    border: "#9CC6F8",
+    muted: "#6B7280",
   },
-  logo: { ...theme.logo },
-});
-
-const fallbackPreset =
-  THEME_PRESETS.find((preset) => preset.id === DEFAULT_THEME_ID) ?? THEME_PRESETS[0];
-
-export const fallbackTheme: ThemeDefinition = cloneTheme(fallbackPreset);
+  logo: {
+    label: "Players To Pro",
+    background: "#2191FB",
+    color: "#FFFFFF",
+  },
+};
