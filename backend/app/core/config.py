@@ -16,7 +16,11 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "change-me"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
     SECURITY_ALGORITHM: str = "HS256"
-    BACKEND_CORS_ORIGINS: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
+    BACKEND_CORS_ORIGINS_STR: str = "http://localhost:5173"
+
+    @property
+    def BACKEND_CORS_ORIGINS(self) -> list[str]:
+        return [origin.strip() for origin in self.BACKEND_CORS_ORIGINS_STR.split(',')]
     MEDIA_ROOT: str = "media"
     GOOGLE_CLIENT_ID: str | None = None
     GOOGLE_CLIENT_SECRET: str | None = None
