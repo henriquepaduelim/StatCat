@@ -24,7 +24,7 @@ const readPersistedToken = (): string | null => {
 };
 
 export const api = axios.create({
-  baseURL: "/api/v1",
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 10_000,
 });
 
