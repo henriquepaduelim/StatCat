@@ -172,36 +172,103 @@ const AthleteReport = () => {
           <p className="text-sm text-muted">{t.dashboard.athleteReport.chartEmpty}</p>
         ) : (
           <div className="space-y-4">
-            {sessions.map((session) => (
-              <article key={session.session_id} className="rounded-xl border border-black/10 bg-container-gradient">
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <h3 className="text-base font-semibold text-container-foreground">{session.session_name}</h3>
-                    <p className="text-xs text-muted">
-                      {t.reports.sessionDate(session.scheduled_at ?? null)}
-                      {session.location ? ` • ${session.location}` : ""}
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-action-primary/10 px-3 py-1 text-xs font-semibold uppercase text-accent">
-                    {t.reports.metricsBadge(session.results.length)}
-                  </span>
-                </div>
-                <div className="mt-3 grid gap-3 md:grid-cols-3">
-                  {session.results.map((metric) => (
-                    <div key={`${session.session_id}-${metric.test_id}-${metric.recorded_at}`} className="rounded-lg border border-black/10 bg-container px-4 py-3 text-sm">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                        {metric.category ?? t.reports.metricFallback}
+            {sessions.map((session) => {
+              const isCombineSession = session.session_name === "Combine Testing Day";
+              let sprintAnalysis = null;
+
+              if (isCombineSession) {
+                const findTestValue = (testName: string) => {
+                  const result = session.results.find((r) => r.test_name === testName);
+                  return result?.value ?? null;
+                };
+
+                const time10m = findTestValue("10m Sprint");
+                const time20m = findTestValue("20m Sprint");
+                const time35m = findTestValue("35m Sprint");
+
+                if (time10m !== null && time20m !== null && time35m !== null) {
+                  const split10_20 = time20m - time10m;
+                  const split20_35 = time35m - time20m;
+                  const speed0_10 = 10 / time10m;
+                  const speed10_20 = 10 / split10_20;
+                  const speed20_35 = 15 / split20_35;
+
+                  sprintAnalysis = {
+                    split10_20: split10_20.toFixed(2),
+                    split20_35: split20_35.toFixed(2),
+                    speed0_10: speed0_10.toFixed(2),
+                    speed10_20: speed10_20.toFixed(2),
+                    speed20_35: speed20_35.toFixed(2),
+                  };
+                }
+              }
+
+              return (
+                <article key={session.session_id} className="rounded-xl border border-black/10 bg-container-gradient p-4">
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <h3 className="text-base font-semibold text-container-foreground">{session.session_name}</h3>
+                      <p className="text-xs text-muted">
+                        {t.reports.sessionDate(session.scheduled_at ?? null)}
+                        {session.location ? ` • ${session.location}` : ""}
                       </p>
-                      <p className="mt-1 text-lg font-semibold text-container-foreground">
-                        {metric.value}
-                        {metric.unit ? <span className="text-sm text-muted"> {metric.unit}</span> : null}
-                      </p>
-                      <p className="text-xs text-muted">{metric.test_name}</p>
                     </div>
-                  ))}
-                </div>
-              </article>
-            ))}
+                    <span className="rounded-full bg-action-primary/10 px-3 py-1 text-xs font-semibold uppercase text-accent">
+                      {t.reports.metricsBadge(session.results.length)}
+                    </span>
+                  </div>
+
+                  {sprintAnalysis && (
+                    <div className="mt-3">
+                      <h4 className="text-sm font-semibold uppercase tracking-wide text-muted">{t.dashboard.athleteReport.sprintAnalysis.title}</h4>
+                      <div className="mt-2 grid gap-3 md:grid-cols-3">
+                        <div className="rounded-lg border border-black/10 bg-container px-4 py-3 text-sm">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted">{t.dashboard.athleteReport.sprintAnalysis.split10_20}</p>
+                          <p className="mt-1 text-lg font-semibold text-container-foreground">{sprintAnalysis.split10_20} s</p>
+                        </div>
+                        <div className="rounded-lg border border-black/10 bg-container px-4 py-3 text-sm">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted">{t.dashboard.athleteReport.sprintAnalysis.split20_35}</p>
+                          <p className="mt-1 text-lg font-semibold text-container-foreground">{sprintAnalysis.split20_35} s</p>
+                        </div>
+                        <div className="rounded-lg border border-black/10 bg-container px-4 py-3 text-sm">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted">{t.dashboard.athleteReport.sprintAnalysis.speed0_10}</p>
+                          <p className="mt-1 text-lg font-semibold text-container-foreground">{sprintAnalysis.speed0_10} m/s</p>
+                        </div>
+                        <div className="rounded-lg border border-black/10 bg-container px-4 py-3 text-sm">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted">{t.dashboard.athleteReport.sprintAnalysis.speed10_20}</p>
+                          <p className="mt-1 text-lg font-semibold text-container-foreground">{sprintAnalysis.speed10_20} m/s</p>
+                        </div>
+                        <div className="rounded-lg border border-black/10 bg-container px-4 py-3 text-sm">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted">{t.dashboard.athleteReport.sprintAnalysis.speed20_35}</p>
+                          <p className="mt-1 text-lg font-semibold text-container-foreground">{sprintAnalysis.speed20_35} m/s</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-3 grid gap-3 md:grid-cols-3">
+                    {session.results
+                      .filter(
+                        (metric) =>
+                          !isCombineSession ||
+                          !["10m Sprint", "20m Sprint", "35m Sprint"].includes(metric.test_name)
+                      )
+                      .map((metric) => (
+                        <div key={`${session.session_id}-${metric.test_id}-${metric.recorded_at}`} className="rounded-lg border border-black/10 bg-container px-4 py-3 text-sm">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                            {metric.category ?? t.reports.metricFallback}
+                          </p>
+                          <p className="mt-1 text-lg font-semibold text-container-foreground">
+                            {metric.value}
+                            {metric.unit ? <span className="text-sm text-muted"> {metric.unit}</span> : null}
+                          </p>
+                          <p className="text-xs text-muted">{metric.test_name}</p>
+                        </div>
+                      ))}
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
       </section>

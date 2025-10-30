@@ -292,6 +292,8 @@ const AthleteReportCard = ({
   const athleteWeight = detailedAthlete?.weight_kg ?? athlete?.weight_kg;
   const athleteBmi = computeBmi(athleteHeight, athleteWeight);
 
+
+
   const metricsSummary = [
     {
       label: t.dashboard.athleteReport.ageLabel,
@@ -380,84 +382,9 @@ const AthleteReportCard = ({
             ))}
           </div>
 
-          <div className="space-y-4">
-            <h4 className="text-sm font-semibold uppercase tracking-wide text-muted">
-              {t.dashboard.mainSkills.currentLabel}
-            </h4>
-            {mainSkills.length ? (
-              <div className="rounded-xl border border-white/10 bg-container/60 p-4">
-                <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-                  <div className="h-56 w-full sm:w-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        {mainSkills.map((skill) => {
-                          const normalizedValue = Math.max(0, Math.min(skill.current ?? 0, MAX_INDEX));
-                          return (
-                            <Pie
-                              key={skill.category}
-                              data={[
-                                {
-                                  name: mainSkillLabels[skill.category],
-                                  value: normalizedValue,
-                                  fill: chartPalette[skill.category],
-                                },
-                                {
-                                  name: t.dashboard.mainSkills.remainingLabel,
-                                  value: Math.max(0, MAX_INDEX - normalizedValue),
-                                  fill: donutColors.remainder,
-                                },
-                              ]}
-                              dataKey="value"
-                              nameKey="name"
-                              startAngle={90}
-                              endAngle={-270}
-                              innerRadius={skill.category === "Physical" ? 60 : 35}
-                              outerRadius={skill.category === "Physical" ? 80 : 55}
-                              stroke="none"
-                            >
-                              <Cell key={`${skill.category}-fill`} fill={chartPalette[skill.category]} />
-                            </Pie>
-                          );
-                        })}
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="flex w-full flex-col gap-3 sm:max-w-xs">
-                    {mainSkills.map((skill) => {
-                      const label = mainSkillLabels[skill.category];
-                      const tone =
-                        skill.delta != null && skill.delta < 0 ? "text-red-400" : "text-emerald-400";
-                      return (
-                        <div
-                          key={`${skill.category}-summary`}
-                          className="rounded-lg border border-white/10 bg-container px-4 py-3 text-center"
-                        >
-                          <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
-                          <p className="mt-2 text-2xl font-semibold text-container-foreground">
-                            {skill.current != null
-                              ? numberFormatter.format(skill.current)
-                              : t.dashboard.athleteReport.notAvailable}
-                          </p>
-                          <p className="text-xs text-muted">{t.dashboard.mainSkills.currentLabel}</p>
-                          <p className="mt-1 text-xs font-semibold">
-                            {skill.delta != null ? (
-                              <span className={tone}>
-                                {decimalFormatter.format(skill.delta)} {t.dashboard.mainSkills.deltaLabel}
-                              </span>
-                            ) : (
-                              <span className="text-muted">{t.dashboard.mainSkills.noPrevious}</span>
-                            )}
-                          </p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-muted">{t.dashboard.sessionComparison.noData}</p>
-            )}
-          </div>
+
+
+
 
           <div className="space-y-4 overflow-hidden rounded-xl border border-white/10 bg-container/60 px-0 py-3 sm:px-2 md:px-6 md:py-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

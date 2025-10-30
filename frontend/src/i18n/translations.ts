@@ -1,4 +1,4 @@
-export type Locale = "en";
+export type Locale = "en" | "pt";
 
 type DashboardTimeRange = "30d" | "90d" | "180d" | "365d" | "all";
 
@@ -114,6 +114,14 @@ export type TranslationDictionary = {
       legLengthLabel: string;
       legLengthUnit: string;
       notAvailable: string;
+      sprintAnalysis: {
+        title: string;
+        split10_20: string;
+        split20_35: string;
+        speed0_10: string;
+        speed10_20: string;
+        speed20_35: string;
+      };
     };
     summary: {
       title: string;
@@ -675,6 +683,14 @@ export const translations: Record<Locale, TranslationDictionary> = {
       legLengthLabel: "Leg length",
       legLengthUnit: "cm",
       notAvailable: "N/A",
+      sprintAnalysis: {
+        title: "Sprint Analysis",
+        split10_20: "10-20m Split",
+        split20_35: "20-35m Split",
+        speed0_10: "0-10m Avg. Speed",
+        speed10_20: "10-20m Avg. Speed",
+        speed20_35: "20-35m Avg. Speed",
+      },
     },
     summary: {
       title: "Team availability",

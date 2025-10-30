@@ -33,11 +33,11 @@ class MetricDefinition:
 METRIC_DEFINITIONS: tuple[MetricDefinition, ...] = (
     MetricDefinition(
         id="anthropometrics_profile",
-        name="Perfil Antropométrico",
+        name="Anthropometric Profile",
         category="General Info",
         description=(
-            "Resumo padronizado das medidas básicas do atleta para permitir "
-            "comparações rápidas com referências de posição ou faixa etária."
+            "Standardized summary of the athlete's basic measurements to allow "
+            "quick comparisons with position or age group references."
         ),
         primary_tests=(
             "Height",
@@ -46,18 +46,18 @@ METRIC_DEFINITIONS: tuple[MetricDefinition, ...] = (
             "Body Mass Index (BMI)",
         ),
         calculation=(
-            "Exibir os valores brutos e derivar percentis/z-scores a partir "
-            "de tabelas de referência externas."
+            "Display raw values and derive percentiles/z-scores from "
+            "external reference tables."
         ),
         direction="mixed",
-        tags=("size", "monitoramento"),
+        tags=("size", "monitoring"),
     ),
     MetricDefinition(
         id="resting_readiness",
-        name="Prontidão Cardiorrespiratória",
+        name="Cardiorespiratory Readiness",
         category="General Info",
         description=(
-            "Estado fisiológico em repouso e capacidade inicial de recuperação."
+            "Physiological state at rest and initial recovery capacity."
         ),
         primary_tests=(
             "Resting Heart Rate (Seated)",
@@ -65,20 +65,19 @@ METRIC_DEFINITIONS: tuple[MetricDefinition, ...] = (
             "Maximum Heart Rate",
         ),
         calculation=(
-            "Normalizar batimento em repouso e tempo de recuperação, calcular "
-            "uma média ponderada (rest HR inverso + recuperação inversa) "
-            "e contextualizar com o máximo teórico (220 - idade)."
+            "Normalize resting heart rate and recovery time, calculate "
+            "a weighted average (inverse rest HR + inverse recovery) "
+            "and contextualize with the theoretical maximum (220 - age)."
         ),
         direction="higher_is_better",
-        tags=("fisiologia", "monitoramento"),
+        tags=("physiology", "monitoring"),
     ),
     MetricDefinition(
         id="mobility_balance",
-        name="Mobilidade e Equilíbrio",
+        name="Mobility and Balance",
         category="Physical",
         description=(
-            "Capacidade de mobilidade articular e controle de equilíbrio "
-            "multiplanar."
+            "Joint mobility and multiplanar balance control ability."
         ),
         primary_tests=(
             "Knee to Wall",
@@ -103,19 +102,19 @@ METRIC_DEFINITIONS: tuple[MetricDefinition, ...] = (
             "Calf Pull (Left)",
         ),
         calculation=(
-            "Converter cada teste em score porcentual (resultado atual / "
-            "referência) e gerar média geral com destaques por lado para "
-            "detectar assimetrias."
+            "Convert each test into a percentage score (current result / "
+            "reference) and generate a general average with highlights per side to "
+            "detect asymmetries."
         ),
         direction="higher_is_better",
-        tags=("mobilidade", "prevenção"),
+        tags=("mobility", "prevention"),
     ),
     MetricDefinition(
         id="reactive_quickness",
-        name="Tempo de Reação e Coordenação",
+        name="Reaction Time and Coordination",
         category="Physical",
         description=(
-            "Resposta neuromuscular em estímulos visuais e coordenação fina."
+            "Neuromuscular response to visual stimuli and fine coordination."
         ),
         primary_tests=(
             "Reaction Time: Ruler Drop (Right Hand)",
@@ -124,17 +123,17 @@ METRIC_DEFINITIONS: tuple[MetricDefinition, ...] = (
             "Eye-Foot Coordination (FitLight)",
         ),
         calculation=(
-            "Calcular média das mãos/pés, converter para milissegundos "
-            "quando necessário e criar índice inverso (menor tempo = melhor)."
+            "Calculate the average of hands/feet, convert to milliseconds "
+            "when necessary and create an inverse index (lower time = better)."
         ),
         direction="higher_is_better",
-        tags=("coordenação", "neuromuscular"),
+        tags=("coordination", "neuromuscular"),
     ),
     MetricDefinition(
         id="upper_body_endurance",
-        name="Força de Membros Superiores",
+        name="Upper Body Strength",
         category="Physical",
-        description="Resistência e potência de empurrar/puxar do tronco e braços.",
+        description="Pushing/pulling strength and endurance of the trunk and arms.",
         primary_tests=(
             "Push-Ups (1 min)",
             "Dead Hang",
@@ -142,67 +141,67 @@ METRIC_DEFINITIONS: tuple[MetricDefinition, ...] = (
             "Lift-Up Power",
         ),
         calculation=(
-            "Padronizar repetições por minuto e leituras de potência para "
-            "w/kg (usar massa corporal do perfil antropométrico) e gerar média."
+            "Standardize repetitions per minute and power readings to "
+            "w/kg (use body mass from anthropometric profile) and generate average."
         ),
         direction="higher_is_better",
-        tags=("força", "superior"),
+        tags=("strength", "upper"),
     ),
     MetricDefinition(
         id="core_stability",
-        name="Resistência do Core",
+        name="Core Strength",
         category="Physical",
-        description="Capacidade de estabilização do tronco em isometria e repetição.",
+        description="Trunk stabilization capacity in isometry and repetition.",
         primary_tests=(
             "Plank (Max Time)",
             "Sit-Ups (1 min)",
         ),
         calculation=(
-            "Converter os resultados para z-scores por faixa etária e gerar "
-            "média simples, destacando tempo isométrico vs repetições."
+            "Convert results to z-scores by age group and generate "
+            "a simple average, highlighting isometric time vs repetitions."
         ),
         direction="higher_is_better",
-        tags=("core", "estabilidade"),
+        tags=("core", "stability"),
     ),
     MetricDefinition(
         id="lower_body_power",
-        name="Potência de Membros Inferiores",
+        name="Lower Body Power",
         category="Physical",
-        description="Explosão vertical e horizontal para saltos e arranques.",
+        description="Vertical and horizontal explosion for jumps and starts.",
         primary_tests=(
             "Vertical Jump (No Run-Up)",
             "Vertical Jump (Run-Up)",
             "Standing Long Jump (inches)",
         ),
         calculation=(
-            "Converter saltos em potência estimada (Fórmula de Sayers ou "
-            "Lewis) e gerar média ponderada para destacar ganho com corrida."
+            "Convert jumps into estimated power (Sayers or "
+            "Lewis formula) and generate a weighted average to highlight gain with running."
         ),
         direction="higher_is_better",
-        tags=("potência", "inferior"),
+        tags=("power", "lower"),
     ),
     MetricDefinition(
         id="short_acceleration",
-        name="Aceleração 0-15 m",
+        name="0-15m Acceleration",
         category="Physical",
-        description="Explosão inicial em distâncias curtas (0-15 metros).",
+        description="Initial burst over short distances (0-15 meters).",
         primary_tests=(
             "5 m Sprint",
             "10 m Sprint",
             "15 m Sprint",
         ),
         calculation=(
-            "Calcular velocidades médias por parcial (distância/tempo), "
-            "obter índice composto = média ((v5 + v10 + v15) / 3)."
+            "Calculate average speeds per split (distance/time), "
+            "obtain a composite index = average ((v5 + v10 + v15) / 3)."
         ),
         direction="higher_is_better",
-        tags=("velocidade", "aceleração"),
+        tags=("speed", "acceleration"),
     ),
     MetricDefinition(
         id="top_end_speed",
-        name="Velocidade Máxima",
+        name="Maximum Speed",
         category="Physical",
-        description="Top speed sustentada em sprints mais longos.",
+        description="Top speed sustained in longer sprints.",
         primary_tests=(
             "30 m Sprint",
             "35 m Sprint",
@@ -213,17 +212,17 @@ METRIC_DEFINITIONS: tuple[MetricDefinition, ...] = (
             "25 m Sprint",
         ),
         calculation=(
-            "Selecionar o menor tempo disponível na maior distância, "
-            "converter para m/s e comparar com benchmarks por posição."
+            "Select the shortest available time at the longest distance, "
+            "convert to m/s and compare with benchmarks by position."
         ),
         direction="higher_is_better",
-        tags=("velocidade", "top_speed"),
+        tags=("speed", "top_speed"),
     ),
     MetricDefinition(
         id="change_of_direction",
-        name="Agilidade / Mudança de Direção",
+        name="Agility / Change of Direction",
         category="Physical",
-        description="Eficiência em transições rápidas sem bola.",
+        description="Efficiency in quick transitions without the ball.",
         primary_tests=(
             "20 m Slalom (No Ball)",
             "T-Drill",
@@ -231,35 +230,35 @@ METRIC_DEFINITIONS: tuple[MetricDefinition, ...] = (
             "Illinois Test (No Ball)",
         ),
         calculation=(
-            "Normalizar tempos por teste, inverter a escala (menor = melhor) "
-            "e calcular média. Também registrar delta entre testes lineares vs "
-            "multi-cortes."
+            "Normalize times per test, invert the scale (lower = better) "
+            "and calculate average. Also record delta between linear vs "
+            "multi-cut tests."
         ),
         direction="higher_is_better",
-        tags=("agilidade", "mudanca_direcao"),
+        tags=("agility", "change_of_direction"),
     ),
     MetricDefinition(
         id="dribbling_agility",
-        name="Agilidade com Bola",
+        name="Agility with Ball",
         category="Technical",
-        description="Manutenção de agilidade quando a bola está sob controle.",
+        description="Maintaining agility when the ball is under control.",
         primary_tests=(
             "20 m Slalom with Ball",
             "T-Pro Drill with Ball",
             "Illinois Test with Ball",
         ),
         calculation=(
-            "Comparar tempos com os equivalentes sem bola para gerar índice "
-            "de penalidade (% perda de velocidade)."
+            "Compare times with the no-ball equivalents to generate a "
+            "penalty index (% speed loss)."
         ),
         direction="higher_is_better",
-        tags=("agilidade", "controle_bola"),
+        tags=("agility", "ball_control"),
     ),
     MetricDefinition(
         id="aerobic_capacity",
-        name="Capacidade Aeróbia",
+        name="Aerobic Capacity",
         category="Physical",
-        description="Aptidão cardiorrespiratória para esforços prolongados.",
+        description="Cardiorespiratory fitness for prolonged efforts.",
         primary_tests=(
             "Beep Test",
         ),
@@ -268,17 +267,17 @@ METRIC_DEFINITIONS: tuple[MetricDefinition, ...] = (
             "Maximum Heart Rate",
         ),
         calculation=(
-            "Converter nível/palmas do Beep Test para VO₂max estimado e "
-            "ajustar conforme recuperação pós-teste (tempo menor = melhor)."
+            "Convert Beep Test level/shuttles to estimated VO₂max and "
+            "adjust according to post-test recovery (shorter time = better)."
         ),
         direction="higher_is_better",
         tags=("endurance", "cardio"),
     ),
     MetricDefinition(
         id="ball_mastery",
-        name="Domínio de Bola",
+        name="Ball Mastery",
         category="Technical",
-        description="Controle próximo e habilidade de manipulação individual.",
+        description="Close control and individual handling ability.",
         primary_tests=(
             "Keep-Ups: Pick Up Three Objects",
             "Super 4",
@@ -289,47 +288,47 @@ METRIC_DEFINITIONS: tuple[MetricDefinition, ...] = (
             "Keep-Ups: Distance and Time",
         ),
         calculation=(
-            "Somar pontuações dos desafios e normalizar pelo tempo/distância "
-            "quando aplicável, produzindo score único (0-100)."
+            "Sum challenge scores and normalize by time/distance "
+            "where applicable, producing a single score (0-100)."
         ),
         direction="higher_is_better",
-        tags=("habilidade", "controle_bola"),
+        tags=("skill", "ball_control"),
     ),
     MetricDefinition(
         id="shoot_power_right",
-        name="Potência de Finalização (Direita)",
+        name="Shooting Power (Right)",
         category="Technical",
-        description="Potência média dos chutes de perna direita.",
+        description="Average shooting power of the right leg.",
         primary_tests=(
             "Shot Power (No Run-Up, Right Foot)",
             "Shot Power (Run-Up, Right Foot)",
         ),
         calculation=(
-            "Calcular média e pico (km/h) entre tentativas com e sem corrida."
+            "Calculate average and peak (km/h) between attempts with and without a run-up."
         ),
         direction="higher_is_better",
-        tags=("finalizacao", "perna_direita"),
+        tags=("shooting", "right_foot"),
     ),
     MetricDefinition(
         id="shoot_power_left",
-        name="Potência de Finalização (Esquerda)",
+        name="Shooting Power (Left)",
         category="Technical",
-        description="Potência média dos chutes de perna esquerda.",
+        description="Average shooting power of the left leg.",
         primary_tests=(
             "Shot Power (No Run-Up, Left Foot)",
             "Shot Power (Run-Up, Left Foot)",
         ),
         calculation=(
-            "Mesma abordagem da direita; gera base para analisar simetria."
+            "Same approach as the right; provides a basis for analyzing symmetry."
         ),
         direction="higher_is_better",
-        tags=("finalizacao", "perna_esquerda"),
+        tags=("shooting", "left_foot"),
     ),
     MetricDefinition(
         id="shoot_accuracy_right",
-        name="Precisão de Finalização (Direita)",
+        name="Shooting Accuracy (Right)",
         category="Technical",
-        description="Consistência de acerto com a perna dominante (direita).",
+        description="Shooting consistency with the dominant (right) leg.",
         primary_tests=(
             "10 m Accuracy Kick (Right Foot, 5 attempts)",
             "15 m Driven Shot (Right Foot, 5 attempts)",
@@ -337,17 +336,17 @@ METRIC_DEFINITIONS: tuple[MetricDefinition, ...] = (
             "35 m Driven Shot (Right Foot, 5 attempts)",
         ),
         calculation=(
-            "Transformar acertos em % por distância e calcular média ponderada "
-            "com maior peso para distâncias longas."
+            "Transform hits into % per distance and calculate a weighted average "
+            "with greater weight for long distances."
         ),
         direction="higher_is_better",
-        tags=("finalizacao", "precisao"),
+        tags=("shooting", "accuracy"),
     ),
     MetricDefinition(
         id="shoot_accuracy_left",
-        name="Precisão de Finalização (Esquerda)",
+        name="Shooting Accuracy (Left)",
         category="Technical",
-        description="Consistência de acerto com a perna não dominante (esquerda).",
+        description="Shooting consistency with the non-dominant (left) leg.",
         primary_tests=(
             "10 m Accuracy Kick (Left Foot, 5 attempts)",
             "15 m Driven Shot (Left Foot, 5 attempts)",
@@ -355,50 +354,50 @@ METRIC_DEFINITIONS: tuple[MetricDefinition, ...] = (
             "35 m Driven Shot (Left Foot, 5 attempts)",
         ),
         calculation=(
-            "Mesma ponderação utilizada para a perna direita para facilitar "
-            "comparações."
+            "Same weighting used for the right leg to facilitate "
+            "comparisons."
         ),
         direction="higher_is_better",
-        tags=("finalizacao", "precisao"),
+        tags=("shooting", "accuracy"),
     ),
     MetricDefinition(
         id="cross_accuracy_right",
-        name="Precisão de Cruzamentos (Direita)",
+        name="Crossing Accuracy (Right)",
         category="Technical",
-        description="Qualidade do serviço lateral com perna direita.",
+        description="Quality of lateral service with the right leg.",
         primary_tests=(
             "25 m Wing Delivery to Runner (Low, Right Foot, 5 attempts)",
             "25 m Wing Delivery to Runner (Mid, Right Foot, 5 attempts)",
             "25 m Wing Delivery to Runner (High, Right Foot, 5 attempts)",
         ),
         calculation=(
-            "Calcular % de acerto por altura e gerar média; reportar variação "
-            "para identificar melhor faixa de cruzamento."
+            "Calculate hit % by height and generate average; report variation "
+            "to identify the best crossing range."
         ),
         direction="higher_is_better",
-        tags=("cruzamento", "perna_direita"),
+        tags=("crossing", "right_foot"),
     ),
     MetricDefinition(
         id="cross_accuracy_left",
-        name="Precisão de Cruzamentos (Esquerda)",
+        name="Crossing Accuracy (Left)",
         category="Technical",
-        description="Qualidade do serviço lateral com perna esquerda.",
+        description="Quality of lateral service with the left leg.",
         primary_tests=(
             "25 m Wing Delivery to Runner (Low, Left Foot, 5 attempts)",
             "25 m Wing Delivery to Runner (Mid, Left Foot, 5 attempts)",
             "25 m Wing Delivery to Runner (High, Left Foot, 5 attempts)",
         ),
         calculation=(
-            "Mesma estrutura da perna direita; facilita análise de lateralidade."
+            "Same structure as the right leg; facilitates laterality analysis."
         ),
         direction="higher_is_better",
-        tags=("cruzamento", "perna_esquerda"),
+        tags=("crossing", "left_foot"),
     ),
     MetricDefinition(
         id="two_footedness_index",
-        name="Índice de Bi-dominância",
+        name="Two-Footedness Index",
         category="Technical",
-        description="Equilíbrio entre pés em potência e precisão ofensiva.",
+        description="Balance between feet in offensive power and accuracy.",
         primary_tests=(
             "Shot Power (Run-Up, Right Foot)",
             "Shot Power (Run-Up, Left Foot)",
@@ -408,12 +407,12 @@ METRIC_DEFINITIONS: tuple[MetricDefinition, ...] = (
             "25 m Wing Delivery to Runner (High, Left Foot, 5 attempts)",
         ),
         calculation=(
-            "Calcular diferença relativa entre pés (% diferença média) e "
-            "subtrair de 100 para obter índice (0 = totalmente unilateral, "
-            "100 = perfeito equilíbrio)."
+            "Calculate the relative difference between feet (% average difference) and "
+            "subtract from 100 to get an index (0 = completely one-sided, "
+            "100 = perfect balance)."
         ),
         direction="higher_is_better",
-        tags=("lateralidade", "simetria"),
+        tags=("laterality", "symmetry"),
     ),
 )
 
