@@ -55,3 +55,4 @@ backend/*.log
 backend/backend.log
 backend/backend_error.log
 backend/backend_startup.log
+frontend/.env.local

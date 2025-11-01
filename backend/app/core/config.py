@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,7 +9,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
-    ENVIRONMENT: str = "production"
+    ENVIRONMENT: str = "development"
     PROJECT_NAME: str = "Combine Backend"
     VERSION: str = "0.1.0"
     API_V1_PREFIX: str = "/api/v1"
@@ -34,7 +34,7 @@ class Settings(BaseSettings):
         "https://stats-cat-git-*.vercel.app",
     ])
     MEDIA_ROOT: str = "media"
-    AUTO_SEED_DATABASE: bool = True
+    AUTO_SEED_DATABASE: bool = False
     
     # Google OAuth settings
     GOOGLE_CLIENT_ID: str | None = None
@@ -49,6 +49,19 @@ class Settings(BaseSettings):
     SMTP_FROM_EMAIL: str | None = None
     SMTP_FROM_NAME: str | None = "Combine Platform"
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 30
+
+    @model_validator(mode="after")
+    def _validate_security_basics(self) -> "Settings":
+        """Prevent weak defaults from being used in production-like environments."""
+
+        is_default_secret = self.SECRET_KEY in {"change-me", "your-secret-key-here", "your-secret-key-here-change-in-production"}
+        is_prod_env = self.ENVIRONMENT.lower() not in {"dev", "development", "local"}
+
+        if is_prod_env and is_default_secret:
+            raise ValueError("SECRET_KEY must be set to a strong value in production.")
+        if is_prod_env and self.AUTO_SEED_DATABASE:
+            raise ValueError("AUTO_SEED_DATABASE must be disabled in production.")
+        return self
 
 
 @lru_cache

@@ -1,5 +1,4 @@
 services:
-  # Backend API
   - type: web
     name: combine-backend
     env: python
@@ -9,24 +8,16 @@ services:
     startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHON_VERSION
-        value: "3.11"
+        value: "3.11.9"
+      - key: ENVIRONMENT
+        value: "production"
       - key: SECRET_KEY
         generateValue: true
-      - key: PROJECT_NAME
-        value: "Combine Backend API"
+      - key: DATABASE_URL
+        value: "postgresql://<user>:<password>@<host>:5432/<db>"  # set in Render dashboard
       - key: BACKEND_CORS_ORIGINS
-        value: '["https://combine-frontend.onrender.com", "http://localhost:5173"]'
-
-  # Frontend Web Service
-  - type: web
-    name: combine-frontend
-    env: node
-    rootDir: frontend
-    plan: free
-    buildCommand: "npm ci && npm run build && npm install -g serve"
-    startCommand: "serve dist -s -l $PORT"
-    envVars:
-      - key: NODE_VERSION
-        value: "18"
-      - key: VITE_API_BASE_URL
-        value: "https://combine-backend.onrender.com"
+        value: '["https://<frontend-domain>"]'
+      - key: MEDIA_ROOT
+        value: "/app/media"
+      - key: AUTO_SEED_DATABASE
+        value: "false"
