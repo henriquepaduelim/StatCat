@@ -1,4 +1,4 @@
-export type Locale = "en" | "pt";
+export type Locale = "en";
 
 type DashboardTimeRange = "30d" | "90d" | "180d" | "365d" | "all";
 

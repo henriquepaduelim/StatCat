@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 
 import api from "./client";
-import type { User } from "../stores/useAuthStore";
+import type { AuthUser } from "../stores/useAuthStore";
 
 export type AuthResponse = {
-  user: User;
+  user: AuthUser;
   token: string;
 };
 
