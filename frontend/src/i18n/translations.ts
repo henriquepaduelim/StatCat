@@ -620,7 +620,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       password: "Password",
       error: "Invalid credentials. Please try again.",
       seeds:
-        "Seed accounts: admin@mvp.com / admin123, admin@playerstopro.com / ptp123456, urban@combine.dev / urban123",
+        "Demo accounts: admin@combine.local / admin123, staff@combine.local / staff123, coach@combine.local / coach123",
     },
     dashboard: {
       title: "Club Management Dashboard",
