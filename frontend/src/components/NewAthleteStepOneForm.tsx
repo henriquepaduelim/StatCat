@@ -64,8 +64,6 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
       queryClient.invalidateQueries({ queryKey: ["athletes"] });
       if (onSuccess) {
         onSuccess(athlete);
-      } else {
-        navigate(`/athletes/register/${athlete.id}/details`, { replace: true });
       }
     },
   });

@@ -64,12 +64,12 @@ export interface AthletePaymentPayload {
 export interface AthleteRegistrationCompletionPayload {
   email?: string | null;
   phone?: string | null;
-  address_line1: string;
+  address_line1?: string | null;
   address_line2?: string | null;
-  city: string;
-  province: string;
-  postal_code: string;
-  country: string;
+  city?: string | null;
+  province?: string | null;
+  postal_code?: string | null;
+  country?: string | null;
   guardian_name?: string | null;
   guardian_relationship?: string | null;
   guardian_email?: string | null;
@@ -78,9 +78,9 @@ export interface AthleteRegistrationCompletionPayload {
   secondary_guardian_relationship?: string | null;
   secondary_guardian_email?: string | null;
   secondary_guardian_phone?: string | null;
-  emergency_contact_name: string;
-  emergency_contact_relationship: string;
-  emergency_contact_phone: string;
+  emergency_contact_name?: string | null;
+  emergency_contact_relationship?: string | null;
+  emergency_contact_phone?: string | null;
   medical_allergies?: string | null;
   medical_conditions?: string | null;
   physician_name?: string | null;

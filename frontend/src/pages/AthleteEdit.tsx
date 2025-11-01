@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import AthleteForm from "../components/AthleteForm";
+import NewAthleteStepTwoForm from "../components/NewAthleteStepTwoForm";
 import { updateAthlete, uploadAthletePhoto } from "../api/athletes";
 import { useAthlete } from "../hooks/useAthlete";
 import { useTranslation } from "../i18n/useTranslation";
@@ -22,6 +23,7 @@ const AthleteEdit = () => {
   const [profilePending, setProfilePending] = useState(false);
   const [currentPhotoUrl, setCurrentPhotoUrl] = useState<string | null>(null);
   const [profileMessage, setProfileMessage] = useState<string | null>(null);
+  const [additionalInfoMessage, setAdditionalInfoMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setCurrentPhotoUrl(athlete?.photo_url ?? null);
@@ -32,6 +34,12 @@ const AthleteEdit = () => {
     const timeout = window.setTimeout(() => setProfileMessage(null), 4000);
     return () => window.clearTimeout(timeout);
   }, [profileMessage]);
+
+  useEffect(() => {
+    if (!additionalInfoMessage) return;
+    const timeout = window.setTimeout(() => setAdditionalInfoMessage(null), 4000);
+    return () => window.clearTimeout(timeout);
+  }, [additionalInfoMessage]);
 
   const mutation = useMutation({
     mutationFn: (payload: AthletePayload) => updateAthlete(athleteId!, payload),
@@ -64,6 +72,12 @@ const AthleteEdit = () => {
     } finally {
       setProfilePending(false);
     }
+  };
+
+  const handleAdditionalInfoSuccess = () => {
+    setAdditionalInfoMessage("Additional information updated successfully!");
+    queryClient.invalidateQueries({ queryKey: ["athlete", athleteId!] });
+    queryClient.invalidateQueries({ queryKey: ["athletes"] });
   };
 
   if (athleteId == null) {
@@ -143,6 +157,31 @@ const AthleteEdit = () => {
           onPhotoChange={setPhotoFile}
           initialPhotoUrl={currentPhotoUrl}
         />
+      </section>
+
+      <section className="space-y-4">
+        <div className="space-y-1">
+          <h2 className="text-xl font-semibold text-container-foreground">
+            Additional Information
+          </h2>
+          <p className="text-sm text-muted">Manage additional athlete details, contact information, and medical records</p>
+        </div>
+        {additionalInfoMessage && (
+          <div
+            role="status"
+            className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
+          >
+            {additionalInfoMessage}
+          </div>
+        )}
+        <div className="rounded-lg border border-black/5 bg-white p-6 shadow-sm">
+          <NewAthleteStepTwoForm
+            athlete={athlete}
+            onSuccess={handleAdditionalInfoSuccess}
+            onClose={() => {}} // Não precisamos do onClose aqui pois não é um modal
+            isEditMode={true}
+          />
+        </div>
       </section>
     </div>
   );
