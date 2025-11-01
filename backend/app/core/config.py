@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     MEDIA_ROOT: str = "media"
     
     # Production settings
-    ENVIRONMENT: str = "development"
+    ENVIRONMENT: str = "production"
     DATABASE_URL_POSTGRES: str | None = None  # Para usar PostgreSQL em produção
     GOOGLE_CLIENT_ID: str | None = None
     GOOGLE_CLIENT_SECRET: str | None = None
