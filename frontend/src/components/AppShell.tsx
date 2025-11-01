@@ -84,10 +84,10 @@ const AppShell = ({ children }: PropsWithChildren) => {
                       aria-label={item.label}
                       title={item.label}
                       className={({ isActive }) =>
-                        `flex h-12 w-12 items-center justify-center rounded-lg border border-sidebar-foreground/20 text-base transition-colors duration-150 ${
+                        `flex h-12 w-12 items-center justify-center rounded-lg border border-sidebar-foreground/20 text-base transition-colors duration-150 bg-action-primary hover:bg-action-primary/90 ${
                           isActive
-                            ? "bg-action-primary text-action-primary-foreground shadow-sm"
-                            : "bg-sidebar-foreground/10 text-sidebar-foreground hover:bg-sidebar-foreground/20"
+                            ? "text-sidebar shadow-sm"
+                            : "text-action-primary-foreground"
                         }`
                       }
                     >
