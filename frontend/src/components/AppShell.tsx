@@ -70,12 +70,12 @@ const AppShell = ({ children }: PropsWithChildren) => {
           </button>
         </header>
         {mobileMenuOpen && (
-          <div className="md:hidden">
-            <div className="px-6 pt-4">
+          <div className="md:hidden bg-sidebar">
+            <div className="px-6 pt-4 flex justify-center">
               <img src="/media/logo.png" alt="Logo" className="h-16 w-auto" />
             </div>
             <nav className="px-6 pt-4 pb-6">
-              <ul className="flex flex-wrap gap-3">
+              <ul className="flex flex-wrap gap-3 justify-center">
                 {mobileNavItems.map((item) => (
                   <li key={item.to}>
                     <NavLink
@@ -84,10 +84,10 @@ const AppShell = ({ children }: PropsWithChildren) => {
                       aria-label={item.label}
                       title={item.label}
                       className={({ isActive }) =>
-                        `flex h-12 w-12 items-center justify-center rounded-lg border border-sidebar/20 text-base transition-colors duration-150 ${
+                        `flex h-12 w-12 items-center justify-center rounded-lg border border-sidebar-foreground/20 text-base transition-colors duration-150 ${
                           isActive
                             ? "bg-action-primary text-action-primary-foreground shadow-sm"
-                            : "bg-sidebar/30 text-sidebar-foreground hover:bg-sidebar/40"
+                            : "bg-sidebar-foreground/10 text-sidebar-foreground hover:bg-sidebar-foreground/20"
                         }`
                       }
                     >
@@ -104,7 +104,7 @@ const AppShell = ({ children }: PropsWithChildren) => {
                     }}
                     aria-label={t.common.logout}
                     title={t.common.logout}
-                    className="flex h-12 w-12 items-center justify-center rounded-lg border border-sidebar/20 bg-action-primary text-action-primary-foreground transition-colors duration-150 hover:bg-action-primary/90"
+                    className="flex h-12 w-12 items-center justify-center rounded-lg border border-sidebar-foreground/20 bg-action-primary text-action-primary-foreground transition-colors duration-150 hover:bg-action-primary/90"
                   >
                     <FontAwesomeIcon icon={faRightFromBracket} className="text-lg leading-none" />
                   </button>
