@@ -1,5 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPenToSquare, faUsers, faUserTie } from "@fortawesome/free-solid-svg-icons";
 
 import {
   assignCoachToTeam,
@@ -95,6 +97,8 @@ const Dashboard = () => {
   const [speedGenderFilter, setSpeedGenderFilter] = useState<string>("boys");
   const [isCoachFormOpen, setCoachFormOpen] = useState(false);
   const [isTeamFormOpen, setTeamFormOpen] = useState(false);
+  const [editingTeam, setEditingTeam] = useState<{ id: number; name: string; ageCategory: string; description: string } | null>(null);
+  const [editingCoach, setEditingCoach] = useState<{ id: number; fullName: string; email: string; phone: string } | null>(null);
   const createEmptyCoachForm = (assignToTeam: boolean) => ({
     fullName: "",
     email: "",
@@ -473,12 +477,14 @@ const Dashboard = () => {
     setTeamFormOpen(false);
     setTeamForm(createEmptyTeamForm());
     setTeamFormError(null);
+    setEditingTeam(null);
   };
   const closeCoachFormModal = () => {
     setCoachFormOpen(false);
     setCoachForm(createEmptyCoachForm(Boolean(selectedTeamId)));
     setCoachFormError(null);
     setCoachFormSuccess(null);
+    setEditingCoach(null);
   };
 
   const createTeamMutation = useMutation({
@@ -848,6 +854,196 @@ const Dashboard = () => {
         </div>
       </section>
 
+      {/* Teams and Coaches Containers */}
+      <section className="print-hidden grid gap-6 md:grid-cols-2">
+        {/* Teams Container */}
+        <div className="rounded-xl border border-action-primary/25 bg-container-gradient p-6 shadow-xl backdrop-blur">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-container-foreground">Teams</h2>
+                <p className="text-sm text-muted">Manage team rosters and assignments</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setTeamForm(createEmptyTeamForm());
+                  setTeamFormError(null);
+                  setEditingTeam(null);
+                  setTeamFormOpen(true);
+                }}
+                disabled={createTeamMutation.isPending}
+                className="flex items-center gap-2 rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <FontAwesomeIcon icon={faUsers} className="text-xs" />
+                {createTeamLabels.button}
+              </button>
+            </div>
+            <div className="space-y-3">
+              {teamsQuery.isLoading ? (
+                <p className="text-sm text-muted">{t.common.loading}...</p>
+              ) : teamsQuery.isError ? (
+                <p className="text-sm text-red-500">Unable to load teams.</p>
+              ) : !teams.length ? (
+                <p className="text-sm text-muted">No teams created yet.</p>
+              ) : (
+                <div className="overflow-hidden rounded-lg border border-white/10 bg-white/90">
+                  {/* Header */}
+                  <div className="grid grid-cols-[auto_1fr_80px_60px_50px] gap-3 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                    <FontAwesomeIcon icon={faUsers} className="self-center text-action-primary" />
+                    <span>Team Name</span>
+                    <span className="text-center">Category</span>
+                    <span className="text-center">Athletes</span>
+                    <span className="text-center">Edit</span>
+                  </div>
+                  {/* Rows */}
+                  {teams.map((team) => (
+                    <div
+                      key={team.id}
+                      className="grid grid-cols-[auto_1fr_80px_60px_50px] gap-3 items-center border-b border-black/5 px-4 py-3 text-sm hover:bg-white/50 last:border-b-0"
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-action-primary/10">
+                        <FontAwesomeIcon icon={faUsers} className="text-xs text-action-primary" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-container-foreground">{team.name}</p>
+                        {team.description && (
+                          <p className="text-xs text-muted truncate">{team.description}</p>
+                        )}
+                      </div>
+                      <span className="text-center text-xs text-muted">{team.age_category}</span>
+                      <span className="text-center text-xs font-medium text-container-foreground">
+                        {displayAthletes.filter(athlete => athlete.team_id === team.id).length}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingTeam({
+                            id: team.id,
+                            name: team.name,
+                            ageCategory: team.age_category,
+                            description: team.description || ""
+                          });
+                          setTeamForm({
+                            name: team.name,
+                            ageCategory: team.age_category,
+                            description: team.description || "",
+                            coachIds: [], // TODO: Load existing coach assignments
+                            athleteIds: displayAthletes.filter(athlete => athlete.team_id === team.id).map(athlete => athlete.id)
+                          });
+                          setTeamFormError(null);
+                          setTeamFormOpen(true);
+                        }}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition hover:bg-action-primary/10 hover:text-action-primary mx-auto"
+                        aria-label={`Edit ${team.name}`}
+                      >
+                        <FontAwesomeIcon icon={faPenToSquare} className="text-lg" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Coaches Container */}
+        <div className="rounded-xl border border-action-primary/25 bg-container-gradient p-6 shadow-xl backdrop-blur">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-container-foreground">Coaches</h2>
+                <p className="text-sm text-muted">Manage coaching staff and assignments</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setCoachForm(createEmptyCoachForm(Boolean(selectedTeamId)));
+                  setCoachFormOpen(true);
+                  setCoachFormError(null);
+                  setCoachFormSuccess(null);
+                  setEditingCoach(null);
+                }}
+                disabled={createCoachMutation.isPending}
+                className="flex items-center gap-2 rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <FontAwesomeIcon icon={faUserTie} className="text-xs" />
+                Add Coach
+              </button>
+            </div>
+            <div className="space-y-3">
+              {allCoachesQuery.isLoading ? (
+                <p className="text-sm text-muted">{t.common.loading}...</p>
+              ) : allCoachesQuery.isError ? (
+                <p className="text-sm text-red-500">Unable to load coaches.</p>
+              ) : !availableCoaches.length ? (
+                <p className="text-sm text-muted">No coaches registered yet.</p>
+              ) : (
+                <div className="overflow-hidden rounded-lg border border-white/10 bg-white/90">
+                  {/* Header */}
+                  <div className="grid grid-cols-[auto_1fr_120px_50px] gap-3 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                    <FontAwesomeIcon icon={faUserTie} className="self-center text-action-primary" />
+                    <span>Coach Name</span>
+                    <span className="text-center">Contact</span>
+                    <span className="text-center">Edit</span>
+                  </div>
+                  {/* Rows */}
+                  {availableCoaches.slice(0, 6).map((coach) => (
+                    <div
+                      key={coach.id}
+                      className="grid grid-cols-[auto_1fr_120px_50px] gap-3 items-center border-b border-black/5 px-4 py-3 text-sm hover:bg-white/50 last:border-b-0"
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-action-primary/10">
+                        <FontAwesomeIcon icon={faUserTie} className="text-xs text-action-primary" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-container-foreground">{coach.full_name}</p>
+                        <p className="text-xs text-muted truncate">{coach.email}</p>
+                      </div>
+                      <span className="text-center text-xs text-muted">
+                        {coach.phone ?? "Not set"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingCoach({
+                            id: coach.id,
+                            fullName: coach.full_name,
+                            email: coach.email,
+                            phone: coach.phone || ""
+                          });
+                          setCoachForm({
+                            fullName: coach.full_name,
+                            email: coach.email,
+                            phone: coach.phone || "",
+                            password: "", // Password field will be optional for edits
+                            assignToTeam: false
+                          });
+                          setCoachFormError(null);
+                          setCoachFormSuccess(null);
+                          setCoachFormOpen(true);
+                        }}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition hover:bg-action-primary/10 hover:text-action-primary mx-auto"
+                        aria-label={`Edit ${coach.full_name}`}
+                      >
+                        <FontAwesomeIcon icon={faPenToSquare} className="text-lg" />
+                      </button>
+                    </div>
+                  ))}
+                  {availableCoaches.length > 6 && (
+                    <div className="border-t border-black/10 bg-container/10 px-4 py-2 text-center">
+                      <p className="text-xs text-muted">
+                        +{availableCoaches.length - 6} more coaches
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="print-hidden flex flex-col gap-6 xl:flex-row">
         <div className="w-full space-y-4 xl:w-1/2">
           <div className="rounded-xl border border-action-primary/25 bg-container-gradient p-6 shadow-xl backdrop-blur">
@@ -1167,33 +1363,6 @@ const Dashboard = () => {
         <div className="w-full space-y-4 rounded-xl border border-action-primary/25 bg-container-gradient p-6 shadow-xl backdrop-blur xl:w-1/2">
           <div className="space-y-3">
             <h2 className="text-lg font-semibold text-container-foreground">{summaryLabels.title}</h2>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setTeamForm(createEmptyTeamForm());
-                  setTeamFormError(null);
-                  setTeamFormOpen(true);
-                }}
-                disabled={createTeamMutation.isPending}
-                className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {createTeamLabels.button}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setCoachForm(createEmptyCoachForm(Boolean(selectedTeamId)));
-                  setCoachFormOpen(true);
-                  setCoachFormError(null);
-                  setCoachFormSuccess(null);
-                }}
-                disabled={createCoachMutation.isPending}
-                className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60 "
-              >
-                {summaryLabels.addCoachButton}
-              </button>
-            </div>
           </div>
           <div className="space-y-4">
             {selectedEventDate ? (
@@ -1262,43 +1431,6 @@ const Dashboard = () => {
                       ))}
                     </select>
                   </label>
-                  <div className="ml-auto flex rounded-lg border border-black/5 bg-white/80 px-3 py-2 text-xs text-muted">
-                    <div className="space-y-1">
-                      <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-container-foreground">
-                        {summaryLabels.coachesTitle}
-                      </p>
-                      {!selectedTeamId ? (
-                        <p>{summaryLabels.emptyTeam}</p>
-                      ) : isCoachListLoading ? (
-                        <p>{t.common.loading}...</p>
-                      ) : coachListHasError ? (
-                        <p className="text-red-500">{summaryLabels.error}</p>
-                      ) : teamCoaches.length ? (
-                        <ul className="space-y-1">
-                          {teamCoaches.map((coach) => (
-                            <li key={coach.id} className="flex items-center gap-2 text-xs text-container-foreground">
-                              <div className="min-w-0 flex-1">
-                                <p className="truncate font-medium">{coach.full_name}</p>
-                                <p className="truncate text-muted">{coach.phone ?? coachDirectoryLabels.phoneFallback}</p>
-                                <p className="truncate text-muted">{coach.email}</p>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => handleCoachRemove(coach.id)}
-                                disabled={removeCoachMutation.isPending}
-                                className="flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-[0.65rem] font-semibold text-red-500 transition hover:bg-red-200 disabled:opacity-50"
-                                aria-label={summaryLabels.removeCoachLabel}
-                              >
-                                ×
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p>{summaryLabels.coachesEmpty}</p>
-                      )}
-                    </div>
-                  </div>
                 </div>
                 <div className="overflow-hidden rounded-lg border border-white/10 bg-white/70">
                   <div className="grid grid-cols-[max-content_minmax(0,1fr)_auto] gap-x-2 border-b border-black/5 bg-container/20 px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-wide text-muted">
@@ -1365,7 +1497,7 @@ const Dashboard = () => {
           <div className="flex items-start justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold text-container-foreground">
-                {createTeamLabels.modalTitle}
+                {editingTeam ? `Edit ${editingTeam.name}` : createTeamLabels.modalTitle}
               </h3>
               <p className="text-sm text-muted">{createTeamLabels.helper}</p>
             </div>
@@ -1576,7 +1708,7 @@ const Dashboard = () => {
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1">
               <h3 className="text-lg font-semibold text-container-foreground">
-                {coachDirectoryLabels.title}
+                {editingCoach ? `Edit ${editingCoach.fullName}` : coachDirectoryLabels.title}
               </h3>
               <p className="text-sm text-muted">{coachDirectoryLabels.helper}</p>
               {selectedTeamName ? (
