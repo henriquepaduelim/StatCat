@@ -1,0 +1,31 @@
+# Render Blueprint
+# Este arquivo será usado pelo Render para fazer o deploy automático
+
+previewsEnabled: true
+services:
+  - type: web
+    name: combine-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        value: sqlite:///./combine.db
+      - key: ENVIRONMENT
+        value: production
+
+  - type: static
+    name: combine-frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: combine-backend
+          property: host

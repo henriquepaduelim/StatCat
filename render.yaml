@@ -9,22 +9,28 @@ services:
     startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.9
+        value: "3.11"
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
-        value: sqlite:///./combine.db
+        value: "sqlite:///./combine.db"
       - key: ENVIRONMENT
-        value: production
+        value: "production"
+      - key: PROJECT_NAME
+        value: "Combine Backend API"
       - key: BACKEND_CORS_ORIGINS
-        value: '["https://your-frontend-domain.onrender.com"]'
+        value: '["https://combine-frontend.onrender.com", "http://localhost:5173"]'
 
-  # Frontend Static Site
-  - type: static
+  # Frontend Web Service
+  - type: web
     name: combine-frontend
+    env: node
     rootDir: frontend
-    buildCommand: "npm install && npm run build"
-    staticPublishPath: ./dist
+    plan: free
+    buildCommand: "npm ci && npm run build && npm install -g serve"
+    startCommand: "serve dist -s -l $PORT"
     envVars:
+      - key: NODE_VERSION
+        value: "18"
       - key: VITE_API_BASE_URL
-        value: https://combine-backend.onrender.com
+        value: "https://combine-backend.onrender.com"
