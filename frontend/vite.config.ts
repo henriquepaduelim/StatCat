@@ -12,4 +12,21 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    outDir: "dist",
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom"],
+          router: ["react-router-dom"],
+          query: ["@tanstack/react-query"],
+          icons: ["@fortawesome/react-fontawesome", "@fortawesome/free-solid-svg-icons"],
+        },
+      },
+    },
+  },
+  define: {
+    'process.env': {}
+  }
 });

@@ -1,0 +1,16 @@
+# Backend-specific ignores
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+*.env
+.venv/
+venv/
+combine.db
+media/
+*.log
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/

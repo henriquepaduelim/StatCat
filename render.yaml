@@ -1,6 +1,7 @@
 services:
+  # Backend API
   - type: web
-    name: statcat-backend
+    name: combine-backend
     env: python
     rootDir: backend
     plan: free
@@ -9,3 +10,21 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        value: sqlite:///./combine.db
+      - key: ENVIRONMENT
+        value: production
+      - key: BACKEND_CORS_ORIGINS
+        value: '["https://your-frontend-domain.onrender.com"]'
+
+  # Frontend Static Site
+  - type: static
+    name: combine-frontend
+    rootDir: frontend
+    buildCommand: "npm install && npm run build"
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://combine-backend.onrender.com
