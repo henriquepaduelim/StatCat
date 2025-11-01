@@ -8,8 +8,8 @@ export type AuthResponse = {
   token: string;
 };
 
-export const fetchMe = async (): Promise<User> => {
-  const { data } = await api.get<User>("/auth/me");
+export const fetchMe = async (): Promise<AuthUser> => {
+  const { data } = await api.get<AuthUser>("/auth/me");
   return data;
 };
 
@@ -26,7 +26,7 @@ export const login = async (
     payload
   );
 
-  const { data: user } = await api.get<User>("/auth/me", {
+  const { data: user } = await api.get<AuthUser>("/auth/me", {
     headers: { Authorization: `Bearer ${tokenData.access_token}` },
   });
 
@@ -50,7 +50,7 @@ export const registerAccount = async (
 };
 
 export const useUser = () =>
-  useQuery<User>({
+  useQuery<AuthUser>({
     queryKey: ["me"],
     queryFn: fetchMe,
     staleTime: 1000 * 60 * 5, // 5 minutes
