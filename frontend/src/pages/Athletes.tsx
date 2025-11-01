@@ -146,7 +146,9 @@ const Athletes = () => {
   });
 
   const tableRows = useMemo(() => {
-    const athletes = Array.isArray(data) ? data : [];
+    if (!data) {
+      return [];
+    }
 
     const normalizedName = nameFilter ? normalizeText(nameFilter.trim()) : "";
     const normalizedEmail = emailFilter ? normalizeText(emailFilter.trim()) : "";
@@ -167,7 +169,7 @@ const Athletes = () => {
       return computed;
     };
 
-    const filtered = athletes.filter((athlete) => {
+    const filtered = data.filter((athlete) => {
       if (normalizedName) {
         const haystack = normalizeText(`${athlete.first_name} ${athlete.last_name}`);
         if (!haystack.includes(normalizedName)) {
