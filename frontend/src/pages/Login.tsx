@@ -6,6 +6,7 @@ import { Divider, TextInput } from "@tremor/react";
 import { login, registerAccount } from "../api/auth";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useTranslation } from "../i18n/useTranslation";
+import PasswordInput from "../components/PasswordInput";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
@@ -199,16 +200,15 @@ const Login = () => {
               >
                 {t.login.password}
               </label>
-              <TextInput
+              <PasswordInput
                 id="password"
-                type="password"
                 name="password"
                 autoComplete="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 placeholder="••••••••"
-                className="mt-2 bg-blue-300 text-black"
                 required
+                className="mt-2"
               />
             </div>
 
