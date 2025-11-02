@@ -1,124 +1,243 @@
-https://github.com/user-attachments/assets/95990c81-d890-492f-ab60-bdde2d61d656
-
-
-https://github.com/user-attachments/assets/9117c132-41aa-49d3-880c-c0807bf84613
-
-
-
-https://github.com/user-attachments/assets/64ffa3b6-6f6b-4ceb-b0b0-b3f4f46c0f39
-
-
-
-https://github.com/user-attachments/assets/b00076a5-a800-456d-8b51-d1b5bc87f177
-
-
-
 # Combine Football Platform
 
-Internal pilot build that centralises physical and technical assessments, branded reporting, and single-tenant dashboards for football combines.
+Assessment and performance management system for football combines with role-based access, athlete onboarding, and comprehensive reporting.
 
-## Monorepo Layout
+## Architecture Overview
+
+The platform uses a monorepo structure with independent backend and frontend deployments:
 
 ```
 .
-├── backend/   # FastAPI + SQLModel API (SQLite seed, media uploads, JWT auth)
-└── frontend/  # Vite/React dashboard and marketing site with shared assets
+├── backend/          # FastAPI + SQLModel + SQLite
+│   ├── app/
+│   │   ├── api/v1/   # REST endpoints
+│   │   ├── models/   # SQLModel entities
+│   │   ├── schemas/  # Pydantic validation
+│   │   ├── services/ # Business logic
+│   │   ├── analytics/# Metrics computation
+│   │   ├── core/     # Config, security, auth
+│   │   └── db/       # Database setup and seed
+│   └── pyproject.toml
+└── frontend/         # React + Vite + Tailwind + React Query
+    ├── src/
+    │   ├── pages/    # Route components
+    │   ├── components/# Reusable UI elements
+    │   ├── api/      # HTTP client
+    │   ├── hooks/    # React hooks
+    │   ├── stores/   # Zustand state management
+    │   └── types/    # TypeScript interfaces
+    └── package.json
 ```
 
-## Phase Snapshot — Pilot Ready
-- Authenticated single-tenant experience with distinct access levels for `admin`, `staff`, `coach`, and `athlete` accounts.
-- Athlete management and reporting flows are wired end-to-end with live FastAPI endpoints plus printable summaries.
-- Dashboard surfaces speed/technical trends, scoring leaderboards, and session insights without tenant switching overhead.
-- SQLite seed data ships realistic athletes, teams, tests, sessions, and KPI results for a single organisation.
+## Backend (FastAPI + SQLModel)
 
-## Backend Highlights (FastAPI + SQLModel)
-- JWT/OAuth2 authentication (`/api/v1/auth`) for `admin`, `staff`, `coach`, and `athlete` roles; tokens issued through `/auth/login` with an expanded profile available from `/auth/login/full`.
-- CRUD endpoints for athletes (including `/media/athletes/<id>` photo upload with 5 MB cap), teams, tests, assessment sessions, and session results.
-- Athlete report generator (`GET /api/v1/reports/athletes/{id}`) groups sessions, computes trend-friendly metrics, and adds peer averages by age band.
-- Dashboard summary (`/api/v1/dashboard/summary`) counts active/inactive athletes and feeds leaderboard views.
-- SQLite database initialised on startup with a single-organisation seed; delete `backend/combine.db` to regenerate a clean dataset.
-- Configurable media root and CORS via `.env` variables; static assets served from `/media`.
+### Core Features
+- **Authentication**: JWT/OAuth2 with four roles (admin, staff, coach, athlete)
+- **Data Models**: User, Athlete, Team, Test, AssessmentSession, SessionResult, Group, TestDefinition, MatchStat
+- **API Endpoints**:
+  - `/api/v1/auth/` - Registration, login, token validation
+  - `/api/v1/athletes/` - CRUD with photo upload (5 MB limit)
+  - `/api/v1/teams/` - Team management
+  - `/api/v1/tests/` - Test definitions and configurations
+  - `/api/v1/sessions/` - Assessment session tracking
+  - `/api/v1/reports/` - Athlete performance reports with peer comparison
+  - `/api/v1/dashboard/` - Aggregated metrics and leaderboards
+  - `/api/v1/analytics/` - Metric computation and analysis
 
-## Frontend Highlights (React + Vite + Tailwind)
-- App shell with Zustand stores for auth and lightweight theming (single-tenant branding baked in).
-- Dashboard, athletes, and reports routes share one cohesive UI shell with responsive layouts and printable views.
-- Athlete area supports filtering, sorting, creation, detail view, and photo uploads with optimistic UI states.
-- Report builder records assessment sessions, captures metric inputs, and renders athlete cards ready for PDF export.
-- React Query powers data fetching with persisted tokens; API wrapper lives in `frontend/src/api` with dedicated modules per resource.
+### Database
+- SQLite with auto-initialization and demo seed data
+- Single-organization setup
+- Recreate dataset by deleting `backend/combine.db`
 
-## Local Development
+### Media Handling
+- Static file serving from `/media` directory
+- Athlete photo uploads with validation
+- Configurable storage root via `.env`
+
+## Frontend (React + Vite + Tailwind)
+
+### Core Features
+- **Authentication Flow**: Token-based with persistent storage and auto-redirect based on athlete status
+- **Role-Based Navigation**: Different dashboards for admin, staff, coach, and athlete
+- **Responsive Design**: Mobile-first approach with Tailwind CSS
+- **Data Management**: React Query with optimized caching and invalidation
+
+### Key Pages
+- `/login` - Registration and login with unified video background
+- `/athlete-onboarding` - Multi-step registration (basic info → additional details → review)
+- `/awaiting-approval` - Status tracking for pending athletes
+- `/dashboard` - Role-based view with teams, coaches, athletes, and metrics
+- `/reports` - Performance analysis and leaderboards
+- `/athletes` - Athlete management interface
+
+### UI Components
+- Password input with visibility toggle
+- PasswordInput component with eye icon positioned right
+- Form containers with consistent styling (10% opacity, gray-50 inputs)
+- Unified button style (bg-action-primary with text-action-primary-foreground)
+- Loading spinners and error states
+
+## Athlete Onboarding Flow
+
+### User Journey
+1. **Registration** → Create account with name, email, password on `/login`
+2. **Auto-Login** → Redirect to `/athlete-onboarding` with session auto-populated
+3. **Step 1** → Basic information (DOB, gender, measurements, position, team)
+4. **Step 2** → Additional details (address, guardians, emergency contact, medical info)
+5. **Step 3** → Review and submit for admin approval
+6. **Admin Review** → Status becomes PENDING; athlete waits on `/awaiting-approval`
+7. **Approval/Rejection** → Admin decision with optional feedback; rejected athletes can resubmit
+
+### UI Enhancements
+- Consistent video background on login and onboarding pages
+- Form container width: max-w-7xl (60% wider than initial)
+- Optimized layout with reduced spacing and compact inputs
+- Smooth CSS transitions between onboarding steps
+- All buttons use unified blue style (bg-action-primary)
+
+## Installation & Development
 
 ### Requirements
 - Python 3.11+
 - Node.js 18+
-- npm (or yarn/pnpm if you update scripts accordingly)
+- npm
 
-### Backend
+### Backend Setup
 ```bash
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install --upgrade pip
 pip install -e ".[dev]"
-cp .env.example .env  # set SECRET_KEY, BACKEND_CORS_ORIGINS, MEDIA_ROOT as needed
+cp .env.example .env
 uvicorn app.main:app --reload
 ```
-- First startup creates `combine.db` and seeds demo data; delete the file to regenerate a clean dataset.
-- Interactive docs: http://localhost:8000/docs — Health check: http://localhost:8000/health
 
-### Frontend
+API available at `http://localhost:8000`
+- Swagger UI: `http://localhost:8000/docs`
+- Health check: `http://localhost:8000/health`
+
+### Frontend Setup
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-- Vite serves the app on http://localhost:5173 with a dev proxy to `http://localhost:8000/api`.
-- Production bundle: `npm run build` → `dist/`; preview with `npm run preview`.
 
-### Seed Credentials
-| Email | Role | Password | Notes |
-|-------|------|----------|-------|
-| admin@combine.local | admin | admin123 | Full access to all resources |
-| staff@combine.local | staff | staff123 | Manages athletes, sessions, and reports |
-| coach@combine.local | coach | coach123 | Read/write athletes, enter assessments |
+App available at `http://localhost:5173` with dev proxy to backend API
 
-## Tooling & Useful Commands
-- `uvicorn app.main:app --reload` — Run API locally.
-- `pytest` — Placeholder for backend tests (none committed yet).
-- `ruff check app` / `mypy app` — Static analysis and type checking.
-- `npm run lint` — ESLint over `frontend/src`.
-- `npm run build` — Frontend production output.
-- `backend/scripts/*` — Utilities for generating or inspecting demo records.
-    
-## Known Gaps & Next Up
-- Replace ad-hoc seed migrations with Alembic-managed migrations.
-- Expand automated test coverage on both backend (pytest/httpx) and frontend (RTL/Cypress).
-- Finalise PDF/CSV exports plus automated report delivery.
-- Integrate external storage (S3/MinIO) for high-resolution media and automate cleanup.
+### Build Production
+```bash
+# Backend
+pip install -e .
+uvicorn app.main:app
 
-## Athlete Onboarding Flow
+# Frontend
+npm run build
+npm run preview
+```
 
-### Registration & Onboarding (Refactored)
-The athlete onboarding experience has been redesigned for a seamless, unified UX:
+## Default Credentials
 
-1. **Registration** → User creates account on `/login` with name, email, and password
-2. **Auto-redirect** → After successful registration, user is automatically redirected to `/athlete-onboarding` with credentials passed via location state
-3. **Onboarding Steps** → On a full-screen page with video background (matching login styling):
-   - **Step 1**: Basic Information (name, DOB, gender, email, phone, height/weight, position, jersey number, team)
-   - **Step 2**: Additional Details (address, guardian info, emergency contact, medical info)
-   - **Step 3**: Review & Submit (confirmation before admin review)
-4. **Admin Review** → User status becomes `PENDING` and can view progress on `/awaiting-approval`
-5. **Approval/Rejection** → Admin approves or rejects with feedback; athlete can re-enter onboarding to fix rejected profiles
+| Email | Role | Password | Access |
+|-------|------|----------|--------|
+| admin@combine.local | admin | admin123 | Full platform access |
+| staff@combine.local | staff | staff123 | Athletes, sessions, reports |
+| coach@combine.local | coach | coach123 | Athlete data, assessments |
 
-### Key Improvements
-- **Consistent UI**: Login and onboarding use the same video background and styling
-- **Stateful Flow**: Forms retain data if user needs to edit information
-- **Clear Status**: Athletes always know where they are in the process (incomplete → pending → approved)
-- **Error Feedback**: Rejection feedback is shown at the top of the onboarding page
-- **Responsive Design**: Forms adapt to mobile and desktop layouts with proper scrolling
+To reset: delete `backend/combine.db`
 
-### File Structure
-- `frontend/src/pages/Login.tsx` — Registration form + login, redirects post-registration to onboarding
-- `frontend/src/pages/AthleteOnboarding.tsx` — Full onboarding flow with video background
-- `frontend/src/components/NewAthleteStepOneForm.tsx` — Step 1 form component
-- `frontend/src/components/NewAthleteStepTwoForm.tsx` — Step 2 form component
+## Technology Stack
+
+### Backend
+- FastAPI 0.110+ - ASGI web framework
+- SQLModel 0.0.16+ - SQL ORM with Pydantic validation
+- Uvicorn 0.27+ - ASGI server
+- SQLite - Embedded database
+- Passlib + bcrypt - Password hashing
+- python-jose - JWT tokens
+
+### Frontend
+- React 18 - UI framework
+- Vite - Build tool and dev server
+- Tailwind CSS - Utility-first styling
+- React Router - Navigation
+- React Query - Server state management
+- Zustand - Client state management
+- FontAwesome - Icons
+- Tremor - Data visualization
+- Recharts - Charts and graphs
+
+## Project Structure Notes
+
+### Backend Organization
+- **models/** - SQLModel schema definitions
+- **schemas/** - Pydantic request/response validation
+- **services/** - Business logic layer
+- **analytics/** - Metric computations
+- **api/v1/endpoints/** - Route handlers per resource
+- **core/** - Configuration, auth, security utilities
+- **db/** - Database initialization and seed data
+
+### Frontend Organization
+- **pages/** - Route-level components
+- **components/** - Reusable UI components
+- **api/** - HTTP client with endpoint modules
+- **hooks/** - Custom React hooks
+- **stores/** - Zustand stores for state
+- **types/** - TypeScript type definitions
+- **i18n/** - Internationalization
+
+## Common Tasks
+
+### Clear Database and Reseed
+```bash
+rm backend/combine.db
+uvicorn app.main:app --reload
+```
+
+### Type Checking
+```bash
+# Backend
+mypy app
+
+# Frontend
+tsc --noEmit
+```
+
+### Linting
+```bash
+# Backend
+ruff check app
+
+# Frontend
+npm run lint
+```
+
+### Build Frontend Production
+```bash
+cd frontend
+npm run build  # Creates dist/
+npm run preview  # Test production build locally
+```
+
+## Performance Considerations
+
+- **Video Playback**: Login and onboarding use looped MP4 with `loop` attribute for seamless playback
+- **Form Optimization**: NewAthleteStepTwoForm uses compact layout with reduced spacing to minimize scroll
+- **State Management**: React Query caches athlete data with smart invalidation
+- **Bundle Size**: Lazy loading of routes and components
+- **API Requests**: Token-based auth with localStorage persistence
+
+## Deployment Notes
+
+- Backend requires environment variables: `SECRET_KEY`, `BACKEND_CORS_ORIGINS`, `MEDIA_ROOT`
+- Frontend proxies API requests to backend during development
+- CORS configured for cross-origin requests
+- Static media files served from configured directory
+- Session data persisted in SQLite
+- No external database required for pilot
+
+## Current Status
+
+Production-ready core functionality with single-tenant architecture. Athlete registration, onboarding, and approval workflows fully implemented. Dashboard provides role-based access to metrics, teams, and reports.
