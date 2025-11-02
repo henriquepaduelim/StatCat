@@ -153,12 +153,12 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
   const athleteName = `${athlete.first_name} ${athlete.last_name}`.trim();
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-h-full overflow-y-auto">
-      <header className="space-y-1 border-b border-black/5 pb-4">
-        <h2 className="text-xl font-semibold text-container-foreground">
+    <form onSubmit={handleSubmit} className="space-y-4 max-h-full overflow-y-auto">
+      <header className="space-y-1 border-b border-black/5 pb-3">
+        <h2 className="text-lg font-semibold text-container-foreground">
           {isEditMode ? "Additional Information" : "Complete Athlete Registration"}
         </h2>
-        <p className="text-sm text-muted">
+        <p className="text-xs text-muted">
           {isEditMode 
             ? `Update additional details for ${athleteName} (all fields are optional)`
             : `Additional information for ${athleteName} (all fields are optional)`
@@ -167,18 +167,18 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
       </header>
 
       {statusMessage && (
-        <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
           {statusMessage}
         </div>
       )}
 
       {/* Contact Information */}
-      <section className="space-y-4 rounded-lg border border-black/5 bg-white p-4 shadow-sm">
-        <h3 className="text-sm font-semibold text-container-foreground">
+      <section className="space-y-3 rounded-lg border border-black/5 bg-white p-3 shadow-sm">
+        <h3 className="text-xs font-semibold text-container-foreground">
           Contact Information
         </h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="text-sm font-medium text-muted">
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="text-xs font-medium text-muted">
             Email
             <input
               type="email"
@@ -186,10 +186,10 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="email"
               value={form.email}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
             />
           </label>
-          <label className="text-sm font-medium text-muted">
+          <label className="text-xs font-medium text-muted">
             Phone
             <input
               type="tel"
@@ -197,42 +197,42 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="phone"
               value={form.phone}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
             />
           </label>
         </div>
       </section>
 
       {/* Address */}
-      <section className="space-y-4 rounded-lg border border-black/5 bg-white p-4 shadow-sm">
-        <h3 className="text-sm font-semibold text-container-foreground">
+      <section className="space-y-3 rounded-lg border border-black/5 bg-white p-3 shadow-sm">
+        <h3 className="text-xs font-semibold text-container-foreground">
           Address
         </h3>
-        <div className="space-y-4">
-          <label className="text-sm font-medium text-muted">
-            Address (Street/Avenue)
+        <div className="space-y-3">
+          <label className="text-xs font-medium text-muted">
+            Street Address
             <input
               type="text"
               id="address_line1"
               name="address_line1"
               value={form.address_line1}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
             />
           </label>
-          <label className="text-sm font-medium text-muted">
-            Complement (Number, Apartment, etc.)
+          <label className="text-xs font-medium text-muted">
+            Complement
             <input
               type="text"
               id="address_line2"
               name="address_line2"
               value={form.address_line2}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
             />
           </label>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-            <label className="text-sm font-medium text-muted">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <label className="text-xs font-medium text-muted">
               City
               <input
                 type="text"
@@ -240,21 +240,21 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="city"
                 value={form.city}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
               />
             </label>
-            <label className="text-sm font-medium text-muted">
-              State/Province
+            <label className="text-xs font-medium text-muted">
+              Province
               <input
                 type="text"
                 id="province"
                 name="province"
                 value={form.province}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
               />
             </label>
-            <label className="text-sm font-medium text-muted">
+            <label className="text-xs font-medium text-muted">
               Postal Code
               <input
                 type="text"
@@ -262,10 +262,10 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="postal_code"
                 value={form.postal_code}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
               />
             </label>
-            <label className="text-sm font-medium text-muted">
+            <label className="text-xs font-medium text-muted">
               Country
               <input
                 type="text"
@@ -273,7 +273,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="country"
                 value={form.country}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
               />
             </label>
           </div>
@@ -281,34 +281,34 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
       </section>
 
       {/* Guardian/Responsible */}
-      <section className="space-y-4 rounded-lg border border-black/5 bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-container-foreground">
+      <section className="space-y-3 rounded-lg border border-black/5 bg-white p-3 shadow-sm">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-xs font-semibold text-container-foreground">
             Guardian/Responsible
           </h3>
-          <label className="flex items-center gap-2 text-xs text-muted">
+          <label className="flex items-center gap-1 text-xs text-muted">
             <input
               type="checkbox"
               checked={showSecondaryGuardian}
               onChange={(event) => setShowSecondaryGuardian(event.target.checked)}
               className="h-3 w-3 text-blue-600 focus:ring-blue-500"
             />
-            Add second guardian
+            Add second
           </label>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <label className="text-sm font-medium text-muted">
-            Guardian Name
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="text-xs font-medium text-muted">
+            Name
             <input
               type="text"
               id="guardian_name"
               name="guardian_name"
               value={form.guardian_name}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
             />
           </label>
-          <label className="text-sm font-medium text-muted">
+          <label className="text-xs font-medium text-muted">
             Relationship
             <input
               type="text"
@@ -316,48 +316,48 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="guardian_relationship"
               value={form.guardian_relationship}
               onChange={handleFieldChange}
-              placeholder="e.g. Father, Mother, Guardian"
-              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+              placeholder="e.g. Father, Mother"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
             />
           </label>
-          <label className="text-sm font-medium text-muted">
-            Guardian Email
+          <label className="text-xs font-medium text-muted">
+            Email
             <input
               type="email"
               id="guardian_email"
               name="guardian_email"
               value={form.guardian_email}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
             />
           </label>
-          <label className="text-sm font-medium text-muted">
-            Guardian Phone
+          <label className="text-xs font-medium text-muted">
+            Phone
             <input
               type="tel"
               id="guardian_phone"
               name="guardian_phone"
               value={form.guardian_phone}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
             />
           </label>
         </div>
 
         {showSecondaryGuardian && (
-          <div className="grid gap-4 md:grid-cols-2 pt-4 border-t border-black/5">
-            <label className="text-sm font-medium text-muted">
-              Second Guardian Name
+          <div className="grid gap-3 md:grid-cols-2 pt-3 border-t border-black/5">
+            <label className="text-xs font-medium text-muted">
+              Name
               <input
                 type="text"
                 id="secondary_guardian_name"
                 name="secondary_guardian_name"
                 value={form.secondary_guardian_name}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
               />
             </label>
-            <label className="text-sm font-medium text-muted">
+            <label className="text-xs font-medium text-muted">
               Relationship
               <input
                 type="text"
@@ -365,29 +365,29 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="secondary_guardian_relationship"
                 value={form.secondary_guardian_relationship}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
               />
             </label>
-            <label className="text-sm font-medium text-muted">
-              Second Guardian Email
+            <label className="text-xs font-medium text-muted">
+              Email
               <input
                 type="email"
                 id="secondary_guardian_email"
                 name="secondary_guardian_email"
                 value={form.secondary_guardian_email}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
               />
             </label>
-            <label className="text-sm font-medium text-muted">
-              Second Guardian Phone
+            <label className="text-xs font-medium text-muted">
+              Phone
               <input
                 type="tel"
                 id="secondary_guardian_phone"
                 name="secondary_guardian_phone"
                 value={form.secondary_guardian_phone}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
               />
             </label>
           </div>
@@ -395,12 +395,12 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
       </section>
 
       {/* Emergency Contact */}
-      <section className="space-y-4 rounded-lg border border-black/5 bg-white p-4 shadow-sm">
-        <h3 className="text-sm font-semibold text-container-foreground">
+      <section className="space-y-3 rounded-lg border border-black/5 bg-white p-3 shadow-sm">
+        <h3 className="text-xs font-semibold text-container-foreground">
           Emergency Contact
         </h3>
-        <div className="grid gap-4 md:grid-cols-3">
-          <label className="text-sm font-medium text-muted">
+        <div className="grid gap-3 md:grid-cols-3">
+          <label className="text-xs font-medium text-muted">
             Name
             <input
               type="text"
@@ -408,10 +408,10 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="emergency_contact_name"
               value={form.emergency_contact_name}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
             />
           </label>
-          <label className="text-sm font-medium text-muted">
+          <label className="text-xs font-medium text-muted">
             Relationship
             <input
               type="text"
@@ -419,10 +419,10 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="emergency_contact_relationship"
               value={form.emergency_contact_relationship}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
             />
           </label>
-          <label className="text-sm font-medium text-muted">
+          <label className="text-xs font-medium text-muted">
             Phone
             <input
               type="tel"
@@ -430,44 +430,44 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="emergency_contact_phone"
               value={form.emergency_contact_phone}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
             />
           </label>
         </div>
       </section>
 
       {/* Medical Information */}
-      <section className="space-y-4 rounded-lg border border-black/5 bg-white p-4 shadow-sm">
-        <h3 className="text-sm font-semibold text-container-foreground">
+      <section className="space-y-3 rounded-lg border border-black/5 bg-white p-3 shadow-sm">
+        <h3 className="text-xs font-semibold text-container-foreground">
           Medical Information
         </h3>
-        <div className="space-y-4">
-          <label className="text-sm font-medium text-muted">
+        <div className="space-y-3">
+          <label className="text-xs font-medium text-muted">
             Allergies
             <textarea
               id="medical_allergies"
               name="medical_allergies"
-              rows={3}
+              rows={2}
               value={form.medical_allergies}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
               placeholder="Describe any known allergies..."
             />
           </label>
-          <label className="text-sm font-medium text-muted">
+          <label className="text-xs font-medium text-muted">
             Medical Conditions
             <textarea
               id="medical_conditions"
               name="medical_conditions"
-              rows={3}
+              rows={2}
               value={form.medical_conditions}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
               placeholder="Describe any relevant medical conditions..."
             />
           </label>
-          <div className="grid gap-4 md:grid-cols-2">
-            <label className="text-sm font-medium text-muted">
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="text-xs font-medium text-muted">
               Physician Name
               <input
                 type="text"
@@ -475,10 +475,10 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="physician_name"
                 value={form.physician_name}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
               />
             </label>
-            <label className="text-sm font-medium text-muted">
+            <label className="text-xs font-medium text-muted">
               Physician Phone
               <input
                 type="tel"
@@ -486,7 +486,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="physician_phone"
                 value={form.physician_phone}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-2 py-1.5 text-sm"
               />
             </label>
           </div>
@@ -494,18 +494,18 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
       </section>
 
       {mutation.isError && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
           Error saving information. Please try again.
         </div>
       )}
 
       {/* Action Buttons */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end border-t border-black/5 pt-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end border-t border-black/5 pt-4">
         {!isEditMode && (
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
+            className="rounded-md bg-action-primary px-3 py-1.5 text-xs font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
           >
             Skip and Finish
           </button>
@@ -513,7 +513,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
         <button
           type="submit"
           disabled={mutation.isPending}
-          className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-md bg-action-primary px-3 py-1.5 text-xs font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {mutation.isPending ? "Saving..." : isEditMode ? "Save Changes" : "Complete Registration"}
         </button>

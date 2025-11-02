@@ -176,7 +176,7 @@ const AthleteOnboarding = () => {
         Your browser does not support the video tag.
       </video>
       <div className="flex min-h-screen items-center justify-center bg-black/50 px-4 py-10">
-        <div className="w-full max-w-4xl rounded-2xl bg-container-gradient bg-opacity-10 p-8 shadow-xl transition-all duration-300 ease-in-out">
+        <div className="w-full max-w-7xl rounded-2xl bg-container-gradient bg-opacity-10 p-8 shadow-xl transition-all duration-300 ease-in-out">
           {currentStep === 1 ? (
             <div>
               <div className="mb-6 text-center">
