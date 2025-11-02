@@ -186,7 +186,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="email"
               value={form.email}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -197,7 +197,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="phone"
               value={form.phone}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
         </div>
@@ -217,7 +217,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="address_line1"
               value={form.address_line1}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -228,7 +228,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="address_line2"
               value={form.address_line2}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -240,7 +240,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="city"
                 value={form.city}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -251,7 +251,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="province"
                 value={form.province}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -262,7 +262,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="postal_code"
                 value={form.postal_code}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -273,7 +273,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="country"
                 value={form.country}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
               />
             </label>
           </div>
@@ -305,7 +305,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="guardian_name"
               value={form.guardian_name}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -317,7 +317,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               value={form.guardian_relationship}
               onChange={handleFieldChange}
               placeholder="e.g. Father, Mother, Guardian"
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -328,7 +328,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="guardian_email"
               value={form.guardian_email}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -339,7 +339,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="guardian_phone"
               value={form.guardian_phone}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
         </div>
@@ -354,7 +354,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="secondary_guardian_name"
                 value={form.secondary_guardian_name}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -365,7 +365,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="secondary_guardian_relationship"
                 value={form.secondary_guardian_relationship}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -376,7 +376,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="secondary_guardian_email"
                 value={form.secondary_guardian_email}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -387,7 +387,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="secondary_guardian_phone"
                 value={form.secondary_guardian_phone}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
               />
             </label>
           </div>
@@ -408,7 +408,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="emergency_contact_name"
               value={form.emergency_contact_name}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -419,7 +419,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="emergency_contact_relationship"
               value={form.emergency_contact_relationship}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -430,7 +430,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="emergency_contact_phone"
               value={form.emergency_contact_phone}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
         </div>
@@ -450,7 +450,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               rows={3}
               value={form.medical_allergies}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
               placeholder="Describe any known allergies..."
             />
           </label>
@@ -462,7 +462,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               rows={3}
               value={form.medical_conditions}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
               placeholder="Describe any relevant medical conditions..."
             />
           </label>
@@ -475,7 +475,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="physician_name"
                 value={form.physician_name}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -486,7 +486,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="physician_phone"
                 value={form.physician_phone}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
               />
             </label>
           </div>
@@ -505,7 +505,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md border border-black/10 px-4 py-2 text-sm font-semibold text-muted hover:border-action-primary hover:text-accent"
+            className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
           >
             Skip and Finish
           </button>
@@ -513,7 +513,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
         <button
           type="submit"
           disabled={mutation.isPending}
-          className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {mutation.isPending ? "Saving..." : isEditMode ? "Save Changes" : "Complete Registration"}
         </button>

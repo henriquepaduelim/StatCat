@@ -1,6 +1,3 @@
-
-
-
 https://github.com/user-attachments/assets/95990c81-d890-492f-ab60-bdde2d61d656
 
 
@@ -98,3 +95,30 @@ npm run dev
 - Expand automated test coverage on both backend (pytest/httpx) and frontend (RTL/Cypress).
 - Finalise PDF/CSV exports plus automated report delivery.
 - Integrate external storage (S3/MinIO) for high-resolution media and automate cleanup.
+
+## Athlete Onboarding Flow
+
+### Registration & Onboarding (Refactored)
+The athlete onboarding experience has been redesigned for a seamless, unified UX:
+
+1. **Registration** → User creates account on `/login` with name, email, and password
+2. **Auto-redirect** → After successful registration, user is automatically redirected to `/athlete-onboarding` with credentials passed via location state
+3. **Onboarding Steps** → On a full-screen page with video background (matching login styling):
+   - **Step 1**: Basic Information (name, DOB, gender, email, phone, height/weight, position, jersey number, team)
+   - **Step 2**: Additional Details (address, guardian info, emergency contact, medical info)
+   - **Step 3**: Review & Submit (confirmation before admin review)
+4. **Admin Review** → User status becomes `PENDING` and can view progress on `/awaiting-approval`
+5. **Approval/Rejection** → Admin approves or rejects with feedback; athlete can re-enter onboarding to fix rejected profiles
+
+### Key Improvements
+- **Consistent UI**: Login and onboarding use the same video background and styling
+- **Stateful Flow**: Forms retain data if user needs to edit information
+- **Clear Status**: Athletes always know where they are in the process (incomplete → pending → approved)
+- **Error Feedback**: Rejection feedback is shown at the top of the onboarding page
+- **Responsive Design**: Forms adapt to mobile and desktop layouts with proper scrolling
+
+### File Structure
+- `frontend/src/pages/Login.tsx` — Registration form + login, redirects post-registration to onboarding
+- `frontend/src/pages/AthleteOnboarding.tsx` — Full onboarding flow with video background
+- `frontend/src/components/NewAthleteStepOneForm.tsx` — Step 1 form component
+- `frontend/src/components/NewAthleteStepTwoForm.tsx` — Step 2 form component

@@ -27,7 +27,6 @@ const Login = () => {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"coach" | "athlete">("athlete");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -43,13 +42,13 @@ const Login = () => {
 
     try {
       if (isRegister) {
+        // Create account and auto-login
         await registerAccount(fullName.trim(), email.trim(), password, "athlete");
-        setSuccessMessage("Account created successfully! You can now sign in with your credentials.");
-        setMode("login"); // Switch to login mode
-        setError(null);
-        // Clear the form fields except email for convenience
-        setFullName("");
-        setPassword("");
+        const { user, token } = await login(email.trim(), password, true);
+        setCredentials({ user, token });
+        setInitialized(true);
+        // Navigate to onboarding
+        navigate("/athlete-onboarding", { replace: true });
       } else {
         const { user, token } = await login(email.trim(), password, true);
         setCredentials({ user, token });

@@ -38,9 +38,20 @@ const AwaitingApproval = () => {
   }
 
   return (
-    <div className="min-h-screen bg-page flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
-        <div className="rounded-xl border border-action-primary/25 bg-container-gradient p-8 shadow-xl text-center">
+    <div className="relative min-h-screen">
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute top-0 left-0 h-full w-full object-cover"
+        style={{ zIndex: -1 }}
+      >
+        <source src="/media/login-bg.mp4" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+      <div className="flex min-h-screen items-center justify-center bg-black/50 px-4 py-10">
+        <div className="w-full max-w-2xl rounded-2xl bg-container-gradient bg-opacity-10 p-8 shadow-xl text-center">
           <div className="mb-6">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
               <svg className="h-8 w-8 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,7 +93,7 @@ const AwaitingApproval = () => {
           <div className="mt-6 pt-4 border-t border-black/5">
             <button
               onClick={handleLogout}
-              className="text-sm text-muted hover:text-container-foreground transition"
+              className="rounded-lg bg-action-primary px-6 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
             >
               Sign out
             </button>

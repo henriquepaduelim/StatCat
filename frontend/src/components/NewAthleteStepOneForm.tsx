@@ -129,7 +129,7 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
               name="first_name"
               value={form.first_name}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -139,7 +139,7 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
               name="last_name"
               value={form.last_name}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -150,7 +150,7 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
               name="birth_date"
               value={form.birth_date}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -159,7 +159,7 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
               name="gender"
               value={form.gender}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             >
               <option value="male">{t.newAthlete.genderOptions.male}</option>
               <option value="female">{t.newAthlete.genderOptions.female}</option>
@@ -173,7 +173,7 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
               name="email"
               value={form.email}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
         </div>
@@ -185,7 +185,7 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
               name="phone"
               value={form.phone}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -194,7 +194,7 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
               name="height_cm"
               value={form.height_cm}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -203,7 +203,7 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
               name="weight_kg"
               value={form.weight_kg}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -212,7 +212,7 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
               name="dominant_foot"
               value={form.dominant_foot}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             >
               <option value="">{t.newAthlete.dominantFootOptions.default}</option>
               <option value="right">{t.newAthlete.dominantFootOptions.right}</option>
@@ -236,7 +236,7 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
               name="registration_year"
               value={form.registration_year}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -245,7 +245,7 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
               name="registration_category"
               value={form.registration_category}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             >
               {registrationCategories.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -260,7 +260,7 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
               name="player_registration_status"
               value={form.player_registration_status}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             >
               {playerStatuses.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -275,7 +275,7 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
               name="preferred_position"
               value={form.preferred_position}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -284,7 +284,7 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
               name="desired_shirt_number"
               value={form.desired_shirt_number}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-gray-50 px-3 py-2"
             />
           </label>
         </div>
@@ -322,14 +322,14 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md border border-black/10 px-4 py-2 text-sm font-semibold text-muted hover:border-action-primary hover:text-accent"
+          className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
         >
           {t.common.cancel}
         </button>
         <button
           type="submit"
           disabled={submitDisabled}
-          className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {mutation.isPending ? `${t.common.loading}...` : t.newAthlete.submitStepOne}
         </button>
