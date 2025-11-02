@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import NewAthlete from "./pages/NewAthlete";
 import Reports from "./pages/Reports";
 import { useAuthStore } from "./stores/useAuthStore";
+import { useAuthBootstrap } from "./hooks/useAuthBootstrap";
 
 // Import AwaitingApproval separately
 import AwaitingApproval from "./pages/AwaitingApproval";
@@ -28,9 +29,32 @@ const RedirectToDashboardOrReports = () => {
   const user = useAuthStore((state) => state.user);
   const isInitialized = useAuthStore((state) => state.isInitialized);
   
+  // Bootstrap auth on the root route
+  useAuthBootstrap();
+  
   // Wait for auth to be initialized
   if (!isInitialized) {
-    return <div>Loading...</div>;
+    return (
+      <div className="relative min-h-screen">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute top-0 left-0 h-full w-full object-cover"
+          style={{ zIndex: -1 }}
+        >
+          <source src="/media/login-bg.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+        <div className="flex min-h-screen items-center justify-center bg-black/50">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-white mx-auto"></div>
+            <p className="mt-6 text-xl font-medium text-white">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
   
   // If no user, redirect to login
