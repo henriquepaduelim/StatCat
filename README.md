@@ -62,23 +62,6 @@ The platform uses a monorepo structure with independent backend and frontend dep
 - **Responsive Design**: Mobile-first approach with Tailwind CSS
 - **Data Management**: React Query with optimized caching and invalidation
 
-### Key Pages
-- `/login` - Registration and login with unified video background
-- `/athlete-onboarding` - Multi-step registration (basic info → additional details → review)
-- `/awaiting-approval` - Status tracking for pending athletes
-- `/dashboard` - Role-based view with teams, coaches, athletes, and metrics
-- `/reports` - Performance analysis and leaderboards
-- `/athletes` - Athlete management interface
-
-### UI Components
-- Password input with visibility toggle
-- PasswordInput component with eye icon positioned right
-- Form containers with consistent styling (10% opacity, gray-50 inputs)
-- Unified button style (bg-action-primary with text-action-primary-foreground)
-- Loading spinners and error states
-
-## Athlete Onboarding Flow
-
 ### User Journey
 1. **Registration** → Create account with name, email, password on `/login`
 2. **Auto-Login** → Redirect to `/athlete-onboarding` with session auto-populated
@@ -88,12 +71,7 @@ The platform uses a monorepo structure with independent backend and frontend dep
 6. **Admin Review** → Status becomes PENDING; athlete waits on `/awaiting-approval`
 7. **Approval/Rejection** → Admin decision with optional feedback; rejected athletes can resubmit
 
-### UI Enhancements
-- Consistent video background on login and onboarding pages
-- Form container width: max-w-7xl (60% wider than initial)
-- Optimized layout with reduced spacing and compact inputs
-- Smooth CSS transitions between onboarding steps
-- All buttons use unified blue style (bg-action-primary)
+
 
 ## Installation & Development
 
