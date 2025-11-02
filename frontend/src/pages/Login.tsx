@@ -27,7 +27,7 @@ const Login = () => {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"coach" | "athlete">("coach");
+  const [role, setRole] = useState<"coach" | "athlete">("athlete");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -43,23 +43,47 @@ const Login = () => {
 
     try {
       if (isRegister) {
-        await registerAccount(fullName.trim(), email.trim(), password, role);
-        const { user, token } = await login(email.trim(), password, true);
-        setCredentials({ user, token });
-        setInitialized(true);
-        navigate("/dashboard", { replace: true });
+        await registerAccount(fullName.trim(), email.trim(), password, "athlete");
+        setSuccessMessage("Account created successfully! You can now sign in with your credentials.");
+        setMode("login"); // Switch to login mode
+        setError(null);
+        // Clear the form fields except email for convenience
+        setFullName("");
+        setPassword("");
       } else {
         const { user, token } = await login(email.trim(), password, true);
         setCredentials({ user, token });
         setInitialized(true);
+        
+        // Navigate based on user role and athlete status
+        if (user.role === "athlete") {
+          const athleteStatus = user.athlete_status || "INCOMPLETE";
+          
+          switch (athleteStatus) {
+            case "INCOMPLETE":
+            case "REJECTED":
+              navigate("/athlete-onboarding", { replace: true });
+              break;
+            case "PENDING":
+              navigate("/awaiting-approval", { replace: true });
+              break;
+            case "APPROVED":
+              navigate("/reports", { replace: true });
+              break;
+            default:
+              navigate("/athlete-onboarding", { replace: true });
+          }
+        } else {
+          navigate(from, { replace: true });
+        }
       }
     } catch (err) {
       console.error(err);
-      setError(
-        isRegister
-          ? "Unable to create account. Please try again."
-          : t.login.error
-      );
+      if (isRegister) {
+        setError("Unable to create account. Please check if the email is already registered and try again.");
+      } else {
+        setError("Invalid email or password. Please check your credentials and try again.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -69,6 +93,10 @@ const Login = () => {
     setMode(nextMode);
     setError(null);
     setSuccessMessage(null);
+    // Clear form when switching modes
+    if (nextMode === "login") {
+      setFullName("");
+    }
   };
 
   if (token) {
@@ -96,7 +124,7 @@ const Login = () => {
             </h1>
             <p className="mt-2 text-sm text-muted">
               {isRegister
-                ? "Sign up with your email to access the platform."
+                ? "Create your athlete account to access your reports and performance data."
                 : t.login.subtitle}
             </p>
             <div className="mt-4 flex justify-center gap-2 text-sm">
@@ -144,47 +172,6 @@ const Login = () => {
                     className="mt-2"
                     required
                   />
-                </div>
-                <div className="flex flex-col">
-                  <label className="text-sm font-medium text-muted">
-                    Account type
-                  </label>
-                  <div className="mt-2 grid grid-cols-2 gap-4">
-                    <label
-                      className={`flex cursor-pointer items-center justify-center rounded-md border p-4 text-sm font-medium transition ${
-                        role === "coach"
-                          ? "border-action-primary bg-action-primary/10 text-accent"
-                          : "border-gray-300 hover:border-action-primary/50"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="role"
-                        value="coach"
-                        checked={role === "coach"}
-                        onChange={() => setRole("coach")}
-                        className="sr-only"
-                      />
-                      Coach
-                    </label>
-                    <label
-                      className={`flex cursor-pointer items-center justify-center rounded-md border p-4 text-sm font-medium transition ${
-                        role === "athlete"
-                          ? "border-action-primary bg-action-primary/10 text-accent"
-                          : "border-gray-300 hover:border-action-primary/50"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="role"
-                        value="athlete"
-                        checked={role === "athlete"}
-                        onChange={() => setRole("athlete")}
-                        className="sr-only"
-                      />
-                      Athlete
-                    </label>
-                  </div>
                 </div>
               </>
             ) : null}

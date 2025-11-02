@@ -16,7 +16,7 @@ from app.models.athlete import (
     AthletePayment,
 )
 from app.models.team import Team
-from app.models.user import User, UserRole
+from app.models.user import User, UserRole, AthleteStatus
 from app.schemas.athlete import (
     AthleteCreate,
     AthleteRead,
@@ -25,6 +25,7 @@ from app.schemas.athlete import (
     AthleteRegistrationCreate,
     AthleteUpdate,
 )
+from app.schemas.user import UserRead
 
 MANAGE_ATHLETE_ROLES = {UserRole.ADMIN, UserRole.STAFF}
 READ_ATHLETE_ROLES = {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH}
@@ -150,6 +151,7 @@ def register_athlete(
 def list_athletes(
     gender: AthleteGender | None = None,
     team_id: int | None = None,
+    include_user_status: bool = False,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
 ) -> list[AthleteRead]:
@@ -162,7 +164,42 @@ def list_athletes(
         statement = statement.where(Athlete.gender == gender)
     if team_id is not None:
         statement = statement.where(Athlete.team_id == team_id)
-    return session.exec(statement).all()
+    
+    athletes = session.exec(statement).all()
+    result = []
+    
+    for athlete in athletes:
+        try:
+            # Use model_dump to get the base data
+            athlete_dict = athlete.model_dump()
+            
+            # Add the additional fields required by AthleteRead
+            athlete_dict['user_athlete_status'] = None
+            athlete_dict['user_rejection_reason'] = None
+            
+            # If requested, enrich athletes with user status information
+            if include_user_status and current_user.role in MANAGE_ATHLETE_ROLES:
+                try:
+                    user = session.exec(select(User).where(User.athlete_id == athlete.id)).first()
+                    if user:
+                        if user.athlete_status:
+                            # Safely get the status value
+                            if hasattr(user.athlete_status, 'value'):
+                                athlete_dict['user_athlete_status'] = user.athlete_status.value
+                            else:
+                                athlete_dict['user_athlete_status'] = str(user.athlete_status)
+                        athlete_dict['user_rejection_reason'] = user.rejection_reason
+                except Exception as e:
+                    # If there's an error getting user info, just log it and continue
+                    print(f"Warning: Could not get user status for athlete {athlete.id}: {e}")
+            
+            result.append(AthleteRead(**athlete_dict))
+        except Exception as e:
+            print(f"Error processing athlete {athlete.id}: {e}")
+            # Skip this athlete if there's an error
+            continue
+    
+    return result
 
 
 @router.post("/", response_model=AthleteRead, status_code=status.HTTP_201_CREATED)
@@ -242,6 +279,9 @@ def complete_registration(
     session.add(detail)
     session.add(athlete)
 
+    # Do NOT automatically change status to PENDING
+    # User will explicitly submit for approval later
+
     if payload.documents:
         existing_docs = session.exec(
             select(AthleteDocument).where(AthleteDocument.athlete_id == athlete_id)
@@ -297,6 +337,91 @@ def complete_registration(
     session.commit()
     session.refresh(athlete)
     return athlete
+
+
+@router.get("/pending")
+def get_pending_athletes(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Get all pending athletes for admin/staff review."""
+    print(f"=== PENDING ENDPOINT CALLED ===")
+    print(f"User: {current_user.email}, Role: {current_user.role}")
+    
+    try:
+        ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
+        
+        pending_users = session.exec(
+            select(User).where(User.athlete_status == AthleteStatus.PENDING)
+        ).all()
+        
+        print(f"Found {len(pending_users)} pending users")
+        
+        result = []
+        for user in pending_users:
+            result.append({
+                "id": user.id,
+                "email": user.email,
+                "full_name": user.full_name,
+                "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
+                "athlete_id": user.athlete_id,
+                "athlete_status": user.athlete_status.value if hasattr(user.athlete_status, 'value') else str(user.athlete_status),
+            })
+        
+        print(f"Returning {len(result)} results")
+        return result
+        
+    except Exception as e:
+        print(f"Error in get_pending_athletes: {e}")
+        raise
+
+
+@router.get("/pending/count")
+def get_pending_athletes_count(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> dict[str, int]:
+    """Get the count of pending athletes for admin/staff users."""
+    try:
+        ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
+        
+        # Use a more robust query
+        pending_users = session.exec(
+            select(User).where(
+                User.athlete_status == AthleteStatus.PENDING,
+                User.role == UserRole.ATHLETE
+            )
+        ).all()
+        
+        return {"count": len(pending_users)}
+    except Exception as e:
+        # Return zero count if there's any error
+        return {"count": 0}
+
+
+@router.get("/pending-debug")
+def debug_pending():
+    """Ultra simple debug endpoint."""
+    print("DEBUG ENDPOINT CALLED")
+    return {"debug": "working"}
+
+
+@router.get("/test-pending")
+def test_pending_athletes(
+    current_user: User = Depends(get_current_active_user),
+):
+    """Test endpoint for debugging pending athletes."""
+    print(f"=== TEST ENDPOINT CALLED ===")
+    print(f"User: {current_user.email}")
+    print(f"Role: {current_user.role}")
+    
+    return {
+        "message": "Test endpoint working",
+        "user": {
+            "email": current_user.email,
+            "role": current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role),
+        }
+    }
 
 
 @router.get("/{athlete_id}", response_model=AthleteRead)
@@ -426,3 +551,126 @@ def upload_document(
     session.commit()
     session.refresh(document)
     return document
+
+
+@router.post("/{athlete_id}/approve", response_model=UserRead)
+def approve_athlete(
+    athlete_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    """Approve a pending athlete and update their status."""
+    ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
+    
+    athlete = session.get(Athlete, athlete_id)
+    if not athlete:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+    
+    # Find the user associated with this athlete
+    user = session.exec(select(User).where(User.athlete_id == athlete_id)).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found for this athlete")
+    
+    if user.athlete_status != AthleteStatus.PENDING:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Athlete must be in pending status to be approved"
+        )
+    
+    user.athlete_status = AthleteStatus.APPROVED
+    user.rejection_reason = None
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    
+    return user
+
+
+@router.post("/{athlete_id}/reject", response_model=UserRead)
+def reject_athlete(
+    athlete_id: int,
+    reason: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    """Reject a pending athlete with a reason and update their status."""
+    ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
+    
+    athlete = session.get(Athlete, athlete_id)
+    if not athlete:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+    
+    # Find the user associated with this athlete
+    user = session.exec(select(User).where(User.athlete_id == athlete_id)).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found for this athlete")
+    
+    if user.athlete_status != AthleteStatus.PENDING:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Athlete must be in pending status to be rejected"
+        )
+    
+    if not reason or not reason.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Rejection reason is required"
+        )
+    
+    user.athlete_status = AthleteStatus.REJECTED
+    user.rejection_reason = reason.strip()
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    
+    return user
+
+
+@router.post("/{athlete_id}/submit-for-approval", response_model=UserRead)
+def submit_for_approval(
+    athlete_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    """Submit athlete registration for admin approval."""
+    athlete = session.get(Athlete, athlete_id)
+    if not athlete:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+    
+    # Only the athlete themselves can submit for approval
+    if current_user.role != UserRole.ATHLETE or current_user.athlete_id != athlete_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the athlete can submit their own registration")
+    
+    # Check if athlete is in the correct status
+    if current_user.athlete_status != AthleteStatus.INCOMPLETE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="Can only submit incomplete registrations for approval"
+        )
+    
+    # Basic athlete information should be present (from Step 1)
+    if not all([athlete.first_name, athlete.last_name, athlete.birth_date]):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Basic athlete information (name and date of birth) is required before submitting for approval"
+        )
+    
+    # Check if athlete detail exists - if not, it's okay, we'll allow submission with basic info
+    detail = session.get(AthleteDetail, athlete_id)
+    if detail:
+        # If detail exists, only check essential contact information
+        required_contact_fields = [detail.emergency_contact_name, detail.emergency_contact_phone]
+        if not all(field and field.strip() for field in required_contact_fields if isinstance(field, str)):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Emergency contact information is required before submitting for approval"
+            )
+    
+    # Update status to PENDING
+    current_user.athlete_status = AthleteStatus.PENDING
+    current_user.rejection_reason = None  # Clear any previous rejection reason
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+    
+    return current_user

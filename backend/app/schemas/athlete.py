@@ -43,6 +43,8 @@ class AthleteCreate(AthleteBase):
 
 class AthleteRead(AthleteBase):
     id: int
+    user_athlete_status: str | None = None
+    user_rejection_reason: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

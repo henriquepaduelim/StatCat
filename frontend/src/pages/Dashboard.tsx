@@ -17,6 +17,7 @@ import { useTeamCoaches } from "../hooks/useTeamCoaches";
 import { useTeams } from "../hooks/useTeams";
 import { useScoringLeaderboard } from "../hooks/useScoringLeaderboard";
 import { useMetricRanking } from "../hooks/useMetricRanking";
+import { usePermissions } from "../hooks/usePermissions";
 import { useTranslation } from "../i18n/useTranslation";
 import type { Athlete } from "../types/athlete";
 import { useAuthStore } from "../stores/useAuthStore";
@@ -79,6 +80,7 @@ const readableDate = (dateStr: string) => {
 const Dashboard = () => {
   const athletesQuery = useAthletes();
   const teamsQuery = useTeams();
+  const permissions = usePermissions();
 
   const displayAthletes = useMemo(() => athletesQuery.data ?? [], [athletesQuery.data]);
   const teams = useMemo(() => teamsQuery.data ?? [], [teamsQuery.data]);
@@ -988,22 +990,24 @@ const Dashboard = () => {
                 <h2 className="text-lg font-semibold text-container-foreground">Coaches</h2>
                 <p className="text-sm text-muted">Manage coaching staff and assignments</p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setCoachForm(createEmptyCoachForm(Boolean(selectedTeamId)));
-                  setCoachFormOpen(true);
-                  setCoachFormError(null);
-                  setCoachFormSuccess(null);
-                  setEditingCoach(null);
-                }}
-                disabled={createCoachMutation.isPending}
-                className="flex items-center justify-center gap-2 rounded-md bg-action-primary px-3 sm:px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <FontAwesomeIcon icon={faUserTie} className="text-xs" />
-                <span className="hidden sm:inline">Add Coach</span>
-                <span className="sm:hidden">Add</span>
-              </button>
+              {permissions.canCreateCoaches && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCoachForm(createEmptyCoachForm(Boolean(selectedTeamId)));
+                    setCoachFormOpen(true);
+                    setCoachFormError(null);
+                    setCoachFormSuccess(null);
+                    setEditingCoach(null);
+                  }}
+                  disabled={createCoachMutation.isPending}
+                  className="flex items-center justify-center gap-2 rounded-md bg-action-primary px-3 sm:px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <FontAwesomeIcon icon={faUserTie} className="text-xs" />
+                  <span className="hidden sm:inline">Add Coach</span>
+                  <span className="sm:hidden">Add</span>
+                </button>
+              )}
             </div>
             <div className="space-y-3">
               {allCoachesQuery.isLoading ? (

@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+export type AthleteStatus = "INCOMPLETE" | "PENDING" | "APPROVED" | "REJECTED";
+
 export type AuthUser = {
   id: number;
   email: string;
@@ -8,6 +10,8 @@ export type AuthUser = {
   phone?: string | null;
   role: "admin" | "staff" | "coach" | "athlete" | string;
   athlete_id?: number | null;
+  athlete_status?: AthleteStatus;
+  rejection_reason?: string | null;
   is_active: boolean;
 };
 

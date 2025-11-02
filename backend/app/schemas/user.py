@@ -4,7 +4,7 @@ from email_validator import EmailNotValidError, validate_email
 from pydantic import AfterValidator, ConfigDict
 from sqlmodel import SQLModel
 
-from app.models.user import UserRole
+from app.models.user import UserRole, AthleteStatus
 
 
 def _validate_email_allowing_local(value: str) -> str:
@@ -38,6 +38,8 @@ class UserBase(SQLModel):
     phone: str | None = None
     role: UserRole = UserRole.STAFF
     athlete_id: int | None = None
+    athlete_status: AthleteStatus = AthleteStatus.INCOMPLETE
+    rejection_reason: str | None = None
     is_active: bool = True
 
 

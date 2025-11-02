@@ -8,6 +8,8 @@ import { useAthleteReport } from "../hooks/useAthleteReport";
 import { useAthlete } from "../hooks/useAthlete";
 import { useTests } from "../hooks/useTests";
 import { useTranslation } from "../i18n/useTranslation";
+import { useAuthStore } from "../stores/useAuthStore";
+import { usePermissions } from "../hooks/usePermissions";
 import AthleteReportCard from "../components/AthleteReportCard";
 import MapInput from "../components/MapInput";
 import {
@@ -19,10 +21,30 @@ import {
 import type { TestDefinition } from "../types/test";
 
 const Reports = () => {
-  const { data: athletes } = useAthletes();
+  const user = useAuthStore((state) => state.user);
+  const permissions = usePermissions();
+  const { data: allAthletes } = useAthletes();
   const [currentAthleteId, setCurrentAthleteId] = useState<number | undefined>(undefined);
   const t = useTranslation();
   const queryClient = useQueryClient();
+
+  // Filter athletes based on user role and permissions
+  const athletes = useMemo(() => {
+    if (!allAthletes) return undefined;
+    
+    // If user can view all reports (admin/coach), show all athletes
+    if (permissions.canViewAllReports) {
+      return allAthletes;
+    }
+    
+    // If user is an athlete, only show themselves (match by email)
+    if (user?.role === "athlete") {
+      return allAthletes.filter((athlete) => athlete.email === user.email);
+    }
+    
+    // Default: show all athletes (fallback)
+    return allAthletes;
+  }, [allAthletes, permissions.canViewAllReports, user]);
 
   useEffect(() => {
     if (athletes && athletes.length && !currentAthleteId) {

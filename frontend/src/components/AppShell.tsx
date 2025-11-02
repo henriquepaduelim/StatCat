@@ -5,6 +5,7 @@ import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 
 import { useAuthStore } from "../stores/useAuthStore";
 import { useTranslation } from "../i18n/useTranslation";
+import { usePermissions } from "../hooks/usePermissions";
 import SideNav from "./SideNav";
 import { NAV_ITEMS } from "./navigationItems";
 
@@ -12,10 +13,17 @@ const AppShell = ({ children }: PropsWithChildren) => {
   const location = useLocation();
   const clearAuth = useAuthStore((state) => state.clear);
   const t = useTranslation();
+  const permissions = usePermissions();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Filter navigation items based on user permissions
+  const allowedNavItems = useMemo(() => {
+    return NAV_ITEMS.filter((item) => permissions[item.requiredPermission]);
+  }, [permissions]);
+
   const mobileNavItems = useMemo(
-    () => NAV_ITEMS.map((item) => ({ ...item, label: item.label(t) })),
-    [t]
+    () => allowedNavItems.map((item) => ({ ...item, label: item.label(t) })),
+    [allowedNavItems, t]
   );
   const isAthletesListPage =
     location.pathname === "/athletes" || location.pathname === "/athletes/";

@@ -24,6 +24,8 @@ export interface Athlete {
   player_registration_status?: PlayerRegistrationStatus | null;
   preferred_position?: string | null;
   desired_shirt_number?: string | null;
+  user_athlete_status?: string | null;
+  user_rejection_reason?: string | null;
 }
 
 export type AthletePayload = Omit<Athlete, "id">;

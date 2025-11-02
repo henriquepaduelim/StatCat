@@ -5,12 +5,16 @@ import { Dialog, Transition } from "@headlessui/react";
 
 import { useAthletes } from "../hooks/useAthletes";
 import { useTeams } from "../hooks/useTeams";
+import { usePendingAthletesCount } from "../hooks/usePendingAthletesCount";
+import { usePermissions } from "../hooks/usePermissions";
 import { useTranslation } from "../i18n/useTranslation";
+import NotificationBadge from "../components/NotificationBadge";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
 import { deleteAthlete } from "../api/athletes";
 import type { Athlete } from "../types/athlete";
 import NewAthleteStepOneForm from "../components/NewAthleteStepOneForm";
 import NewAthleteStepTwoForm from "../components/NewAthleteStepTwoForm";
+import AthleteApproval from "./AthleteApproval";
 
 const normalizeText = (value: string) =>
   value
@@ -43,11 +47,14 @@ const Athletes = () => {
   const t = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const permissions = usePermissions();
+  const { data: pendingCount } = usePendingAthletesCount();
   const [selected, setSelected] = useState<Athlete | null>(null);
   const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(
     null
   );
   const [isNewAthleteOpen, setIsNewAthleteOpen] = useState(false);
+  const [isPendingAthletesOpen, setIsPendingAthletesOpen] = useState(false);
   const [isAthleteDetailsOpen, setIsAthleteDetailsOpen] = useState(false);
   const [registeredAthlete, setRegisteredAthlete] = useState<Athlete | null>(null);
   const [nameFilter, setNameFilter] = useState("");
@@ -333,6 +340,54 @@ const Athletes = () => {
 
   return (
     <>
+      {/* Pending Athletes Modal */}
+      <Transition appear show={isPendingAthletesOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-20" onClose={() => setIsPendingAthletesOpen(false)}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-3xl bg-container-gradient shadow-2xl transition-all">
+                  <div className="relative px-8 py-8">
+                    <button
+                      type="button"
+                      onClick={() => setIsPendingAthletesOpen(false)}
+                      className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/70 text-muted shadow-sm transition hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
+                    >
+                      <span className="sr-only">Close</span>
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                    <AthleteApproval />
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      {/* New Athlete Modal */}
       <Transition appear show={isNewAthleteOpen} as={Fragment}>
         <Dialog as="div" className="relative z-40" onClose={setIsNewAthleteOpen}>
           <Transition.Child
@@ -396,13 +451,29 @@ const Athletes = () => {
             <h1 className="text-2xl font-semibold text-container-foreground">{t.athletes.title}</h1>
             <p className="text-sm text-muted">{t.athletes.description}</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsNewAthleteOpen(true)}
-            className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
-          >
-            {t.athletes.add}
-          </button>
+          <div className="flex gap-3">
+            {permissions.canCreateAthletes && (
+              <button
+                type="button"
+                onClick={() => setIsPendingAthletesOpen(true)}
+                className="relative rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+              >
+                Pending Athletes
+                {pendingCount && pendingCount.count > 0 && (
+                  <div className="absolute -top-2 -right-2">
+                    <NotificationBadge count={pendingCount.count} />
+                  </div>
+                )}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsNewAthleteOpen(true)}
+              className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
+            >
+              {t.athletes.add}
+            </button>
+          </div>
         </header>
 
       {alert ? (
@@ -1089,17 +1160,37 @@ const Athletes = () => {
                   <td className="px-4 py-4 text-sm text-muted">{genderLabel}</td>
                   <td className="px-4 py-4 text-sm text-muted">{athlete.email ?? "-"}</td>
                   <td className="px-4 py-4 text-sm">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                        athlete.status === "active"
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-red-300 text-red-900"
-                      }`}
-                    >
-                      {athlete.status === "active"
-                        ? t.newAthlete.statusOptions.active
-                        : t.newAthlete.statusOptions.inactive}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                          athlete.status === "active"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-red-300 text-red-900"
+                        }`}
+                      >
+                        {athlete.status === "active"
+                          ? t.newAthlete.statusOptions.active
+                          : t.newAthlete.statusOptions.inactive}
+                      </span>
+                      {athlete.user_athlete_status === "PENDING" && (
+                        <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-800">
+                          Pending Approval
+                        </span>
+                      )}
+                      {athlete.user_athlete_status === "REJECTED" && (
+                        <span 
+                          className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800 cursor-help"
+                          title={athlete.user_rejection_reason || "Rejected"}
+                        >
+                          Rejected
+                        </span>
+                      )}
+                      {athlete.user_athlete_status === "INCOMPLETE" && (
+                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-800">
+                          Incomplete
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex justify-end gap-2">

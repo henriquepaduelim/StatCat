@@ -28,5 +28,12 @@ export default defineConfig({
   },
   define: {
     'process.env': {}
-  }
+  },
+  // Disable all source maps to prevent errors
+  css: {
+    devSourcemap: false,
+  },
+  esbuild: {
+    sourcemap: false,
+  },
 });

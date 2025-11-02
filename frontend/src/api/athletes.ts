@@ -68,3 +68,31 @@ export const uploadAthleteDocument = async (
   );
   return data;
 };
+
+export const approveAthlete = async (athleteId: number): Promise<any> => {
+  const { data } = await api.post(`/athletes/${athleteId}/approve`);
+  return data;
+};
+
+export const rejectAthlete = async (
+  athleteId: number, 
+  reason: string
+): Promise<any> => {
+  const { data } = await api.post(`/athletes/${athleteId}/reject?reason=${encodeURIComponent(reason)}`);
+  return data;
+};
+
+export const getPendingAthletesCount = async (): Promise<{ count: number }> => {
+  const { data } = await api.get("/athletes/pending/count");
+  return data;
+};
+
+export const getPendingAthletes = async (): Promise<any[]> => {
+  const { data } = await api.get("/athletes/pending");
+  return data;
+};
+
+export const submitForApproval = async (athleteId: number): Promise<any> => {
+  const { data } = await api.post(`/athletes/${athleteId}/submit-for-approval`);
+  return data;
+};

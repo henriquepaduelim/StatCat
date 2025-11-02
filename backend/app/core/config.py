@@ -18,9 +18,9 @@ class Settings(BaseSettings):
     SECURITY_ALGORITHM: str = "HS256"
     BACKEND_CORS_ORIGINS: list[str] = Field(default_factory=lambda: [
         "http://localhost:5173",
-        "https://stat-cat-git-main-henriquepaduelims-projects.vercel.app",  # URL atual do Vercel
-        "https://statscat.vercel.app",  # URL possível do Vercel
-        "*"  # Temporário para debug - REMOVER em produção final
+        "http://localhost:3000",
+        "https://stat-cat-git-main-henriquepaduelims-projects.vercel.app",
+        "https://statscat.vercel.app",
     ])
     MEDIA_ROOT: str = "media"
     

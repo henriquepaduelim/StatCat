@@ -78,6 +78,33 @@ def _ensure_optional_columns() -> None:
             connection.exec_driver_sql(
                 "ALTER TABLE user ADD COLUMN phone VARCHAR(30)"
             )
+        if "athlete_status" not in user_columns:
+            connection.exec_driver_sql(
+                "ALTER TABLE user ADD COLUMN athlete_status VARCHAR(20) DEFAULT 'INCOMPLETE'"
+            )
+        
+        # Always update existing values to match enum keys
+        connection.exec_driver_sql(
+            "UPDATE user SET athlete_status = 'INCOMPLETE' WHERE athlete_status IN ('incomplete', 'INCOMPLETE') OR athlete_status IS NULL OR athlete_status = ''"
+        )
+        connection.exec_driver_sql(
+            "UPDATE user SET athlete_status = 'PENDING' WHERE athlete_status = 'pending'"
+        )
+        connection.exec_driver_sql(
+            "UPDATE user SET athlete_status = 'APPROVED' WHERE athlete_status = 'approved'"
+        )
+        connection.exec_driver_sql(
+            "UPDATE user SET athlete_status = 'REJECTED' WHERE athlete_status = 'rejected'"
+        )
+        
+        # Set default status for users without athlete_status (non-athletes should be approved)
+        connection.exec_driver_sql(
+            "UPDATE user SET athlete_status = 'APPROVED' WHERE role != 'athlete' AND (athlete_status IS NULL OR athlete_status = '')"
+        )
+        if "rejection_reason" not in user_columns:
+            connection.exec_driver_sql(
+                "ALTER TABLE user ADD COLUMN rejection_reason TEXT"
+            )
 
         assessment_session_columns = {
             row[1]

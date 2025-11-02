@@ -1,9 +1,13 @@
+import { useMemo } from "react";
 import { NavLink } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 
 import { useAuthStore } from "../stores/useAuthStore";
 import { useTranslation } from "../i18n/useTranslation";
+import { usePermissions } from "../hooks/usePermissions";
+import { usePendingAthletesCount } from "../hooks/usePendingAthletesCount";
+import NotificationBadge from "./NotificationBadge";
 import { NAV_ITEMS } from "./navigationItems";
 
 const LOGOUT_ICON = faRightFromBracket;
@@ -16,13 +20,20 @@ const linkClasses = ({ isActive }: { isActive: boolean }) =>
 const SideNav = () => {
   const t = useTranslation();
   const clearAuth = useAuthStore((state) => state.clear);
+  const permissions = usePermissions();
+  const { data: pendingCount } = usePendingAthletesCount();
+
+  // Filter navigation items based on user permissions
+  const allowedNavItems = useMemo(() => {
+    return NAV_ITEMS.filter((item) => permissions[item.requiredPermission]);
+  }, [permissions]);
 
   return (
     <div className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:w-72 text-sidebar-foreground">
       <div className="flex-1 flex flex-col min-h-0 bg-sidebar">
         <div className="flex-1 flex flex-col pt-28 pb-4 overflow-y-auto">
           <nav className="mt-8 flex-1 space-y-0.5 px-0">
-            {NAV_ITEMS.map((item) => (
+            {allowedNavItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -31,12 +42,17 @@ const SideNav = () => {
                 }
               >
                 <span
-                  className={`flex items-center gap-3 ${
+                  className={`flex items-center justify-between gap-3 ${
                     item.isUppercase ? "tracking-wider" : ""
                   }`}
                 >
-                  <FontAwesomeIcon icon={item.icon} className="text-base leading-none" />
-                  {item.label(t)}
+                  <span className="flex items-center gap-3">
+                    <FontAwesomeIcon icon={item.icon} className="text-base leading-none" />
+                    {item.label(t)}
+                  </span>
+                  {item.to === "/athletes" && pendingCount && pendingCount.count > 0 && (
+                    <NotificationBadge count={pendingCount.count} />
+                  )}
                 </span>
               </NavLink>
             ))}

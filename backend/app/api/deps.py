@@ -42,21 +42,32 @@ def get_current_user(
 
     try:
         if token is None:
+            print("get_current_user: No token provided")
             raise credentials_exception
+        
+        print(f"get_current_user: Attempting to decode token: {token[:20]}...")
         payload = jwt.decode(
             token,
             settings.SECRET_KEY,
             algorithms=[settings.SECURITY_ALGORITHM],
         )
+        print(f"get_current_user: Token payload: {payload}")
         token_data = TokenPayload.model_validate(payload)
-    except (JWTError, ValidationError):
+        print(f"get_current_user: Token data validated: {token_data}")
+    except (JWTError, ValidationError) as e:
+        print(f"get_current_user: Token validation error: {e}")
         raise credentials_exception
 
+    print(f"get_current_user: Looking up user with email: {token_data.sub}")
     user = session.exec(select(User).where(User.email == token_data.sub)).first()
     if not user:
+        print(f"get_current_user: User not found for email: {token_data.sub}")
         raise credentials_exception
     if not user.is_active:
+        print(f"get_current_user: User {user.email} is inactive")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
+    
+    print(f"get_current_user: Successfully authenticated user: {user.email}")
     return user
 
 

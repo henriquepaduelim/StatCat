@@ -1,9 +1,11 @@
-import { useMemo } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useMemo, useEffect } from "react";
+import { Link, useParams, Navigate } from "react-router-dom";
 
 import { useAthlete } from "../hooks/useAthlete";
 import { useAthleteMetrics } from "../hooks/useAthleteMetrics";
 import { useAthleteReport } from "../hooks/useAthleteReport";
+import { useAuthStore } from "../stores/useAuthStore";
+import { usePermissions } from "../hooks/usePermissions";
 import { activeTheme } from "../theme/themes";
 import { useTranslation } from "../i18n/useTranslation";
 import type { AthleteReportSession } from "../types/athlete";
@@ -11,11 +13,28 @@ import type { AthleteReportSession } from "../types/athlete";
 const AthleteReport = () => {
   const params = useParams<{ id: string }>();
   const athleteId = Number(params.id);
+  const user = useAuthStore((state) => state.user);
+  const permissions = usePermissions();
   const { data: athlete, isLoading, isError } = useAthlete(athleteId);
   const reportQuery = useAthleteReport(Number.isNaN(athleteId) ? undefined : athleteId);
   const metricsQuery = useAthleteMetrics(athleteId);
   const t = useTranslation();
   const theme = activeTheme;
+
+  // Check if athlete user is trying to access someone else's report
+  const canAccessReport = useMemo(() => {
+    if (!athlete || !user) return false;
+    
+    // Admins and coaches can access all reports
+    if (permissions.canViewAllReports) return true;
+    
+    // Athletes can only access their own reports (by email)
+    if (user.role === "athlete") {
+      return athlete.email === user.email;
+    }
+    
+    return true; // Fallback
+  }, [athlete, user, permissions.canViewAllReports]);
 
   const sessions = useMemo<AthleteReportSession[]>(() => {
     if (reportQuery.data?.sessions?.length) {
@@ -28,7 +47,7 @@ const AthleteReport = () => {
     return (
       <div className="space-y-3">
         <p className="text-sm text-red-500">{t.athletes.error}</p>
-        <Link to="/athletes" className="text-sm font-semibold text-accent hover:underline">
+        <Link to="/reports" className="text-sm font-semibold text-accent hover:underline">
           {t.athleteDetail.backToList}
         </Link>
       </div>
@@ -43,11 +62,16 @@ const AthleteReport = () => {
     return (
       <div className="space-y-3">
         <p className="text-sm text-red-500">{t.athletes.error}</p>
-        <Link to="/athletes" className="text-sm font-semibold text-accent hover:underline">
+        <Link to="/reports" className="text-sm font-semibold text-accent hover:underline">
           {t.athleteDetail.backToList}
         </Link>
       </div>
     );
+  }
+
+  // Redirect if user doesn't have permission to view this specific report
+  if (!canAccessReport) {
+    return <Navigate to="/reports" replace />;
   }
 
   return (
@@ -61,7 +85,7 @@ const AthleteReport = () => {
           <p className="text-sm text-muted">{t.dashboard.athleteReport.subtitle}</p>
         </div>
         <Link
-          to="/athletes"
+          to="/reports"
           className="inline-flex items-center rounded-md border border-action-primary/40 bg-action-primary px-3 py-2 text-xs font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
         >
           {t.athleteDetail.backToList}

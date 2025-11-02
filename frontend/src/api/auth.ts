@@ -9,8 +9,19 @@ export type AuthResponse = {
 };
 
 export const fetchMe = async (): Promise<AuthUser> => {
-  const { data } = await api.get<AuthUser>("/auth/me");
-  return data;
+  console.log("fetchMe - Making request to /auth/me");
+  try {
+    const { data } = await api.get<AuthUser>("/auth/me");
+    console.log("fetchMe - Received data:", data);
+    console.log("fetchMe - User role:", data?.role);
+    console.log("fetchMe - Athlete status:", data?.athlete_status);
+    return data;
+  } catch (error: any) {
+    console.error("fetchMe - Error:", error);
+    console.error("fetchMe - Error response:", error?.response);
+    console.error("fetchMe - Error status:", error?.response?.status);
+    throw error;
+  }
 };
 
 export const login = async (
@@ -37,7 +48,7 @@ export const registerAccount = async (
   fullName: string,
   email: string,
   password?: string,
-  role: "coach" | "athlete" = "coach"
+  role: "coach" | "athlete" = "athlete"
 ) => {
   const payload = {
     full_name: fullName,
@@ -45,7 +56,7 @@ export const registerAccount = async (
     password: password ?? "",
     role,
   };
-  const { data } = await api.post("/users/register", payload);
+  const { data } = await api.post("/auth/signup", payload);
   return data;
 };
 
