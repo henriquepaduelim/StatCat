@@ -66,20 +66,30 @@ const ConfirmDeleteModal = ({
         tabIndex={-1}
         className="relative z-10 w-full max-w-sm rounded-xl bg-container p-6 shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
       >
+        <button
+          type="button"
+          onClick={onCancel}
+          className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/70 text-muted shadow-sm transition hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
+          aria-label="Close"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            className="h-4 w-4"
+          >
+            <path d="M5 5l10 10M15 5L5 15" strokeLinecap="round" />
+          </svg>
+        </button>
         <h2 id="confirm-delete-title" className="text-lg font-semibold text-container-foreground">
           {title}
         </h2>
         <p id="confirm-delete-description" className="mt-2 text-sm text-muted">
           {description}
         </p>
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="rounded-md border border-black/10 px-4 py-2 text-sm font-medium text-muted transition hover:border-action-primary hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
-          >
-            {cancelLabel}
-          </button>
+        <div className="mt-6 flex justify-end">
           <button
             type="button"
             onClick={onConfirm}

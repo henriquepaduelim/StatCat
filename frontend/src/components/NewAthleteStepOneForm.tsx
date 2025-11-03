@@ -318,14 +318,7 @@ const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProp
         <p className="text-sm text-red-600">{t.newAthlete.error}</p>
       ) : null}
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-md border border-black/10 px-4 py-2 text-sm font-semibold text-muted hover:border-action-primary hover:text-accent"
-        >
-          {t.common.cancel}
-        </button>
+      <div className="flex justify-end">
         <button
           type="submit"
           disabled={submitDisabled}

@@ -1411,21 +1411,31 @@ const Dashboard = () => {
           className="w-full max-w-lg sm:max-w-7xl max-h-[95vh] sm:max-h-[98vh] overflow-y-auto space-y-4 rounded-2xl bg-white p-4 sm:p-6 md:px-10 shadow-2xl"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-            <div className="flex-1">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={closeTeamFormModal}
+              disabled={createTeamMutation.isPending}
+              className="absolute right-0 top-0 inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/70 text-muted shadow-sm transition hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary disabled:cursor-not-allowed disabled:opacity-60"
+              aria-label="Close"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                className="h-4 w-4"
+              >
+                <path d="M5 5l10 10M15 5L5 15" strokeLinecap="round" />
+              </svg>
+            </button>
+            <div>
               <h3 className="text-lg font-semibold text-container-foreground">
                 {editingTeam ? `Edit ${editingTeam.name}` : createTeamLabels.modalTitle}
               </h3>
               <p className="text-sm text-muted">{createTeamLabels.helper}</p>
             </div>
-            <button
-              type="button"
-              onClick={closeTeamFormModal}
-              disabled={createTeamMutation.isPending}
-              className="self-end sm:self-start text-sm font-semibold text-muted hover:text-action-primary disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {createTeamLabels.cancelLabel}
-            </button>
           </div>
           <form onSubmit={handleTeamFormSubmit} className="space-y-5">
             <div className="grid gap-4 md:grid-cols-2">
@@ -1591,15 +1601,7 @@ const Dashboard = () => {
 
             {teamFormError ? <p className="text-xs text-red-500">{teamFormError}</p> : null}
 
-            <div className="flex flex-col sm:flex-row justify-end gap-2">
-              <button
-                type="button"
-                onClick={closeTeamFormModal}
-                disabled={createTeamMutation.isPending}
-                className="w-full sm:w-auto rounded-md border border-black/10 px-4 py-2 text-sm font-semibold text-muted disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {createTeamLabels.cancelLabel}
-              </button>
+            <div className="flex justify-end">
               <button
                 type="submit"
                 disabled={createTeamMutation.isPending}
@@ -1619,11 +1621,28 @@ const Dashboard = () => {
         role="presentation"
       >
         <div
-          className="w-full max-w-lg sm:max-w-5xl space-y-5 rounded-2xl bg-white p-4 sm:p-6 md:px-10 shadow-2xl"
+          className="relative w-full max-w-lg sm:max-w-5xl space-y-5 rounded-2xl bg-white p-4 sm:p-6 md:px-10 shadow-2xl"
           onClick={(event) => event.stopPropagation()}
         >
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="space-y-1">
+              <button
+                type="button"
+                onClick={closeCoachFormModal}
+                className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/70 text-muted shadow-sm transition hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
+                aria-label="Close"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  className="h-4 w-4"
+                >
+                  <path d="M5 5l10 10M15 5L5 15" strokeLinecap="round" />
+                </svg>
+              </button>
               <h3 className="text-lg font-semibold text-container-foreground">
                 {editingCoach ? `Edit ${editingCoach.fullName}` : coachDirectoryLabels.title}
               </h3>
@@ -1636,13 +1655,6 @@ const Dashboard = () => {
                 <p className="text-xs text-muted">{coachDirectoryLabels.assignDisabled}</p>
               )}
             </div>
-            <button
-              type="button"
-              onClick={closeCoachFormModal}
-              className="text-sm font-semibold text-muted hover:text-action-primary"
-            >
-              {coachDirectoryLabels.closeButton}
-            </button>
           </div>
           {coachFormError ? (
             <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
@@ -1802,14 +1814,7 @@ const Dashboard = () => {
                     {selectedTeamName ? ` (${selectedTeamName})` : ""}
                   </span>
                 </label>
-                <div className="flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={closeCoachFormModal}
-                    className="rounded-md border border-black/10 px-4 py-2 text-sm font-semibold text-muted"
-                  >
-                    {coachDirectoryLabels.cancelLabel}
-                  </button>
+                <div className="flex justify-end">
                   <button
                     type="submit"
                     disabled={createCoachMutation.isPending}
@@ -1835,20 +1840,30 @@ const Dashboard = () => {
           className="w-full max-w-none h-[92vh] sm:h-[94vh] overflow-y-auto rounded-none bg-white p-4 sm:p-6 shadow-2xl"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={handleEventCancel}
+              className="absolute right-0 top-0 inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/70 text-muted shadow-sm transition hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
+              aria-label="Close"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                className="h-4 w-4"
+              >
+                <path d="M5 5l10 10M15 5L5 15" strokeLinecap="round" />
+              </svg>
+            </button>
             <div className="space-y-1">
               <h3 className="text-lg font-semibold text-container-foreground">
                 {readableDate(eventForm.date || selectedEventDate || formatDateKey(new Date()))}
               </h3>
               <p className="text-sm text-muted">{summaryLabels.calendar.subtitle}</p>
             </div>
-            <button
-              type="button"
-              onClick={handleEventCancel}
-              className="text-sm font-semibold text-muted hover:text-action-primary"
-            >
-              {summaryLabels.calendar.cancelLabel}
-            </button>
           </div>
 
           <div className="mt-4 grid gap-6 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
@@ -1957,14 +1972,7 @@ const Dashboard = () => {
                 {eventFormError ? (
                   <p className="text-xs text-red-500">{eventFormError}</p>
                 ) : null}
-                <div className="flex flex-col sm:flex-row justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={handleEventCancel}
-                    className="w-full sm:w-auto rounded-md border border-black/10 px-4 py-2 text-sm font-semibold text-muted hover:border-action-primary/50"
-                  >
-                    {t.common.cancel}
-                  </button>
+                <div className="flex justify-end">
                   <button
                     type="submit"
                     className="w-full sm:w-auto rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground hover:bg-action-primary/90"
