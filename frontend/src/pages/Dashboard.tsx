@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPenToSquare, faUsers, faUserTie } from "@fortawesome/free-solid-svg-icons";
+import { faPenToSquare, faUsers, faUserTie, faPlus, faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 
 import {
   assignCoachToTeam,
@@ -63,13 +63,19 @@ const createEmptyTeamForm = (): NewTeamFormState => ({
   athleteIds: [],
 });
 
-const formatDateKey = (date: Date) => date.toISOString().split("T")[0];
+// Gera chave de data (YYYY-MM-DD) em horário local, evitando regressão de dia por UTC
+const formatDateKey = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
 
+// Converte string YYYY-MM-DD para Date local (não UTC) para exibição
 const readableDate = (dateStr: string) => {
-  if (!dateStr) {
-    return "";
-  }
-  const date = new Date(dateStr);
+  if (!dateStr) return "";
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date((y || 0), (m || 1) - 1, (d || 1));
   return date.toLocaleDateString(undefined, {
     weekday: "short",
     month: "short",
@@ -321,18 +327,48 @@ const Dashboard = () => {
       if (!event.date) {
         return;
       }
-      map.set(event.date, [...(map.get(event.date) ?? []), event]);
+      const dayEvents = map.get(event.date);
+      if (dayEvents) {
+        dayEvents.push(event);
+      } else {
+        map.set(event.date, [event]);
+      }
     });
     return map;
   }, [events]);
 
+  // Datas únicas com eventos (ordenadas), para navegar entre dias com eventos
+  const eventDatesSorted = useMemo(() => {
+    const set = new Set<string>();
+    events.forEach((e) => { if (e.date) set.add(e.date); });
+    return Array.from(set).sort();
+  }, [events]);
+  const eventDateIndex = useMemo(() => (
+    selectedEventDate ? eventDatesSorted.indexOf(selectedEventDate) : -1
+  ), [eventDatesSorted, selectedEventDate]);
+  const hasPrevEventDay = eventDateIndex > 0;
+  const hasNextEventDay = eventDateIndex >= 0 && eventDateIndex < eventDatesSorted.length - 1;
+  const goToPrevEventDay = () => {
+    if (!hasPrevEventDay) return;
+    const d = eventDatesSorted[eventDateIndex - 1];
+    setSelectedEventDate(d);
+    setEventForm((prev) => ({ ...prev, date: d }));
+  };
+  const goToNextEventDay = () => {
+    if (!hasNextEventDay) return;
+    const d = eventDatesSorted[eventDateIndex + 1];
+    setSelectedEventDate(d);
+    setEventForm((prev) => ({ ...prev, date: d }));
+  };
+
   const upcomingEvents = useMemo(() => {
+    const toLocalTs = (dateStr: string, timeStr?: string) => {
+      const [y, m, d] = (dateStr || "").split("-").map(Number);
+      const [hh = 0, mm = 0] = (timeStr || "00:00").split(":" ).map(Number);
+      return new Date((y || 0), (m || 1) - 1, (d || 1), hh, mm).getTime();
+    };
     return [...events]
-      .sort((a, b) => {
-        const aDate = new Date(`${a.date}T${a.time || "00:00"}`).getTime();
-        const bDate = new Date(`${b.date}T${b.time || "00:00"}`).getTime();
-        return aDate - bDate;
-      })
+      .sort((a, b) => toLocalTs(a.date, a.time) - toLocalTs(b.date, b.time))
       .slice(0, 4);
   }, [events]);
 
@@ -400,31 +436,24 @@ const Dashboard = () => {
     const target = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth(), day);
     const dateKey = formatDateKey(target);
     const dayEvents = eventsByDate.get(dateKey) ?? [];
-    
-    if (dayEvents.length) {
-      setEventFormOpen(false);
-      setEventFormError(null);
-      setSelectedEventDate(dateKey);
-      
-      // Get teams with events on this date
-      const teamsWithEventsOnDate = new Set<number>();
-      dayEvents.forEach(event => {
-        if (event.teamId !== null) {
-          teamsWithEventsOnDate.add(event.teamId);
-        }
-      });
-      
-      // If there are teams with events, select the first one if current selection isn't valid
-      if (teamsWithEventsOnDate.size > 0) {
-        const teamsArray = Array.from(teamsWithEventsOnDate);
-        if (!selectedTeamId || !teamsWithEventsOnDate.has(selectedTeamId)) {
-          setSelectedTeamId(teamsArray[0]);
-        }
+
+    // Sempre abre o modal do dia clicado, mostrando eventos (esquerda) e criação (direita)
+    setEventFormOpen(false);
+    setEventFormError(null);
+    setSelectedEventDate(dateKey);
+
+    // Se houver times com eventos no dia, seleciona um válido por padrão
+    const teamsWithEventsOnDate = new Set<number>();
+    dayEvents.forEach((ev) => {
+      if (ev.teamId !== null) teamsWithEventsOnDate.add(ev.teamId);
+    });
+    if (teamsWithEventsOnDate.size > 0) {
+      const firstTeamId = Array.from(teamsWithEventsOnDate)[0];
+      if (!selectedTeamId || !teamsWithEventsOnDate.has(selectedTeamId)) {
+        setSelectedTeamId(firstTeamId);
       }
-      return;
     }
-    
-    setSelectedEventDate(null);
+
     openEventFormPanel(dateKey);
   };
 
@@ -896,9 +925,10 @@ const Dashboard = () => {
                 disabled={createTeamMutation.isPending}
                 className="flex items-center justify-center gap-2 rounded-md bg-action-primary px-3 sm:px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <FontAwesomeIcon icon={faUsers} className="text-xs" />
+                <FontAwesomeIcon icon={faPlus} className="text-xs" />
                 <span className="hidden sm:inline">{createTeamLabels.button}</span>
                 <span className="sm:hidden">Add</span>
+                <FontAwesomeIcon icon={faUsers} className="text-xs" />
               </button>
             </div>
             <div className="space-y-3">
@@ -1003,9 +1033,10 @@ const Dashboard = () => {
                   disabled={createCoachMutation.isPending}
                   className="flex items-center justify-center gap-2 rounded-md bg-action-primary px-3 sm:px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <FontAwesomeIcon icon={faUserTie} className="text-xs" />
+                  <FontAwesomeIcon icon={faPlus} className="text-xs" />
                   <span className="hidden sm:inline">Add Coach</span>
                   <span className="sm:hidden">Add</span>
+                  <FontAwesomeIcon icon={faUserTie} className="text-xs" />
                 </button>
               )}
             </div>
@@ -1169,6 +1200,7 @@ const Dashboard = () => {
                   onClick={() => openEventFormPanel()}
                   className="rounded-md border border-action-primary/40 bg-action-primary px-3 py-1 text-xs font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
                 >
+                  <FontAwesomeIcon icon={faPlus} className="text-xs mr-1" />
                   {summaryLabels.calendar.createButton}
                 </button>
               </div>
@@ -1624,70 +1656,83 @@ const Dashboard = () => {
           ) : null}
           <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)]">
             <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-semibold text-container-foreground">
                   {coachDirectoryLabels.listTitle}
                 </p>
-                <span className="text-xs text-muted">
-                  {availableCoaches.length} {availableCoaches.length === 1 ? coachDirectoryLabels.coachCountSingular : coachDirectoryLabels.coachCountPlural}
-                </span>
+                {availableCoaches.length ? (
+                  <span className="text-xs text-muted">
+                    {availableCoaches.length}{" "}
+                    {availableCoaches.length === 1
+                      ? coachDirectoryLabels.coachCountSingular
+                      : coachDirectoryLabels.coachCountPlural}
+                  </span>
+                ) : null}
               </div>
-              <div className="max-h-48 sm:max-h-72 overflow-y-auto rounded-lg border border-black/10 bg-white/70 p-3 space-y-2">
+              <div className="max-h-72 overflow-y-auto rounded-lg border border-black/10 bg-white/70">
                 {allCoachesQuery.isLoading ? (
-                  <p className="text-xs text-muted">{coachDirectoryLabels.coachesLoading}</p>
+                  <p className="px-3 py-2 text-xs text-muted">
+                    {coachDirectoryLabels.coachesLoading}
+                  </p>
                 ) : allCoachesQuery.isError ? (
-                  <p className="text-xs text-red-500">{coachDirectoryLabels.coachesError}</p>
+                  <p className="px-3 py-2 text-xs text-red-500">
+                    {coachDirectoryLabels.coachesError}
+                  </p>
                 ) : !availableCoaches.length ? (
-                  <p className="text-xs text-muted">{coachDirectoryLabels.noCoaches}</p>
+                  <p className="px-3 py-2 text-xs text-muted">
+                    {coachDirectoryLabels.noCoaches}
+                  </p>
                 ) : (
-                  availableCoaches.map((coach) => {
-                    const isAssigned = assignedCoachIds.has(coach.id);
-                    return (
-                      <div
-                        key={`coach-directory-${coach.id}`}
-                        className="flex flex-col gap-2 rounded-lg border border-black/5 bg-white px-3 py-2 text-sm text-container-foreground shadow-sm md:flex-row md:items-center md:justify-between"
-                      >
-                        <div className="min-w-0 space-y-1">
-                          <p className="truncate font-semibold">{coach.full_name}</p>
-                          <p className="truncate text-xs text-muted">
-                            {coach.phone ?? coachDirectoryLabels.phoneFallback}
-                          </p>
-                          <p className="truncate text-xs text-muted">{coach.email}</p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          {selectedTeamId ? (
-                            isAssigned ? (
-                              <button
-                                type="button"
-                                onClick={() => handleCoachRemove(coach.id)}
-                                disabled={removeCoachMutation.isPending}
-                                className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                              >
-                                {coachDirectoryLabels.removeButton}
-                              </button>
+                  <div className="space-y-3 p-3">
+                    {availableCoaches.map((coach) => {
+                      const isAssigned = assignedCoachIds.has(coach.id);
+                      return (
+                        <div
+                          key={`coach-directory-${coach.id}`}
+                          className="flex flex-col gap-2 rounded-lg border border-black/5 bg-white px-3 py-2 text-sm text-container-foreground shadow-sm md:flex-row md:items-center md:justify-between"
+                        >
+                          <div className="min-w-0 space-y-1">
+                            <p className="truncate font-semibold">{coach.full_name}</p>
+                            <p className="truncate text-xs text-muted">
+                              {coach.phone ?? coachDirectoryLabels.phoneFallback}
+                            </p>
+                            <p className="truncate text-xs text-muted">{coach.email}</p>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {selectedTeamId ? (
+                              isAssigned ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCoachRemove(coach.id)}
+                                  disabled={removeCoachMutation.isPending}
+                                  className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  {coachDirectoryLabels.removeButton}
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCoachAssign(coach.id)}
+                                  disabled={assignCoachMutation.isPending}
+                                  className="rounded-full border border-action-primary/40 px-3 py-1 text-xs font-semibold text-action-primary transition hover:bg-action-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  {coachDirectoryLabels.assignButton}
+                                </button>
+                              )
                             ) : (
                               <button
                                 type="button"
-                                onClick={() => handleCoachAssign(coach.id)}
-                                disabled={assignCoachMutation.isPending}
-                                className="rounded-full border border-action-primary/40 px-3 py-1 text-xs font-semibold text-action-primary transition hover:bg-action-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="cursor-not-allowed rounded-full border border-black/10 px-3 py-1 text-xs font-semibold text-muted"
+                                disabled
                               >
-                                {coachDirectoryLabels.assignButton}
+                                {coachDirectoryLabels.assignDisabled}
                               </button>
-                            )
-                          ) : (
-                            <button
-                              type="button"
-                              className="cursor-not-allowed rounded-full border border-black/10 px-3 py-1 text-xs font-semibold text-muted"
-                              disabled
-                            >
-                              {coachDirectoryLabels.assignDisabled}
-                            </button>
-                          )}
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             </div>
@@ -1782,218 +1827,154 @@ const Dashboard = () => {
     
     {isEventModalOpen ? (
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-2 sm:px-4 py-4 sm:py-8"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-0 py-0"
         onClick={handleEventCancel}
         role="presentation"
       >
         <div
-          className="w-full max-w-sm sm:max-w-4xl max-h-[95vh] sm:max-h-[98vh] overflow-y-auto space-y-4 rounded-2xl bg-white p-4 sm:p-6 shadow-2xl"
+          className="w-full max-w-none h-[92vh] sm:h-[94vh] overflow-y-auto rounded-none bg-white p-4 sm:p-6 shadow-2xl"
           onClick={(event) => event.stopPropagation()}
         >
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-            <div className="flex-1">
+            <div className="space-y-1">
               <h3 className="text-lg font-semibold text-container-foreground">
-                {summaryLabels.calendar.formTitle}
+                {readableDate(eventForm.date || selectedEventDate || formatDateKey(new Date()))}
               </h3>
-              <p className="text-sm text-muted">Create a new event and invite athletes</p>
+              <p className="text-sm text-muted">{summaryLabels.calendar.subtitle}</p>
             </div>
             <button
               type="button"
               onClick={handleEventCancel}
-              className="self-end sm:self-start text-sm font-semibold text-muted hover:text-action-primary"
+              className="text-sm font-semibold text-muted hover:text-action-primary"
             >
               {summaryLabels.calendar.cancelLabel}
             </button>
           </div>
-          
-          <form onSubmit={handleEventSubmit} className="space-y-5">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="text-xs font-medium text-muted sm:col-span-2">
-                {summaryLabels.calendar.nameLabel}
-                <input
-                  type="text"
-                  value={eventForm.name}
-                  onChange={(event) => handleEventInputChange("name", event.target.value)}
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                  placeholder="Rivalry Match"
-                  required
-                />
-              </label>
-              
-              <label className="text-xs font-medium text-muted">
-                {summaryLabels.calendar.dateLabel}
-                <input
-                  type="date"
-                  value={eventForm.date}
-                  onChange={(event) => handleEventInputChange("date", event.target.value)}
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                  required
-                />
-              </label>
-              
-              <label className="text-xs font-medium text-muted">
-                {summaryLabels.calendar.timeLabel}
-                <input
-                  type="time"
-                  value={eventForm.time}
-                  onChange={(event) => handleEventInputChange("time", event.target.value)}
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                />
-              </label>
-              
-              <label className="text-xs font-medium text-muted">
-                {summaryLabels.calendar.locationLabel}
-                <input
-                  type="text"
-                  value={eventForm.location}
-                  onChange={(event) => handleEventInputChange("location", event.target.value)}
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                  placeholder="Training Center"
-                />
-              </label>
-              
-              <label className="text-xs font-medium text-muted sm:col-span-2">
-                {summaryLabels.calendar.notesLabel}
-                <textarea
-                  value={eventForm.notes}
-                  onChange={(event) => handleEventInputChange("notes", event.target.value)}
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                  rows={3}
-                  placeholder="Additional information about the event..."
-                />
-              </label>
-              
-              <label className="text-xs font-medium text-muted">
-                {summaryLabels.calendar.teamLabel}
-                <select
-                  value={eventForm.teamId ?? ""}
-                  onChange={(event) =>
-                    handleEventInputChange("teamId", event.target.value ? Number(event.target.value) : null)
-                  }
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                >
-                  <option value="">{summaryLabels.teamPlaceholder}</option>
-                  {teams.map((team) => (
-                    <option key={`event-team-${team.id}`} value={team.id}>
-                      {team.name}
-                    </option>
+
+          <div className="mt-4 grid gap-6 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+            {/* Coluna esquerda: Eventos do dia */}
+            <div className="rounded-xl border border-black/10 bg-white/80 p-4">
+              <h4 className="text-base font-semibold text-container-foreground">
+                {summaryLabels.calendar.title}
+              </h4>
+              <p className="text-xs text-muted">{summaryLabels.calendar.subtitle}</p>
+              {eventsOnSelectedDate.length ? (
+                <ul className="mt-3 space-y-3 text-sm">
+                  {eventsOnSelectedDate.map((ev) => (
+                    <li key={`modal-day-event-${ev.id}`} className="rounded-lg border border-black/10 bg-white/70 px-3 py-2 shadow-sm">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-container-foreground">{ev.name}</p>
+                          <p className="text-xs text-muted">
+                            {ev.time || summaryLabels.calendar.timeTbd}
+                            {ev.location ? ` • ${ev.location}` : ""}
+                          </p>
+                          <p className="text-[0.7rem] text-muted">
+                            {summaryLabels.teamLabel}: {ev.teamId ? (teamNameById[ev.teamId] ?? summaryLabels.teamPlaceholder) : summaryLabels.teamPlaceholder}
+                          </p>
+                        </div>
+                      </div>
+                    </li>
                   ))}
-                </select>
-              </label>
-              
-              <label className="text-xs font-medium text-muted">
-                {summaryLabels.calendar.coachLabel}
-                {eventTeamCoachesQuery.isLoading ? (
-                  <p className="mt-1 text-xs text-muted">{summaryLabels.calendar.coachLoading}</p>
-                ) : eventTeamCoaches.length ? (
+                </ul>
+              ) : (
+                <p className="mt-3 text-xs text-muted">{summaryLabels.calendar.upcomingEmpty}</p>
+              )}
+            </div>
+
+            {/* Coluna direita: Criar novo evento */}
+            <div className="rounded-xl border border-action-primary/25 bg-container-gradient p-4">
+              <h4 className="text-base font-semibold text-container-foreground">
+                {summaryLabels.calendar.createButton}
+              </h4>
+              <form onSubmit={handleEventSubmit} className="mt-3 space-y-3 text-sm">
+                <label className="block text-xs font-medium text-muted">
+                  {summaryLabels.calendar.nameLabel}
+                  <input
+                    type="text"
+                    value={eventForm.name}
+                    onChange={(e) => handleEventInputChange("name", e.target.value)}
+                    className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                    placeholder="Training session"
+                    required
+                  />
+                </label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block text-xs font-medium text-muted">
+                    {summaryLabels.calendar.dateLabel}
+                    <input
+                      type="date"
+                      value={eventForm.date}
+                      onChange={(e) => handleEventInputChange("date", e.target.value)}
+                      className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                      required
+                    />
+                  </label>
+                  <label className="block text-xs font-medium text-muted">
+                    {summaryLabels.calendar.timeLabel}
+                    <input
+                      type="time"
+                      value={eventForm.time}
+                      onChange={(e) => handleEventInputChange("time", e.target.value)}
+                      className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                    />
+                  </label>
+                </div>
+                <label className="block text-xs font-medium text-muted">
+                  {summaryLabels.teamLabel}
                   <select
-                    value={eventForm.coachId ?? ""}
-                    onChange={(event) =>
-                      handleEventInputChange("coachId", event.target.value ? Number(event.target.value) : null)
-                    }
+                    value={eventForm.teamId ?? ""}
+                    onChange={(e) => handleEventInputChange("teamId", e.target.value ? Number(e.target.value) : null)}
                     className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                   >
-                    <option value="">{t.common.select}</option>
-                    {eventTeamCoaches.map((coach) => (
-                      <option key={`event-coach-${coach.id}`} value={coach.id}>
-                        {coach.full_name}
+                    <option value="">{summaryLabels.teamPlaceholder}</option>
+                    {teams.map((team) => (
+                      <option key={`modal-team-${team.id}`} value={team.id}>
+                        {team.name}
                       </option>
                     ))}
                   </select>
-                ) : (
-                  <p className="mt-1 text-xs text-muted">{summaryLabels.calendar.coachEmpty}</p>
-                )}
-              </label>
+                </label>
+                <label className="block text-xs font-medium text-muted">
+                  {summaryLabels.calendar.locationLabel}
+                  <input
+                    type="text"
+                    value={eventForm.location}
+                    onChange={(e) => handleEventInputChange("location", e.target.value)}
+                    className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                    placeholder="Main field"
+                  />
+                </label>
+                <label className="block text-xs font-medium text-muted">
+                  {summaryLabels.calendar.notesLabel}
+                  <textarea
+                    value={eventForm.notes}
+                    onChange={(e) => handleEventInputChange("notes", e.target.value)}
+                    className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                    rows={3}
+                  />
+                </label>
+                {eventFormError ? (
+                  <p className="text-xs text-red-500">{eventFormError}</p>
+                ) : null}
+                <div className="flex flex-col sm:flex-row justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={handleEventCancel}
+                    className="w-full sm:w-auto rounded-md border border-black/10 px-4 py-2 text-sm font-semibold text-muted hover:border-action-primary/50"
+                  >
+                    {t.common.cancel}
+                  </button>
+                  <button
+                    type="submit"
+                    className="w-full sm:w-auto rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground hover:bg-action-primary/90"
+                  >
+                    {summaryLabels.calendar.createButton}
+                  </button>
+                </div>
+              </form>
             </div>
-            
-            <div>
-              <p className="text-xs font-medium text-muted">{summaryLabels.calendar.inviteLabel}</p>
-              <div className="mt-2 max-h-32 sm:max-h-48 overflow-y-auto rounded-lg border border-black/10 bg-white/70">
-                {!eventTeamId ? (
-                  <p className="px-3 py-2 text-xs text-muted">{summaryLabels.emptyTeam}</p>
-                ) : eventTeamAthletes.length ? (
-                  <div className="text-sm text-container-foreground">
-                    <div className="grid w-full min-w-full border border-black/10">
-                      <div className="grid grid-cols-[40px_1fr] items-center border-b border-black/10 bg-container/20 px-2 py-1 text-[0.7rem] font-semibold uppercase tracking-wide text-muted">
-                        <div className="flex items-center justify-center">
-                          <input
-                            ref={selectAllInviteesRef}
-                            type="checkbox"
-                            checked={areAllInviteesSelected}
-                            onChange={handleToggleAllInvitees}
-                            aria-label={summaryLabels.calendar.inviteHeaderSelect}
-                            className="h-4 w-4 rounded border-gray-300 text-action-primary focus:ring-action-primary"
-                          />
-                        </div>
-                        <span className="px-1">{summaryLabels.calendar.inviteHeaderAthlete}</span>
-                      </div>
-                      {eventTeamAthletes.map((athlete) => {
-                        const assignedTeamName =
-                          athlete.team_id && teamNameById[athlete.team_id]
-                            ? teamNameById[athlete.team_id]
-                            : null;
-                        const checkboxId = `event-invite-${athlete.id}`;
-                        return (
-                          <div
-                            key={checkboxId}
-                            className="grid grid-cols-[40px_1fr] items-stretch border-b border-black/10 last:border-b-0"
-                          >
-                            <div className="flex items-center justify-center border-r border-black/10 px-2 py-1">
-                              <input
-                                id={checkboxId}
-                                type="checkbox"
-                                checked={eventForm.inviteeIds.includes(athlete.id)}
-                                onChange={() => handleInviteToggle(athlete.id)}
-                                className="h-4 w-4 rounded border-gray-300 text-action-primary focus:ring-action-primary"
-                              />
-                            </div>
-                            <label
-                              htmlFor={checkboxId}
-                              className="flex flex-col justify-center gap-0.5 px-3 py-2 leading-tight"
-                            >
-                              <span className="text-sm">
-                                {athlete.first_name} {athlete.last_name}
-                              </span>
-                              {athlete.team_id ? (
-                                <span className="text-xs text-muted">
-                                  {assignedTeamName
-                                    ? `(Assigned • ${assignedTeamName})`
-                                    : "(Assigned)"}
-                                </span>
-                              ) : null}
-                            </label>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="px-3 py-2 text-xs text-muted">{summaryLabels.calendar.noAthletes}</p>
-                )}
-              </div>
-              <p className="mt-1 text-xs text-muted">{summaryLabels.calendar.inviteHelper}</p>
-            </div>
-            
-            {eventFormError ? (
-              <p className="text-xs text-red-500">{eventFormError}</p>
-            ) : null}
-            
-            <div className="flex flex-col sm:flex-row justify-end gap-2">
-              <button
-                type="button"
-                onClick={handleEventCancel}
-                className="w-full sm:w-auto rounded-md border border-black/10 px-4 py-2 text-sm font-semibold text-muted hover:text-action-primary"
-              >
-                {summaryLabels.calendar.cancelLabel}
-              </button>
-              <button
-                type="submit"
-                className="w-full sm:w-auto rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground hover:bg-action-primary/90"
-              >
-                {summaryLabels.calendar.submitLabel}
-              </button>
-            </div>
-          </form>
+          </div>
         </div>
       </div>
     ) : null}
