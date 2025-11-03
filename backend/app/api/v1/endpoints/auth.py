@@ -19,13 +19,13 @@ def login_access_token(
     session: Session = Depends(get_session),
     form_data: OAuth2PasswordRequestForm = Depends(),
 ) -> Token:
-    print(f"Login attempt for user: {form_data.username}")
+    # Login attempt for user
     user = authenticate_user(session, form_data.username, form_data.password)
     if not user:
-        print(f"Authentication failed for user: {form_data.username}")
+        # Authentication failed
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
     if not user.is_active:
-        print(f"User {user.email} is inactive")
+        # User is inactive
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
 
     token = create_access_token(user.email)

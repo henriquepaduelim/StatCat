@@ -18,6 +18,10 @@ frontend/dist/
 node_modules/
 
 # Database files
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
 combine.db
 backend/combine.db
 

@@ -904,7 +904,7 @@ const Dashboard = () => {
         </div>
       </section>
 
-      {/* Teams and Coaches Containers */}
+      {/* Teams and Report Cards Containers */}
       <section className="print-hidden grid gap-6 md:grid-cols-2">
         {/* Teams Container */}
         <div className="rounded-xl border border-action-primary/25 bg-container-gradient p-4 sm:p-6 shadow-xl backdrop-blur">
@@ -1012,114 +1012,24 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Coaches Container */}
+        {/* Report Cards Container - Placeholder */}
         <div className="rounded-xl border border-action-primary/25 bg-container-gradient p-4 sm:p-6 shadow-xl backdrop-blur">
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-container-foreground">Coaches</h2>
-                <p className="text-sm text-muted">Manage coaching staff and assignments</p>
+                <h2 className="text-lg font-semibold text-container-foreground">Report Cards</h2>
+                <p className="text-sm text-muted">Performance reports and analytics</p>
               </div>
-              {permissions.canCreateCoaches && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCoachForm(createEmptyCoachForm(Boolean(selectedTeamId)));
-                    setCoachFormOpen(true);
-                    setCoachFormError(null);
-                    setCoachFormSuccess(null);
-                    setEditingCoach(null);
-                  }}
-                  disabled={createCoachMutation.isPending}
-                  className="flex items-center justify-center gap-2 rounded-md bg-action-primary px-3 sm:px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <FontAwesomeIcon icon={faPlus} className="text-xs" />
-                  <span className="hidden sm:inline">Add Coach</span>
-                  <span className="sm:hidden">Add</span>
-                  <FontAwesomeIcon icon={faUserTie} className="text-xs" />
-                </button>
-              )}
             </div>
             <div className="space-y-3">
-              {allCoachesQuery.isLoading ? (
-                <p className="text-sm text-muted">{t.common.loading}...</p>
-              ) : allCoachesQuery.isError ? (
-                <p className="text-sm text-red-500">Unable to load coaches.</p>
-              ) : !availableCoaches.length ? (
-                <p className="text-sm text-muted">No coaches registered yet.</p>
-              ) : (
-                <div className="overflow-hidden rounded-lg border border-white/10 bg-white/90">
-                  {/* Header - Desktop only */}
-                  <div className="hidden sm:grid grid-cols-[auto_1fr_120px_50px] gap-3 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
-                    <FontAwesomeIcon icon={faUserTie} className="self-center text-action-primary" />
-                    <span>Coach Name</span>
-                    <span className="text-center">Contact</span>
-                    <span className="text-center">Edit</span>
-                  </div>
-                  {/* Rows */}
-                  {availableCoaches.slice(0, 6).map((coach) => (
-                    <div
-                      key={coach.id}
-                      className="grid grid-cols-1 sm:grid-cols-[auto_1fr_120px_50px] gap-3 items-start sm:items-center border-b border-black/5 px-3 sm:px-4 py-3 text-sm hover:bg-white/50 last:border-b-0"
-                    >
-                      <div className="flex items-center gap-3 sm:contents">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-action-primary/10">
-                          <FontAwesomeIcon icon={faUserTie} className="text-xs text-action-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-container-foreground">{coach.full_name}</p>
-                          <p className="text-xs text-muted truncate">{coach.email}</p>
-                        </div>
-                      </div>
-                      
-                      {/* Mobile layout - additional info */}
-                      <div className="flex justify-between items-center sm:contents">
-                        <div className="text-xs text-muted sm:hidden">
-                          <span>Phone: {coach.phone ?? "Not set"}</span>
-                        </div>
-                        
-                        {/* Desktop layout - separate columns */}
-                        <span className="hidden sm:block text-center text-xs text-muted">
-                          {coach.phone ?? "Not set"}
-                        </span>
-                        
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setEditingCoach({
-                              id: coach.id,
-                              fullName: coach.full_name,
-                              email: coach.email,
-                              phone: coach.phone || ""
-                            });
-                            setCoachForm({
-                              fullName: coach.full_name,
-                              email: coach.email,
-                              phone: coach.phone || "",
-                              password: "", // Password field will be optional for edits
-                              assignToTeam: false
-                            });
-                            setCoachFormError(null);
-                            setCoachFormSuccess(null);
-                            setCoachFormOpen(true);
-                          }}
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition hover:bg-action-primary/10 hover:text-action-primary sm:mx-auto"
-                          aria-label={`Edit ${coach.full_name}`}
-                        >
-                          <FontAwesomeIcon icon={faPenToSquare} className="text-lg" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                  {availableCoaches.length > 6 && (
-                    <div className="border-t border-black/10 bg-container/10 px-4 py-2 text-center">
-                      <p className="text-xs text-muted">
-                        +{availableCoaches.length - 6} more coaches
-                      </p>
-                    </div>
-                  )}
+              <div className="overflow-hidden rounded-lg border border-white/10 bg-white/90 p-8">
+                <div className="text-center">
+                  <p className="text-sm text-muted">Report cards feature coming soon...</p>
+                  <p className="mt-2 text-xs text-muted">
+                    Generate and view athlete performance reports and assessments.
+                  </p>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
@@ -1393,6 +1303,113 @@ const Dashboard = () => {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      </section>
+
+      {/* Coaches Container - Full Width at Bottom */}
+      <section className="print-hidden">
+        <div className="rounded-xl border border-action-primary/25 bg-container-gradient p-4 sm:p-6 shadow-xl backdrop-blur">
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-container-foreground">Coaches</h2>
+                <p className="text-sm text-muted">Manage coaching staff and assignments</p>
+              </div>
+              {permissions.canCreateCoaches && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCoachForm(createEmptyCoachForm(Boolean(selectedTeamId)));
+                    setCoachFormOpen(true);
+                    setCoachFormError(null);
+                    setCoachFormSuccess(null);
+                    setEditingCoach(null);
+                  }}
+                  disabled={createCoachMutation.isPending}
+                  className="flex items-center justify-center gap-2 rounded-md bg-action-primary px-3 sm:px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <FontAwesomeIcon icon={faPlus} className="text-xs" />
+                  <span className="hidden sm:inline">Add Coach</span>
+                  <span className="sm:hidden">Add</span>
+                  <FontAwesomeIcon icon={faUserTie} className="text-xs" />
+                </button>
+              )}
+            </div>
+            <div className="space-y-3">
+              {allCoachesQuery.isLoading ? (
+                <p className="text-sm text-muted">{t.common.loading}...</p>
+              ) : allCoachesQuery.isError ? (
+                <p className="text-sm text-red-500">Unable to load coaches.</p>
+              ) : !availableCoaches.length ? (
+                <p className="text-sm text-muted">No coaches registered yet.</p>
+              ) : (
+                <div className="overflow-hidden rounded-lg border border-white/10 bg-white/90">
+                  {/* Header - Desktop only */}
+                  <div className="hidden sm:grid grid-cols-[auto_1fr_120px_50px] gap-3 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                    <FontAwesomeIcon icon={faUserTie} className="self-center text-action-primary" />
+                    <span>Coach Name</span>
+                    <span className="text-center">Contact</span>
+                    <span className="text-center">Edit</span>
+                  </div>
+                  {/* Rows */}
+                  {availableCoaches.map((coach) => (
+                    <div
+                      key={coach.id}
+                      className="grid grid-cols-1 sm:grid-cols-[auto_1fr_120px_50px] gap-3 items-start sm:items-center border-b border-black/5 px-3 sm:px-4 py-3 text-sm hover:bg-white/50 last:border-b-0"
+                    >
+                      <div className="flex items-center gap-3 sm:contents">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-action-primary/10">
+                          <FontAwesomeIcon icon={faUserTie} className="text-xs text-action-primary" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-container-foreground">{coach.full_name}</p>
+                          <p className="text-xs text-muted truncate">{coach.email}</p>
+                        </div>
+                      </div>
+                      
+                      {/* Mobile layout - additional info */}
+                      <div className="flex justify-between items-center sm:contents">
+                        <div className="text-xs text-muted sm:hidden">
+                          <span>Phone: {coach.phone ?? "Not set"}</span>
+                        </div>
+                        
+                        {/* Desktop layout - separate columns */}
+                        <span className="hidden sm:block text-center text-xs text-muted">
+                          {coach.phone ?? "Not set"}
+                        </span>
+                        
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingCoach({
+                              id: coach.id,
+                              fullName: coach.full_name,
+                              email: coach.email,
+                              phone: coach.phone || ""
+                            });
+                            setCoachForm({
+                              fullName: coach.full_name,
+                              email: coach.email,
+                              phone: coach.phone || "",
+                              password: "", // Password field will be optional for edits
+                              assignToTeam: false
+                            });
+                            setCoachFormError(null);
+                            setCoachFormSuccess(null);
+                            setCoachFormOpen(true);
+                          }}
+                          className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition hover:bg-action-primary/10 hover:text-action-primary sm:mx-auto"
+                          aria-label={`Edit ${coach.full_name}`}
+                        >
+                          <FontAwesomeIcon icon={faPenToSquare} className="text-lg" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>

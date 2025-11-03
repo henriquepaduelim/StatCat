@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import api from "./client";
 import type { AuthUser } from "../stores/useAuthStore";
+import { logger } from "../utils/logger";
 
 export type AuthResponse = {
   user: AuthUser;
@@ -9,17 +10,17 @@ export type AuthResponse = {
 };
 
 export const fetchMe = async (): Promise<AuthUser> => {
-  console.log("fetchMe - Making request to /auth/me");
+  logger.debug("fetchMe - Making request to /auth/me");
   try {
     const { data } = await api.get<AuthUser>("/auth/me");
-    console.log("fetchMe - Received data:", data);
-    console.log("fetchMe - User role:", data?.role);
-    console.log("fetchMe - Athlete status:", data?.athlete_status);
+    logger.debug("fetchMe - Received data:", data);
+    logger.debug("fetchMe - User role:", data?.role);
+    logger.debug("fetchMe - Athlete status:", data?.athlete_status);
     return data;
   } catch (error: any) {
-    console.error("fetchMe - Error:", error);
-    console.error("fetchMe - Error response:", error?.response);
-    console.error("fetchMe - Error status:", error?.response?.status);
+    logger.error("fetchMe - Error:", error);
+    logger.error("fetchMe - Error response:", error?.response);
+    logger.error("fetchMe - Error status:", error?.response?.status);
     throw error;
   }
 };

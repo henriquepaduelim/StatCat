@@ -62,10 +62,10 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         }
     )
 
-# Configurar CORS PRIMEIRO
+# Configurar CORS com origens específicas
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Permitir todas as origens temporariamente
+    allow_origins=settings.BACKEND_CORS_ORIGINS,  # Apenas origens permitidas
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
