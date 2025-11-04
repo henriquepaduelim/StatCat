@@ -8,17 +8,19 @@
       "DOM.Iterable"
     ],
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "bundler",
     "strict": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
     "jsx": "react-jsx",
     "types": [
       "vite/client"
     ],
     "skipLibCheck": true,
-    "noEmit": true
+    "noEmit": true,
+    "allowImportingTsExtensions": false
   },
   "include": [
     "src"
