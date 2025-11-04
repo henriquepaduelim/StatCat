@@ -1,15 +1,25 @@
+import { lazy, Suspense } from "react";
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 
 import AppShell from "./components/AppShell";
 import ProtectedRoute from "./components/ProtectedRoute";
-import Athletes from "./pages/Athletes";
-import AthleteEdit from "./pages/AthleteEdit";
-import AthleteReport from "./pages/AthleteReport";
-import Dashboard from "./pages/Dashboard";
-import Login from "./pages/Login";
-import NewAthlete from "./pages/NewAthlete";
-import Reports from "./pages/Reports";
 import { useAuthStore } from "./stores/useAuthStore";
+
+// Lazy load pages for better code splitting
+const Login = lazy(() => import("./pages/Login"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Athletes = lazy(() => import("./pages/Athletes"));
+const AthleteEdit = lazy(() => import("./pages/AthleteEdit"));
+const AthleteReport = lazy(() => import("./pages/AthleteReport"));
+const NewAthlete = lazy(() => import("./pages/NewAthlete"));
+const Reports = lazy(() => import("./pages/Reports"));
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="flex h-screen items-center justify-center">
+    <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+  </div>
+);
 
 const ProtectedLayout = () => (
   <ProtectedRoute requireAuth={true}>
@@ -49,10 +59,11 @@ const RedirectToDashboardOrReports = () => {
 };
 
 const App = () => (
-  <Routes>
-    <Route path="/" element={<RedirectToDashboardOrReports />} />
-    <Route path="/login" element={<Login />} />
-    <Route element={<ProtectedLayout />}>
+  <Suspense fallback={<LoadingFallback />}>
+    <Routes>
+      <Route path="/" element={<RedirectToDashboardOrReports />} />
+      <Route path="/login" element={<Login />} />
+      <Route element={<ProtectedLayout />}>
       <Route 
         path="/dashboard" 
         element={
@@ -112,6 +123,7 @@ const App = () => (
       <Route path="*" element={<RedirectToDashboardOrReports />} />
     </Route>
   </Routes>
+  </Suspense>
 );
 
 export default App;
