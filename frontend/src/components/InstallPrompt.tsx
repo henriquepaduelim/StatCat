@@ -65,58 +65,39 @@ export function InstallPrompt() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 left-4 md:left-auto md:w-96 z-50 animate-slide-up">
-      <div className="bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden">
-        <div className="p-4">
-          <div className="flex items-start gap-3">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
+    <div className="fixed top-0 left-0 right-0 z-50 animate-slideDown">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">📱</span>
+              <div className="flex-1">
+                <p className="font-semibold text-sm">
+                  Instale o StatCat App
+                </p>
+                <p className="text-xs text-blue-100">
+                  Acesso rápido, offline e experiência nativa
+                </p>
               </div>
             </div>
             
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-semibold text-gray-900">
-                Install StatCat App
-              </h3>
-              <p className="mt-1 text-xs text-gray-600">
-                Install our app for quick access, offline support, and a native experience.
-              </p>
-              
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleInstall}
-                  className="flex-1 px-3 py-2 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700 transition"
-                >
-                  Install
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDismiss}
-                  className="px-3 py-2 text-xs font-medium text-gray-700 hover:text-gray-900 transition"
-                >
-                  Not now
-                </button>
-              </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleInstall}
+                className="px-4 py-2 bg-white text-blue-600 text-sm font-medium rounded-md hover:bg-blue-50 transition"
+              >
+                Instalar Agora
+              </button>
+              <button
+                type="button"
+                onClick={handleDismiss}
+                className="px-3 py-2 text-sm font-medium text-white hover:text-blue-100 transition"
+              >
+                Não, obrigado
+              </button>
             </div>
-
-            <button
-              type="button"
-              onClick={handleDismiss}
-              className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
           </div>
-        </div>
-        
-        <div className="bg-gray-50 px-4 py-2 text-[10px] text-gray-500 border-t border-gray-100">
-          Works offline • Fast loading • Native experience
         </div>
       </div>
     </div>
