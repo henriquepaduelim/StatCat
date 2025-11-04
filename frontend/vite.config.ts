@@ -15,37 +15,20 @@ export default defineConfig({
   build: {
     outDir: "dist",
     sourcemap: false,
-    target: 'esnext',
+    target: 'es2015',
     minify: 'esbuild',
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          // Separate node_modules into vendor chunks
-          if (id.includes('node_modules')) {
-            // React core
-            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
-              return 'vendor-react';
-            }
-            // Router
-            if (id.includes('react-router')) {
-              return 'vendor-router';
-            }
-            // State management and queries
-            if (id.includes('@tanstack/react-query') || id.includes('zustand')) {
-              return 'vendor-state';
-            }
-            // UI libraries
-            if (id.includes('@headlessui') || id.includes('@tremor')) {
-              return 'vendor-ui';
-            }
-            // Icons
-            if (id.includes('@fortawesome')) {
-              return 'vendor-icons';
-            }
-            // Other vendors
-            return 'vendor-misc';
-          }
+        manualChunks: {
+          // Keep React and React-DOM together to prevent issues
+          'vendor-react': ['react', 'react-dom', 'react/jsx-runtime'],
+          // Router
+          'vendor-router': ['react-router-dom'],
+          // State management
+          'vendor-state': ['@tanstack/react-query', 'zustand'],
+          // UI libraries
+          'vendor-ui': ['@headlessui/react'],
         },
         // Optimize chunk file naming
         chunkFileNames: 'assets/[name]-[hash].js',

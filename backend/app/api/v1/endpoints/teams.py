@@ -122,7 +122,8 @@ def list_all_coaches(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
 ) -> list[UserRead]:
-    ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF})
+    # Allow admin, staff, and coaches to see the list of coaches
+    ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH})
     statement = select(User).where(User.role == UserRole.COACH).order_by(User.full_name)
     return session.exec(statement).scalars().all()
 

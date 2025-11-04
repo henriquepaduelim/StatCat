@@ -214,11 +214,11 @@ const Athletes = () => {
   const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">("all");
   const [ageFilter, setAgeFilter] = useState<{ min: string; max: string }>({ min: "", max: "" });
   const [sortConfig, setSortConfig] = useState<{
-    column: "name" | "age" | "gender" | "email" | "status";
+    column: "name" | "age" | "category" | "email" | "team" | "coach";
     direction: "asc" | "desc";
   }>({ column: "name", direction: "asc" });
   const [activePopover, setActivePopover] = useState<
-    null | "name" | "age" | "gender" | "email" | "status"
+    null | "name" | "age" | "category" | "email" | "team" | "coach"
   >(null);
   const tableContainerRef = useRef<HTMLElement | null>(null);
   const tableWrapperRef = useRef<HTMLDivElement | null>(null);
@@ -253,13 +253,13 @@ const Athletes = () => {
   }, [activePopover]);
 
   const togglePopover = (
-    column: "name" | "age" | "gender" | "email" | "status"
+    column: "name" | "age" | "category" | "email" | "team" | "coach"
   ) => {
     setActivePopover((current) => (current === column ? null : column));
   };
 
   const applySort = (
-    column: "name" | "age" | "gender" | "email" | "status",
+    column: "name" | "age" | "category" | "email" | "team" | "coach",
     direction: "asc" | "desc"
   ) => {
     setSortConfig({ column, direction });
@@ -267,7 +267,7 @@ const Athletes = () => {
   };
 
   const clearFilter = (
-    column: "name" | "age" | "gender" | "email" | "status"
+    column: "name" | "age" | "category" | "email" | "team" | "coach"
   ) => {
     switch (column) {
       case "name":
@@ -276,20 +276,23 @@ const Athletes = () => {
       case "age":
         setAgeFilter({ min: "", max: "" });
         break;
-      case "gender":
+      case "category":
         setGenderFilter("all");
         break;
       case "email":
         setEmailFilter("");
         break;
-      case "status":
-        setStatusFilter("all");
+      case "team":
+        // No filter for team yet
+        break;
+      case "coach":
+        // No filter for coach yet
         break;
     }
   };
 
   const isSortActive = (
-    column: "name" | "age" | "gender" | "email" | "status",
+    column: "name" | "age" | "category" | "email" | "team" | "coach",
     direction: "asc" | "desc"
   ) => sortConfig.column === column && sortConfig.direction === direction;
 
@@ -332,6 +335,15 @@ const Athletes = () => {
     };
 
     const filtered = data.filter((athlete) => {
+      // Only show athletes that are approved or have no user status (created by admin)
+      // Exclude PENDING, REJECTED, and INCOMPLETE athletes from main list
+      if (athlete.user_athlete_status) {
+        const status = athlete.user_athlete_status.toUpperCase();
+        if (status === "PENDING" || status === "REJECTED" || status === "INCOMPLETE") {
+          return false;
+        }
+      }
+      
       if (normalizedName) {
         const haystack = normalizeText(`${athlete.first_name} ${athlete.last_name}`);
         if (!haystack.includes(normalizedName)) {
@@ -393,7 +405,7 @@ const Athletes = () => {
           }
           return leftAge < rightAge ? -1 * directionFactor : 1 * directionFactor;
         }
-        case "gender": {
+        case "category": {
           const weight = (value: string | null | undefined) =>
             value?.toLowerCase() === "female" ? 1 : 0;
           const leftWeight = weight(left.gender ?? null);
@@ -405,11 +417,23 @@ const Athletes = () => {
           const rightName = `${right.first_name} ${right.last_name}`.toLowerCase();
           return leftName.localeCompare(rightName) * directionFactor;
         }
-        case "status": {
-          const weight = (status: string) => (status === "active" ? 0 : 1);
-          const diff = weight(left.status) - weight(right.status);
-          if (diff !== 0) {
-            return diff * directionFactor;
+        case "team": {
+          const leftTeam = left.team_id ? (teamsById.get(left.team_id)?.name ?? "") : "";
+          const rightTeam = right.team_id ? (teamsById.get(right.team_id)?.name ?? "") : "";
+          const comparison = leftTeam.localeCompare(rightTeam);
+          if (comparison !== 0) {
+            return comparison * directionFactor;
+          }
+          const leftName = `${left.first_name} ${left.last_name}`.toLowerCase();
+          const rightName = `${right.first_name} ${right.last_name}`.toLowerCase();
+          return leftName.localeCompare(rightName) * directionFactor;
+        }
+        case "coach": {
+          const leftCoach = left.team_id ? (teamsById.get(left.team_id)?.coach ?? "") : "";
+          const rightCoach = right.team_id ? (teamsById.get(right.team_id)?.coach ?? "") : "";
+          const comparison = leftCoach.localeCompare(rightCoach);
+          if (comparison !== 0) {
+            return comparison * directionFactor;
           }
           const leftName = `${left.first_name} ${left.last_name}`.toLowerCase();
           const rightName = `${right.first_name} ${right.last_name}`.toLowerCase();
@@ -445,7 +469,6 @@ const Athletes = () => {
   const hasEmailFilter = emailFilter.trim().length > 0;
   const hasAgeFilter =
     ageFilter.min.trim().length > 0 || ageFilter.max.trim().length > 0;
-  const hasStatusSelection = statusFilter !== "all";
   const hasGenderFilter = genderFilter !== "all";
 
   const updateFillerRows = useCallback(() => {
@@ -885,17 +908,17 @@ const Athletes = () => {
                   </th>
                   <th className="relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
                     <div className="flex items-center gap-1">
-                      <span>{t.athletes.table.gender}</span>
+                      <span>Category</span>
                       <button
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
-                          togglePopover("gender");
+                          togglePopover("category");
                         }}
                         aria-haspopup="dialog"
-                        aria-expanded={activePopover === "gender"}
+                        aria-expanded={activePopover === "category"}
                         className={`inline-flex items-center justify-center rounded p-1 text-muted transition hover:text-accent ${
-                          sortConfig.column === "gender" || hasGenderFilter
+                          sortConfig.column === "category" || hasGenderFilter
                             ? "text-accent"
                             : "text-muted"
                         }`}
@@ -905,7 +928,7 @@ const Athletes = () => {
                           viewBox="0 0 10 6"
                           aria-hidden="true"
                           className={`h-2.5 w-2.5 transition-transform ${
-                            activePopover === "gender" ? "rotate-180" : ""
+                            activePopover === "category" ? "rotate-180" : ""
                           }`}
                           fill="none"
                           stroke="currentColor"
@@ -918,7 +941,7 @@ const Athletes = () => {
                         <span className="sr-only">{t.athletes.filters.openMenu}</span>
                       </button>
                     </div>
-                    {activePopover === "gender" ? (
+                    {activePopover === "category" ? (
                       <div
                         className="absolute left-0 z-20 mt-2 w-60 rounded-lg border border-black/10 bg-white p-4 text-left shadow-xl"
                         onClick={(event) => event.stopPropagation()}
@@ -971,9 +994,9 @@ const Athletes = () => {
                             <div className="mt-2 flex gap-2">
                               <button
                                 type="button"
-                                onClick={() => applySort("gender", "asc")}
+                                onClick={() => applySort("category", "asc")}
                                 className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-semibold transition ${
-                                  isSortActive("gender", "asc")
+                                  isSortActive("category", "asc")
                                     ? "border-action-primary text-accent"
                                     : "border-black/10 text-muted hover:border-action-primary hover:text-accent"
                                 }`}
@@ -982,9 +1005,9 @@ const Athletes = () => {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => applySort("gender", "desc")}
+                                onClick={() => applySort("category", "desc")}
                                 className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-semibold transition ${
-                                  isSortActive("gender", "desc")
+                                  isSortActive("category", "desc")
                                     ? "border-action-primary text-accent"
                                     : "border-black/10 text-muted hover:border-action-primary hover:text-accent"
                                 }`}
@@ -996,7 +1019,7 @@ const Athletes = () => {
                           <div className="flex justify-between gap-2 pt-2">
                             <button
                               type="button"
-                              onClick={() => clearFilter("gender")}
+                              onClick={() => clearFilter("category")}
                               className="rounded-md border border-black/10 px-3 py-1 text-xs font-semibold text-muted transition hover:border-action-primary hover:text-accent"
                             >
                               {t.athletes.filters.clear}
@@ -1117,17 +1140,17 @@ const Athletes = () => {
                   </th>
                   <th className="relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
                     <div className="flex items-center gap-1">
-                      <span>{t.athletes.table.status}</span>
+                      <span>Team</span>
                       <button
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
-                          togglePopover("status");
+                          togglePopover("team");
                         }}
                         aria-haspopup="dialog"
-                        aria-expanded={activePopover === "status"}
+                        aria-expanded={activePopover === "team"}
                         className={`inline-flex items-center justify-center rounded p-1 text-muted transition hover:text-accent ${
-                          sortConfig.column === "status" || hasStatusSelection
+                          sortConfig.column === "team"
                             ? "text-accent"
                             : "text-muted"
                         }`}
@@ -1137,7 +1160,7 @@ const Athletes = () => {
                           viewBox="0 0 10 6"
                           aria-hidden="true"
                           className={`h-2.5 w-2.5 transition-transform ${
-                            activePopover === "status" ? "rotate-180" : ""
+                            activePopover === "team" ? "rotate-180" : ""
                           }`}
                           fill="none"
                           stroke="currentColor"
@@ -1150,52 +1173,12 @@ const Athletes = () => {
                         <span className="sr-only">{t.athletes.filters.openMenu}</span>
                       </button>
                     </div>
-                    {activePopover === "status" ? (
+                    {activePopover === "team" ? (
                       <div
-                        className="absolute left-0 z-20 mt-2 w-60 rounded-lg border border-black/10 bg-white p-4 text-left shadow-xl"
+                        className="absolute left-0 z-20 mt-2 w-64 rounded-lg border border-black/10 bg-white p-4 text-left shadow-xl"
                         onClick={(event) => event.stopPropagation()}
                       >
                         <div className="space-y-3">
-                          <div className="space-y-2">
-                            <p className="text-xs font-semibold text-muted">
-                              {t.athletes.filters.status}
-                            </p>
-                            <div className="space-y-1">
-                              <label className="flex items-center gap-2 text-xs text-muted">
-                                <input
-                                  type="radio"
-                                  name="status-filter"
-                                  value="all"
-                                  checked={statusFilter === "all"}
-                                  onChange={() => setStatusFilter("all")}
-                                  className="h-3 w-3 text-accent focus:ring-action-primary"
-                                />
-                                <span>{t.athletes.filters.statusAll}</span>
-                              </label>
-                              <label className="flex items-center gap-2 text-xs text-muted">
-                                <input
-                                  type="radio"
-                                  name="status-filter"
-                                  value="active"
-                                  checked={statusFilter === "active"}
-                                  onChange={() => setStatusFilter("active")}
-                                  className="h-3 w-3 text-accent focus:ring-action-primary"
-                                />
-                                <span>{t.athletes.filters.statusActive}</span>
-                              </label>
-                              <label className="flex items-center gap-2 text-xs text-muted">
-                                <input
-                                  type="radio"
-                                  name="status-filter"
-                                  value="inactive"
-                                  checked={statusFilter === "inactive"}
-                                  onChange={() => setStatusFilter("inactive")}
-                                  className="h-3 w-3 text-accent focus:ring-action-primary"
-                                />
-                                <span>{t.athletes.filters.statusInactive}</span>
-                              </label>
-                            </div>
-                          </div>
                           <div>
                             <p className="text-xs font-semibold text-muted">
                               {t.athletes.filters.sortLabel}
@@ -1203,36 +1186,112 @@ const Athletes = () => {
                             <div className="mt-2 flex gap-2">
                               <button
                                 type="button"
-                                onClick={() => applySort("status", "asc")}
+                                onClick={() => applySort("team", "asc")}
                                 className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-semibold transition ${
-                                  isSortActive("status", "asc")
+                                  isSortActive("team", "asc")
                                     ? "border-action-primary text-accent"
                                     : "border-black/10 text-muted hover:border-action-primary hover:text-accent"
                                 }`}
                               >
-                                {t.athletes.filters.sortStatusAsc}
+                                {t.athletes.filters.sortAlphaAsc}
                               </button>
                               <button
                                 type="button"
-                                onClick={() => applySort("status", "desc")}
+                                onClick={() => applySort("team", "desc")}
                                 className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-semibold transition ${
-                                  isSortActive("status", "desc")
+                                  isSortActive("team", "desc")
                                     ? "border-action-primary text-accent"
                                     : "border-black/10 text-muted hover:border-action-primary hover:text-accent"
                                 }`}
                               >
-                                {t.athletes.filters.sortStatusDesc}
+                                {t.athletes.filters.sortAlphaDesc}
                               </button>
                             </div>
                           </div>
-                          <div className="flex justify-between gap-2 pt-2">
+                          <div className="flex justify-end gap-2 pt-2">
                             <button
                               type="button"
-                              onClick={() => clearFilter("status")}
-                              className="rounded-md border border-black/10 px-3 py-1 text-xs font-semibold text-muted transition hover:border-action-primary hover:text-accent"
+                              onClick={() => setActivePopover(null)}
+                              className="rounded-md bg-action-primary px-3 py-1 text-xs font-semibold text-action-primary-foreground shadow-sm"
                             >
-                              {t.athletes.filters.clear}
+                              {t.athletes.filters.close}
                             </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </th>
+                  <th className="relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
+                    <div className="flex items-center gap-1">
+                      <span>Coach</span>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          togglePopover("coach");
+                        }}
+                        aria-haspopup="dialog"
+                        aria-expanded={activePopover === "coach"}
+                        className={`inline-flex items-center justify-center rounded p-1 text-muted transition hover:text-accent ${
+                          sortConfig.column === "coach"
+                            ? "text-accent"
+                            : "text-muted"
+                        }`}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 10 6"
+                          aria-hidden="true"
+                          className={`h-2.5 w-2.5 transition-transform ${
+                            activePopover === "coach" ? "rotate-180" : ""
+                          }`}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M1 1.5 5 5.5 9 1.5" />
+                        </svg>
+                        <span className="sr-only">{t.athletes.filters.openMenu}</span>
+                      </button>
+                    </div>
+                    {activePopover === "coach" ? (
+                      <div
+                        className="absolute left-0 z-20 mt-2 w-64 rounded-lg border border-black/10 bg-white p-4 text-left shadow-xl"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-xs font-semibold text-muted">
+                              {t.athletes.filters.sortLabel}
+                            </p>
+                            <div className="mt-2 flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => applySort("coach", "asc")}
+                                className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-semibold transition ${
+                                  isSortActive("coach", "asc")
+                                    ? "border-action-primary text-accent"
+                                    : "border-black/10 text-muted hover:border-action-primary hover:text-accent"
+                                }`}
+                              >
+                                {t.athletes.filters.sortAlphaAsc}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => applySort("coach", "desc")}
+                                className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-semibold transition ${
+                                  isSortActive("coach", "desc")
+                                    ? "border-action-primary text-accent"
+                                    : "border-black/10 text-muted hover:border-action-primary hover:text-accent"
+                                }`}
+                              >
+                                {t.athletes.filters.sortAlphaDesc}
+                              </button>
+                            </div>
+                          </div>
+                          <div className="flex justify-end gap-2 pt-2">
                             <button
                               type="button"
                               onClick={() => setActivePopover(null)}
@@ -1246,35 +1305,35 @@ const Athletes = () => {
                     ) : null}
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">
-                    {t.athletes.table.action}
+                    Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/5">
             {isLoading && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-sm text-muted">
+                <td colSpan={7} className="px-4 py-6 text-center text-sm text-muted">
                   {t.athletes.loading}
                 </td>
               </tr>
             )}
             {isError && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-sm text-red-500">
+                <td colSpan={7} className="px-4 py-6 text-center text-sm text-red-500">
                   {t.athletes.error}
                 </td>
               </tr>
             )}
             {!isLoading && !isError && data?.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-sm text-muted">
+                <td colSpan={7} className="px-4 py-6 text-center text-sm text-muted">
                   {t.athletes.empty}
                 </td>
               </tr>
             )}
             {!isLoading && !isError && (data?.length ?? 0) > 0 && tableRows.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-sm text-muted">
+                <td colSpan={7} className="px-4 py-6 text-center text-sm text-muted">
                   {t.athletes.filters.noResults}
                 </td>
               </tr>
@@ -1290,10 +1349,8 @@ const Athletes = () => {
                   ? t.athletes.filters.genderFemale
                   : t.athletes.filters.genderMale;
               const teamInfo = athlete.team_id ? teamsById.get(athlete.team_id) : undefined;
-              const teamDisplay = teamInfo?.name ?? t.athletes.table.teamUnknown;
-              const coachDisplay = teamInfo?.coach
-                ? `${t.athletes.table.coachLabel} ${teamInfo.coach}`
-                : t.athletes.table.coachUnknown;
+              const teamDisplay = teamInfo?.name ?? "-";
+              const coachDisplay = teamInfo?.coach ?? "-";
               return (
                 <tr
                   key={athlete.id}
@@ -1301,48 +1358,13 @@ const Athletes = () => {
                   className="hover:bg-container/60"
                 >
                   <td className="px-4 py-4 text-sm">
-                    <div className="flex flex-col">
-                      <span className="font-medium text-container-foreground">{displayName}</span>
-                      <span className="text-xs text-muted">{teamDisplay}</span>
-                      <span className="text-xs text-muted/70">{coachDisplay}</span>
-                    </div>
+                    <span className="font-medium text-container-foreground">{displayName}</span>
                   </td>
                   <td className="px-4 py-4 text-sm text-muted">{ageLabel}</td>
                   <td className="px-4 py-4 text-sm text-muted">{genderLabel}</td>
                   <td className="px-4 py-4 text-sm text-muted">{athlete.email ?? "-"}</td>
-                  <td className="px-4 py-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                          athlete.status === "active"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-red-300 text-red-900"
-                        }`}
-                      >
-                        {athlete.status === "active"
-                          ? t.newAthlete.statusOptions.active
-                          : t.newAthlete.statusOptions.inactive}
-                      </span>
-                      {athlete.user_athlete_status === "PENDING" && (
-                        <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-800">
-                          Pending Approval
-                        </span>
-                      )}
-                      {athlete.user_athlete_status === "REJECTED" && (
-                        <span 
-                          className="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800 cursor-help"
-                          title={athlete.user_rejection_reason || "Rejected"}
-                        >
-                          Rejected
-                        </span>
-                      )}
-                      {athlete.user_athlete_status === "INCOMPLETE" && (
-                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-800">
-                          Incomplete
-                        </span>
-                      )}
-                    </div>
-                  </td>
+                  <td className="px-4 py-4 text-sm text-muted">{teamDisplay}</td>
+                  <td className="px-4 py-4 text-sm text-muted">{coachDisplay}</td>
                   <td className="px-4 py-4">
                     <div className="flex justify-end gap-2">
                       <button
@@ -1405,7 +1427,7 @@ const Athletes = () => {
             })}
             {Array.from({ length: fillerRowCount }).map((_, index) => (
               <tr key={`filler-${index}`} aria-hidden="true" className="bg-container/20">
-                <td colSpan={6} className="h-14 px-4 text-transparent">
+                <td colSpan={7} className="h-14 px-4 text-transparent">
                   .
                 </td>
               </tr>
