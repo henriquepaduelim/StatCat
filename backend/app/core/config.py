@@ -19,8 +19,14 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: list[str] = Field(default_factory=lambda: [
         "http://localhost:5173",
         "http://localhost:3000",
+        "http://localhost:4173",  # Vite preview
         "https://stat-cat-git-main-henriquepaduelims-projects.vercel.app",
+        "https://stats-cat.vercel.app",
         "https://statscat.vercel.app",
+        "https://stat-cat.vercel.app",
+        # Adicionar variações do Vercel preview URLs
+        "https://stat-cat-git-*.vercel.app",
+        "https://stats-cat-git-*.vercel.app",
     ])
     MEDIA_ROOT: str = "media"
     
