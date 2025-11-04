@@ -4,6 +4,7 @@ import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import AppShell from "./components/AppShell";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuthStore } from "./stores/useAuthStore";
+import { PWAUpdatePrompt } from "./components/PWAUpdatePrompt";
 
 // Lazy load pages for better code splitting
 const Login = lazy(() => import("./pages/Login"));
@@ -131,9 +132,9 @@ const App = () => {
       <Route path="*" element={<RedirectToDashboardOrReports />} />
     </Route>
   </Routes>
+  <PWAUpdatePrompt />
   </Suspense>
   );
 };
 
 export default App;
-  

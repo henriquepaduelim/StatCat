@@ -55,3 +55,10 @@ test_alembic.sh
 # CORS documentation (keep local)
 CORS_FIX.md
 RENDER_CORS_CONFIG.md
+
+# PWA documentation (keep local)
+frontend/PWA_README.md
+frontend/PWA_ICONS_GUIDE.md
+frontend/dev-dist/
+frontend/generate-icons.sh
+frontend/public/create-icons.js

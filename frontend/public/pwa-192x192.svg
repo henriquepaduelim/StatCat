@@ -1,0 +1,14 @@
+<!-- PWA Icon 192x192 - Placeholder SVG -->
+<svg width="192" height="192" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="192" height="192" fill="#1e40af" rx="40"/>
+  
+  <!-- StatCat Logo/Text -->
+  <text x="96" y="80" font-family="Arial, sans-serif" font-size="32" font-weight="bold" fill="white" text-anchor="middle">
+    StatCat
+  </text>
+  
+  <!-- Icon/Symbol -->
+  <circle cx="96" cy="130" r="30" fill="white" opacity="0.2"/>
+  <path d="M 96 110 L 110 130 L 96 150 L 82 130 Z" fill="white"/>
+</svg>
