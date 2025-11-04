@@ -10,10 +10,15 @@ const isIOSSafari = () => {
   return iOSSafari;
 };
 
-// Helper to detect Safari (macOS or iOS)
-const isSafari = () => {
+// Helper to detect Android
+const isAndroid = () => {
   const ua = window.navigator.userAgent;
-  return /^((?!chrome|android).)*safari/i.test(ua) || isIOSSafari();
+  return /Android/.test(ua);
+};
+
+// Helper to detect if is mobile (iOS or Android)
+const isMobile = () => {
+  return isIOSSafari() || isAndroid();
 };
 
 export function InstallPrompt() {
@@ -23,65 +28,70 @@ export function InstallPrompt() {
   const [showSafariInstructions, setShowSafariInstructions] = useState(false);
 
   useEffect(() => {
-    // Check if Safari and not in standalone mode
-    if (isSafari() && !isInstalled && !window.matchMedia('(display-mode: standalone)').matches) {
-      // Show Safari-specific instructions after delay
-      const dismissed = localStorage.getItem('pwa-install-dismissed');
-      if (dismissed) {
-        const expiryDate = new Date(dismissed);
-        const now = new Date();
-        if (expiryDate > now) {
-          setIsDismissed(true);
-          return;
-        } else {
-          localStorage.removeItem('pwa-install-dismissed');
-        }
-      }
-
-      const delay = import.meta.env.DEV ? 0 : 3000;
-      const timer = setTimeout(() => {
-        setShowSafariInstructions(true);
-      }, delay);
-      return () => clearTimeout(timer);
+    // Only show on mobile (iOS or Android), not on desktop
+    if (!isMobile() || isInstalled || window.matchMedia('(display-mode: standalone)').matches) {
+      return;
     }
-  }, [isInstalled]);
 
-  useEffect(() => {
     // Check if user previously dismissed
     const dismissed = localStorage.getItem('pwa-install-dismissed');
     if (dismissed) {
-      // Check if dismissal has expired (7 days)
       const expiryDate = new Date(dismissed);
       const now = new Date();
       if (expiryDate > now) {
         setIsDismissed(true);
         return;
       } else {
-        // Expired, clear it
+        localStorage.removeItem('pwa-install-dismissed');
+      }
+    }
+
+    // Show mobile-specific instructions after delay
+    const delay = import.meta.env.DEV ? 0 : 3000;
+    const timer = setTimeout(() => {
+      setShowSafariInstructions(true);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [isInstalled]);
+
+  // This effect handles the Chrome/Edge install prompt (beforeinstallprompt event)
+  // Only for browsers that support it (Android Chrome, Edge, etc.)
+  useEffect(() => {
+    // Only show on Android if installable, not on iOS or desktop
+    if (!isAndroid() || !isInstallable || isInstalled) {
+      return;
+    }
+
+    // Check if user previously dismissed
+    const dismissed = localStorage.getItem('pwa-install-dismissed');
+    if (dismissed) {
+      const expiryDate = new Date(dismissed);
+      const now = new Date();
+      if (expiryDate > now) {
+        setIsDismissed(true);
+        return;
+      } else {
         localStorage.removeItem('pwa-install-dismissed');
       }
     }
 
     // Show prompt after a short delay
-    // In development: instant, in production: 3 seconds
-    if (isInstallable && !isInstalled) {
-      const delay = import.meta.env.DEV ? 0 : 3000; // 3 seconds in production
-      
-      console.log('[InstallPrompt] Debug:', {
-        isInstallable,
-        isInstalled,
-        isDismissed,
-        delay,
-        dismissed: localStorage.getItem('pwa-install-dismissed')
-      });
+    const delay = import.meta.env.DEV ? 0 : 3000;
+    
+    console.log('[InstallPrompt] Debug:', {
+      isInstallable,
+      isInstalled,
+      isDismissed,
+      delay,
+      dismissed: localStorage.getItem('pwa-install-dismissed')
+    });
 
-      const timer = setTimeout(() => {
-        console.log('[InstallPrompt] Showing install prompt');
-        setShowPrompt(true);
-      }, delay);
+    const timer = setTimeout(() => {
+      console.log('[InstallPrompt] Showing install prompt');
+      setShowPrompt(true);
+    }, delay);
 
-      return () => clearTimeout(timer);
-    }
+    return () => clearTimeout(timer);
   }, [isInstallable, isInstalled]);
 
   const handleInstall = async () => {
@@ -113,11 +123,10 @@ export function InstallPrompt() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm">Install StatCat App</p>
                   <p className="text-xs text-blue-100 mt-0.5">
                     {isIOSSafari() 
-                      ? 'Tap Share button, then "Add to Home Screen"'
-                      : 'Click Share menu, then "Add to Dock"'
+                      ? 'Tap Share → Add to Home Screen to install this app.'
+                      : 'Tap ⋮ in your browser and select Add to Home screen to install.'
                     }
                   </p>
                 </div>
