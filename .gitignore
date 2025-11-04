@@ -51,3 +51,7 @@ IMPROVEMENTS_COMPLETED.md
 PERFORMANCE_OPTIMIZATIONS.md
 QUICK_START.md
 test_alembic.sh
+
+# CORS documentation (keep local)
+CORS_FIX.md
+RENDER_CORS_CONFIG.md
