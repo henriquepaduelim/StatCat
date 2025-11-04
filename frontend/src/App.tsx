@@ -5,6 +5,8 @@ import AppShell from "./components/AppShell";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useAuthStore } from "./stores/useAuthStore";
 import { PWAUpdatePrompt } from "./components/PWAUpdatePrompt";
+import { OfflineBanner } from "./components/OfflineBanner";
+import { InstallPrompt } from "./components/InstallPrompt";
 
 // Lazy load pages for better code splitting
 const Login = lazy(() => import("./pages/Login"));
@@ -132,6 +134,8 @@ const App = () => {
       <Route path="*" element={<RedirectToDashboardOrReports />} />
     </Route>
   </Routes>
+  <OfflineBanner />
+  <InstallPrompt />
   <PWAUpdatePrompt />
   </Suspense>
   );
