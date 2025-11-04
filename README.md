@@ -1,6 +1,3 @@
-
-
-
 # Combine Football Platform
 
 A centralized platform for managing physical and technical assessments, athlete profiles, and performance reporting for football combines.
@@ -133,9 +130,45 @@ npm run build
 npm run preview
 ```
 
+### Database Migrations
+
+This project uses **Alembic** for database schema version control and migrations.
+
+#### Initial Setup
+Migrations are automatically available after backend setup. To check status:
+
+```bash
+cd backend
+alembic current
+```
+
+#### Applying Migrations
+Apply all pending migrations:
+
+```bash
+alembic upgrade head
+```
+
+#### Creating New Migrations
+When you modify database models, create a migration:
+
+```bash
+alembic revision --autogenerate -m "Description of changes"
+```
+
+Review the generated migration file in `backend/alembic/versions/`, then apply it:
+
+```bash
+alembic upgrade head
+```
+
+ **For detailed information, see [ALEMBIC_GUIDE.md](./ALEMBIC_GUIDE.md)**
+
 ### Database Initialization
 
 The database is automatically created on first startup with seed data. To reset the database, delete the `backend/combine.db` file and restart the backend server.
+
+**Note:** The legacy `_ensure_optional_columns()` function has been replaced by Alembic migrations for better schema management and version control.
 
 ### Test Accounts
 
@@ -185,6 +218,45 @@ Athletes can self-register through the application interface and require adminis
 - `GET /api/v1/analytics/metrics` - Performance metrics
 
 ## Development Tools
+
+### Running Tests
+
+The project includes comprehensive test coverage for authentication, CRUD operations, and API endpoints.
+
+#### Backend Tests
+
+Run all tests:
+```bash
+cd backend
+pytest
+```
+
+Run with coverage report:
+```bash
+pytest --cov=app --cov-report=html
+```
+
+Run specific test file:
+```bash
+pytest tests/test_auth.py -v
+```
+
+Run tests matching a pattern:
+```bash
+pytest -k "test_create" -v
+```
+
+**Test Structure:**
+- `tests/conftest.py` - Fixtures and test configuration
+- `tests/test_auth.py` - Authentication endpoint tests
+- `tests/test_athletes.py` - Athlete CRUD tests
+- `tests/test_teams.py` - Team CRUD tests
+
+**Key Features:**
+- In-memory SQLite database for fast testing
+- Isolated test sessions (no test pollution)
+- Reusable fixtures for users and authentication
+- Comprehensive coverage of happy paths and error cases
 
 ### Backend Commands
 
@@ -271,6 +343,31 @@ The frontend uses Vite's environment variable system. Development proxy is confi
 - File upload handling with size limits
 - Secure password storage and JWT tokens
 
-## License
+### Performance & Best Practices
 
-This project is proprietary software developed for internal use.
+**Database Optimizations:**
+- Pagination on all list endpoints (default 50 items, max 100)
+- Indexed columns for common queries (email, team_id, athlete_id)
+- Eager loading to prevent N+1 queries in relationships
+- Database migrations with Alembic for schema versioning
+
+**Security:**
+- JWT-based authentication with configurable expiration
+- Password hashing with bcrypt
+- CORS configuration from environment variables
+- Role-based access control (RBAC) on all endpoints
+- Input validation with Pydantic schemas
+
+**Code Quality:**
+- Comprehensive test coverage (auth, CRUD, permissions)
+- Centralized permission checking with `ensure_roles()` helper
+- Conditional logging (development only) to reduce production noise
+- TypeScript strict mode for frontend type safety
+- Linting with Ruff (Python) and ESLint (TypeScript)
+
+**API Best Practices:**
+- Consistent error responses with HTTP status codes
+- Request/response validation with schemas
+- OpenAPI documentation auto-generated
+- Versioned API endpoints (`/api/v1/`)
+- Health check endpoint for monitoring

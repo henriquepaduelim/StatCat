@@ -121,7 +121,9 @@ def init_db() -> None:
     """Create database tables."""
 
     SQLModel.metadata.create_all(engine)
-    _ensure_optional_columns()
+    # NOTE: _ensure_optional_columns() has been replaced by Alembic migrations
+    # Use `alembic upgrade head` to apply schema changes
+    # _ensure_optional_columns()
     with Session(engine) as session:
         seed_database(session)
 

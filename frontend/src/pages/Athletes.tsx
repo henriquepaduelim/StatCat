@@ -14,7 +14,7 @@ import { deleteAthlete } from "../api/athletes";
 import type { Athlete } from "../types/athlete";
 import NewAthleteStepOneForm from "../components/NewAthleteStepOneForm";
 import NewAthleteStepTwoForm from "../components/NewAthleteStepTwoForm";
-import AthleteApproval from "./AthleteApproval";
+import AthleteApprovalList from "../components/AthleteApprovalList";
 
 const normalizeText = (value: string) =>
   value
@@ -378,7 +378,7 @@ const Athletes = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
-                    <AthleteApproval />
+                    <AthleteApprovalList />
                   </div>
                 </Dialog.Panel>
               </Transition.Child>

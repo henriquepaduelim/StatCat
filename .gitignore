@@ -43,3 +43,10 @@ client_secret_*.json
 tmp_*
 testDay.*
 =*
+
+# Refactoring documentation (internal only)
+REFACTORING_SUMMARY.md
+IMPORTANT_TASKS_COMPLETED.md
+IMPROVEMENTS_COMPLETED.md
+QUICK_START.md
+test_alembic.sh

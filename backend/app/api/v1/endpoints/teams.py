@@ -41,10 +41,30 @@ def list_teams(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
     age_category: str | None = None,
+    page: int = 1,
+    size: int = 50,
 ) -> list[TeamRead]:
+    """List teams with optional pagination.
+    
+    Args:
+        page: Page number (1-indexed), default 1
+        size: Items per page, default 50, max 100
+    """
+    # Validate pagination params
+    if page < 1:
+        page = 1
+    if size < 1:
+        size = 50
+    if size > 100:
+        size = 100
+        
     statement = select(Team).order_by(Team.name)
     if age_category:
         statement = statement.where(Team.age_category == age_category)
+    
+    # Apply pagination
+    offset = (page - 1) * size
+    statement = statement.offset(offset).limit(size)
 
     teams = session.exec(statement).scalars().all()
     roster_counts = _load_roster_counts(session, [team.id for team in teams])

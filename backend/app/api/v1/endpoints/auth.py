@@ -7,7 +7,7 @@ from app.api.deps import authenticate_user, get_current_active_user
 from app.core.security import create_access_token, get_password_hash
 from app.db.session import get_session
 from app.models.athlete import Athlete
-from app.models.user import User, UserRole, AthleteStatus
+from app.models.user import User, UserRole, UserAthleteApprovalStatus
 from app.schemas.user import Token, UserCreate, UserRead, UserReadWithToken, UserSignup
 from app.core.config import settings # Import settings to get origins
 
@@ -150,7 +150,7 @@ def signup_user(
             phone=payload.phone,
             role=payload.role,
             athlete_id=athlete.id,
-            athlete_status=AthleteStatus.INCOMPLETE,  # Explicitly set status
+            athlete_status=UserAthleteApprovalStatus.INCOMPLETE,  # Explicitly set status
             is_active=True,
         )
         session.add(user)

@@ -1,61 +1,99 @@
 import { PropsWithChildren } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { usePermissions, type UserRole } from "../hooks/usePermissions";
 import { useAuthStore } from "../stores/useAuthStore";
+import { useAuthBootstrap } from "../hooks/useAuthBootstrap";
+import { useTranslation } from "../i18n/useTranslation";
 
 interface ProtectedRouteProps extends PropsWithChildren {
+  /**
+   * Specific permission required to access this route
+   */
   requiredPermission?: keyof ReturnType<typeof usePermissions>;
+  
+  /**
+   * Specific roles allowed to access this route
+   */
   allowedRoles?: UserRole[];
+  
+  /**
+   * Where to redirect if access is denied
+   */
   fallbackPath?: string;
+  
+  /**
+   * Whether authentication is required (default: true)
+   */
+  requireAuth?: boolean;
 }
 
+/**
+ * Unified authentication and authorization component
+ * Combines RequireAuth, ProtectedRoute, and DashboardGuard functionality
+ */
 const ProtectedRoute = ({ 
   children, 
   requiredPermission, 
   allowedRoles,
-  fallbackPath = "/reports" 
+  fallbackPath = "/reports",
+  requireAuth = true
 }: ProtectedRouteProps): JSX.Element => {
+  useAuthBootstrap();
+  
+  const { token, user, isInitialized } = useAuthStore();
   const permissions = usePermissions();
-  const user = useAuthStore((state) => state.user);
+  const location = useLocation();
+  const t = useTranslation();
 
-  console.log("ProtectedRoute - User:", user?.email);
-  console.log("ProtectedRoute - Required permission:", requiredPermission);
-  console.log("ProtectedRoute - User permissions:", permissions);
+  // Wait for auth initialization
+  if (!isInitialized) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-page text-muted">
+        {t.common.loading}...
+      </div>
+    );
+  }
 
-  // If specific roles are required, check them
+  // Check authentication requirement
+  if (requireAuth && !token) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // If no user but token exists, something is wrong
+  if (requireAuth && token && !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Check role-based access
   if (allowedRoles && user) {
     const hasRequiredRole = allowedRoles.includes(user.role as UserRole);
     if (!hasRequiredRole) {
-      console.log("ProtectedRoute - Role check failed, redirecting to:", fallbackPath);
       return <Navigate to={fallbackPath} replace />;
     }
   }
 
-  // If specific permission is required, check it
-  if (requiredPermission) {
+  // Check permission-based access
+  if (requiredPermission && user) {
     const hasPermission = permissions[requiredPermission];
     if (!hasPermission) {
-      console.log("ProtectedRoute - Permission check failed, redirecting");
-      
       // Special handling for athletes who don't have access
-      if (user?.role === "athlete") {
+      if (user.role === "athlete") {
         const status = user.athlete_status || "INCOMPLETE";
         if (status === "INCOMPLETE" || status === "REJECTED") {
-          console.log("ProtectedRoute - Redirecting incomplete athlete to onboarding");
-          return <Navigate to="/athlete-onboarding" replace />;
+          // These pages are handled by Login.tsx modal now
+          return <Navigate to="/login" replace />;
         }
         if (status === "PENDING") {
-          console.log("ProtectedRoute - Redirecting pending athlete to awaiting approval");
-          return <Navigate to="/awaiting-approval" replace />;
+          // These pages are handled by Login.tsx modal now
+          return <Navigate to="/login" replace />;
         }
       }
       
-      console.log("ProtectedRoute - Using fallback path:", fallbackPath);
       return <Navigate to={fallbackPath} replace />;
     }
   }
 
-  console.log("ProtectedRoute - Access granted");
+  // All checks passed, render children
   return <>{children}</>;
 };
 

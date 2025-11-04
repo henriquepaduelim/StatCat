@@ -1,27 +1,22 @@
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 
 import AppShell from "./components/AppShell";
-import RequireAuth from "./components/RequireAuth";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Athletes from "./pages/Athletes";
 import AthleteEdit from "./pages/AthleteEdit";
 import AthleteReport from "./pages/AthleteReport";
-import AthleteOnboarding from "./pages/AthleteOnboarding";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import NewAthlete from "./pages/NewAthlete";
 import Reports from "./pages/Reports";
 import { useAuthStore } from "./stores/useAuthStore";
 
-// Import AwaitingApproval separately
-import AwaitingApproval from "./pages/AwaitingApproval";
-
 const ProtectedLayout = () => (
-  <RequireAuth>
+  <ProtectedRoute requireAuth={true}>
     <AppShell>
       <Outlet />
     </AppShell>
-  </RequireAuth>
+  </ProtectedRoute>
 );
 
 const RedirectToDashboardOrReports = () => {
@@ -57,16 +52,6 @@ const App = () => (
   <Routes>
     <Route path="/" element={<RedirectToDashboardOrReports />} />
     <Route path="/login" element={<Login />} />
-    <Route path="/athlete-onboarding" element={
-      <RequireAuth>
-        <AthleteOnboarding />
-      </RequireAuth>
-    } />
-    <Route path="/awaiting-approval" element={
-      <RequireAuth>
-        <AwaitingApproval />
-      </RequireAuth>
-    } />
     <Route element={<ProtectedLayout />}>
       <Route 
         path="/dashboard" 

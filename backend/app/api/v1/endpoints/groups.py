@@ -48,8 +48,29 @@ def _validate_athletes(session: Session, athlete_ids: list[int]) -> list[Athlete
 def list_groups(
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_active_user),
+    page: int = 1,
+    size: int = 50,
 ) -> list[GroupRead]:
+    """List groups with optional pagination.
+    
+    Args:
+        page: Page number (1-indexed), default 1
+        size: Items per page, default 50, max 100
+    """
+    # Validate pagination params
+    if page < 1:
+        page = 1
+    if size < 1:
+        size = 50
+    if size > 100:
+        size = 100
+        
     statement = select(Group).order_by(Group.name)
+    
+    # Apply pagination
+    offset = (page - 1) * size
+    statement = statement.offset(offset).limit(size)
+    
     groups = session.exec(statement).all()
     memberships = _load_memberships(session, [group.id for group in groups])
 

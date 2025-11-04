@@ -16,7 +16,7 @@ from app.models.athlete import (
     AthletePayment,
 )
 from app.models.team import Team
-from app.models.user import User, UserRole, AthleteStatus
+from app.models.user import User, UserRole, UserAthleteApprovalStatus
 from app.schemas.athlete import (
     AthleteCreate,
     AthleteRead,
@@ -152,9 +152,25 @@ def list_athletes(
     gender: AthleteGender | None = None,
     team_id: int | None = None,
     include_user_status: bool = False,
+    page: int = 1,
+    size: int = 50,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
 ) -> list[AthleteRead]:
+    """List athletes with optional pagination.
+    
+    Args:
+        page: Page number (1-indexed), default 1
+        size: Items per page, default 50, max 100
+    """
+    # Validate pagination params
+    if page < 1:
+        page = 1
+    if size < 1:
+        size = 50
+    if size > 100:
+        size = 100
+        
     statement = select(Athlete)
     if current_user.role == UserRole.ATHLETE:
         if current_user.athlete_id is None:
@@ -165,9 +181,22 @@ def list_athletes(
     if team_id is not None:
         statement = statement.where(Athlete.team_id == team_id)
     
-    athletes = session.exec(statement).all()
-    result = []
+    # Apply pagination
+    offset = (page - 1) * size
+    statement = statement.offset(offset).limit(size)
     
+    athletes = session.exec(statement).all()
+    
+    # Optimize N+1 query: Preload user statuses for all athletes at once
+    user_status_map = {}
+    if include_user_status and current_user.role in MANAGE_ATHLETE_ROLES and athletes:
+        athlete_ids = [athlete.id for athlete in athletes]
+        users = session.exec(
+            select(User).where(User.athlete_id.in_(athlete_ids))
+        ).all()
+        user_status_map = {user.athlete_id: user for user in users}
+    
+    result = []
     for athlete in athletes:
         try:
             # Use model_dump to get the base data
@@ -179,19 +208,15 @@ def list_athletes(
             
             # If requested, enrich athletes with user status information
             if include_user_status and current_user.role in MANAGE_ATHLETE_ROLES:
-                try:
-                    user = session.exec(select(User).where(User.athlete_id == athlete.id)).first()
-                    if user:
-                        if user.athlete_status:
-                            # Safely get the status value
-                            if hasattr(user.athlete_status, 'value'):
-                                athlete_dict['user_athlete_status'] = user.athlete_status.value
-                            else:
-                                athlete_dict['user_athlete_status'] = str(user.athlete_status)
-                        athlete_dict['user_rejection_reason'] = user.rejection_reason
-                except Exception as e:
-                    # If there's an error getting user info, just log it and continue
-                    print(f"Warning: Could not get user status for athlete {athlete.id}: {e}")
+                user = user_status_map.get(athlete.id)
+                if user:
+                    if user.athlete_status:
+                        # Safely get the status value
+                        if hasattr(user.athlete_status, 'value'):
+                            athlete_dict['user_athlete_status'] = user.athlete_status.value
+                        else:
+                            athlete_dict['user_athlete_status'] = str(user.athlete_status)
+                    athlete_dict['user_rejection_reason'] = user.rejection_reason
             
             result.append(AthleteRead(**athlete_dict))
         except Exception as e:
@@ -352,7 +377,7 @@ def get_pending_athletes(
         ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
         
         pending_users = session.exec(
-            select(User).where(User.athlete_status == AthleteStatus.PENDING)
+            select(User).where(User.athlete_status == UserAthleteApprovalStatus.PENDING)
         ).all()
         
         print(f"Found {len(pending_users)} pending users")
@@ -388,7 +413,7 @@ def get_pending_athletes_count(
         # Use a more robust query
         pending_users = session.exec(
             select(User).where(
-                User.athlete_status == AthleteStatus.PENDING,
+                User.athlete_status == UserAthleteApprovalStatus.PENDING,
                 User.role == UserRole.ATHLETE
             )
         ).all()
@@ -571,13 +596,13 @@ def approve_athlete(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found for this athlete")
     
-    if user.athlete_status != AthleteStatus.PENDING:
+    if user.athlete_status != UserAthleteApprovalStatus.PENDING:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
             detail="Athlete must be in pending status to be approved"
         )
     
-    user.athlete_status = AthleteStatus.APPROVED
+    user.athlete_status = UserAthleteApprovalStatus.APPROVED
     user.rejection_reason = None
     session.add(user)
     session.commit()
@@ -605,7 +630,7 @@ def reject_athlete(
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found for this athlete")
     
-    if user.athlete_status != AthleteStatus.PENDING:
+    if user.athlete_status != UserAthleteApprovalStatus.PENDING:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
             detail="Athlete must be in pending status to be rejected"
@@ -617,7 +642,7 @@ def reject_athlete(
             detail="Rejection reason is required"
         )
     
-    user.athlete_status = AthleteStatus.REJECTED
+    user.athlete_status = UserAthleteApprovalStatus.REJECTED
     user.rejection_reason = reason.strip()
     session.add(user)
     session.commit()
@@ -642,7 +667,7 @@ def submit_for_approval(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the athlete can submit their own registration")
     
     # Check if athlete is in the correct status
-    if current_user.athlete_status != AthleteStatus.INCOMPLETE:
+    if current_user.athlete_status != UserAthleteApprovalStatus.INCOMPLETE:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
             detail="Can only submit incomplete registrations for approval"
@@ -667,7 +692,7 @@ def submit_for_approval(
             )
     
     # Update status to PENDING
-    current_user.athlete_status = AthleteStatus.PENDING
+    current_user.athlete_status = UserAthleteApprovalStatus.PENDING
     current_user.rejection_reason = None  # Clear any previous rejection reason
     session.add(current_user)
     session.commit()

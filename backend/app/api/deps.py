@@ -85,3 +85,22 @@ def ensure_roles(user: User, allowed_roles: Collection[UserRole]) -> None:
         return
     if user.role not in allowed_roles:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+
+
+# Common role combinations as reusable dependencies
+def get_admin_user(current_user: User = Depends(get_current_active_user)) -> User:
+    """Ensure current user is an admin."""
+    ensure_roles(current_user, {UserRole.ADMIN})
+    return current_user
+
+
+def get_staff_or_admin(current_user: User = Depends(get_current_active_user)) -> User:
+    """Ensure current user is staff or admin."""
+    ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF})
+    return current_user
+
+
+def get_coach_or_above(current_user: User = Depends(get_current_active_user)) -> User:
+    """Ensure current user is coach, staff, or admin."""
+    ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH})
+    return current_user

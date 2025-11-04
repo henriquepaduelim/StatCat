@@ -18,7 +18,8 @@ class UserRole(str, enum.Enum):
     ATHLETE = "athlete"
 
 
-class AthleteStatus(str, enum.Enum):
+class UserAthleteApprovalStatus(str, enum.Enum):
+    """Status for athlete user registration approval workflow."""
     INCOMPLETE = "INCOMPLETE"
     PENDING = "PENDING"
     APPROVED = "APPROVED"
@@ -33,7 +34,7 @@ class User(SQLModel, table=True):
     phone: str | None = Field(default=None, max_length=30)
     role: UserRole = Field(default=UserRole.ATHLETE, sa_column=Column(Enum(UserRole)))
     athlete_id: int | None = Field(default=None, foreign_key="athlete.id", index=True)
-    athlete_status: AthleteStatus = Field(default=AthleteStatus.INCOMPLETE, sa_column=Column(Enum(AthleteStatus)))
+    athlete_status: UserAthleteApprovalStatus = Field(default=UserAthleteApprovalStatus.INCOMPLETE, sa_column=Column(Enum(UserAthleteApprovalStatus)))
     rejection_reason: Optional[str] = Field(default=None)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
