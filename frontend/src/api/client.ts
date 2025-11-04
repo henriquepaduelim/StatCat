@@ -20,4 +20,19 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Response interceptor to handle 401 errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // If we get a 401 error, clear the auth state
+    if (error.response?.status === 401) {
+      const { clear } = useAuthStore.getState();
+      clear();
+      // Redirect to login page
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;

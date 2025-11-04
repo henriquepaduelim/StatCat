@@ -51,7 +51,7 @@ const Login = () => {
   const isRegister = mode === "register";
 
   // Fetch existing athlete if user already has athlete_id
-  const { data: existingAthlete } = useQuery({
+  const { data: existingAthlete, error: athleteError } = useQuery({
     queryKey: ['athlete', user?.athlete_id],
     queryFn: async () => {
       if (!user?.athlete_id) return null;
@@ -59,7 +59,24 @@ const Login = () => {
       return data;
     },
     enabled: !!user?.athlete_id && !createdAthlete && (onboardingStep === 2 || onboardingStep === 3),
+    retry: false, // Don't retry on error
   });
+
+  // Handle athlete fetch error
+  useEffect(() => {
+    if (athleteError) {
+      console.error('Error fetching athlete:', athleteError);
+      // If we can't fetch the athlete, create a placeholder
+      if (onboardingStep === 2 && user && !createdAthlete) {
+        setCreatedAthlete({
+          id: user.athlete_id || user.id,
+          user_id: user.id,
+          full_name: user.full_name || '',
+          email: user.email || '',
+        });
+      }
+    }
+  }, [athleteError, onboardingStep, user, createdAthlete]);
 
   // Set existing athlete when fetched or create a placeholder for new users
   useEffect(() => {
