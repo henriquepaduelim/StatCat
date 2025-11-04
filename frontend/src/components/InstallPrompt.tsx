@@ -1,10 +1,50 @@
 import { useEffect, useState } from 'react';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
 
+// Helper to detect iOS Safari
+const isIOSSafari = () => {
+  const ua = window.navigator.userAgent;
+  const iOS = /iPad|iPhone|iPod/.test(ua);
+  const webkit = /WebKit/.test(ua);
+  const iOSSafari = iOS && webkit && !/CriOS|FxiOS|OPiOS|mercury/.test(ua);
+  return iOSSafari;
+};
+
+// Helper to detect Safari (macOS or iOS)
+const isSafari = () => {
+  const ua = window.navigator.userAgent;
+  return /^((?!chrome|android).)*safari/i.test(ua) || isIOSSafari();
+};
+
 export function InstallPrompt() {
   const { isInstallable, isInstalled, promptInstall } = useInstallPrompt();
   const [isDismissed, setIsDismissed] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
+  const [showSafariInstructions, setShowSafariInstructions] = useState(false);
+
+  useEffect(() => {
+    // Check if Safari and not in standalone mode
+    if (isSafari() && !isInstalled && !window.matchMedia('(display-mode: standalone)').matches) {
+      // Show Safari-specific instructions after delay
+      const dismissed = localStorage.getItem('pwa-install-dismissed');
+      if (dismissed) {
+        const expiryDate = new Date(dismissed);
+        const now = new Date();
+        if (expiryDate > now) {
+          setIsDismissed(true);
+          return;
+        } else {
+          localStorage.removeItem('pwa-install-dismissed');
+        }
+      }
+
+      const delay = import.meta.env.DEV ? 0 : 3000;
+      const timer = setTimeout(() => {
+        setShowSafariInstructions(true);
+      }, delay);
+      return () => clearTimeout(timer);
+    }
+  }, [isInstalled]);
 
   useEffect(() => {
     // Check if user previously dismissed
@@ -53,6 +93,7 @@ export function InstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
+    setShowSafariInstructions(false);
     setIsDismissed(true);
     // Remember dismissal for 7 days
     const expiryDate = new Date();
@@ -60,6 +101,42 @@ export function InstallPrompt() {
     localStorage.setItem('pwa-install-dismissed', expiryDate.toISOString());
   };
 
+  // Safari Instructions Banner
+  if (showSafariInstructions && !isDismissed && !isInstalled) {
+    return (
+      <div className="fixed top-0 left-0 right-0 z-50 animate-slideDown">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 flex-1">
+                <svg className="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-sm">Install StatCat App</p>
+                  <p className="text-xs text-blue-100 mt-0.5">
+                    {isIOSSafari() 
+                      ? 'Tap Share button, then "Add to Home Screen"'
+                      : 'Click Share menu, then "Add to Dock"'
+                    }
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleDismiss}
+                className="px-3 py-1.5 text-sm font-medium text-white hover:text-blue-100 transition flex-shrink-0"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Chrome/Edge Install Prompt
   if (!showPrompt || isDismissed || isInstalled) {
     return null;
   }
