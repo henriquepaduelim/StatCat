@@ -27,7 +27,7 @@ export function InstallPrompt() {
     if (isInstallable && !isInstalled) {
       const delay = import.meta.env.DEV ? 0 : 3000; // 3 seconds in production
       
-      console.log('🔍 InstallPrompt Debug:', {
+      console.log('[InstallPrompt] Debug:', {
         isInstallable,
         isInstalled,
         isDismissed,
@@ -36,7 +36,7 @@ export function InstallPrompt() {
       });
 
       const timer = setTimeout(() => {
-        console.log('✅ Showing install prompt');
+        console.log('[InstallPrompt] Showing install prompt');
         setShowPrompt(true);
       }, delay);
 
@@ -70,13 +70,15 @@ export function InstallPrompt() {
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">📱</span>
+              <svg className="w-8 h-8 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
               <div className="flex-1">
                 <p className="font-semibold text-sm">
-                  Instale o StatCat App
+                  Install StatCat App
                 </p>
                 <p className="text-xs text-blue-100">
-                  Acesso rápido, offline e experiência nativa
+                  Quick access, offline support, and native experience
                 </p>
               </div>
             </div>
@@ -85,16 +87,16 @@ export function InstallPrompt() {
               <button
                 type="button"
                 onClick={handleInstall}
-                className="px-4 py-2 bg-white text-blue-600 text-sm font-medium rounded-md hover:bg-blue-50 transition"
+                className="px-4 py-2 bg-white text-blue-600 text-sm font-medium rounded-md hover:bg-blue-50 transition whitespace-nowrap"
               >
-                Instalar Agora
+                Install Now
               </button>
               <button
                 type="button"
                 onClick={handleDismiss}
-                className="px-3 py-2 text-sm font-medium text-white hover:text-blue-100 transition"
+                className="px-3 py-2 text-sm font-medium text-white hover:text-blue-100 transition whitespace-nowrap"
               >
-                Não, obrigado
+                Not now
               </button>
             </div>
           </div>

@@ -15,7 +15,7 @@ export function useInstallPrompt() {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     const isIOSStandalone = (window.navigator as any).standalone === true;
     
-    console.log('🔍 useInstallPrompt - Install Status:', {
+    console.log('[useInstallPrompt] Install Status:', {
       isStandalone,
       isIOSStandalone,
       displayMode: window.matchMedia('(display-mode: standalone)').matches,
@@ -24,20 +24,20 @@ export function useInstallPrompt() {
     });
 
     if (isStandalone) {
-      console.log('ℹ️ App already installed (standalone mode)');
+      console.log('[useInstallPrompt] App already installed (standalone mode)');
       setIsInstalled(true);
       return;
     }
 
     // Check if running as iOS standalone app
     if (isIOSStandalone) {
-      console.log('ℹ️ App already installed (iOS standalone)');
+      console.log('[useInstallPrompt] App already installed (iOS standalone)');
       setIsInstalled(true);
       return;
     }
 
     const handleBeforeInstallPrompt = (e: Event) => {
-      console.log('✅ beforeinstallprompt event fired!');
+      console.log('[useInstallPrompt] beforeinstallprompt event fired!');
       // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
       // Save the event so it can be triggered later
@@ -46,18 +46,18 @@ export function useInstallPrompt() {
     };
 
     const handleAppInstalled = () => {
-      console.log('🎉 App installed successfully!');
+      console.log('[useInstallPrompt] App installed successfully!');
       setIsInstalled(true);
       setIsInstallable(false);
       setInstallPrompt(null);
     };
 
-    console.log('👂 Listening for beforeinstallprompt event...');
+    console.log('[useInstallPrompt] Listening for beforeinstallprompt event...');
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
-      console.log('🧹 Cleaning up event listeners');
+      console.log('[useInstallPrompt] Cleaning up event listeners');
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
@@ -65,17 +65,17 @@ export function useInstallPrompt() {
 
   const promptInstall = async () => {
     if (!installPrompt) {
-      console.warn('⚠️ No install prompt available');
+      console.warn('[useInstallPrompt] No install prompt available');
       return false;
     }
 
-    console.log('📱 Showing native install prompt...');
+    console.log('[useInstallPrompt] Showing native install prompt...');
     // Show the install prompt
     await installPrompt.prompt();
 
     // Wait for the user to respond to the prompt
     const { outcome } = await installPrompt.userChoice;
-    console.log('📊 User choice:', outcome);
+    console.log('[useInstallPrompt] User choice:', outcome);
 
     // Clear the saved prompt since it can't be used again
     setInstallPrompt(null);
