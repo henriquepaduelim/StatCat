@@ -1,4 +1,4 @@
-# Combine Football Platform
+# StatCat Football Platform
 
 A centralized platform for managing physical and technical assessments, athlete profiles, and performance reporting for football combines.
 
@@ -13,7 +13,7 @@ A centralized platform for managing physical and technical assessments, athlete 
 
 ## Overview
 
-This application provides a complete solution for managing football combine operations, including athlete registration, assessment tracking, and performance reporting. The system supports role-based access control with distinct workflows for administrators, staff, coaches, and athletes.
+This application provides a complete solution for managing football combine operations, including athlete registration, assessment tracking, performance reporting, and team management. The system supports role-based access control with distinct workflows for administrators, staff, coaches, and athletes.
 
 ### Core Features
 
@@ -21,24 +21,38 @@ This application provides a complete solution for managing football combine oper
 - JWT-based authentication with secure password hashing
 - Role-based access control: admin, staff, coach, athlete
 - Protected routes and API endpoints based on user permissions
+- Athlete approval workflow with status tracking
 
 **Athlete Management**
 - Complete athlete registration with personal information and documents
 - Photo upload and document management
 - Status tracking: incomplete, pending, approved, rejected
 - Athlete approval workflow for administrators
+- Profile editing and batch operations
+
+**Team Management**
+- Team creation and roster management
+- Coach assignment to teams
+- Coach creation and management
+- Team filtering by age category
+- Athlete assignment to teams
 
 **Assessment & Reporting**
-- Session-based assessment tracking
+- Session-based assessment tracking with scheduling
+- Test definitions for standardized measurements
+- Session result entry and management
 - Performance metrics and test results
 - Peer comparison and age-band analysis
+- Individual athlete report cards
 - Report generation with historical data
 
 **Dashboard & Analytics**
-- Real-time athlete statistics
-- Performance leaderboards
+- Real-time athlete statistics and summaries
+- Performance leaderboards and rankings
 - Session insights and trends
-- Team and group management
+- Event calendar with team scheduling
+- Event creation and management
+- Team and group management interface
 
 ## Technical Stack
 
@@ -191,31 +205,55 @@ Athletes can self-register through the application interface and require adminis
 - `GET /api/v1/auth/me` - Current user profile
 
 ### Athletes
-- `GET /api/v1/athletes` - List all athletes
+- `GET /api/v1/athletes` - List all athletes with pagination and filters
 - `POST /api/v1/athletes` - Create new athlete
+- `POST /api/v1/athletes/register` - Self-registration for new athletes
+- `GET /api/v1/athletes/pending` - List athletes pending approval
+- `GET /api/v1/athletes/pending/count` - Count of pending athletes
 - `GET /api/v1/athletes/{id}` - Get athlete details
-- `PUT /api/v1/athletes/{id}` - Update athlete information
+- `PATCH /api/v1/athletes/{id}` - Update athlete information
 - `DELETE /api/v1/athletes/{id}` - Remove athlete
 - `POST /api/v1/athletes/{id}/photo` - Upload athlete photo
 - `POST /api/v1/athletes/{id}/complete-registration` - Complete athlete profile
 - `POST /api/v1/athletes/{id}/submit-for-approval` - Submit for admin approval
+- `POST /api/v1/athletes/{id}/approve` - Approve athlete registration
+- `POST /api/v1/athletes/{id}/reject` - Reject athlete registration
 
-### Teams & Groups
-- `GET /api/v1/teams` - List teams
+### Teams & Coaches
+- `GET /api/v1/teams` - List teams with pagination
 - `POST /api/v1/teams` - Create team
-- `GET /api/v1/groups` - List groups
-- `POST /api/v1/groups` - Create group
+- `GET /api/v1/teams/coaches` - List all coaches
+- `GET /api/v1/teams/{team_id}/coaches` - List coaches for specific team
+- `POST /api/v1/teams/coaches` - Create new coach
+- `POST /api/v1/teams/{team_id}/coaches` - Create coach and assign to team
+- `POST /api/v1/teams/{team_id}/coaches/{coach_id}/assign` - Assign existing coach to team
+- `DELETE /api/v1/teams/{team_id}/coaches/{coach_id}` - Remove coach from team
 
-### Assessments
-- `GET /api/v1/tests` - List test definitions
-- `GET /api/v1/sessions` - List assessment sessions
+### Groups
+- `GET /api/v1/groups` - List groups with pagination
+- `POST /api/v1/groups` - Create group
+- `PATCH /api/v1/groups/{id}` - Update group
+- `DELETE /api/v1/groups/{id}` - Remove group
+
+### Assessment Sessions
+- `GET /api/v1/sessions` - List assessment sessions with date filters
 - `POST /api/v1/sessions` - Create new session
-- `GET /api/v1/sessions/{id}/results` - Get session results
+- `GET /api/v1/sessions/{id}` - Get session details
+- `PUT /api/v1/sessions/{id}` - Update session
+- `DELETE /api/v1/sessions/{id}` - Delete session
+- `POST /api/v1/sessions/{id}/results` - Add test results to session
+
+### Test Definitions
+- `GET /api/v1/tests` - List test definitions
+- `POST /api/v1/tests` - Create new test definition
+- `GET /api/v1/tests/{id}` - Get test definition details
 
 ### Reporting & Analytics
-- `GET /api/v1/reports/athletes/{id}` - Generate athlete report
-- `GET /api/v1/dashboard/summary` - Dashboard statistics
-- `GET /api/v1/analytics/metrics` - Performance metrics
+- `GET /api/v1/reports/athletes/{id}` - Generate individual athlete report
+- `GET /api/v1/dashboard/summary` - Dashboard statistics and summaries
+- `GET /api/v1/analytics/athletes/{athlete_id}/metrics` - Athlete performance metrics
+- `GET /api/v1/analytics/rankings/metrics/{metric_id}` - Metric rankings with filters
+- `GET /api/v1/analytics/leaderboards/scoring` - Scoring leaderboards (goals, shootouts)
 
 ## Development Tools
 
@@ -327,21 +365,31 @@ The frontend uses Vite's environment variable system. Development proxy is confi
 ## Project Status
 
 ### Current Implementation
-- User authentication and authorization
+- User authentication and authorization with JWT
 - Athlete registration with approval workflow
-- Profile management with document uploads
-- Role-based route protection
-- Dashboard with statistics (update coming soon)
-- Assessment session tracking
-- Team and group management
+- Profile management with document and photo uploads
+- Role-based route protection and API permissions
+- Dashboard with real-time statistics and event calendar
+- Assessment session creation, scheduling, and result entry
+- Team and group management with roster assignment
+- Coach creation and team assignment
+- Event calendar with team-based scheduling
+- Match statistics tracking (goals, assists, shootouts)
+- Performance analytics and leaderboards (scorers, shootout leaders)
+- Individual athlete report cards
+- Metric-based rankings with age and gender filters
+- Comprehensive test coverage for critical paths
 
 ### Architecture Notes
 - Monorepo structure with separate backend and frontend
 - RESTful API design with OpenAPI documentation
 - Type-safe schemas with Pydantic and TypeScript
 - Responsive UI with mobile support
-- File upload handling with size limits
-- Secure password storage and JWT tokens
+- File upload handling with size limits and validation
+- Secure password storage with bcrypt and JWT tokens
+- Database migrations with Alembic
+- Pagination on all list endpoints
+- Optimized queries with eager loading to prevent N+1 issues
 
 ### Performance & Best Practices
 
