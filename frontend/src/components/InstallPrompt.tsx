@@ -10,15 +10,35 @@ export function InstallPrompt() {
     // Check if user previously dismissed
     const dismissed = localStorage.getItem('pwa-install-dismissed');
     if (dismissed) {
-      setIsDismissed(true);
-      return;
+      // Check if dismissal has expired (7 days)
+      const expiryDate = new Date(dismissed);
+      const now = new Date();
+      if (expiryDate > now) {
+        setIsDismissed(true);
+        return;
+      } else {
+        // Expired, clear it
+        localStorage.removeItem('pwa-install-dismissed');
+      }
     }
 
-    // Show prompt after 30 seconds of browsing
+    // Show prompt after a short delay
+    // In development: instant, in production: 3 seconds
     if (isInstallable && !isInstalled) {
+      const delay = import.meta.env.DEV ? 0 : 3000; // 3 seconds in production
+      
+      console.log('🔍 InstallPrompt Debug:', {
+        isInstallable,
+        isInstalled,
+        isDismissed,
+        delay,
+        dismissed: localStorage.getItem('pwa-install-dismissed')
+      });
+
       const timer = setTimeout(() => {
+        console.log('✅ Showing install prompt');
         setShowPrompt(true);
-      }, 30000); // 30 seconds
+      }, delay);
 
       return () => clearTimeout(timer);
     }
