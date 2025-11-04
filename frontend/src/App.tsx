@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 
 import AppShell from "./components/AppShell";
@@ -58,11 +58,19 @@ const RedirectToDashboardOrReports = () => {
   return <Navigate to="/dashboard" replace />;
 };
 
-const App = () => (
-  <Suspense fallback={<LoadingFallback />}>
-    <Routes>
-      <Route path="/" element={<RedirectToDashboardOrReports />} />
-      <Route path="/login" element={<Login />} />
+const App = () => {
+  const setInitialized = useAuthStore((state) => state.setInitialized);
+  
+  // Initialize auth store on app mount
+  useEffect(() => {
+    setInitialized(true);
+  }, [setInitialized]);
+
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <Routes>
+        <Route path="/" element={<RedirectToDashboardOrReports />} />
+        <Route path="/login" element={<Login />} />
       <Route element={<ProtectedLayout />}>
       <Route 
         path="/dashboard" 
@@ -124,6 +132,8 @@ const App = () => (
     </Route>
   </Routes>
   </Suspense>
-);
+  );
+};
 
 export default App;
+  
