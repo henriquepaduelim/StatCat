@@ -10,6 +10,7 @@ import {
   updateTeam,
   deleteTeamCoach,
   listAllCoaches,
+  listTeamCoaches,
   type TeamCoach,
 } from "../api/teams";
 import { updateAthlete } from "../api/athletes";
@@ -1147,7 +1148,7 @@ const Dashboard = () => {
                         
                         <button
                           type="button"
-                          onClick={() => {
+                          onClick={async () => {
                             setEditingTeam({
                               id: team.id,
                               name: team.name,
@@ -1155,12 +1156,22 @@ const Dashboard = () => {
                               gender: "coed", // Default since backend doesn't have this field yet
                               description: team.description || ""
                             });
+                            
+                            // Load existing coaches for this team
+                            let existingCoachIds: number[] = [];
+                            try {
+                              const coaches = await listTeamCoaches(team.id);
+                              existingCoachIds = coaches.map(coach => coach.id);
+                            } catch (error) {
+                              console.error("Error loading team coaches:", error);
+                            }
+                            
                             setTeamForm({
                               name: team.name,
                               ageCategory: team.age_category,
                               gender: "coed", // Default since backend doesn't have this field yet
                               description: team.description || "",
-                              coachIds: [], // TODO: Load existing coach assignments
+                              coachIds: existingCoachIds,
                               athleteIds: displayAthletes.filter(athlete => athlete.team_id === team.id).map(athlete => athlete.id)
                             });
                             setTeamFormError(null);
