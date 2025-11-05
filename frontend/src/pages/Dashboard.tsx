@@ -494,24 +494,31 @@ const Dashboard = () => {
     const dateKey = formatDateKey(target);
     const dayEvents = eventsByDate.get(dateKey) ?? [];
 
-    // Always open the modal for the clicked day, showing events (left) and creation form (right)
-    setEventFormOpen(false);
-    setEventFormError(null);
-    setSelectedEventDate(dateKey);
+    // Two-click behavior:
+    // - First click: select day and show events only
+    // - Second click on same day: open event creation modal
+    if (selectedEventDate === dateKey) {
+      // Second click on same day - open the event creation modal
+      openEventFormPanel(dateKey);
+    } else {
+      // First click - just select the day and show events
+      setEventFormOpen(false);
+      setEventFormError(null);
+      setSelectedEventDate(dateKey);
+      setEventModalOpen(false); // Make sure modal is closed
 
-    // If there are teams with events on this day, select a valid one by default
-    const teamsWithEventsOnDate = new Set<number>();
-    dayEvents.forEach((ev) => {
-      if (ev.team_id !== null) teamsWithEventsOnDate.add(ev.team_id);
-    });
-    if (teamsWithEventsOnDate.size > 0) {
-      const firstTeamId = Array.from(teamsWithEventsOnDate)[0];
-      if (!selectedTeamId || !teamsWithEventsOnDate.has(selectedTeamId)) {
-        setSelectedTeamId(firstTeamId);
+      // If there are teams with events on this day, select a valid one by default
+      const teamsWithEventsOnDate = new Set<number>();
+      dayEvents.forEach((ev) => {
+        if (ev.team_id !== null) teamsWithEventsOnDate.add(ev.team_id);
+      });
+      if (teamsWithEventsOnDate.size > 0) {
+        const firstTeamId = Array.from(teamsWithEventsOnDate)[0];
+        if (!selectedTeamId || !teamsWithEventsOnDate.has(selectedTeamId)) {
+          setSelectedTeamId(firstTeamId);
+        }
       }
     }
-
-    openEventFormPanel(dateKey);
   };
 
   const handleEventInputChange = <T extends keyof EventFormState>(field: T, value: EventFormState[T]) => {
