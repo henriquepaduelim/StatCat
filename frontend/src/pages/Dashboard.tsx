@@ -27,10 +27,11 @@ import type { Event, ParticipantStatus } from "../types/event";
 type EventFormState = {
   name: string;
   date: string;
-  time: string;
+  startTime: string;
+  endTime: string;
   location: string;
   notes: string;
-  teamId: number | null;
+  teamIds: number[];
   coachId: number | null;
   inviteeIds: number[];
   sendEmail: boolean;
@@ -46,6 +47,20 @@ type NewTeamFormState = {
 };
 
 const weekdayInitials = ["S", "M", "T", "W", "T", "F", "S"];
+
+// Helper function to calculate age from birth date
+const calculateAge = (birthDate: string): number => {
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  
+  return age;
+};
 
 const createEmptyTeamForm = (): NewTeamFormState => ({
   name: "",
@@ -164,10 +179,11 @@ const Dashboard = () => {
   const [eventForm, setEventForm] = useState<EventFormState>({
     name: "",
     date: "",
-    time: "",
+    startTime: "",
+    endTime: "",
     location: "",
     notes: "",
-    teamId: null,
+    teamIds: [],
     coachId: null,
     inviteeIds: [],
     sendEmail: true,
@@ -175,13 +191,16 @@ const Dashboard = () => {
   });
   const [eventFormError, setEventFormError] = useState<string | null>(null);
   
+  // Athlete filters for event invitation
+  const [athleteFilterTeam, setAthleteFilterTeam] = useState<number | null>(null);
+  const [athleteFilterAge, setAthleteFilterAge] = useState<string>("");
+  const [athleteFilterGender, setAthleteFilterGender] = useState<string>("");
+  
   // Mutations
   const createEventMutation = useCreateEvent();
   const confirmAttendanceMutation = useConfirmEventAttendance();
   const selectAllAthletesRef = useRef<HTMLInputElement | null>(null);
   const selectAllInviteesRef = useRef<HTMLInputElement | null>(null);
-  const eventTeamId = eventForm.teamId ?? selectedTeamId ?? null;
-  const eventTeamCoachesQuery = useTeamCoaches(eventTeamId);
 
   const eventsOnSelectedDate = useMemo(() => {
     if (!selectedEventDate) {
@@ -301,14 +320,46 @@ const Dashboard = () => {
     selectAllAthletesRef.current.indeterminate = isIndeterminate;
   }, [teamForm.athleteIds, areAllAthletesSelected]);
 
+  // Get all athletes from selected teams
+  // Base list of athletes for event invitation (all athletes available)
   const eventTeamAthletes = useMemo(() => {
-    if (!eventTeamId) {
-      return [];
-    }
-    return displayAthletes.filter((athlete) => athlete.team_id === eventTeamId);
-  }, [displayAthletes, eventTeamId]);
+    return displayAthletes;
+  }, [displayAthletes]);
 
-  const allInviteeIds = useMemo(() => eventTeamAthletes.map((athlete) => athlete.id), [eventTeamAthletes]);
+  // Apply filters to athletes
+  const filteredEventAthletes = useMemo(() => {
+    let filtered = [...eventTeamAthletes];
+    
+    // Filter by team
+    if (athleteFilterTeam) {
+      filtered = filtered.filter(athlete => athlete.team_id === athleteFilterTeam);
+    }
+    
+    // Filter by age category (calculated from birth_date)
+    if (athleteFilterAge) {
+      filtered = filtered.filter(athlete => {
+        if (!athlete.birth_date) return false;
+        const age = calculateAge(athlete.birth_date);
+        
+        // Match age category
+        if (athleteFilterAge === "U14" && age < 14) return true;
+        if (athleteFilterAge === "U16" && age >= 14 && age < 16) return true;
+        if (athleteFilterAge === "U18" && age >= 16 && age < 18) return true;
+        if (athleteFilterAge === "U21" && age >= 18 && age < 21) return true;
+        if (athleteFilterAge === "Senior" && age >= 21) return true;
+        return false;
+      });
+    }
+    
+    // Filter by gender
+    if (athleteFilterGender) {
+      filtered = filtered.filter(athlete => athlete.gender === athleteFilterGender);
+    }
+    
+    return filtered;
+  }, [eventTeamAthletes, athleteFilterTeam, athleteFilterAge, athleteFilterGender]);
+
+  const allInviteeIds = useMemo(() => filteredEventAthletes.map((athlete) => athlete.id), [filteredEventAthletes]);
   const areAllInviteesSelected = useMemo(
     () => allInviteeIds.length > 0 && allInviteeIds.every((id) => eventForm.inviteeIds.includes(id)),
     [allInviteeIds, eventForm.inviteeIds]
@@ -464,7 +515,6 @@ const Dashboard = () => {
   }, [teams, selectedTeamId]);
   const isCoachListLoading = teamCoachesQuery.isLoading && Boolean(selectedTeamId);
   const coachListHasError = teamCoachesQuery.isError;
-  const eventTeamCoaches = eventTeamCoachesQuery.data ?? [];
   const isTeamSelectDisabled = !teamsForSelectedDate.length;
 
   const goToPrevMonth = () => {
@@ -480,7 +530,7 @@ const Dashboard = () => {
     setEventForm((prev) => ({
       ...prev,
       date: targetDate,
-      teamId: prev.teamId ?? selectedTeamId ?? null,
+      teamIds: prev.teamIds.length > 0 ? prev.teamIds : (selectedTeamId ? [selectedTeamId] : []),
     }));
     setEventFormError(null);
     setEventModalOpen(true);
@@ -525,8 +575,17 @@ const Dashboard = () => {
     setEventForm((prev) => ({
       ...prev,
       [field]: value,
-      ...(field === "teamId" ? { inviteeIds: [], coachId: null } : null),
+      ...(field === "teamIds" ? { inviteeIds: [] } : null),
     }));
+  };
+  
+  const handleTeamToggle = (teamId: number) => {
+    setEventForm((prev) => {
+      const nextTeams = prev.teamIds.includes(teamId)
+        ? prev.teamIds.filter((id) => id !== teamId)
+        : [...prev.teamIds, teamId];
+      return { ...prev, teamIds: nextTeams, inviteeIds: [] };
+    });
   };
 
   const handleInviteToggle = (athleteId: number) => {
@@ -552,14 +611,27 @@ const Dashboard = () => {
       return;
     }
 
+    // Use startTime for the backend (backend expects HH:MM format only)
+    // We'll store endTime separately or in notes for now
+    const timeValue = eventForm.startTime || null;
+    
+    // Add end time to notes if provided
+    let notesWithTime = eventForm.notes || "";
+    if (eventForm.startTime && eventForm.endTime) {
+      const timeNote = `Time: ${eventForm.startTime} - ${eventForm.endTime}`;
+      notesWithTime = notesWithTime 
+        ? `${timeNote}\n\n${notesWithTime}` 
+        : timeNote;
+    }
+
     try {
       await createEventMutation.mutateAsync({
         name: eventForm.name.trim(),
         date: eventForm.date,
-        time: eventForm.time || null,
+        time: timeValue,
         location: eventForm.location || null,
-        notes: eventForm.notes || null,
-        team_id: eventForm.teamId ?? selectedTeamId ?? null,
+        notes: notesWithTime || null,
+        team_id: eventForm.teamIds.length === 1 ? eventForm.teamIds[0] : null,
         coach_id: eventForm.coachId,
         invitee_ids: [], // Empty for now - we're inviting athletes, not users
         athlete_ids: eventForm.inviteeIds, // These are athlete IDs
@@ -568,18 +640,19 @@ const Dashboard = () => {
       });
 
       setSelectedEventDate(eventForm.date);
-      if (eventForm.teamId) {
-        setSelectedTeamId(eventForm.teamId);
+      if (eventForm.teamIds.length === 1) {
+        setSelectedTeamId(eventForm.teamIds[0]);
       }
       
       // Reset form
       setEventForm({
         name: "",
         date: "",
-        time: "",
+        startTime: "",
+        endTime: "",
         location: "",
         notes: "",
-        teamId: eventForm.teamId ?? selectedTeamId ?? null,
+        teamIds: [],
         coachId: null,
         inviteeIds: [],
         sendEmail: true,
@@ -587,8 +660,19 @@ const Dashboard = () => {
       });
       setEventFormError(null);
       setEventModalOpen(false);
+      // Reset filters
+      setAthleteFilterTeam(null);
+      setAthleteFilterAge("");
+      setAthleteFilterGender("");
     } catch (error: any) {
-      setEventFormError(error?.response?.data?.detail || "Error creating event");
+      const errorDetail = error?.response?.data?.detail;
+      // Handle validation errors (array) or string errors
+      const errorMessage = Array.isArray(errorDetail)
+        ? errorDetail.map((e: any) => e.msg || JSON.stringify(e)).join(", ")
+        : typeof errorDetail === "string"
+          ? errorDetail
+          : "Error creating event";
+      setEventFormError(errorMessage);
     }
   };
 
@@ -1265,15 +1349,19 @@ const Dashboard = () => {
                   </button>
                 </div>
                 {eventsOnSelectedDate.length ? (
-                  <ul className="mt-2 space-y-1 text-left">
+                  <ul className="mt-2 space-y-1">
                     {eventsOnSelectedDate.map((event) => (
                       <li
                         key={`selected-event-${event.id}`}
-                        className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted"
+                        className="grid grid-cols-[80px_1fr_150px] gap-4 text-xs items-center"
                       >
-                        <span className="font-medium text-container-foreground">{event.name}</span>
-                        <span>
-                          {summaryLabels.teamLabel}:{" "}
+                        <span className="font-medium text-container-foreground text-left">
+                          {event.time || "TBD"}
+                        </span>
+                        <span className="font-medium text-container-foreground text-left">
+                          {event.name}
+                        </span>
+                        <span className="text-muted text-left">
                           {event.team_id
                             ? teamNameById[event.team_id] ?? summaryLabels.teamPlaceholder
                             : summaryLabels.teamPlaceholder}
@@ -2082,42 +2170,36 @@ const Dashboard = () => {
                     required
                   />
                 </label>
+                <label className="block text-xs font-medium text-muted">
+                  {summaryLabels.calendar.dateLabel}
+                  <input
+                    type="date"
+                    value={eventForm.date}
+                    onChange={(e) => handleEventInputChange("date", e.target.value)}
+                    className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                    required
+                  />
+                </label>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="block text-xs font-medium text-muted">
-                    {summaryLabels.calendar.dateLabel}
+                    Start Time
                     <input
-                      type="date"
-                      value={eventForm.date}
-                      onChange={(e) => handleEventInputChange("date", e.target.value)}
+                      type="time"
+                      value={eventForm.startTime}
+                      onChange={(e) => handleEventInputChange("startTime", e.target.value)}
                       className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                      required
                     />
                   </label>
                   <label className="block text-xs font-medium text-muted">
-                    {summaryLabels.calendar.timeLabel}
+                    End Time
                     <input
                       type="time"
-                      value={eventForm.time}
-                      onChange={(e) => handleEventInputChange("time", e.target.value)}
+                      value={eventForm.endTime}
+                      onChange={(e) => handleEventInputChange("endTime", e.target.value)}
                       className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                     />
                   </label>
                 </div>
-                <label className="block text-xs font-medium text-muted">
-                  {summaryLabels.teamLabel}
-                  <select
-                    value={eventForm.teamId ?? ""}
-                    onChange={(e) => handleEventInputChange("teamId", e.target.value ? Number(e.target.value) : null)}
-                    className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                  >
-                    <option value="">{summaryLabels.teamPlaceholder}</option>
-                    {teams.map((team) => (
-                      <option key={`modal-team-${team.id}`} value={team.id}>
-                        {team.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
                 <label className="block text-xs font-medium text-muted">
                   {summaryLabels.calendar.locationLabel}
                   <input
@@ -2140,7 +2222,55 @@ const Dashboard = () => {
 
                 {/* Invite athletes section */}
                 <div className="block text-xs font-medium text-muted">
-                  <p className="mb-2 text-sm font-semibold">Invite Athletes</p>
+                  <p className="mb-3 text-sm font-semibold">Invite Athletes</p>
+                  
+                  {/* Filter Controls */}
+                  <div className="mb-3 grid gap-2 sm:grid-cols-3 rounded-lg border border-black/10 bg-white/70 p-3">
+                    <div>
+                      <label className="block text-xs font-medium text-muted mb-1">Filter by Team</label>
+                      <select
+                        value={athleteFilterTeam ?? ""}
+                        onChange={(e) => setAthleteFilterTeam(e.target.value ? Number(e.target.value) : null)}
+                        className="w-full rounded-md border border-black/10 bg-white px-2 py-1 text-xs shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                      >
+                        <option value="">All Teams</option>
+                        {teams.map((team) => (
+                          <option key={`filter-team-${team.id}`} value={team.id}>
+                            {team.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-muted mb-1">Filter by Age</label>
+                      <select
+                        value={athleteFilterAge}
+                        onChange={(e) => setAthleteFilterAge(e.target.value)}
+                        className="w-full rounded-md border border-black/10 bg-white px-2 py-1 text-xs shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                      >
+                        <option value="">All Ages</option>
+                        <option value="U14">U14</option>
+                        <option value="U16">U16</option>
+                        <option value="U18">U18</option>
+                        <option value="U21">U21</option>
+                        <option value="Senior">Senior</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-muted mb-1">Filter by Gender</label>
+                      <select
+                        value={athleteFilterGender}
+                        onChange={(e) => setAthleteFilterGender(e.target.value)}
+                        className="w-full rounded-md border border-black/10 bg-white px-2 py-1 text-xs shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                      >
+                        <option value="">All Genders</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Select All Checkbox */}
                   <div className="mb-2 flex items-center gap-2 text-xs text-muted">
                     <input
                       ref={selectAllInviteesRef}
@@ -2150,23 +2280,62 @@ const Dashboard = () => {
                       onChange={handleToggleAllInvitees}
                       className="h-4 w-4 rounded border-gray-300 text-action-primary"
                     />
-                    <label htmlFor="select-all-invitees">Select all</label>
+                    <label htmlFor="select-all-invitees">Select all ({filteredEventAthletes.length} athletes)</label>
                   </div>
-                  <div className="max-h-40 overflow-y-auto rounded-lg border border-black/10 bg-white/70 p-1">
-                    {eventTeamAthletes.length ? (
-                      eventTeamAthletes.map((athlete) => (
-                        <label key={`invitee-${athlete.id}`} className="flex items-center gap-2 px-2 py-1 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={eventForm.inviteeIds.includes(athlete.id)}
-                            onChange={() => handleInviteToggle(athlete.id)}
-                            className="h-4 w-4 rounded border-gray-300 text-action-primary"
-                          />
-                          <span className="truncate">{athlete.first_name} {athlete.last_name}</span>
-                        </label>
-                      ))
+
+                  {/* Athletes Table */}
+                  <div className="max-h-48 overflow-y-auto rounded-lg border border-black/10 bg-white">
+                    {filteredEventAthletes.length ? (
+                      <table className="w-full text-xs">
+                        <thead className="sticky top-0 bg-gray-50 border-b border-black/10">
+                          <tr>
+                            <th className="w-8 px-2 py-2 text-left">
+                              <span className="sr-only">Select</span>
+                            </th>
+                            <th className="px-2 py-2 text-left font-semibold text-muted">Name</th>
+                            <th className="px-2 py-2 text-left font-semibold text-muted">Team</th>
+                            <th className="px-2 py-2 text-left font-semibold text-muted">Age</th>
+                            <th className="px-2 py-2 text-left font-semibold text-muted">Gender</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-black/5">
+                          {filteredEventAthletes.map((athlete) => (
+                            <tr 
+                              key={`invitee-${athlete.id}`} 
+                              className="hover:bg-gray-50 cursor-pointer"
+                              onClick={() => handleInviteToggle(athlete.id)}
+                            >
+                              <td className="px-2 py-2 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={eventForm.inviteeIds.includes(athlete.id)}
+                                  onChange={() => handleInviteToggle(athlete.id)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="h-4 w-4 rounded border-gray-300 text-action-primary"
+                                />
+                              </td>
+                              <td className="px-2 py-2 font-medium text-container-foreground">
+                                {athlete.first_name} {athlete.last_name}
+                              </td>
+                              <td className="px-2 py-2 text-muted">
+                                {athlete.team_id && teamNameById[athlete.team_id] ? teamNameById[athlete.team_id] : "—"}
+                              </td>
+                              <td className="px-2 py-2 text-muted">
+                                {athlete.birth_date ? calculateAge(athlete.birth_date) : "—"}
+                              </td>
+                              <td className="px-2 py-2 text-muted">
+                                {athlete.gender === "male" ? "Male" : athlete.gender === "female" ? "Female" : "—"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     ) : (
-                      <p className="px-2 py-1 text-xs text-muted">No athletes in selected team.</p>
+                      <p className="px-3 py-6 text-center text-xs text-muted">
+                        {displayAthletes.length === 0 
+                          ? "No athletes registered yet. Create athletes first to invite them to events." 
+                          : "No athletes found with the selected filters"}
+                      </p>
                     )}
                   </div>
                 </div>

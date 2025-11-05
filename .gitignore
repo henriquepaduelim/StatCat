@@ -48,17 +48,39 @@ testDay.*
 REFACTORING_SUMMARY.md
 IMPORTANT_TASKS_COMPLETED.md
 IMPROVEMENTS_COMPLETED.md
-PERFORMANCE_OPTIMIZATIONS.md
+ALEMBIC_GUIDE.md
+ATHLETE_*.md
+CHECKLIST_*.md
+CLEANUP_*.md
+COMO_*.md
+CORS_*.md
+DEBUG_*.md
+DEPLOY_*.md
+EVENT_*.md
+EVENTS_*.md
+FINAL_*.md
+FRONTEND_*.md
+MY_*.md
+PENDING_*.md
+PERFORMANCE_*.md
+PROXIMOS_*.md
+PWA_*.md
 QUICK_START.md
-test_alembic.sh
+README.md
+RENDER_*.md
+RESTART_*.md
+SHOW_*.md
+TEAM_*.md
+TESTE_*.md
+*_FIX.md
+*_SUMMARY.md
+*_STATUS.md
+*_GUIDE.md
+*_CHECKLIST.md
+*_COMPLETED.md
 
-# CORS documentation (keep local)
-CORS_FIX.md
-RENDER_CORS_CONFIG.md
-
-# PWA documentation (keep local)
-frontend/PWA_README.md
-frontend/PWA_ICONS_GUIDE.md
-frontend/dev-dist/
-frontend/generate-icons.sh
-frontend/public/create-icons.js
+# Backend logs
+backend/*.log
+backend/backend.log
+backend/backend_error.log
+backend/backend_startup.log
