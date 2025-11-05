@@ -1,5 +1,6 @@
 from app.models.assessment_session import AssessmentSession
 from app.models.athlete import Athlete, AthleteDetail, AthleteDocument, AthletePayment
+from app.models.event import Event, EventParticipant, Notification, PushSubscription
 from app.models.group import Group, GroupMembership
 from app.models.session_result import SessionResult
 from app.models.match_stat import MatchStat
@@ -12,6 +13,10 @@ __all__ = [
     "AthleteDetail",
     "AthleteDocument",
     "AthletePayment",
+    "Event",
+    "EventParticipant",
+    "Notification",
+    "PushSubscription",
     "Group",
     "GroupMembership",
     "Team",

@@ -1,0 +1,162 @@
+"""Notification service for coordinating email and push notifications."""
+import logging
+from typing import List, Optional
+from datetime import datetime
+from sqlmodel import Session, select
+
+from app.models.event import Event, EventParticipant, Notification
+from app.models.user import User
+from app.services.email_service import email_service
+
+logger = logging.getLogger(__name__)
+
+
+class NotificationService:
+    """Service for managing event notifications."""
+    
+    async def notify_event_created(
+        self,
+        db: Session,
+        event: Event,
+        invitee_ids: List[int],
+        send_email: bool = True,
+        send_push: bool = False,
+    ) -> None:
+        """Notify invitees about new event."""
+        organizer = db.get(User, event.created_by_id)
+        if not organizer:
+            logger.error(f"Organizer not found for event {event.id}")
+            return
+        
+        for user_id in invitee_ids:
+            user = db.get(User, user_id)
+            if not user:
+                continue
+            
+            # Send email
+            if send_email and user.email:
+                success = await email_service.send_event_invitation(
+                    to_email=user.email,
+                    to_name=user.full_name,
+                    event_name=event.name,
+                    event_date=event.date,
+                    event_time=event.time,
+                    event_location=event.location,
+                    event_notes=event.notes,
+                    organizer_name=organizer.full_name,
+                )
+                
+                # Log notification
+                notification = Notification(
+                    user_id=user_id,
+                    event_id=event.id,
+                    type="event_invite",
+                    channel="email" if not send_push else "both",
+                    title=f"You're invited: {event.name}",
+                    body=f"Event on {event.date}" + (f" at {event.time}" if event.time else ""),
+                    sent=success,
+                    sent_at=datetime.utcnow() if success else None,
+                )
+                db.add(notification)
+        
+        # Mark event as notified
+        event.email_sent = send_email
+        event.push_sent = send_push
+        db.add(event)
+        db.commit()
+        
+        logger.info(f"Sent event invitations for event {event.id} to {len(invitee_ids)} users")
+    
+    async def notify_event_updated(
+        self,
+        db: Session,
+        event: Event,
+        changes: str,
+        send_notification: bool = True,
+    ) -> None:
+        """Notify confirmed participants about event update."""
+        if not send_notification:
+            return
+        
+        # Get confirmed participants
+        stmt = select(EventParticipant).where(
+            EventParticipant.event_id == event.id,
+            EventParticipant.status == "confirmed"
+        )
+        participants = db.exec(stmt).all()
+        
+        for participant in participants:
+            user = db.get(User, participant.user_id)
+            if not user or not user.email:
+                continue
+            
+            success = await email_service.send_event_update(
+                to_email=user.email,
+                to_name=user.full_name,
+                event_name=event.name,
+                event_date=event.date,
+                event_time=event.time,
+                event_location=event.location,
+                changes=changes,
+            )
+            
+            # Log notification
+            notification = Notification(
+                user_id=user.id,
+                event_id=event.id,
+                type="event_update",
+                channel="email",
+                title=f"Event Updated: {event.name}",
+                body=f"Changes: {changes}",
+                sent=success,
+                sent_at=datetime.utcnow() if success else None,
+            )
+            db.add(notification)
+        
+        event.updated_at = datetime.utcnow()
+        db.add(event)
+        db.commit()
+        
+        logger.info(f"Sent event update for event {event.id} to {len(participants)} confirmed participants")
+    
+    async def notify_confirmation_received(
+        self,
+        db: Session,
+        event: Event,
+        participant: EventParticipant,
+        status: str,
+    ) -> None:
+        """Notify organizer that someone confirmed/declined."""
+        organizer = db.get(User, event.created_by_id)
+        participant_user = db.get(User, participant.user_id)
+        
+        if not organizer or not organizer.email or not participant_user:
+            return
+        
+        success = await email_service.send_confirmation_receipt(
+            to_email=organizer.email,
+            to_name=organizer.full_name,
+            participant_name=participant_user.full_name,
+            event_name=event.name,
+            status=status,
+        )
+        
+        # Log notification
+        notification = Notification(
+            user_id=organizer.id,
+            event_id=event.id,
+            type="event_confirmation",
+            channel="email",
+            title=f"{participant_user.full_name} {status}",
+            body=f"For event: {event.name}",
+            sent=success,
+            sent_at=datetime.utcnow() if success else None,
+        )
+        db.add(notification)
+        db.commit()
+        
+        logger.info(f"Notified organizer about {status} from {participant_user.full_name}")
+
+
+# Singleton instance
+notification_service = NotificationService()

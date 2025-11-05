@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPenToSquare, faUsers, faUserTie, faPlus, faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
+import { faPenToSquare, faUsers, faUserTie, faPlus, faChevronLeft, faChevronRight, faCheck, faTimes, faQuestion } from "@fortawesome/free-solid-svg-icons";
 
 import {
   assignCoachToTeam,
@@ -21,18 +21,8 @@ import { usePermissions } from "../hooks/usePermissions";
 import { useTranslation } from "../i18n/useTranslation";
 import type { Athlete } from "../types/athlete";
 import { useAuthStore } from "../stores/useAuthStore";
-
-type DashboardEvent = {
-  id: number;
-  name: string;
-  date: string; // YYYY-MM-DD
-  time: string;
-  location: string;
-  notes: string;
-  teamId: number | null;
-  coachId: number | null;
-  inviteeIds: number[];
-};
+import { useMyEvents, useCreateEvent, useConfirmEventAttendance } from "../hooks/useEvents";
+import type { Event, ParticipantStatus } from "../types/event";
 
 type EventFormState = {
   name: string;
@@ -43,6 +33,8 @@ type EventFormState = {
   teamId: number | null;
   coachId: number | null;
   inviteeIds: number[];
+  sendEmail: boolean;
+  sendPush: boolean;
 };
 
 type NewTeamFormState = {
@@ -63,7 +55,7 @@ const createEmptyTeamForm = (): NewTeamFormState => ({
   athleteIds: [],
 });
 
-// Gera chave de data (YYYY-MM-DD) em horário local, evitando regressão de dia por UTC
+// Generate date key (YYYY-MM-DD) in local time, avoiding day regression due to UTC
 const formatDateKey = (date: Date) => {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -71,7 +63,7 @@ const formatDateKey = (date: Date) => {
   return `${y}-${m}-${d}`;
 };
 
-// Converte string YYYY-MM-DD para Date local (não UTC) para exibição
+// Convert YYYY-MM-DD string to local Date (not UTC) for display
 const readableDate = (dateStr: string) => {
   if (!dateStr) return "";
   const [y, m, d] = dateStr.split("-").map(Number);
@@ -161,7 +153,11 @@ const Dashboard = () => {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1);
   });
-  const [events, setEvents] = useState<DashboardEvent[]>([]);
+  
+  // Fetch events from backend
+  const myEventsQuery = useMyEvents();
+  const events = useMemo(() => myEventsQuery.data ?? [], [myEventsQuery.data]);
+  
   const [selectedEventDate, setSelectedEventDate] = useState<string | null>(null);
   const [eventFormOpen, setEventFormOpen] = useState(false);
   const [isEventModalOpen, setEventModalOpen] = useState(false);
@@ -174,9 +170,14 @@ const Dashboard = () => {
     teamId: null,
     coachId: null,
     inviteeIds: [],
+    sendEmail: true,
+    sendPush: false,
   });
   const [eventFormError, setEventFormError] = useState<string | null>(null);
-  const eventIdRef = useRef(1);
+  
+  // Mutations
+  const createEventMutation = useCreateEvent();
+  const confirmAttendanceMutation = useConfirmEventAttendance();
   const selectAllAthletesRef = useRef<HTMLInputElement | null>(null);
   const selectAllInviteesRef = useRef<HTMLInputElement | null>(null);
   const eventTeamId = eventForm.teamId ?? selectedTeamId ?? null;
@@ -195,8 +196,8 @@ const Dashboard = () => {
     }
     const ids = new Set<number>();
     eventsOnSelectedDate.forEach((event) => {
-      if (event.teamId !== null) {
-        ids.add(event.teamId);
+      if (event.team_id !== null) {
+        ids.add(event.team_id);
       }
     });
     return Array.from(ids);
@@ -207,8 +208,8 @@ const Dashboard = () => {
     }
     const teamsWithEvents = new Set<number>();
     events.forEach((event) => {
-      if (event.teamId !== null) {
-        teamsWithEvents.add(event.teamId);
+      if (event.team_id !== null) {
+        teamsWithEvents.add(event.team_id);
       }
     });
     if (!teamsWithEvents.size) {
@@ -322,7 +323,7 @@ const Dashboard = () => {
   }, [eventForm.inviteeIds, areAllInviteesSelected]);
 
   const eventsByDate = useMemo(() => {
-    const map = new Map<string, DashboardEvent[]>();
+    const map = new Map<string, Event[]>();
     events.forEach((event) => {
       if (!event.date) {
         return;
@@ -337,7 +338,7 @@ const Dashboard = () => {
     return map;
   }, [events]);
 
-  // Datas únicas com eventos (ordenadas), para navegar entre dias com eventos
+  // Unique dates with events (sorted), to navigate between days with events
   const eventDatesSorted = useMemo(() => {
     const set = new Set<string>();
     events.forEach((e) => { if (e.date) set.add(e.date); });
@@ -362,7 +363,7 @@ const Dashboard = () => {
   };
 
   const upcomingEvents = useMemo(() => {
-    const toLocalTs = (dateStr: string, timeStr?: string) => {
+    const toLocalTs = (dateStr: string, timeStr?: string | null) => {
       const [y, m, d] = (dateStr || "").split("-").map(Number);
       const [hh = 0, mm = 0] = (timeStr || "00:00").split(":" ).map(Number);
       return new Date((y || 0), (m || 1) - 1, (d || 1), hh, mm).getTime();
@@ -390,10 +391,66 @@ const Dashboard = () => {
     return { cells, year, month };
   }, [calendarCursor]);
 
-  const availabilityBadgeClass = (status: Athlete["status"]) =>
-    status === "active"
-      ? "flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700"
-      : "flex h-6 w-6 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700";
+  // Get athlete participation status for events on selected date
+  const getAthleteEventStatus = (athleteId: number): ParticipantStatus | null => {
+    if (!selectedEventDate || !eventsOnSelectedDate.length) {
+      return null;
+    }
+    
+    // Find if athlete is participant in any event on selected date
+    for (const event of eventsOnSelectedDate) {
+      const participant = event.participants?.find(p => p.athlete_id === athleteId);
+      if (participant) {
+        return participant.status;
+      }
+    }
+    
+    return null;
+  };
+
+  const getAvailabilityDisplay = (athlete: Athlete) => {
+    const eventStatus = getAthleteEventStatus(athlete.id);
+    
+    if (eventStatus) {
+      // Athlete has event invitation/confirmation
+      switch (eventStatus) {
+        case 'confirmed':
+          return {
+            className: "flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700",
+            icon: faCheck,
+            label: "Confirmed"
+          };
+        case 'declined':
+          return {
+            className: "flex h-6 w-6 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700",
+            icon: faTimes,
+            label: "Declined"
+          };
+        case 'maybe':
+          return {
+            className: "flex h-6 w-6 items-center justify-center rounded-full border border-amber-200 bg-amber-50 text-amber-700",
+            icon: faQuestion,
+            label: "Maybe"
+          };
+        case 'invited':
+        default:
+          return {
+            className: "flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 bg-gray-50 text-gray-600",
+            icon: faQuestion,
+            label: "Pending"
+          };
+      }
+    }
+    
+    // No event - show athlete status
+    return {
+      className: athlete.status === "active"
+        ? "flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700"
+        : "flex h-6 w-6 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700",
+      icon: athlete.status === "active" ? faCheck : faTimes,
+      label: athlete.status === "active" ? "Active" : "Inactive"
+    };
+  };
 
   const isRosterLoading = athletesQuery.isLoading || teamsQuery.isLoading;
   const rosterHasError = athletesQuery.isError || teamsQuery.isError;
@@ -437,15 +494,15 @@ const Dashboard = () => {
     const dateKey = formatDateKey(target);
     const dayEvents = eventsByDate.get(dateKey) ?? [];
 
-    // Sempre abre o modal do dia clicado, mostrando eventos (esquerda) e criação (direita)
+    // Always open the modal for the clicked day, showing events (left) and creation form (right)
     setEventFormOpen(false);
     setEventFormError(null);
     setSelectedEventDate(dateKey);
 
-    // Se houver times com eventos no dia, seleciona um válido por padrão
+    // If there are teams with events on this day, select a valid one by default
     const teamsWithEventsOnDate = new Set<number>();
     dayEvents.forEach((ev) => {
-      if (ev.teamId !== null) teamsWithEventsOnDate.add(ev.teamId);
+      if (ev.team_id !== null) teamsWithEventsOnDate.add(ev.team_id);
     });
     if (teamsWithEventsOnDate.size > 0) {
       const firstTeamId = Array.from(teamsWithEventsOnDate)[0];
@@ -481,41 +538,62 @@ const Dashboard = () => {
     }));
   };
 
-  const handleEventSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleEventSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!eventForm.name.trim() || !eventForm.date) {
       setEventFormError(summaryLabels.calendar.errorIncomplete);
       return;
     }
-    const newEvent: DashboardEvent = {
-      id: eventIdRef.current,
-      name: eventForm.name.trim(),
-      date: eventForm.date,
-      time: eventForm.time,
-      location: eventForm.location,
-      notes: eventForm.notes,
-      teamId: eventForm.teamId ?? selectedTeamId ?? null,
-      coachId: eventForm.coachId,
-      inviteeIds: eventForm.inviteeIds,
-    };
-    eventIdRef.current += 1;
-    setEvents((prev) => [...prev, newEvent]);
-    setSelectedEventDate(newEvent.date);
-    if (newEvent.teamId) {
-      setSelectedTeamId(newEvent.teamId);
+
+    try {
+      await createEventMutation.mutateAsync({
+        name: eventForm.name.trim(),
+        date: eventForm.date,
+        time: eventForm.time || null,
+        location: eventForm.location || null,
+        notes: eventForm.notes || null,
+        team_id: eventForm.teamId ?? selectedTeamId ?? null,
+        coach_id: eventForm.coachId,
+        invitee_ids: [], // Empty for now - we're inviting athletes, not users
+        athlete_ids: eventForm.inviteeIds, // These are athlete IDs
+        send_email: eventForm.sendEmail,
+        send_push: eventForm.sendPush,
+      });
+
+      setSelectedEventDate(eventForm.date);
+      if (eventForm.teamId) {
+        setSelectedTeamId(eventForm.teamId);
+      }
+      
+      // Reset form
+      setEventForm({
+        name: "",
+        date: "",
+        time: "",
+        location: "",
+        notes: "",
+        teamId: eventForm.teamId ?? selectedTeamId ?? null,
+        coachId: null,
+        inviteeIds: [],
+        sendEmail: true,
+        sendPush: false,
+      });
+      setEventFormError(null);
+      setEventModalOpen(false);
+    } catch (error: any) {
+      setEventFormError(error?.response?.data?.detail || "Error creating event");
     }
-    setEventForm({
-      name: "",
-      date: "",
-      time: "",
-      location: "",
-      notes: "",
-      teamId: eventForm.teamId ?? selectedTeamId ?? null,
-      coachId: null,
-      inviteeIds: [],
-    });
-    setEventFormError(null);
-    setEventModalOpen(false);
+  };
+
+  const handleConfirmAttendance = async (eventId: number, status: 'confirmed' | 'declined' | 'maybe') => {
+    try {
+      await confirmAttendanceMutation.mutateAsync({
+        eventId,
+        payload: { status },
+      });
+    } catch (error) {
+      console.error("Error confirming attendance:", error);
+    }
   };
 
   const handleEventCancel = () => {
@@ -1121,8 +1199,8 @@ const Dashboard = () => {
                       setSelectedEventDate(event.date);
                       setEventFormOpen(false);
                       setEventFormError(null);
-                      if (event.teamId) {
-                        setSelectedTeamId(event.teamId);
+                      if (event.team_id) {
+                        setSelectedTeamId(event.team_id);
                       }
                       setCalendarCursor((prev) => {
                         const eventDate = new Date(event.date);
@@ -1189,8 +1267,8 @@ const Dashboard = () => {
                         <span className="font-medium text-container-foreground">{event.name}</span>
                         <span>
                           {summaryLabels.teamLabel}:{" "}
-                          {event.teamId
-                            ? teamNameById[event.teamId] ?? summaryLabels.teamPlaceholder
+                          {event.team_id
+                            ? teamNameById[event.team_id] ?? summaryLabels.teamPlaceholder
                             : summaryLabels.teamPlaceholder}
                         </span>
                       </li>
@@ -1234,33 +1312,13 @@ const Dashboard = () => {
               <div className="rounded-lg border border-black/10 bg-white/70 px-3 py-2 text-xs text-muted">
                 {summaryLabels.noEvents}
               </div>
-            ) : (                <>
-                <div className="flex flex-wrap items-center gap-2">
-                  <label className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm font-medium text-muted">
-                    <span className="text-xs sm:text-sm">{summaryLabels.teamLabel}</span>
-                    <select
-                      value={selectedTeamId ?? ""}
-                      onChange={(event) => {
-                        const value = event.target.value;
-                        setSelectedTeamId(value ? Number(value) : null);
-                      }}
-                      disabled={isTeamSelectDisabled}
-                      className="w-full sm:w-auto min-w-[160px] rounded-md border border-action-primary/30 bg-container/80 px-3 py-2 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      <option value="">{summaryLabels.teamPlaceholder}</option>
-                      {teamsForSelectedDate.map((team) => (
-                        <option key={team.id} value={team.id}>
-                          {team.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                </div>
+            ) : (
+              <>
                 <div className="overflow-hidden rounded-lg border border-white/10 bg-white/70">
-                  <div className="hidden sm:grid grid-cols-[max-content_minmax(0,1fr)_auto] gap-x-2 border-b border-black/5 bg-container/20 px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-wide text-muted">
+                  <div className="hidden sm:grid grid-cols-[minmax(140px,180px)_1fr_100px] gap-x-4 border-b border-black/5 bg-container/20 px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-wide text-muted">
                     <span className="text-left">{summaryLabels.columns.name}</span>
-                    <span className="text-center">{summaryLabels.columns.contact}</span>
-                    <span className="text-right">{summaryLabels.columns.availability}</span>
+                    <span className="text-left">{summaryLabels.columns.contact}</span>
+                    <span className="text-center">{summaryLabels.columns.availability}</span>
                   </div>
                   {isRosterLoading ? (
                     <div className="px-4 py-6 text-sm text-muted">{summaryLabels.loading}</div>
@@ -1272,32 +1330,31 @@ const Dashboard = () => {
                     <div className="px-4 py-6 text-sm text-muted">{summaryLabels.empty}</div>
                   ) : (
                     <ul className="divide-y divide-black/5">
-                      {rosterAthletes.map((athlete) => (
-                        <li
-                          key={athlete.id}
-                          className="grid grid-cols-1 sm:grid-cols-[max-content_minmax(0,1fr)_auto] items-start sm:items-center gap-2 sm:gap-x-2 px-3 sm:px-1 py-3 sm:py-1 text-sm"
-                        >
-                          <div className="w-full sm:w-max">
-                            <p className="font-semibold text-container-foreground">
-                              {athlete.first_name} {athlete.last_name}
-                            </p>
-                            <p className="text-xs text-muted">
-                              {athlete.primary_position ?? summaryLabels.positionFallback}
-                            </p>
-                          </div>
-                          <div className="min-w-0 justify-self-start">
-                            <span className="block truncate text-left text-sm text-container-foreground">
-                              {athlete.email ?? summaryLabels.contactFallback}
-                            </span>
-                          </div>
-                          <div className="flex justify-between sm:justify-end items-center">
-                            <span className="text-xs text-muted sm:hidden">Status:</span>
-                            <span className={`${availabilityBadgeClass(athlete.status)} justify-self-end`}>
-                              {athlete.status === "active" ? "✔" : "✖"}
-                            </span>
-                          </div>
-                        </li>
-                      ))}
+                      {rosterAthletes.map((athlete) => {
+                        const availability = getAvailabilityDisplay(athlete);
+                        return (
+                          <li
+                            key={athlete.id}
+                            className="grid grid-cols-[1fr_auto] sm:grid-cols-[minmax(140px,180px)_1fr_100px] items-center gap-x-3 sm:gap-x-2 px-3 sm:px-4 py-2 text-sm"
+                          >
+                            <div className="w-full sm:w-auto sm:max-w-[180px]">
+                              <p className="font-semibold text-container-foreground text-left whitespace-nowrap overflow-hidden text-ellipsis">
+                                {athlete.first_name} {athlete.last_name}
+                              </p>
+                            </div>
+                            <div className="hidden sm:block min-w-0 text-left">
+                              <span className="block truncate text-left text-sm text-container-foreground">
+                                {athlete.email ?? summaryLabels.contactFallback}
+                              </span>
+                            </div>
+                            <div className="flex justify-center items-center w-auto sm:w-[100px]">
+                              <span className={availability.className} title={availability.label}>
+                                <FontAwesomeIcon icon={availability.icon} className="h-3 w-3" />
+                              </span>
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </div>
@@ -1884,7 +1941,7 @@ const Dashboard = () => {
           </div>
 
           <div className="mt-4 grid gap-6 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-            {/* Coluna esquerda: Eventos do dia */}
+            {/* Left column: Events of the day */}
             <div className="rounded-xl border border-black/10 bg-white/80 p-4">
               <h4 className="text-base font-semibold text-container-foreground">
                 {summaryLabels.calendar.title}
@@ -1892,29 +1949,116 @@ const Dashboard = () => {
               <p className="text-xs text-muted">{summaryLabels.calendar.subtitle}</p>
               {eventsOnSelectedDate.length ? (
                 <ul className="mt-3 space-y-3 text-sm">
-                  {eventsOnSelectedDate.map((ev) => (
-                    <li key={`modal-day-event-${ev.id}`} className="rounded-lg border border-black/10 bg-white/70 px-3 py-2 shadow-sm">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <p className="font-semibold text-container-foreground">{ev.name}</p>
-                          <p className="text-xs text-muted">
-                            {ev.time || summaryLabels.calendar.timeTbd}
-                            {ev.location ? ` • ${ev.location}` : ""}
-                          </p>
-                          <p className="text-[0.7rem] text-muted">
-                            {summaryLabels.teamLabel}: {ev.teamId ? (teamNameById[ev.teamId] ?? summaryLabels.teamPlaceholder) : summaryLabels.teamPlaceholder}
-                          </p>
+                  {eventsOnSelectedDate.map((ev) => {
+                    const currentUser = useAuthStore.getState().user;
+                    const myParticipant = ev.participants?.find(p => p.user_id === currentUser?.id);
+                    const confirmedCount = ev.participants?.filter(p => p.status === 'confirmed').length || 0;
+                    const declinedCount = ev.participants?.filter(p => p.status === 'declined').length || 0;
+                    const pendingCount = ev.participants?.filter(p => p.status === 'invited').length || 0;
+                    
+                    return (
+                      <li key={`modal-day-event-${ev.id}`} className="rounded-lg border border-black/10 bg-white/70 px-3 py-2 shadow-sm">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="font-semibold text-container-foreground">{ev.name}</p>
+                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                                ev.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
+                                ev.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {ev.status === 'scheduled' ? 'Scheduled' : 
+                                 ev.status === 'completed' ? 'Completed' : 'Cancelled'}
+                              </span>
+                            </div>
+                            <p className="text-xs text-muted mt-1">
+                              {ev.time || summaryLabels.calendar.timeTbd}
+                              {ev.location ? ` • ${ev.location}` : ""}
+                            </p>
+                            <p className="text-[0.7rem] text-muted">
+                              {summaryLabels.teamLabel}: {ev.team_id ? (teamNameById[ev.team_id] ?? summaryLabels.teamPlaceholder) : summaryLabels.teamPlaceholder}
+                            </p>
+                            
+                            {/* Participant stats */}
+                            {ev.participants && ev.participants.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                                {confirmedCount > 0 && (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-700">
+                                    <FontAwesomeIcon icon={faCheck} className="h-3 w-3" />
+                                    {confirmedCount}
+                                  </span>
+                                )}
+                                {declinedCount > 0 && (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-rose-700">
+                                    <FontAwesomeIcon icon={faTimes} className="h-3 w-3" />
+                                    {declinedCount}
+                                  </span>
+                                )}
+                                {pendingCount > 0 && (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-amber-700">
+                                    <FontAwesomeIcon icon={faQuestion} className="h-3 w-3" />
+                                    {pendingCount}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Confirmation buttons for invited users */}
+                            {myParticipant && myParticipant.status === 'invited' && (
+                              <div className="mt-2 flex gap-2">
+                                <button
+                                  onClick={() => handleConfirmAttendance(ev.id, 'confirmed')}
+                                  disabled={confirmAttendanceMutation.isPending}
+                                  className="flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                                >
+                                  <FontAwesomeIcon icon={faCheck} className="h-3 w-3" />
+                                  Confirm
+                                </button>
+                                <button
+                                  onClick={() => handleConfirmAttendance(ev.id, 'maybe')}
+                                  disabled={confirmAttendanceMutation.isPending}
+                                  className="flex items-center gap-1 rounded-md bg-amber-600 px-2 py-1 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50"
+                                >
+                                  <FontAwesomeIcon icon={faQuestion} className="h-3 w-3" />
+                                  Maybe
+                                </button>
+                                <button
+                                  onClick={() => handleConfirmAttendance(ev.id, 'declined')}
+                                  disabled={confirmAttendanceMutation.isPending}
+                                  className="flex items-center gap-1 rounded-md bg-rose-600 px-2 py-1 text-xs font-medium text-white hover:bg-rose-700 disabled:opacity-50"
+                                >
+                                  <FontAwesomeIcon icon={faTimes} className="h-3 w-3" />
+                                  Decline
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Show current status if already responded */}
+                            {myParticipant && myParticipant.status !== 'invited' && (
+                              <div className="mt-2">
+                                <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${
+                                  myParticipant.status === 'confirmed' ? 'bg-emerald-100 text-emerald-700' :
+                                  myParticipant.status === 'declined' ? 'bg-rose-100 text-rose-700' :
+                                  'bg-amber-100 text-amber-700'
+                                }`}>
+                                  {myParticipant.status === 'confirmed' ? 'You confirmed attendance' :
+                                   myParticipant.status === 'declined' ? 'You declined' :
+                                   'You marked as maybe'}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </li>
-                  ))}
+                      </li>
+                    );
+                  })}
                 </ul>
               ) : (
                 <p className="mt-3 text-xs text-muted">{summaryLabels.calendar.upcomingEmpty}</p>
               )}
             </div>
 
-            {/* Coluna direita: Criar novo evento */}
+            {/* Right column: Create new event */}
             <div className="rounded-xl border border-action-primary/25 bg-container-gradient p-4">
               <h4 className="text-base font-semibold text-container-foreground">
                 {summaryLabels.calendar.createButton}
@@ -1986,15 +2130,72 @@ const Dashboard = () => {
                     rows={3}
                   />
                 </label>
+
+                {/* Invite athletes section */}
+                <div className="block text-xs font-medium text-muted">
+                  <p className="mb-2 text-sm font-semibold">Invite Athletes</p>
+                  <div className="mb-2 flex items-center gap-2 text-xs text-muted">
+                    <input
+                      ref={selectAllInviteesRef}
+                      id="select-all-invitees"
+                      type="checkbox"
+                      checked={areAllInviteesSelected}
+                      onChange={handleToggleAllInvitees}
+                      className="h-4 w-4 rounded border-gray-300 text-action-primary"
+                    />
+                    <label htmlFor="select-all-invitees">Select all</label>
+                  </div>
+                  <div className="max-h-40 overflow-y-auto rounded-lg border border-black/10 bg-white/70 p-1">
+                    {eventTeamAthletes.length ? (
+                      eventTeamAthletes.map((athlete) => (
+                        <label key={`invitee-${athlete.id}`} className="flex items-center gap-2 px-2 py-1 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={eventForm.inviteeIds.includes(athlete.id)}
+                            onChange={() => handleInviteToggle(athlete.id)}
+                            className="h-4 w-4 rounded border-gray-300 text-action-primary"
+                          />
+                          <span className="truncate">{athlete.first_name} {athlete.last_name}</span>
+                        </label>
+                      ))
+                    ) : (
+                      <p className="px-2 py-1 text-xs text-muted">No athletes in selected team.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Notification toggles */}
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-container-foreground">Notifications</p>
+                  <label className="flex items-center gap-2 text-xs text-muted">
+                    <input
+                      type="checkbox"
+                      checked={eventForm.sendEmail}
+                      onChange={(e) => setEventForm((prev) => ({ ...prev, sendEmail: e.target.checked }))}
+                      className="rounded border-gray-300 text-action-primary"
+                    />
+                    <span>Send email notifications</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-xs text-muted">
+                    <input
+                      type="checkbox"
+                      checked={eventForm.sendPush}
+                      onChange={(e) => setEventForm((prev) => ({ ...prev, sendPush: e.target.checked }))}
+                      className="rounded border-gray-300 text-action-primary"
+                    />
+                    <span>Send push notifications</span>
+                  </label>
+                </div>
                 {eventFormError ? (
                   <p className="text-xs text-red-500">{eventFormError}</p>
                 ) : null}
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    className="w-full sm:w-auto rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground hover:bg-action-primary/90"
+                    disabled={createEventMutation.isPending}
+                    className="w-full sm:w-auto rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground hover:bg-action-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {summaryLabels.calendar.createButton}
+                    {createEventMutation.isPending ? "Criando..." : summaryLabels.calendar.createButton}
                   </button>
                 </div>
               </form>

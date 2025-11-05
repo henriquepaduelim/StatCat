@@ -19,6 +19,7 @@ from app.models.test_definition import TestDefinition
 from app.models.assessment_session import AssessmentSession
 from app.models.session_result import SessionResult
 from app.models.match_stat import MatchStat
+from app.models.event import Event, EventParticipant, Notification, PushSubscription
 from app.core.config import settings
 from sqlmodel import SQLModel
 

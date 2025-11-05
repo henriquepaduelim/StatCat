@@ -5,6 +5,7 @@ from app.api.v1.endpoints import (
     athletes,
     auth,
     dashboard,
+    events,
     groups,
     teams,
     # dev,
@@ -17,6 +18,7 @@ api_router = APIRouter()
 api_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics"])
 api_router.include_router(athletes.router, prefix="/athletes", tags=["Athletes"])
 api_router.include_router(auth.router, prefix="/auth", tags=["Auth"])
+api_router.include_router(events.router, prefix="/events", tags=["Events"])
 api_router.include_router(groups.router, prefix="/groups", tags=["Groups"])
 api_router.include_router(teams.router, prefix="/teams", tags=["Teams"])
 api_router.include_router(tests.router, prefix="/tests", tags=["Tests"])

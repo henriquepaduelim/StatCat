@@ -7,6 +7,7 @@ from sqlmodel import Session, select
 from app.api.deps import ensure_roles, get_current_active_user
 from app.core.config import settings
 from app.core.crypto import encrypt_text
+from app.core.security import get_password_hash
 from app.db.session import get_session
 from app.models.athlete import (
     Athlete,
@@ -376,11 +377,18 @@ def get_pending_athletes(
     try:
         ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
         
+        # Include both PENDING and INCOMPLETE athletes that need approval
         pending_users = session.exec(
-            select(User).where(User.athlete_status == UserAthleteApprovalStatus.PENDING)
+            select(User).where(
+                User.athlete_id.isnot(None),  # Must have an athlete profile
+                User.athlete_status.in_([
+                    UserAthleteApprovalStatus.PENDING,
+                    UserAthleteApprovalStatus.INCOMPLETE
+                ])
+            )
         ).all()
         
-        print(f"Found {len(pending_users)} pending users")
+        print(f"Found {len(pending_users)} pending/incomplete users (need approval)")
         
         result = []
         for user in pending_users:
@@ -410,10 +418,14 @@ def get_pending_athletes_count(
     try:
         ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
         
-        # Use a more robust query
+        # Include both PENDING and INCOMPLETE athletes that need approval
         pending_users = session.exec(
             select(User).where(
-                User.athlete_status == UserAthleteApprovalStatus.PENDING,
+                User.athlete_id.isnot(None),  # Must have an athlete profile
+                User.athlete_status.in_([
+                    UserAthleteApprovalStatus.PENDING,
+                    UserAthleteApprovalStatus.INCOMPLETE
+                ]),
                 User.role == UserRole.ATHLETE
             )
         ).all()
@@ -594,12 +606,48 @@ def approve_athlete(
     # Find the user associated with this athlete
     user = session.exec(select(User).where(User.athlete_id == athlete_id)).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found for this athlete")
+        # Athletes created by admin may not have user accounts yet
+        # Create a placeholder user account for them
+        
+        # Generate email if not present
+        email = athlete.email if athlete.email else f"athlete{athlete_id}@temp.local"
+        
+        # Check if email already exists
+        existing_user = session.exec(select(User).where(User.email == email)).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Email {email} is already registered. Please update athlete's email first."
+            )
+        
+        user = User(
+            email=email,
+            hashed_password=get_password_hash(f"temp{athlete_id}"),  # Temporary password
+            full_name=f"{athlete.first_name} {athlete.last_name}",
+            role=UserRole.ATHLETE,
+            athlete_id=athlete_id,
+            athlete_status=UserAthleteApprovalStatus.INCOMPLETE,
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        print(f"INFO: Created user account for athlete {athlete_id} with email {email}")
     
-    if user.athlete_status != UserAthleteApprovalStatus.PENDING:
+    # Log current status for debugging
+    print(f"DEBUG approve_athlete: athlete_id={athlete_id}, user_id={user.id}, current_status={user.athlete_status}")
+    
+    # If already approved, return success (idempotent operation)
+    if user.athlete_status == UserAthleteApprovalStatus.APPROVED:
+        print(f"INFO: Athlete {athlete_id} is already approved, returning success")
+        return user
+    
+    # Allow approval for PENDING or INCOMPLETE status
+    # INCOMPLETE: Athletes created by admin that haven't gone through registration
+    # PENDING: Athletes who completed registration and submitted for approval
+    if user.athlete_status not in [UserAthleteApprovalStatus.PENDING, UserAthleteApprovalStatus.INCOMPLETE]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="Athlete must be in pending status to be approved"
+            detail=f"Cannot approve athlete. Current status: {user.athlete_status}. Only PENDING or INCOMPLETE athletes can be approved."
         )
     
     user.athlete_status = UserAthleteApprovalStatus.APPROVED
@@ -608,6 +656,7 @@ def approve_athlete(
     session.commit()
     session.refresh(user)
     
+    print(f"INFO: Athlete {athlete_id} approved successfully")
     return user
 
 
@@ -619,6 +668,7 @@ def reject_athlete(
     current_user: User = Depends(get_current_active_user),
 ) -> User:
     """Reject a pending athlete with a reason and update their status."""
+    print(f"DEBUG reject_athlete called: athlete_id={athlete_id}, reason='{reason}'")
     ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
     
     athlete = session.get(Athlete, athlete_id)
@@ -628,12 +678,52 @@ def reject_athlete(
     # Find the user associated with this athlete
     user = session.exec(select(User).where(User.athlete_id == athlete_id)).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found for this athlete")
+        # Athletes created by admin may not have user accounts yet
+        # Create a placeholder user account for them
+        
+        # Generate email if not present
+        email = athlete.email if athlete.email else f"athlete{athlete_id}@temp.local"
+        print(f"DEBUG: No user for athlete {athlete_id}, will create with email: {email}")
+        
+        # Check if email already exists
+        existing_user = session.exec(select(User).where(User.email == email)).first()
+        if existing_user:
+            print(f"ERROR reject: Email conflict - {email} already registered to user_id={existing_user.id} (athlete_id={existing_user.athlete_id})")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Email {email} is already registered to user {existing_user.id}. This athlete cannot be rejected without first updating their email."
+            )
+        
+        user = User(
+            email=email,
+            hashed_password=get_password_hash(f"temp{athlete_id}"),  # Temporary password
+            full_name=f"{athlete.first_name} {athlete.last_name}",
+            role=UserRole.ATHLETE,
+            athlete_id=athlete_id,
+            athlete_status=UserAthleteApprovalStatus.INCOMPLETE,
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        print(f"INFO: Created user account for athlete {athlete_id} with email {email}")
     
-    if user.athlete_status != UserAthleteApprovalStatus.PENDING:
+    # Log current status for debugging
+    print(f"DEBUG reject_athlete: athlete_id={athlete_id}, user_id={user.id}, current_status={user.athlete_status}")
+    
+    # If already rejected, allow re-rejection (just update reason)
+    if user.athlete_status == UserAthleteApprovalStatus.REJECTED:
+        print(f"INFO: Athlete {athlete_id} is already rejected, updating reason")
+        user.rejection_reason = reason.strip()
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user
+    
+    # Allow rejection for PENDING or INCOMPLETE status
+    if user.athlete_status not in [UserAthleteApprovalStatus.PENDING, UserAthleteApprovalStatus.INCOMPLETE]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="Athlete must be in pending status to be rejected"
+            detail=f"Cannot reject athlete. Current status: {user.athlete_status}. Only PENDING or INCOMPLETE athletes can be rejected."
         )
     
     if not reason or not reason.strip():
