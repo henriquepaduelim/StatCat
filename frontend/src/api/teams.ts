@@ -30,6 +30,11 @@ export const createTeam = async (payload: TeamPayload) => {
   return data;
 };
 
+export const updateTeam = async (teamId: number, payload: TeamPayload) => {
+  const { data } = await api.put<Team>(`/teams/${teamId}`, payload);
+  return data;
+};
+
 export interface TeamCoach {
   id: number;
   email: string;

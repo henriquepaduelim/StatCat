@@ -117,6 +117,42 @@ def create_team(
     )
 
 
+@router.put("/{team_id}", response_model=TeamRead)
+def update_team(
+    team_id: int,
+    payload: TeamCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> TeamRead:
+    ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF})
+    team = _get_team_or_404(session, team_id)
+
+    team.name = payload.name
+    team.age_category = payload.age_category
+    team.description = payload.description
+    if payload.coach_name is not None:
+        team.coach_name = payload.coach_name
+
+    session.add(team)
+    session.commit()
+    session.refresh(team)
+
+    # Get athlete count
+    roster_counts = _load_roster_counts(session, [team.id])
+
+    return TeamRead(
+        id=team.id,
+        name=team.name,
+        age_category=team.age_category,
+        description=team.description,
+        coach_name=team.coach_name,
+        created_by_id=team.created_by_id,
+        created_at=team.created_at,
+        updated_at=team.updated_at,
+        athlete_count=roster_counts.get(team.id, 0),
+    )
+
+
 @router.get("/coaches", response_model=list[UserRead])
 def list_all_coaches(
     session: Session = Depends(get_session),

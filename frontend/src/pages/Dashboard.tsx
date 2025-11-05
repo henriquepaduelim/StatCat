@@ -7,6 +7,7 @@ import {
   assignCoachToTeam,
   createCoach,
   createTeam,
+  updateTeam,
   deleteTeamCoach,
   listAllCoaches,
   type TeamCoach,
@@ -41,9 +42,16 @@ type EventFormState = {
 type NewTeamFormState = {
   name: string;
   ageCategory: string;
+  gender: "boys" | "girls" | "coed";
   description: string;
   coachIds: number[];
   athleteIds: number[];
+};
+
+type AthleteFilter = {
+  age: string;
+  gender: string;
+  teamStatus: "all" | "assigned" | "unassigned";
 };
 
 const weekdayInitials = ["S", "M", "T", "W", "T", "F", "S"];
@@ -65,6 +73,7 @@ const calculateAge = (birthDate: string): number => {
 const createEmptyTeamForm = (): NewTeamFormState => ({
   name: "",
   ageCategory: "U14",
+  gender: "coed",
   description: "",
   coachIds: [],
   athleteIds: [],
@@ -112,8 +121,14 @@ const Dashboard = () => {
   const [speedGenderFilter, setSpeedGenderFilter] = useState<string>("boys");
   const [isCoachFormOpen, setCoachFormOpen] = useState(false);
   const [isTeamFormOpen, setTeamFormOpen] = useState(false);
-  const [editingTeam, setEditingTeam] = useState<{ id: number; name: string; ageCategory: string; description: string } | null>(null);
+  const [editingTeam, setEditingTeam] = useState<{ id: number; name: string; ageCategory: string; gender: string; description: string } | null>(null);
   const [editingCoach, setEditingCoach] = useState<{ id: number; fullName: string; email: string; phone: string } | null>(null);
+  const [athleteFilter, setAthleteFilter] = useState<AthleteFilter>({
+    age: "",
+    gender: "",
+    teamStatus: "all"
+  });
+  const [draggedAthleteId, setDraggedAthleteId] = useState<number | null>(null);
   const createEmptyCoachForm = (assignToTeam: boolean) => ({
     fullName: "",
     email: "",
@@ -199,7 +214,6 @@ const Dashboard = () => {
   // Mutations
   const createEventMutation = useCreateEvent();
   const confirmAttendanceMutation = useConfirmEventAttendance();
-  const selectAllAthletesRef = useRef<HTMLInputElement | null>(null);
   const selectAllInviteesRef = useRef<HTMLInputElement | null>(null);
 
   const eventsOnSelectedDate = useMemo(() => {
@@ -295,30 +309,14 @@ const Dashboard = () => {
   }, [selectedTeamId]);
 
   const rosterAthletes = useMemo(() => {
-    if (!selectedTeamId) {
-      return [];
-    }
-    return displayAthletes.filter((athlete) => athlete.team_id === selectedTeamId);
-  }, [displayAthletes, selectedTeamId]);
-
-  const allAthleteIds = useMemo(() => {
+    // Show all athletes, grouped by team
     if (!Array.isArray(displayAthletes)) {
       return [];
     }
-    return displayAthletes.map((athlete) => athlete.id)
+    return displayAthletes;
   }, [displayAthletes]);
-  const areAllAthletesSelected = useMemo(
-    () => allAthleteIds.length > 0 && allAthleteIds.every((id) => teamForm.athleteIds.includes(id)),
-    [allAthleteIds, teamForm.athleteIds]
-  );
 
-  useEffect(() => {
-    if (!selectAllAthletesRef.current) {
-      return;
-    }
-    const isIndeterminate = teamForm.athleteIds.length > 0 && !areAllAthletesSelected;
-    selectAllAthletesRef.current.indeterminate = isIndeterminate;
-  }, [teamForm.athleteIds, areAllAthletesSelected]);
+
 
   // Get all athletes from selected teams
   // Base list of athletes for event invitation (all athletes available)
@@ -707,22 +705,45 @@ const Dashboard = () => {
   };
 
   const createTeamMutation = useMutation({
-    mutationFn: async (form: NewTeamFormState) => {
-      const team = await createTeam({
+    mutationFn: async (form: NewTeamFormState & { teamId?: number }) => {
+      const teamPayload = {
         name: form.name.trim(),
         age_category: form.ageCategory,
         description: form.description.trim() ? form.description.trim() : null,
-      });
+      };
 
-      if (form.coachIds.length) {
+      // Update existing team or create new one
+      const team = form.teamId 
+        ? await updateTeam(form.teamId, teamPayload)
+        : await createTeam(teamPayload);
+
+      // Get all athletes currently in this team
+      const currentTeamAthletes = displayAthletes.filter(a => a.team_id === team.id);
+      const currentAthleteIds = new Set(currentTeamAthletes.map(a => a.id));
+      const newAthleteIds = new Set(form.athleteIds);
+
+      // Remove athletes that are no longer in the team
+      const athletesToRemove = currentTeamAthletes.filter(a => !newAthleteIds.has(a.id));
+      if (athletesToRemove.length) {
         await Promise.all(
-          form.coachIds.map((coachId) => assignCoachToTeam(team.id, coachId))
+          athletesToRemove.map((athlete) => updateAthlete(athlete.id, { team_id: null }))
         );
       }
 
-      if (form.athleteIds.length) {
+      // Add new athletes to the team
+      const athletesToAdd = form.athleteIds.filter(id => !currentAthleteIds.has(id));
+      if (athletesToAdd.length) {
         await Promise.all(
-          form.athleteIds.map((athleteId) => updateAthlete(athleteId, { team_id: team.id }))
+          athletesToAdd.map((athleteId) => updateAthlete(athleteId, { team_id: team.id }))
+        );
+      }
+
+      // Handle coach assignments (simplified for now - may need more sophisticated logic)
+      if (form.coachIds.length) {
+        await Promise.all(
+          form.coachIds.map((coachId) => assignCoachToTeam(team.id, coachId).catch(() => {
+            // Ignore if already assigned
+          }))
         );
       }
 
@@ -738,7 +759,7 @@ const Dashboard = () => {
       closeTeamFormModal();
     },
     onError: (error) => {
-      const message = error instanceof Error ? error.message : "Unable to create team.";
+      const message = error instanceof Error ? error.message : editingTeam ? "Unable to update team." : "Unable to create team.";
       setTeamFormError(message);
     },
   });
@@ -889,33 +910,7 @@ const Dashboard = () => {
     setTeamFormError(null);
   };
 
-  const handleTeamCoachToggle = (coachId: number) => {
-    setTeamForm((prev) => {
-      const nextCoachIds = prev.coachIds.includes(coachId)
-        ? prev.coachIds.filter((id) => id !== coachId)
-        : [...prev.coachIds, coachId];
-      return { ...prev, coachIds: nextCoachIds };
-    });
-    setTeamFormError(null);
-  };
 
-  const handleTeamAthleteToggle = (athleteId: number) => {
-    setTeamForm((prev) => {
-      const nextAthletes = prev.athleteIds.includes(athleteId)
-        ? prev.athleteIds.filter((id) => id !== athleteId)
-        : [...prev.athleteIds, athleteId];
-      return { ...prev, athleteIds: nextAthletes };
-    });
-    setTeamFormError(null);
-  };
-
-  const handleToggleAllAthletes = () => {
-    setTeamForm((prev) => ({
-      ...prev,
-      athleteIds: areAllAthletesSelected ? [] : allAthleteIds,
-    }));
-    setTeamFormError(null);
-  };
 
   const handleTeamFormSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -930,8 +925,10 @@ const Dashboard = () => {
     }
     setTeamFormError(null);
     createTeamMutation.mutate({
+      teamId: editingTeam?.id,
       name: trimmedName,
       ageCategory: teamForm.ageCategory,
+      gender: teamForm.gender,
       description: teamForm.description.trim(),
       coachIds: teamForm.coachIds,
       athleteIds: teamForm.athleteIds,
@@ -1155,11 +1152,13 @@ const Dashboard = () => {
                               id: team.id,
                               name: team.name,
                               ageCategory: team.age_category,
+                              gender: "coed", // Default since backend doesn't have this field yet
                               description: team.description || ""
                             });
                             setTeamForm({
                               name: team.name,
                               ageCategory: team.age_category,
+                              gender: "coed", // Default since backend doesn't have this field yet
                               description: team.description || "",
                               coachIds: [], // TODO: Load existing coach assignments
                               athleteIds: displayAthletes.filter(athlete => athlete.team_id === team.id).map(athlete => athlete.id)
@@ -1419,37 +1418,54 @@ const Dashboard = () => {
                     <div className="px-4 py-6 text-sm text-muted">{summaryLabels.loading}</div>
                   ) : rosterHasError ? (
                     <div className="px-4 py-6 text-sm text-red-500">{summaryLabels.error}</div>
-                  ) : !selectedTeamId ? (
-                    <div className="px-4 py-6 text-sm text-muted">{summaryLabels.emptyTeam}</div>
                   ) : !rosterAthletes.length ? (
                     <div className="px-4 py-6 text-sm text-muted">{summaryLabels.empty}</div>
                   ) : (
                     <ul className="divide-y divide-black/5">
-                      {rosterAthletes.map((athlete) => {
-                        const availability = getAvailabilityDisplay(athlete);
-                        return (
-                          <li
-                            key={athlete.id}
-                            className="grid grid-cols-[1fr_auto] sm:grid-cols-[minmax(140px,180px)_1fr_100px] items-center gap-x-3 sm:gap-x-2 px-3 sm:px-4 py-2 text-sm"
-                          >
-                            <div className="w-full sm:w-auto sm:max-w-[180px]">
-                              <p className="font-semibold text-container-foreground text-left whitespace-nowrap overflow-hidden text-ellipsis">
-                                {athlete.first_name} {athlete.last_name}
-                              </p>
-                            </div>
-                            <div className="hidden sm:block min-w-0 text-left">
-                              <span className="block truncate text-left text-sm text-container-foreground">
-                                {athlete.email ?? summaryLabels.contactFallback}
-                              </span>
-                            </div>
-                            <div className="flex justify-center items-center w-auto sm:w-[100px]">
-                              <span className={availability.className} title={availability.label}>
-                                <FontAwesomeIcon icon={availability.icon} className="h-3 w-3" />
-                              </span>
-                            </div>
-                          </li>
-                        );
-                      })}
+                      {/* Group athletes by team */}
+                      {teams
+                        .filter((team) => rosterAthletes.some((athlete) => athlete.team_id === team.id))
+                        .map((team) => {
+                          const teamAthletes = rosterAthletes.filter((athlete) => athlete.team_id === team.id);
+                          return (
+                            <li key={`team-group-${team.id}`} className="border-b border-black/5 last:border-b-0">
+                              {/* Team header */}
+                              <div className="bg-gray-50/80 px-3 sm:px-4 py-2 border-b border-black/5">
+                                <p className="text-xs font-semibold text-muted uppercase tracking-wide">
+                                  {team.name} ({teamAthletes.length})
+                                </p>
+                              </div>
+                              {/* Athletes in this team */}
+                              <ul className="divide-y divide-black/5">
+                                {teamAthletes.map((athlete) => {
+                                  const availability = getAvailabilityDisplay(athlete);
+                                  return (
+                                    <li
+                                      key={athlete.id}
+                                      className="grid grid-cols-[1fr_auto] sm:grid-cols-[minmax(140px,180px)_1fr_100px] items-center gap-x-3 sm:gap-x-2 px-3 sm:px-4 py-2 text-sm"
+                                    >
+                                      <div className="w-full sm:w-auto sm:max-w-[180px]">
+                                        <p className="font-semibold text-container-foreground text-left whitespace-nowrap overflow-hidden text-ellipsis">
+                                          {athlete.first_name} {athlete.last_name}
+                                        </p>
+                                      </div>
+                                      <div className="hidden sm:block min-w-0 text-left">
+                                        <span className="block truncate text-left text-sm text-container-foreground">
+                                          {athlete.email ?? summaryLabels.contactFallback}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-center items-center w-auto sm:w-[100px]">
+                                        <span className={availability.className} title={availability.label}>
+                                          <FontAwesomeIcon icon={availability.icon} className="h-3 w-3" />
+                                        </span>
+                                      </div>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </li>
+                          );
+                        })}
                     </ul>
                   )}
                 </div>
@@ -1607,8 +1623,9 @@ const Dashboard = () => {
             </div>
           </div>
           <form onSubmit={handleTeamFormSubmit} className="space-y-5">
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="text-xs font-medium text-muted md:col-span-2">
+            {/* Basic Info Section */}
+            <div className="grid gap-4 md:grid-cols-3">
+              <label className="text-xs font-medium text-muted md:col-span-3">
                 {createTeamLabels.nameLabel}
                 <input
                   type="text"
@@ -1635,7 +1652,20 @@ const Dashboard = () => {
                   ))}
                 </select>
               </label>
-              <label className="text-xs font-medium text-muted md:col-span-2">
+              <label className="text-xs font-medium text-muted">
+                Gender Category
+                <select
+                  value={teamForm.gender}
+                  onChange={(event) => handleTeamFormFieldChange("gender", event.target.value as "boys" | "girls" | "coed")}
+                  disabled={createTeamMutation.isPending}
+                  className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
+                >
+                  <option value="boys">Boys</option>
+                  <option value="girls">Girls</option>
+                  <option value="coed">Coed</option>
+                </select>
+              </label>
+              <label className="text-xs font-medium text-muted md:col-span-3">
                 {createTeamLabels.descriptionLabel}
                 <textarea
                   value={teamForm.description}
@@ -1647,124 +1677,261 @@ const Dashboard = () => {
               </label>
             </div>
 
-            <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2 items-stretch">
-              <div className="space-y-2">
-                <p className="text-sm font-semibold text-container-foreground">
-                  {createTeamLabels.coachesSection}
-                </p>
-                <p className="text-xs text-muted">{createTeamLabels.coachesHelper}</p>
-                <div className="mt-1 max-h-40 sm:max-h-60 overflow-y-auto rounded-lg border border-black/10 bg-white/70">
-                  {allCoachesQuery.isLoading ? (
-                    <p className="px-3 py-2 text-xs text-muted">{createTeamLabels.coachesLoading}</p>
-                  ) : allCoachesQuery.isError ? (
-                    <p className="px-3 py-2 text-xs text-red-500">{createTeamLabels.coachesError}</p>
-                  ) : !availableCoaches.length ? (
-                    <p className="px-3 py-2 text-xs text-muted">{createTeamLabels.noCoaches}</p>
-                  ) : (
-                    <div className="text-sm text-container-foreground">
-                      <div className="grid w-full min-w-full border border-black/10">
-                        {availableCoaches.map((coach) => {
-                          const checkboxId = `team-coach-${coach.id}`;
-                          return (
-                            <div
-                              key={checkboxId}
-                              className="grid grid-cols-[40px_1fr] items-stretch border-b border-black/10 last:border-b-0"
-                            >
-                              <div className="flex items-center justify-center border-r border-black/10 px-2 py-1">
-                                <input
-                                  id={checkboxId}
-                                  type="checkbox"
-                                  checked={teamForm.coachIds.includes(coach.id)}
-                                  onChange={() => handleTeamCoachToggle(coach.id)}
-                                  disabled={createTeamMutation.isPending}
-                                  aria-label={`Select ${coach.full_name}`}
-                                  className="h-4 w-4 rounded border-gray-300 text-action-primary focus:ring-action-primary"
-                                />
-                              </div>
-                              <label
-                                htmlFor={checkboxId}
-                                className="flex flex-col justify-center gap-0.5 px-3 py-1 leading-tight"
-                              >
-                                <span className="font-medium">{coach.full_name}</span>
-                                <span className="text-xs text-muted">{coach.email}</span>
-                              </label>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
+            {/* Coaches Selection */}
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-container-foreground">
+                Assign Coaches
+              </p>
+              <p className="text-xs text-muted">Select up to 2 coaches for this team</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="text-xs font-medium text-muted">
+                  Head Coach
+                  <select
+                    value={teamForm.coachIds[0] ?? ""}
+                    onChange={(e) => {
+                      const value = e.target.value ? Number(e.target.value) : null;
+                      const newCoachIds = [...teamForm.coachIds];
+                      if (value) {
+                        newCoachIds[0] = value;
+                        if (newCoachIds.length > 1 && newCoachIds[0] === newCoachIds[1]) {
+                          newCoachIds[1] = 0;
+                        }
+                      } else {
+                        newCoachIds.splice(0, 1);
+                      }
+                      setTeamForm((prev) => ({ ...prev, coachIds: newCoachIds.filter(id => id > 0) }));
+                    }}
+                    disabled={createTeamMutation.isPending}
+                    className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
+                  >
+                    <option value="">Select a coach</option>
+                    {availableCoaches.map((coach) => (
+                      <option key={`head-coach-${coach.id}`} value={coach.id}>
+                        {coach.full_name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-xs font-medium text-muted">
+                  Assistant Coach
+                  <select
+                    value={teamForm.coachIds[1] ?? ""}
+                    onChange={(e) => {
+                      const value = e.target.value ? Number(e.target.value) : null;
+                      const newCoachIds = [...teamForm.coachIds];
+                      if (value && newCoachIds[0] && value !== newCoachIds[0]) {
+                        newCoachIds[1] = value;
+                      } else if (!value && newCoachIds.length > 1) {
+                        newCoachIds.splice(1, 1);
+                      }
+                      setTeamForm((prev) => ({ ...prev, coachIds: newCoachIds.filter(id => id > 0) }));
+                    }}
+                    disabled={createTeamMutation.isPending || !teamForm.coachIds[0]}
+                    className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
+                  >
+                    <option value="">Select an assistant coach</option>
+                    {availableCoaches
+                      .filter(coach => coach.id !== teamForm.coachIds[0])
+                      .map((coach) => (
+                        <option key={`assistant-coach-${coach.id}`} value={coach.id}>
+                          {coach.full_name}
+                        </option>
+                      ))}
+                  </select>
+                </label>
               </div>
+            </div>
+
+            {/* Athletes Section with Drag and Drop */}
+            <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2 items-start">
+              {/* Team Roster - Athletes in this team */}
               <div className="space-y-2">
                 <p className="text-sm font-semibold text-container-foreground">
-                  {createTeamLabels.athletesSection}
+                  Team Roster
                 </p>
-                <p className="text-xs text-muted">{createTeamLabels.athletesHelper}</p>
-                <div className="mt-1 max-h-40 sm:max-h-60 overflow-y-auto rounded-lg border border-black/10 bg-white/70">
-                  {!displayAthletes.length ? (
-                    <p className="px-3 py-2 text-xs text-muted">{createTeamLabels.noAthletes}</p>
+                <p className="text-xs text-muted">Athletes currently on this team</p>
+                <div 
+                  className="min-h-[300px] max-h-[400px] overflow-y-auto rounded-lg border-2 border-dashed border-action-primary/30 bg-blue-50/30 p-2"
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.add('border-action-primary', 'bg-blue-100/50');
+                  }}
+                  onDragLeave={(e) => {
+                    e.currentTarget.classList.remove('border-action-primary', 'bg-blue-100/50');
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.classList.remove('border-action-primary', 'bg-blue-100/50');
+                    if (draggedAthleteId && !teamForm.athleteIds.includes(draggedAthleteId)) {
+                      setTeamForm((prev) => ({
+                        ...prev,
+                        athleteIds: [...prev.athleteIds, draggedAthleteId]
+                      }));
+                    }
+                    setDraggedAthleteId(null);
+                  }}
+                >
+                  {teamForm.athleteIds.length === 0 ? (
+                    <div className="flex items-center justify-center h-32 text-xs text-muted">
+                      Drag athletes here to add them to the team
+                    </div>
                   ) : (
-                    <div className="text-sm text-container-foreground">
-                      <div className="grid w-full min-w-full border border-black/10">
-                        <div className="grid grid-cols-[40px_1fr] items-center border-b border-black/10 bg-container/20 px-2 py-1 text-[0.7rem] font-semibold uppercase tracking-wide text-muted">
-                          <div className="flex items-center justify-center">
-                            <input
-                              ref={selectAllAthletesRef}
-                              type="checkbox"
-                              checked={areAllAthletesSelected}
-                              onChange={handleToggleAllAthletes}
-                              disabled={createTeamMutation.isPending}
-                              aria-label={createTeamLabels.athletesHeaderSelect}
-                              className="h-4 w-4 rounded border-gray-300 text-action-primary focus:ring-action-primary"
-                            />
+                    <div className="space-y-1">
+                      {teamForm.athleteIds.map((athleteId) => {
+                        const athlete = displayAthletes.find(a => a.id === athleteId);
+                        if (!athlete) return null;
+                        return (
+                          <div
+                            key={`roster-athlete-${athlete.id}`}
+                            draggable
+                            onDragStart={() => setDraggedAthleteId(athlete.id)}
+                            className="flex items-center justify-between gap-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm cursor-move hover:bg-gray-50 transition"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-container-foreground truncate">
+                                {athlete.first_name} {athlete.last_name}
+                              </p>                      <p className="text-xs text-muted truncate">
+                        {athlete.birth_date ? `Age: ${calculateAge(athlete.birth_date)}` : ""}
+                        {athlete.gender ? ` • ${athlete.gender === "male" ? "Boys" : "Girls"}` : ""}
+                      </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setTeamForm((prev) => ({
+                                  ...prev,
+                                  athleteIds: prev.athleteIds.filter(id => id !== athlete.id)
+                                }));
+                              }}
+                              className="text-red-500 hover:text-red-700 px-2 py-1 text-xs"
+                            >
+                              Remove
+                            </button>
                           </div>
-                          <span className="px-1">{createTeamLabels.athletesHeaderAthlete}</span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-muted">
+                  Total: {teamForm.athleteIds.length} {teamForm.athleteIds.length === 1 ? 'athlete' : 'athletes'}
+                </p>
+              </div>
+
+              {/* Available Athletes - Pool of athletes */}
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-container-foreground">
+                  Available Athletes
+                </p>
+                <p className="text-xs text-muted">Drag athletes to add them to the roster</p>
+                
+                {/* Filters */}
+                <div className="grid gap-2 grid-cols-3 rounded-lg border border-black/10 bg-white/90 p-2">
+                  <select
+                    value={athleteFilter.age}
+                    onChange={(e) => setAthleteFilter(prev => ({ ...prev, age: e.target.value }))}
+                    className="w-full rounded-md border border-black/10 bg-white px-2 py-1 text-xs shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  >
+                    <option value="">All Ages</option>
+                    <option value="U14">U14</option>
+                    <option value="U16">U16</option>
+                    <option value="U18">U18</option>
+                    <option value="U21">U21</option>
+                    <option value="Senior">Senior</option>
+                  </select>
+                  <select
+                    value={athleteFilter.gender}
+                    onChange={(e) => setAthleteFilter(prev => ({ ...prev, gender: e.target.value }))}
+                    className="w-full rounded-md border border-black/10 bg-white px-2 py-1 text-xs shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  >
+                    <option value="">All Genders</option>
+                    <option value="male">Boys</option>
+                    <option value="female">Girls</option>
+                  </select>
+                  <select
+                    value={athleteFilter.teamStatus}
+                    onChange={(e) => setAthleteFilter(prev => ({ ...prev, teamStatus: e.target.value as "all" | "assigned" | "unassigned" }))}
+                    className="w-full rounded-md border border-black/10 bg-white px-2 py-1 text-xs shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="unassigned">Unassigned</option>
+                    <option value="assigned">Assigned</option>
+                  </select>
+                </div>
+
+                {/* Available Athletes List */}
+                <div className="min-h-[300px] max-h-[400px] overflow-y-auto rounded-lg border border-black/10 bg-white/70 p-2">
+                  {(() => {
+                    const availableAthletes = displayAthletes
+                      .filter(athlete => !teamForm.athleteIds.includes(athlete.id))
+                      .filter(athlete => {
+                        if (athleteFilter.gender && athlete.gender !== athleteFilter.gender) return false;
+                        if (athleteFilter.teamStatus === "assigned" && !athlete.team_id) return false;
+                        if (athleteFilter.teamStatus === "unassigned" && athlete.team_id) return false;
+                        if (athleteFilter.age) {
+                          if (!athlete.birth_date) return false;
+                          const age = calculateAge(athlete.birth_date);
+                          const ageLimit = parseInt(athleteFilter.age.substring(1));
+                          if (age >= ageLimit) return false;
+                        }
+                        return true;
+                      });
+
+                    if (availableAthletes.length === 0) {
+                      return (
+                        <div className="flex items-center justify-center h-32 text-xs text-muted">
+                          No athletes available with selected filters
                         </div>
-                        {displayAthletes.map((athlete) => {
-                          const assignedTeamName =
-                            athlete.team_id && teamNameById[athlete.team_id]
-                              ? teamNameById[athlete.team_id]
-                              : null;
-                          const checkboxId = `team-athlete-${athlete.id}`;
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-1">
+                        {availableAthletes.map((athlete) => {
+                          const assignedTeamName = athlete.team_id && teamNameById[athlete.team_id] 
+                            ? teamNameById[athlete.team_id] 
+                            : null;
                           return (
                             <div
-                              key={checkboxId}
-                              className="grid grid-cols-[40px_1fr] items-stretch border-b border-black/10 last:border-b-0"
+                              key={`available-athlete-${athlete.id}`}
+                              draggable
+                              onDragStart={() => setDraggedAthleteId(athlete.id)}
+                              className="flex items-center justify-between gap-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm cursor-move hover:bg-blue-50 transition"
                             >
-                              <div className="flex items-center justify-center border-r border-black/10 px-2 py-1">
-                                <input
-                                  id={checkboxId}
-                                  type="checkbox"
-                                  checked={teamForm.athleteIds.includes(athlete.id)}
-                                  onChange={() => handleTeamAthleteToggle(athlete.id)}
-                                  disabled={createTeamMutation.isPending}
-                                  aria-label={`Select ${athlete.first_name} ${athlete.last_name}`}
-                                  className="h-4 w-4 rounded border-gray-300 text-action-primary focus:ring-action-primary"
-                                />
-                              </div>
-                              <label
-                                htmlFor={checkboxId}
-                                className="flex flex-col justify-center gap-0.5 px-3 py-1 leading-tight"
-                              >
-                                <span>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-container-foreground truncate">
                                   {athlete.first_name} {athlete.last_name}
-                                </span>
-                                {athlete.team_id ? (
-                                  <span className="text-xs text-muted">
-                                    {assignedTeamName
-                                      ? `(Assigned • ${assignedTeamName})`
-                                      : "(Assigned)"}
-                                  </span>
-                                ) : null}
-                              </label>
+                                </p>
+                                <p className="text-xs text-muted truncate">
+                                  {athlete.birth_date ? `Age: ${calculateAge(athlete.birth_date)}` : ""}
+                                  {athlete.gender ? ` • ${athlete.gender === "male" ? "Boys" : "Girls"}` : ""}
+                                  {assignedTeamName ? ` • ${assignedTeamName}` : " • Unassigned"}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!teamForm.athleteIds.includes(athlete.id)) {
+                                    setTeamForm((prev) => ({
+                                      ...prev,
+                                      athleteIds: [...prev.athleteIds, athlete.id]
+                                    }));
+                                  }
+                                }}
+                                className="flex h-6 w-6 items-center justify-center rounded-full bg-action-primary/10 text-action-primary hover:bg-action-primary/20 transition"
+                              >
+                                <FontAwesomeIcon icon={faPlus} className="text-xs" />
+                              </button>
                             </div>
                           );
                         })}
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
+                <p className="text-xs text-muted">
+                  {displayAthletes.filter(athlete => !teamForm.athleteIds.includes(athlete.id)).length} athletes available
+                </p>
               </div>
             </div>
 
@@ -1776,7 +1943,7 @@ const Dashboard = () => {
                 disabled={createTeamMutation.isPending}
                 className="w-full sm:w-auto rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground disabled:cursor-not-allowed disabled:opacity-70"
               >
-                {createTeamLabels.submitLabel}
+                {editingTeam ? "Save" : createTeamLabels.submitLabel}
               </button>
             </div>
           </form>
@@ -1989,7 +2156,7 @@ const Dashboard = () => {
                     disabled={createCoachMutation.isPending}
                     className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground disabled:cursor-not-allowed disabled:opacity-70"
                   >
-                    {coachDirectoryLabels.createSubmit}
+                    {editingCoach ? "Save" : coachDirectoryLabels.createSubmit}
                   </button>
                 </div>
               </form>

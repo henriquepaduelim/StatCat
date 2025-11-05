@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Script to convert SVG icons to PNG
+# This is a placeholder - you'll need to generate actual PNG files
+
+echo "📱 PWA Icon Generation"
+echo "====================="
+echo ""
+echo "⚠️  IMPORTANTE: Os ícones SVG foram criados como placeholders."
+echo ""
+echo "Para gerar os ícones PNG reais, você pode:"
+echo ""
+echo "1. Usar uma ferramenta online:"
+echo "   - https://realfavicongenerator.net/"
+echo "   - https://www.pwabuilder.com/imageGenerator"
+echo ""
+echo "2. Usar ImageMagick (se instalado):"
+echo "   convert pwa-192x192.svg -resize 192x192 pwa-192x192.png"
+echo "   convert pwa-512x512.svg -resize 512x512 pwa-512x512.png"
+echo ""
+echo "3. Usar um editor de imagens (Figma, Photoshop, etc.)"
+echo ""
+echo "📋 Requisitos dos ícones:"
+echo "   - 192x192px (ícone pequeno)"
+echo "   - 512x512px (ícone grande)"
+echo "   - Formato PNG"
+echo "   - Fundo sólido (sem transparência para melhor compatibilidade)"
+echo ""
+echo "💡 Dica: Use o logo/marca da sua aplicação"
+echo ""
