@@ -80,3 +80,13 @@ export const assignCoachToTeam = async (teamId: number, coachId: number) => {
   const { data } = await api.post<TeamCoach>(`/teams/${teamId}/coaches/${coachId}/assign`);
   return data;
 };
+
+export const updateCoach = async (coachId: number, payload: TeamCoachPayload) => {
+  const { data } = await api.put<TeamCoach>(`/teams/coaches/${coachId}`, payload);
+  return data;
+};
+
+export const getCoachTeams = async (coachId: number) => {
+  const { data } = await api.get<Team[]>(`/teams/coaches/${coachId}/teams`);
+  return data;
+};

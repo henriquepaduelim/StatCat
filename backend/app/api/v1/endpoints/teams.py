@@ -265,6 +265,80 @@ def assign_existing_coach(
     return coach
 
 
+@router.put("/coaches/{coach_id}", response_model=UserRead)
+def update_coach(
+    coach_id: int,
+    payload: TeamCoachCreate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> UserRead:
+    """Update coach information including password."""
+    ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF})
+    
+    coach = session.get(User, coach_id)
+    if not coach or coach.role != UserRole.COACH:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Coach not found")
+    
+    # Update fields
+    coach.full_name = payload.full_name
+    coach.email = payload.email
+    if payload.phone:
+        coach.phone = payload.phone
+    
+    # Update password if provided
+    if payload.password:
+        coach.hashed_password = get_password_hash(payload.password)
+    
+    session.add(coach)
+    session.commit()
+    session.refresh(coach)
+    return coach
+
+
+@router.get("/coaches/{coach_id}/teams", response_model=list[TeamRead])
+def get_coach_teams(
+    coach_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> list[TeamRead]:
+    """Get all teams assigned to a specific coach."""
+    ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF})
+    
+    coach = session.get(User, coach_id)
+    if not coach or coach.role != UserRole.COACH:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Coach not found")
+    
+    # Get all team IDs for this coach
+    team_links = session.exec(
+        select(CoachTeamLink).where(CoachTeamLink.user_id == coach_id)
+    ).all()
+    
+    if not team_links:
+        return []
+    
+    team_ids = [link.team_id for link in team_links]
+    teams = list(session.exec(
+        select(Team).where(Team.id.in_(tuple(team_ids))).order_by(Team.name)
+    ).all())
+    
+    roster_counts = _load_roster_counts(session, team_ids)
+    
+    return [
+        TeamRead(
+            id=team.id,
+            name=team.name,
+            age_category=team.age_category,
+            description=team.description,
+            coach_name=team.coach_name,
+            created_by_id=team.created_by_id,
+            created_at=team.created_at,
+            updated_at=team.updated_at,
+            athlete_count=roster_counts.get(team.id, 0),
+        )
+        for team in teams
+    ]
+
+
 @router.delete(
     "/{team_id}/coaches/{coach_id}",
     status_code=status.HTTP_204_NO_CONTENT,

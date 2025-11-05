@@ -8,10 +8,13 @@ import {
   createCoach,
   createTeam,
   updateTeam,
+  updateCoach,
+  getCoachTeams,
   deleteTeamCoach,
   listAllCoaches,
   listTeamCoaches,
   type TeamCoach,
+  type Team,
 } from "../api/teams";
 import { updateAthlete } from "../api/athletes";
 import { useAthletes } from "../hooks/useAthletes";
@@ -124,6 +127,7 @@ const Dashboard = () => {
   const [isTeamFormOpen, setTeamFormOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<{ id: number; name: string; ageCategory: string; gender: string; description: string } | null>(null);
   const [editingCoach, setEditingCoach] = useState<{ id: number; fullName: string; email: string; phone: string } | null>(null);
+  const [coachTeams, setCoachTeams] = useState<Team[]>([]);
   const [athleteFilter, setAthleteFilter] = useState<AthleteFilter>({
     age: "",
     gender: "",
@@ -703,6 +707,7 @@ const Dashboard = () => {
     setCoachFormError(null);
     setCoachFormSuccess(null);
     setEditingCoach(null);
+    setCoachTeams([]);
   };
 
   const createTeamMutation = useMutation({
@@ -802,6 +807,7 @@ const Dashboard = () => {
         ? coachDirectoryLabels.assignSuccess
         : coachDirectoryLabels.createSuccess;
       setCoachFormSuccess(successMessage);
+      closeCoachFormModal();
     },
     onError: (error) => {
       const message =
@@ -809,6 +815,31 @@ const Dashboard = () => {
           ? error.message
           : coachDirectoryLabels.createError;
       setCoachFormSuccess(null);
+      setCoachFormError(message);
+    },
+  });
+
+  const updateCoachMutation = useMutation<
+    TeamCoach,
+    Error,
+    CoachFormSubmit & { coachId: number }
+  >({
+    mutationFn: async (form) => {
+      return await updateCoach(form.coachId, {
+        full_name: form.fullName,
+        email: form.email,
+        phone: form.phone || undefined,
+        password: form.password,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["all-team-coaches"] });
+      queryClient.invalidateQueries({ queryKey: ["team-coaches"] });
+      setCoachFormSuccess("Coach updated successfully.");
+      closeCoachFormModal();
+    },
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : "Unable to update coach.";
       setCoachFormError(message);
     },
   });
@@ -857,30 +888,56 @@ const Dashboard = () => {
     },
   });
 
+  const generatePassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+    let password = '';
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    updateCoachForm("password", password);
+  };
+
   const handleCoachSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmedName = coachForm.fullName.trim();
     const trimmedEmail = coachForm.email.trim();
     const trimmedPhone = coachForm.phone.trim();
     const trimmedPassword = coachForm.password.trim();
-    if (!trimmedName || !trimmedEmail || !trimmedPassword) {
-      setCoachFormError(coachDirectoryLabels.createError);
+    
+    if (!trimmedName || !trimmedEmail) {
+      setCoachFormError("Name and email are required.");
       return;
     }
-    if (coachForm.assignToTeam && !selectedTeamId) {
-      setCoachFormError(coachDirectoryLabels.assignDisabled);
+    
+    // Password is required for new coaches, optional for editing
+    if (!editingCoach && !trimmedPassword) {
+      setCoachFormError("Password is required for new coaches.");
       return;
     }
+    
     setCoachFormError(null);
     setCoachFormSuccess(null);
-    createCoachMutation.mutate({
-      ...coachForm,
-      fullName: trimmedName,
-      email: trimmedEmail,
-      phone: trimmedPhone,
-      password: trimmedPassword,
-      teamId: coachForm.assignToTeam ? selectedTeamId ?? null : null,
-    });
+    
+    if (editingCoach) {
+      updateCoachMutation.mutate({
+        coachId: editingCoach.id,
+        fullName: trimmedName,
+        email: trimmedEmail,
+        phone: trimmedPhone,
+        password: trimmedPassword,
+        assignToTeam: false,
+        teamId: null,
+      });
+    } else {
+      createCoachMutation.mutate({
+        fullName: trimmedName,
+        email: trimmedEmail,
+        phone: trimmedPhone,
+        password: trimmedPassword,
+        assignToTeam: false,
+        teamId: null,
+      });
+    }
   };
 
   const handleCoachRemove = (coachId: number) => {
@@ -1149,6 +1206,10 @@ const Dashboard = () => {
                         <button
                           type="button"
                           onClick={async () => {
+                            // Load coaches for this team
+                            const teamCoachesData = await listTeamCoaches(team.id);
+                            const coachIds = teamCoachesData.map((coach: TeamCoach) => coach.id);
+                            
                             setEditingTeam({
                               id: team.id,
                               name: team.name,
@@ -1156,22 +1217,12 @@ const Dashboard = () => {
                               gender: "coed", // Default since backend doesn't have this field yet
                               description: team.description || ""
                             });
-                            
-                            // Load existing coaches for this team
-                            let existingCoachIds: number[] = [];
-                            try {
-                              const coaches = await listTeamCoaches(team.id);
-                              existingCoachIds = coaches.map(coach => coach.id);
-                            } catch (error) {
-                              console.error("Error loading team coaches:", error);
-                            }
-                            
                             setTeamForm({
                               name: team.name,
                               ageCategory: team.age_category,
                               gender: "coed", // Default since backend doesn't have this field yet
                               description: team.description || "",
-                              coachIds: existingCoachIds,
+                              coachIds: coachIds,
                               athleteIds: displayAthletes.filter(athlete => athlete.team_id === team.id).map(athlete => athlete.id)
                             });
                             setTeamFormError(null);
@@ -1560,7 +1611,11 @@ const Dashboard = () => {
                         
                         <button
                           type="button"
-                          onClick={() => {
+                          onClick={async () => {
+                            // Load teams for this coach
+                            const teams = await getCoachTeams(coach.id);
+                            setCoachTeams(teams);
+                            
                             setEditingCoach({
                               id: coach.id,
                               fullName: coach.full_name,
@@ -1968,41 +2023,37 @@ const Dashboard = () => {
         role="presentation"
       >
         <div
-          className="relative w-full max-w-lg sm:max-w-5xl space-y-5 rounded-2xl bg-white p-4 sm:p-6 md:px-10 shadow-2xl"
+          className="relative w-full max-w-lg space-y-5 rounded-2xl bg-white p-4 sm:p-6 md:px-10 shadow-2xl max-h-[90vh] overflow-y-auto"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div className="flex items-start justify-between gap-3">
             <div className="space-y-1">
-              <button
-                type="button"
-                onClick={closeCoachFormModal}
-                className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/70 text-muted shadow-sm transition hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
-                aria-label="Close"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  className="h-4 w-4"
-                >
-                  <path d="M5 5l10 10M15 5L5 15" strokeLinecap="round" />
-                </svg>
-              </button>
               <h3 className="text-lg font-semibold text-container-foreground">
-                {editingCoach ? `Edit ${editingCoach.fullName}` : coachDirectoryLabels.title}
+                {editingCoach ? `Edit ${editingCoach.fullName}` : "Add New Coach"}
               </h3>
-              <p className="text-sm text-muted">{coachDirectoryLabels.helper}</p>
-              {selectedTeamName ? (
-                <p className="text-xs text-muted">
-                  {coachDirectoryLabels.selectedTeamLabel}: {selectedTeamName}
-                </p>
-              ) : (
-                <p className="text-xs text-muted">{coachDirectoryLabels.assignDisabled}</p>
-              )}
+              <p className="text-sm text-muted">
+                {editingCoach ? "Update coach information and manage team assignments" : "Create a new coach account"}
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={closeCoachFormModal}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/70 text-muted shadow-sm transition hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
+              aria-label="Close"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                className="h-4 w-4"
+              >
+                <path d="M5 5l10 10M15 5L5 15" strokeLinecap="round" />
+              </svg>
+            </button>
           </div>
+          
           {coachFormError ? (
             <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600">
               {coachFormError}
@@ -2013,166 +2064,103 @@ const Dashboard = () => {
               {coachFormSuccess}
             </div>
           ) : null}
-          <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)]">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-container-foreground">
-                  {coachDirectoryLabels.listTitle}
-                </p>
-                {availableCoaches.length ? (
-                  <span className="text-xs text-muted">
-                    {availableCoaches.length}{" "}
-                    {availableCoaches.length === 1
-                      ? coachDirectoryLabels.coachCountSingular
-                      : coachDirectoryLabels.coachCountPlural}
-                  </span>
-                ) : null}
-              </div>
-              <div className="max-h-72 overflow-y-auto rounded-lg border border-black/10 bg-white/70">
-                {allCoachesQuery.isLoading ? (
-                  <p className="px-3 py-2 text-xs text-muted">
-                    {coachDirectoryLabels.coachesLoading}
-                  </p>
-                ) : allCoachesQuery.isError ? (
-                  <p className="px-3 py-2 text-xs text-red-500">
-                    {coachDirectoryLabels.coachesError}
-                  </p>
-                ) : !availableCoaches.length ? (
-                  <p className="px-3 py-2 text-xs text-muted">
-                    {coachDirectoryLabels.noCoaches}
-                  </p>
-                ) : (
-                  <div className="space-y-3 p-3">
-                    {availableCoaches.map((coach) => {
-                      const isAssigned = assignedCoachIds.has(coach.id);
-                      return (
-                        <div
-                          key={`coach-directory-${coach.id}`}
-                          className="flex flex-col gap-2 rounded-lg border border-black/5 bg-white px-3 py-2 text-sm text-container-foreground shadow-sm md:flex-row md:items-center md:justify-between"
-                        >
-                          <div className="min-w-0 space-y-1">
-                            <p className="truncate font-semibold">{coach.full_name}</p>
-                            <p className="truncate text-xs text-muted">
-                              {coach.phone ?? coachDirectoryLabels.phoneFallback}
-                            </p>
-                            <p className="truncate text-xs text-muted">{coach.email}</p>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            {selectedTeamId ? (
-                              isAssigned ? (
-                                <button
-                                  type="button"
-                                  onClick={() => handleCoachRemove(coach.id)}
-                                  disabled={removeCoachMutation.isPending}
-                                  className="rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-500 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                  {coachDirectoryLabels.removeButton}
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => handleCoachAssign(coach.id)}
-                                  disabled={assignCoachMutation.isPending}
-                                  className="rounded-full border border-action-primary/40 px-3 py-1 text-xs font-semibold text-action-primary transition hover:bg-action-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                  {coachDirectoryLabels.assignButton}
-                                </button>
-                              )
-                            ) : (
-                              <button
-                                type="button"
-                                className="cursor-not-allowed rounded-full border border-black/10 px-3 py-1 text-xs font-semibold text-muted"
-                                disabled
-                              >
-                                {coachDirectoryLabels.assignDisabled}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="space-y-3">
-              <p className="text-sm font-semibold text-container-foreground">
-                {coachDirectoryLabels.addTitle}
-              </p>
-              <form onSubmit={handleCoachSubmit} className="space-y-3">
-                <label className="text-xs font-medium text-muted">
-                  {coachDirectoryLabels.nameLabel}
+
+          <form onSubmit={handleCoachSubmit} className="space-y-4">
+            <label className="text-xs font-medium text-muted">
+              Full Name *
+              <input
+                type="text"
+                value={coachForm.fullName}
+                onChange={(event) => updateCoachForm("fullName", event.target.value)}
+                className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                placeholder="Sam Carter"
+                required
+              />
+            </label>
+            
+            <label className="text-xs font-medium text-muted">
+              Email *
+              <input
+                type="email"
+                value={coachForm.email}
+                onChange={(event) => updateCoachForm("email", event.target.value)}
+                className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                placeholder="coach@club.dev"
+                required
+              />
+            </label>
+            
+            <label className="text-xs font-medium text-muted">
+              Phone
+              <input
+                type="tel"
+                value={coachForm.phone}
+                onChange={(event) => updateCoachForm("phone", event.target.value)}
+                className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                placeholder="(+1) 555-1234"
+              />
+            </label>
+            
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted">
+                Password {!editingCoach && "*"}
+                <div className="mt-1 flex gap-2">
                   <input
                     type="text"
-                    value={coachForm.fullName}
-                    onChange={(event) => updateCoachForm("fullName", event.target.value)}
-                    className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                    placeholder="Sam Carter"
-                    required
-                  />
-                </label>
-                <label className="text-xs font-medium text-muted">
-                  {coachDirectoryLabels.emailLabel}
-                  <input
-                    type="email"
-                    value={coachForm.email}
-                    onChange={(event) => updateCoachForm("email", event.target.value)}
-                    className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                    placeholder="coach@club.dev"
-                    required
-                  />
-                </label>
-                <label className="text-xs font-medium text-muted">
-                  {coachDirectoryLabels.phoneLabel}
-                  <input
-                    type="tel"
-                    value={coachForm.phone}
-                    onChange={(event) => updateCoachForm("phone", event.target.value)}
-                    className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                    placeholder="(+1) 555-1234"
-                  />
-                </label>
-                <label className="text-xs font-medium text-muted">
-                  {coachDirectoryLabels.passwordLabel}
-                  <input
-                    type="password"
                     value={coachForm.password}
                     onChange={(event) => updateCoachForm("password", event.target.value)}
-                    className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                    placeholder="Temporary password"
-                    required
+                    className="flex-1 rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                    placeholder={editingCoach ? "Leave blank to keep current password" : "Enter password"}
+                    required={!editingCoach}
                   />
-                </label>
-                <label className="flex items-center gap-2 text-xs font-medium text-muted">
-                  <input
-                    type="checkbox"
-                    checked={coachForm.assignToTeam && Boolean(selectedTeamId)}
-                    onChange={(event) =>
-                      updateCoachForm(
-                        "assignToTeam",
-                        selectedTeamId ? event.target.checked : false
-                      )
-                    }
-                    disabled={!selectedTeamId}
-                    className="rounded border-gray-300 text-action-primary focus:ring-action-primary disabled:cursor-not-allowed"
-                  />
-                  <span>
-                    {coachDirectoryLabels.assignToggle}
-                    {selectedTeamName ? ` (${selectedTeamName})` : ""}
-                  </span>
-                </label>
-                <div className="flex justify-end">
                   <button
-                    type="submit"
-                    disabled={createCoachMutation.isPending}
-                    className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground disabled:cursor-not-allowed disabled:opacity-70"
+                    type="button"
+                    onClick={generatePassword}
+                    className="rounded-md border border-action-primary/40 bg-action-primary px-3 py-2 text-xs font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
                   >
-                    {editingCoach ? "Save" : coachDirectoryLabels.createSubmit}
+                    Generate
                   </button>
                 </div>
-              </form>
+              </label>
+              {coachForm.password && (
+                <p className="text-xs text-muted">
+                  Save this password securely. {editingCoach ? "This will update the coach's password." : "The coach will use this to log in."}
+                </p>
+              )}
             </div>
-          </div>
+
+            {editingCoach && coachTeams.length > 0 && (
+              <div className="space-y-2 rounded-lg border border-black/10 bg-gray-50 p-3">
+                <p className="text-xs font-semibold text-container-foreground">Assigned Teams</p>
+                <ul className="space-y-1">
+                  {coachTeams.map((team) => (
+                    <li key={team.id} className="flex items-center gap-2 text-xs text-muted">
+                      <FontAwesomeIcon icon={faUsers} className="text-action-primary" />
+                      <span>{team.name}</span>
+                      <span className="text-[0.65rem]">({team.age_category})</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={closeCoachFormModal}
+                className="rounded-md border border-black/10 px-4 py-2 text-sm font-semibold text-container-foreground transition hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={createCoachMutation.isPending || updateCoachMutation.isPending}
+                className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {editingCoach ? "Save Changes" : "Create Coach"}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     ) : null}
