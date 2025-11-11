@@ -175,6 +175,42 @@ StatCat Team
         
         return await self._send_email(to_email, subject, body)
     
+    async def send_password_reset(
+        self,
+        to_email: str,
+        to_name: str,
+        reset_token: str,
+        expires_minutes: int,
+    ) -> bool:
+        """Send password reset instructions."""
+        if not self.is_configured:
+            logger.info(
+                "[Email Not Configured] Would send password reset token to %s (expires in %s minutes)",
+                to_email,
+                expires_minutes,
+            )
+            logger.info("Password reset token for %s: %s", to_email, reset_token)
+            return False
+        
+        subject = "Reset your StatCat password"
+        body = f"""
+Hello {to_name or "StatCat user"},
+
+We received a request to reset your StatCat password.
+
+Use the reset code below within {expires_minutes} minutes:
+
+{reset_token}
+
+After copying the code, open the StatCat login page and use the "Reset password" option to set a new password.
+
+If you did not request this, you can safely ignore this email.
+
+Best regards,
+StatCat Team
+"""
+        return await self._send_email(to_email, subject, body)
+    
     async def _send_email(self, to_email: str, subject: str, body: str) -> bool:
         """Internal method to send email using SMTP."""
         try:

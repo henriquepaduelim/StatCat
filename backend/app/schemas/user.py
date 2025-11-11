@@ -74,3 +74,16 @@ class Token(SQLModel):
 class TokenPayload(SQLModel):
     sub: str
     exp: int
+
+
+class PasswordResetRequest(SQLModel):
+    email: LocalEmailStr
+
+
+class PasswordResetConfirm(SQLModel):
+    token: str
+    new_password: str
+
+
+class PasswordResetResponse(SQLModel):
+    detail: str

@@ -1,18 +1,50 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import {
-  completeAthleteRegistration,
-  uploadAthleteDocument,
-} from "../api/athletes";
-import { useTranslation } from "../i18n/useTranslation";
+import { completeAthleteRegistration } from "../api/athletes";
 import type {
   Athlete,
-  AthleteDocumentMetadata,
   AthleteRegistrationCompletionPayload,
 } from "../types/athlete";
 
-const todayIso = () => new Date().toISOString().slice(0, 10);
+type StepTwoFormState = {
+  email: string;
+  phone: string;
+  address_line1: string;
+  address_line2: string;
+  city: string;
+  province: string;
+  postal_code: string;
+  country: string;
+  guardian_name: string;
+  guardian_relationship: string;
+  guardian_email: string;
+  guardian_phone: string;
+  secondary_guardian_name: string;
+  secondary_guardian_relationship: string;
+  secondary_guardian_email: string;
+  secondary_guardian_phone: string;
+  emergency_contact_name: string;
+  emergency_contact_relationship: string;
+  emergency_contact_phone: string;
+  medical_allergies: string;
+  medical_conditions: string;
+  physician_name: string;
+  physician_phone: string;
+};
+
+type AthleteWithDetails = Athlete & Partial<Record<keyof StepTwoFormState, string | null>>;
+
+const requiredFieldDefinitions: Array<{ name: keyof StepTwoFormState; label: string }> = [
+  { name: "address_line1", label: "Address line 1" },
+  { name: "city", label: "City" },
+  { name: "province", label: "Province / State" },
+  { name: "postal_code", label: "Postal code" },
+  { name: "country", label: "Country" },
+  { name: "emergency_contact_name", label: "Emergency contact name" },
+  { name: "emergency_contact_relationship", label: "Emergency contact relationship" },
+  { name: "emergency_contact_phone", label: "Emergency contact phone" },
+];
 
 interface NewAthleteStepTwoFormProps {
   athlete: Athlete;
@@ -23,9 +55,8 @@ interface NewAthleteStepTwoFormProps {
 
 const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false }: NewAthleteStepTwoFormProps) => {
   const queryClient = useQueryClient();
-  const t = useTranslation();
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<StepTwoFormState>({
     email: "",
     phone: "",
     address_line1: "",
@@ -53,6 +84,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
 
   const [showSecondaryGuardian, setShowSecondaryGuardian] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<string[]>([]);
 
   const mutation = useMutation({
     mutationFn: (payload: AthleteRegistrationCompletionPayload) =>
@@ -69,36 +101,37 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
   });
 
   useEffect(() => {
+    const details = athlete as AthleteWithDetails;
     setForm((prev) => ({
       ...prev,
-      email: prev.email || athlete.email || "",
-      phone: prev.phone || athlete.phone || "",
-      // Pré-popular outros campos se estiverem disponíveis no objeto athlete
-      address_line1: prev.address_line1 || (athlete as any).address_line1 || "",
-      address_line2: prev.address_line2 || (athlete as any).address_line2 || "",
-      city: prev.city || (athlete as any).city || "",
-      province: prev.province || (athlete as any).province || "",
-      postal_code: prev.postal_code || (athlete as any).postal_code || "",
-      country: prev.country || (athlete as any).country || "",
-      guardian_name: prev.guardian_name || (athlete as any).guardian_name || "",
-      guardian_relationship: prev.guardian_relationship || (athlete as any).guardian_relationship || "",
-      guardian_email: prev.guardian_email || (athlete as any).guardian_email || "",
-      guardian_phone: prev.guardian_phone || (athlete as any).guardian_phone || "",
-      secondary_guardian_name: prev.secondary_guardian_name || (athlete as any).secondary_guardian_name || "",
-      secondary_guardian_relationship: prev.secondary_guardian_relationship || (athlete as any).secondary_guardian_relationship || "",
-      secondary_guardian_email: prev.secondary_guardian_email || (athlete as any).secondary_guardian_email || "",
-      secondary_guardian_phone: prev.secondary_guardian_phone || (athlete as any).secondary_guardian_phone || "",
-      emergency_contact_name: prev.emergency_contact_name || (athlete as any).emergency_contact_name || "",
-      emergency_contact_relationship: prev.emergency_contact_relationship || (athlete as any).emergency_contact_relationship || "",
-      emergency_contact_phone: prev.emergency_contact_phone || (athlete as any).emergency_contact_phone || "",
-      medical_allergies: prev.medical_allergies || (athlete as any).medical_allergies || "",
-      medical_conditions: prev.medical_conditions || (athlete as any).medical_conditions || "",
-      physician_name: prev.physician_name || (athlete as any).physician_name || "",
-      physician_phone: prev.physician_phone || (athlete as any).physician_phone || "",
+      email: prev.email || details.email || "",
+      phone: prev.phone || details.phone || "",
+      address_line1: prev.address_line1 || details.address_line1 || "",
+      address_line2: prev.address_line2 || details.address_line2 || "",
+      city: prev.city || details.city || "",
+      province: prev.province || details.province || "",
+      postal_code: prev.postal_code || details.postal_code || "",
+      country: prev.country || details.country || "",
+      guardian_name: prev.guardian_name || details.guardian_name || "",
+      guardian_relationship: prev.guardian_relationship || details.guardian_relationship || "",
+      guardian_email: prev.guardian_email || details.guardian_email || "",
+      guardian_phone: prev.guardian_phone || details.guardian_phone || "",
+      secondary_guardian_name: prev.secondary_guardian_name || details.secondary_guardian_name || "",
+      secondary_guardian_relationship:
+        prev.secondary_guardian_relationship || details.secondary_guardian_relationship || "",
+      secondary_guardian_email: prev.secondary_guardian_email || details.secondary_guardian_email || "",
+      secondary_guardian_phone: prev.secondary_guardian_phone || details.secondary_guardian_phone || "",
+      emergency_contact_name: prev.emergency_contact_name || details.emergency_contact_name || "",
+      emergency_contact_relationship:
+        prev.emergency_contact_relationship || details.emergency_contact_relationship || "",
+      emergency_contact_phone: prev.emergency_contact_phone || details.emergency_contact_phone || "",
+      medical_allergies: prev.medical_allergies || details.medical_allergies || "",
+      medical_conditions: prev.medical_conditions || details.medical_conditions || "",
+      physician_name: prev.physician_name || details.physician_name || "",
+      physician_phone: prev.physician_phone || details.physician_phone || "",
     }));
     
-    // Se houver segundo responsável, mostrar a seção
-    if ((athlete as any).secondary_guardian_name || (athlete as any).secondary_guardian_email) {
+    if (details.secondary_guardian_name || details.secondary_guardian_email) {
       setShowSecondaryGuardian(true);
     }
   }, [athlete]);
@@ -108,20 +141,36 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
   ) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    if (formErrors.length) {
+      setFormErrors([]);
+    }
+    if (statusMessage) {
+      setStatusMessage(null);
+    }
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    const missingFields = requiredFieldDefinitions.filter(
+      ({ name }) => !form[name].trim()
+    );
+
+    if (missingFields.length > 0) {
+      setFormErrors(missingFields.map(({ label }) => `${label} is required.`));
+      setStatusMessage(null);
+      return;
+    }
+
     const payload: AthleteRegistrationCompletionPayload = {
       email: form.email.trim() || undefined,
       phone: form.phone.trim() || undefined,
-      address_line1: form.address_line1.trim() || undefined,
+      address_line1: form.address_line1.trim(),
       address_line2: form.address_line2.trim() || undefined,
-      city: form.city.trim() || undefined,
-      province: form.province.trim() || undefined,
-      postal_code: form.postal_code.trim() || undefined,
-      country: form.country.trim() || undefined,
+      city: form.city.trim(),
+      province: form.province.trim(),
+      postal_code: form.postal_code.trim(),
+      country: form.country.trim(),
       guardian_name: form.guardian_name.trim() || undefined,
       guardian_relationship: form.guardian_relationship.trim() || undefined,
       guardian_email: form.guardian_email.trim() || undefined,
@@ -138,15 +187,16 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
       secondary_guardian_phone: showSecondaryGuardian
         ? form.secondary_guardian_phone.trim() || undefined
         : undefined,
-      emergency_contact_name: form.emergency_contact_name.trim() || undefined,
-      emergency_contact_relationship: form.emergency_contact_relationship.trim() || undefined,
-      emergency_contact_phone: form.emergency_contact_phone.trim() || undefined,
+      emergency_contact_name: form.emergency_contact_name.trim(),
+      emergency_contact_relationship: form.emergency_contact_relationship.trim(),
+      emergency_contact_phone: form.emergency_contact_phone.trim(),
       medical_allergies: form.medical_allergies.trim() || undefined,
       medical_conditions: form.medical_conditions.trim() || undefined,
       physician_name: form.physician_name.trim() || undefined,
       physician_phone: form.physician_phone.trim() || undefined,
     };
 
+    setFormErrors([]);
     mutation.mutate(payload);
   };
 
@@ -169,6 +219,17 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
       {statusMessage && (
         <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
           {statusMessage}
+        </div>
+      )}
+
+      {formErrors.length > 0 && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="font-medium">Please complete the required fields before continuing:</p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            {formErrors.map((error) => (
+              <li key={error}>{error}</li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -212,6 +273,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
           <label className="text-sm font-medium text-muted">
             Address (Street/Avenue)
             <input
+              required
               type="text"
               id="address_line1"
               name="address_line1"
@@ -235,6 +297,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
             <label className="text-sm font-medium text-muted">
               City
               <input
+                required
                 type="text"
                 id="city"
                 name="city"
@@ -246,6 +309,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
             <label className="text-sm font-medium text-muted">
               State/Province
               <input
+                required
                 type="text"
                 id="province"
                 name="province"
@@ -257,6 +321,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
             <label className="text-sm font-medium text-muted">
               Postal Code
               <input
+                required
                 type="text"
                 id="postal_code"
                 name="postal_code"
@@ -268,6 +333,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
             <label className="text-sm font-medium text-muted">
               Country
               <input
+                required
                 type="text"
                 id="country"
                 name="country"
@@ -403,6 +469,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
           <label className="text-sm font-medium text-muted">
             Name
             <input
+              required
               type="text"
               id="emergency_contact_name"
               name="emergency_contact_name"
@@ -414,6 +481,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
           <label className="text-sm font-medium text-muted">
             Relationship
             <input
+              required
               type="text"
               id="emergency_contact_relationship"
               name="emergency_contact_relationship"
@@ -425,6 +493,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
           <label className="text-sm font-medium text-muted">
             Phone
             <input
+              required
               type="tel"
               id="emergency_contact_phone"
               name="emergency_contact_phone"

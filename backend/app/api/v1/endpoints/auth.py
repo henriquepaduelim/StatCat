@@ -1,17 +1,62 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response # Added Response
+from datetime import datetime, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, status, Response  # Added Response
 from fastapi.security import OAuth2PasswordRequestForm
+from jose import JWTError, jwt
 from sqlmodel import Session, select
-from fastapi.responses import JSONResponse # Added this import
 
 from app.api.deps import authenticate_user, get_current_active_user
+from app.core.config import settings  # Import settings to get origins
 from app.core.security import create_access_token, get_password_hash
 from app.db.session import get_session
 from app.models.athlete import Athlete
 from app.models.user import User, UserRole, UserAthleteApprovalStatus
-from app.schemas.user import Token, UserCreate, UserRead, UserReadWithToken, UserSignup
-from app.core.config import settings # Import settings to get origins
+from app.schemas.user import (
+    PasswordResetConfirm,
+    PasswordResetRequest,
+    PasswordResetResponse,
+    Token,
+    UserCreate,
+    UserRead,
+    UserReadWithToken,
+    UserSignup,
+)
+from app.services.email_service import EmailService
 
 router = APIRouter()
+email_service = EmailService()
+PASSWORD_RESET_ALLOWED_ROLES = {UserRole.ADMIN, UserRole.ATHLETE}
+
+
+def _generate_password_reset_token(user_id: int) -> str:
+    expires_minutes = settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
+    expire = datetime.utcnow() + timedelta(minutes=expires_minutes)
+    payload = {
+        "sub": str(user_id),
+        "scope": "password_reset",
+        "exp": expire,
+    }
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.SECURITY_ALGORITHM)
+
+
+def _decode_password_reset_token(token: str) -> int:
+    try:
+        decoded = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.SECURITY_ALGORITHM],
+        )
+    except JWTError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired reset token") from exc
+    if decoded.get("scope") != "password_reset":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token")
+    sub = decoded.get("sub")
+    if not sub:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token")
+    try:
+        return int(sub)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token") from exc
 
 
 @router.post("/login", response_model=Token)
@@ -202,6 +247,67 @@ def login_with_profile(
     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
 
     return response
+
+
+@router.post(
+    "/password-reset/request",
+    response_model=PasswordResetResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def request_password_reset(
+    payload: PasswordResetRequest,
+    session: Session = Depends(get_session),
+) -> PasswordResetResponse:
+    """Send password reset instructions to admins and athletes."""
+    normalized_email = payload.email.strip()
+    user = session.exec(select(User).where(User.email == normalized_email)).first()
+    generic_detail = "If the email is registered to an eligible account, you'll receive reset instructions shortly."
+
+    if not user:
+        return PasswordResetResponse(detail=generic_detail)
+
+    if user.role not in PASSWORD_RESET_ALLOWED_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Password recovery is currently available for administrators and athletes only.",
+        )
+
+    token = _generate_password_reset_token(user.id)
+    await email_service.send_password_reset(
+        to_email=user.email,
+        to_name=user.full_name or "",
+        reset_token=token,
+        expires_minutes=settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES,
+    )
+
+    return PasswordResetResponse(detail=generic_detail)
+
+
+@router.post(
+    "/password-reset/confirm",
+    response_model=PasswordResetResponse,
+)
+def confirm_password_reset(
+    payload: PasswordResetConfirm,
+    session: Session = Depends(get_session),
+) -> PasswordResetResponse:
+    """Confirm password reset using a valid reset token."""
+    user_id = _decode_password_reset_token(payload.token)
+    user = session.get(User, user_id)
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if user.role not in PASSWORD_RESET_ALLOWED_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Password recovery is currently available for administrators and athletes only.",
+        )
+
+    user.hashed_password = get_password_hash(payload.new_password)
+    session.add(user)
+    session.commit()
+    return PasswordResetResponse(detail="Your password has been updated. You can sign in with your new credentials.")
 
 
 @router.get("/debug/token")

@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str | None = None
     SMTP_FROM_EMAIL: str | None = None
     SMTP_FROM_NAME: str | None = "Combine Platform"
+    PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 30
 
     class Config:
         env_file = ".env"

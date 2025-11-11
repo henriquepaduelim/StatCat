@@ -67,3 +67,14 @@ export const useUser = () =>
     queryFn: fetchMe,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
+
+export const requestPasswordReset = async (email: string): Promise<void> => {
+  await api.post("/auth/password-reset/request", { email });
+};
+
+export const confirmPasswordReset = async (token: string, newPassword: string): Promise<void> => {
+  await api.post("/auth/password-reset/confirm", {
+    token,
+    new_password: newPassword,
+  });
+};

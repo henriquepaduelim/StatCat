@@ -1,18 +1,21 @@
 import { FormEvent, useState, useEffect } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import type { Location } from "react-router-dom";
-import { Divider, TextInput } from "@tremor/react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
+import { Divider } from "@tremor/react";
 
-import { login, registerAccount } from "../api/auth";
+import {
+  login,
+  registerAccount,
+} from "../api/auth";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useTranslation } from "../i18n/useTranslation";
-import NewAthleteStepOneForm from "../components/NewAthleteStepOneForm";
-import NewAthleteStepTwoForm from "../components/NewAthleteStepTwoForm";
 import { submitForApproval } from "../api/athletes";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import api from "../api/client";
+import PasswordRecoveryDialog from "../components/PasswordRecoveryDialog";
+import AthleteOnboardingModal, { OnboardingStep } from "../components/AthleteOnboardingModal";
+import AuthCredentialsForm from "../components/AuthCredentialsForm";
+import type { Athlete } from "../types/athlete";
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg fill="currentColor" viewBox="0 0 24 24" {...props}>
@@ -21,8 +24,7 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 type Mode = "login" | "register";
-type OnboardingStep = 1 | 2 | 3 | 4 | null;
-
+type OnboardingAthlete = (Partial<Athlete> & { id: number; user_id?: number; full_name?: string }) | null;
 const Login = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -38,24 +40,25 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState<"coach" | "athlete">("athlete");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
+  const [recoveryStep, setRecoveryStep] = useState<"request" | "confirm">("request");
   
   // Onboarding states
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>(null);
-  const [createdAthlete, setCreatedAthlete] = useState<any>(null);
+  const [createdAthlete, setCreatedAthlete] = useState<OnboardingAthlete>(null);
 
   const from = (location.state as { from?: Location })?.from?.pathname ?? "/dashboard";
   const isRegister = mode === "register";
 
   // Fetch existing athlete if user already has athlete_id
-  const { data: existingAthlete, error: athleteError } = useQuery({
+  const { data: existingAthlete, error: athleteError } = useQuery<Athlete | null>({
     queryKey: ['athlete', user?.athlete_id],
     queryFn: async () => {
       if (!user?.athlete_id) return null;
-      const { data } = await api.get(`/athletes/${user.athlete_id}`);
+      const { data } = await api.get<Athlete>(`/athletes/${user.athlete_id}`);
       return data;
     },
     enabled: !!user?.athlete_id && !createdAthlete && (onboardingStep === 2 || onboardingStep === 3),
@@ -101,7 +104,7 @@ const Login = () => {
         if (status === "INCOMPLETE" || status === "REJECTED") {
           setOnboardingStep(2);
         } else if (status === "PENDING") {
-          setOnboardingStep(4 as any);
+          setOnboardingStep(4);
         }
       }
     }
@@ -109,7 +112,7 @@ const Login = () => {
   
   const submitApprovalMutation = useMutation({
     mutationFn: (athleteId: number) => submitForApproval(athleteId),
-    onSuccess: (updatedUser) => {
+    onSuccess: () => {
       // Update user status in store
       const user = useAuthStore.getState().user;
       const token = useAuthStore.getState().token;
@@ -121,9 +124,9 @@ const Login = () => {
         setCredentials({ user: updatedUserData, token });
       }
       // Move to final success step (step 4)
-      setOnboardingStep(4 as any);
+      setOnboardingStep(4);
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error("Failed to submit for approval:", error);
       setError("Failed to submit for approval. Please try again.");
     },
@@ -166,7 +169,7 @@ const Login = () => {
               break;
             case "PENDING":
               // Show pending message modal on login page
-              setOnboardingStep(4 as any);
+              setOnboardingStep(4);
               break;
             case "APPROVED":
               // Only approved athletes can navigate away
@@ -199,10 +202,21 @@ const Login = () => {
     // Clear form when switching modes
     if (nextMode === "login") {
       setFullName("");
+    } else {
+      setPassword("");
     }
   };
 
-  const handleStepOneSuccess = (athlete: any) => {
+  const openRecoveryModal = (step: "request" | "confirm" = "request") => {
+    setRecoveryStep(step);
+    setIsRecoveryModalOpen(true);
+  };
+
+  const closeRecoveryModal = () => {
+    setIsRecoveryModalOpen(false);
+  };
+
+  const handleStepOneSuccess = (athlete: Athlete) => {
     setCreatedAthlete(athlete);
     setOnboardingStep(2);
     
@@ -236,6 +250,11 @@ const Login = () => {
 
   const handleBackToStepTwo = () => {
     setOnboardingStep(2);
+  };
+
+  const handlePendingReviewClose = () => {
+    setOnboardingStep(null);
+    clearAuth();
   };
 
   // Redirect logic for authenticated users
@@ -304,96 +323,26 @@ const Login = () => {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {isRegister ? (
-              <>
-                <div>
-                  <label
-                    className="text-sm font-medium text-muted"
-                    htmlFor="full-name"
-                  >
-                    Full name
-                  </label>
-                  <TextInput
-                    id="full-name"
-                    name="full-name"
-                    value={fullName}
-                    onChange={(event) => setFullName(event.target.value)}
-                    placeholder="Marvin Fergusson"
-                    className="mt-2"
-                    required
-                  />
-                </div>
-              </>
-            ) : null}
-
-            <div>
-              <label className="text-sm font-medium text-muted" htmlFor="email">
-                {t.login.email}
-              </label>
-              <TextInput
-                id="email"
-                type="email"
-                name="email"
-                autoComplete="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="marvin@statcat.com"
-                className="mt-2 bg-blue-300 text-black"
-                required
-              />
-            </div>
-
-            <div>
-              <label
-                className="text-sm font-medium text-muted"
-                htmlFor="password"
-              >
-                {t.login.password}
-              </label>
-              <div className="relative mt-2">
-                <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  autoComplete="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="••••••••"
-                  className="w-full rounded-md border border-black/10 bg-blue-300 px-3 py-2 pr-10 text-sm text-black placeholder:text-black/60 focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-black/60 hover:text-black transition"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  <FontAwesomeIcon 
-                    icon={showPassword ? faEyeSlash : faEye} 
-                    className="w-5 h-5"
-                  />
-                </button>
-              </div>
-            </div>
-
-            {error ? <p className="text-sm text-red-500">{error}</p> : null}
-            {successMessage ? (
-              <p className="text-sm text-emerald-500">{successMessage}</p>
-            ) : null}
-
-            <button
-              type="submit"
-              className="mt-2 w-full rounded-lg bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:opacity-60"
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? `${t.common.loading}...`
-                : isRegister
-                ? "Create account"
-                : t.common.signIn}
-            </button>
-          </form>
+          <AuthCredentialsForm
+            mode={mode}
+            fullName={fullName}
+            email={email}
+            password={password}
+            showPassword={showPassword}
+            isSubmitting={isSubmitting}
+            error={error}
+            successMessage={successMessage}
+            onSubmit={handleSubmit}
+            onFullNameChange={setFullName}
+            onEmailChange={setEmail}
+            onPasswordChange={setPassword}
+            onTogglePasswordVisibility={() => setShowPassword((previous) => !previous)}
+            onForgotPassword={() => openRecoveryModal("request")}
+            emailLabel={t.login.email}
+            passwordLabel={t.login.password}
+            signInLabel={t.common.signIn}
+            loadingLabel={t.common.loading}
+          />
 
           <Divider className="my-2 whitespace-nowrap">or with</Divider>
           <button
@@ -424,134 +373,24 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Onboarding Modal */}
-      {onboardingStep !== null ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-10">
-          <div 
-            className={`w-full rounded-2xl bg-container-gradient shadow-xl ${
-              onboardingStep === 3 || onboardingStep === 4 
-                ? "max-w-md p-8" 
-                : "max-w-8xl max-h-[95vh] overflow-y-auto p-6 sm:p-8"
-            }`}
-            onClick={(e) => e.stopPropagation()}
-          >
+      <PasswordRecoveryDialog
+        isOpen={isRecoveryModalOpen}
+        initialStep={recoveryStep}
+        onClose={closeRecoveryModal}
+      />
 
-            {onboardingStep === 1 ? (
-              <div>
-                <h2 className="text-lg sm:text-xl font-semibold mb-4 text-container-foreground">
-                  Step 1: Basic Information
-                </h2>
-                <NewAthleteStepOneForm onSuccess={handleStepOneSuccess} />
-              </div>
-            ) : onboardingStep === 2 ? (
-              createdAthlete ? (
-                <div>
-              
-                  <NewAthleteStepTwoForm
-                    athlete={createdAthlete}
-                    onSuccess={handleStepTwoSuccess}
-                    onClose={handleSkipStepTwo}
-                    isEditMode={false}
-                  />
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-muted">Loading athlete information...</p>
-                </div>
-              )
-            ) : onboardingStep === 3 ? (
-              // Step 3: Review and Submit for Approval
-              <div className="text-center space-y-6">
-                <div className="space-y-24">
-                  <h2 className="text-xl sm:text-2xl font-semibold text-container-foreground">
-                    Registration Complete!
-                  </h2>
-                  <p className="text-sm text-muted max-w-md mx-auto">
-                    You have successfully completed your athlete registration. You can now submit your application for admin review and approval.
-                  </p>
-                </div>
-                
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-md mx-auto">
-                  <h3 className="font-medium text-blue-900 mb-2">What happens next?</h3>
-                  <ol className="text-sm text-blue-800 space-y-1 text-left">
-                    <li>1. Your application will be reviewed by our admin team</li>
-                    <li>2. You'll receive an approval or feedback for any needed changes</li>
-                    <li>3. Once approved, you'll have full access to the platform</li>
-                  </ol>
-                </div>
-                
-                {error ? (
-                  <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600 max-w-md mx-auto">
-                    {error}
-                  </div>
-                ) : null}
-                
-                <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                  <button
-                    type="button"
-                    onClick={handleBackToStepTwo}
-                    disabled={submitApprovalMutation.isPending}
-                    className="rounded-md border border-black/10 px-4 py-2 text-sm font-semibold text-muted hover:border-action-primary/50 disabled:opacity-60"
-                  >
-                    Edit Registration
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSubmitForApproval}
-                    disabled={submitApprovalMutation.isPending}
-                    className="rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground hover:bg-action-primary/90 disabled:opacity-60"
-                  >
-                    {submitApprovalMutation.isPending ? "Submitting..." : "Submit for Approval"}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              // Step 4: Application Pending / Submitted
-              <div className="text-center space-y-4">
-                <div className="space-y-24">
-                  <div className="mx-auto w-12 h-12 bg-amber-300 rounded-full flex items-center justify-center">
-                    <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <h2 className="text-xl font-semibold text-container-foreground">
-                    Application Under Review
-                  </h2>
-                  <p className="text-sm text-muted">
-                    Your athlete profile is currently being reviewed by our admin team. You'll be notified once your application is approved or if any changes are needed.
-                  </p>
-                </div>
-                
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                  <h3 className="font-medium text-amber-900 mb-2 text-sm">Current Status</h3>
-                  <div className="text-sm text-amber-800 space-y-1">
-                    <p className="flex items-center justify-center gap-2">
-                      <span className="inline-block w-2 h-2 bg-amber-500 rounded-full"></span>
-                      <strong>PENDING</strong> - Awaiting admin approval
-                    </p>
-                    <p className="text-xs">
-                      This usually takes 1-2 business days. You can close this page and come back later to check your status.
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex justify-center pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOnboardingStep(null);
-                      clearAuth();
-                    }}
-                    className="w-full rounded-lg bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground hover:bg-action-primary/90"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      ) : null}
+      <AthleteOnboardingModal
+        step={onboardingStep}
+        createdAthlete={createdAthlete}
+        error={error}
+        isSubmitPending={submitApprovalMutation.isPending}
+        onStepOneSuccess={handleStepOneSuccess}
+        onStepTwoSuccess={handleStepTwoSuccess}
+        onSkipStepTwo={handleSkipStepTwo}
+        onSubmitForApproval={handleSubmitForApproval}
+        onBackToStepTwo={handleBackToStepTwo}
+        onClosePendingReview={handlePendingReviewClose}
+      />
     </div>
   );
 };
