@@ -6,9 +6,62 @@ import {
   rejectAthlete,
   approveAllAthletes,
 } from "../api/athletes";
-import { Check, X, ChevronDown } from "lucide-react";
 import type { PendingAthleteSummary } from "../types/athlete";
 import NotificationBadge from "./NotificationBadge";
+
+type IconProps = {
+  size?: number;
+  className?: string;
+};
+
+const CheckIcon = ({ size = 18, className }: IconProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M20 6 9 17l-5-5" />
+  </svg>
+);
+
+const XIcon = ({ size = 18, className }: IconProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M18 6 6 18" />
+    <path d="m6 6 12 12" />
+  </svg>
+);
+
+const ChevronDownIcon = ({ size = 18, className }: IconProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
 
 function AthleteApprovalList() {
   const queryClient = useQueryClient();
@@ -116,7 +169,7 @@ function AthleteApprovalList() {
           disabled
         >
           Pending Athletes (0)
-          <ChevronDown size={16} className="text-muted" />
+          <ChevronDownIcon size={16} className="text-muted" />
         </button>
         <p className="mt-3 text-sm text-muted">No pending athletes for approval</p>
       </div>
@@ -134,10 +187,7 @@ function AthleteApprovalList() {
         {pendingAthletes.length > 0 && (
           <NotificationBadge count={pendingAthletes.length} className="absolute -top-2 -right-2" />
         )}
-        <ChevronDown
-          size={18}
-          className={`transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
-        />
+        <ChevronDownIcon className={`transition-transform ${isDropdownOpen ? "rotate-180" : ""}`} />
       </button>
 
       {isDropdownOpen && (
@@ -176,7 +226,7 @@ function AthleteApprovalList() {
                       className="flex items-center justify-center rounded-full bg-green-100 p-2 text-green-700 transition hover:bg-green-200 disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label="Approve"
                     >
-                      <Check size={18} />
+                    <CheckIcon />
                     </button>
                     <button
                       type="button"
@@ -185,7 +235,7 @@ function AthleteApprovalList() {
                       className="flex items-center justify-center rounded-full bg-red-100 p-2 text-red-700 transition hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label="Reject"
                     >
-                      <X size={18} />
+                    <XIcon />
                     </button>
                   </div>
                 </li>
