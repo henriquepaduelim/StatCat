@@ -168,10 +168,9 @@ function AthleteApprovalList() {
           className="flex items-center justify-between rounded-lg border border-black/10 bg-gray-50 px-4 py-2 text-sm font-medium text-muted"
           disabled
         >
-          Pending Athletes (0)
+          Pending Athletes
           <ChevronDownIcon size={16} className="text-muted" />
         </button>
-        <p className="mt-3 text-sm text-muted">No pending athletes for approval</p>
       </div>
     );
   }
