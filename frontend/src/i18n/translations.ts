@@ -614,7 +614,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       footer: "Combine intelligence for elite football.",
     },
     login: {
-      title: "Sign in to Combine",
+      title: "Sign in to your StatCat",
       subtitle: "Access dashboards, manage sessions and share reports with partner clubs.",
       email: "Email",
       password: "Password",

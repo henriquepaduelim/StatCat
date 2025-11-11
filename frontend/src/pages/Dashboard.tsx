@@ -27,6 +27,8 @@ import type { Athlete } from "../types/athlete";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useMyEvents, useCreateEvent, useConfirmEventAttendance, useDeleteEvent } from "../hooks/useEvents";
 import type { Event, ParticipantStatus } from "../types/event";
+import TeamListCard from "../components/dashboard/TeamListCard";
+import LeaderboardCard from "../components/dashboard/LeaderboardCard";
 
 type EventFormState = {
   name: string;
@@ -1005,6 +1007,43 @@ const Dashboard = () => {
     setTeamFormError(null);
   };
 
+  const handleTeamCreateClick = () => {
+    setTeamForm(createEmptyTeamForm());
+    setTeamFormError(null);
+    setEditingTeam(null);
+    setTeamFormOpen(true);
+  };
+
+  const handleTeamEdit = async (team: Team) => {
+    try {
+      const coaches = await fetchTeamCoaches(team.id);
+      const coachIds = coaches
+        .map((coach: any) => ("coach_id" in coach ? coach.coach_id : coach.id))
+        .filter((id: number | undefined): id is number => typeof id === "number");
+      const teamAthletes = athletesByTeamId[team.id] ?? [];
+
+      setEditingTeam({
+        id: team.id,
+        name: team.name,
+        ageCategory: team.age_category,
+        gender: "coed",
+        description: team.description || "",
+      });
+      setTeamForm({
+        name: team.name,
+        ageCategory: team.age_category,
+        gender: "coed",
+        description: team.description || "",
+        coachIds: coachIds.length ? coachIds : [],
+        athleteIds: teamAthletes.map((athlete) => athlete.id),
+      });
+      setTeamFormError(null);
+      setTeamFormOpen(true);
+    } catch (error) {
+      console.error("Unable to prepare team form:", error);
+    }
+  };
+
   const handleTeamDelete = (teamId: number, teamName: string) => {
     if (!permissions.canManageUsers) {
       return;
@@ -1048,168 +1087,26 @@ const Dashboard = () => {
       </section>
 
       <section className="print-hidden grid gap-6 md:grid-cols-2">
-        {/* Teams Container */}
-        <div className="rounded-xl border border-action-primary/25 bg-container-gradient p-4 sm:p-6 shadow-xl backdrop-blur">
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-container-foreground">Teams</h2>
-                <p className="text-sm text-muted">Manage team rosters and assignments</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setTeamForm(createEmptyTeamForm());
-                  setTeamFormError(null);
-                  setEditingTeam(null);
-                  setTeamFormOpen(true);
-                }}
-                disabled={createTeamMutation.isPending}
-                className="flex items-center justify-center gap-2 rounded-md bg-action-primary px-3 sm:px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <FontAwesomeIcon icon={faPlus} className="text-xs" />
-                <span className="hidden sm:inline">{createTeamLabels.button}</span>
-                <span className="sm:hidden">Add</span>
-                <FontAwesomeIcon icon={faUsers} className="text-xs" />
-              </button>
-            </div>
-            <div className="space-y-3">
-              {teamNotice ? (
-                <div
-                  className={`rounded-md border px-3 py-2 text-xs font-medium ${
-                    teamNotice.variant === "success"
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                      : "border-rose-200 bg-rose-50 text-rose-700"
-                  }`}
-                >
-                  {teamNotice.message}
-                </div>
-              ) : null}
-              {teamsQuery.isLoading ? (
-                <p className="text-sm text-muted">{t.common.loading}...</p>
-              ) : teamsQuery.isError ? (
-                <p className="text-sm text-red-500">Unable to load teams.</p>
-              ) : !teams.length ? (
-                <p className="text-sm text-muted">No teams created yet.</p>
-              ) : (
-                <div className="overflow-hidden rounded-lg border border-white/10 bg-white/90">
-                  {/* Header - Desktop only */}
-                  <div className="hidden sm:grid grid-cols-[auto_1fr_80px_60px_minmax(60px,110px)] gap-3 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
-                    <FontAwesomeIcon icon={faUsers} className="self-center text-action-primary" />
-                    <span>Team Name</span>
-                    <span className="text-center">Category</span>
-                    <span className="text-center">Athletes</span>
-                    <span className="text-center">Actions</span>
-                  </div>
-                  {/* Rows */}
-                  {teams.map((team) => {
-                    const teamAthletes = athletesByTeamId[team.id] ?? [];
-                    const teamAthleteCount = teamAthletes.length;
-
-                    return (
-                      <div
-                        key={team.id}
-                        className="grid grid-cols-1 sm:grid-cols-[auto_1fr_80px_60px_minmax(60px,110px)] gap-3 items-start sm:items-center border-b border-black/5 px-3 sm:px-4 py-3 text-sm hover:bg-white/50 last:border-b-0"
-                      >
-                      <div className="flex items-center gap-3 sm:contents">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-action-primary/10">
-                          <FontAwesomeIcon icon={faUsers} className="text-xs text-action-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-container-foreground">{team.name}</p>
-                          {team.description && (
-                            <p className="text-xs text-muted truncate">{team.description}</p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Mobile layout - additional info */}
-                      <div className="flex justify-between items-center sm:contents">
-                        <div className="flex gap-4 text-xs text-muted sm:hidden">
-                          <span>{team.age_category}</span>
-                          <span>{teamAthleteCount} athletes</span>
-                        </div>
-                        
-                        {/* Desktop layout - separate columns */}
-                        <span className="hidden sm:block text-center text-xs text-muted">{team.age_category}</span>
-                        <span className="hidden sm:block text-center text-xs font-medium text-container-foreground">
-                          {teamAthleteCount}
-                        </span>
-                        
-                        <div className="flex items-center justify-end gap-2 sm:justify-center">
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              // Load coaches for this team (cached via react-query)
-                              const teamCoachesData = await fetchTeamCoaches(team.id);
-                              const coachIds = teamCoachesData.map((coach: TeamCoach) => coach.id);
-                              
-                              setEditingTeam({
-                                id: team.id,
-                                name: team.name,
-                                ageCategory: team.age_category,
-                                gender: "coed", // Default since backend doesn't have this field yet
-                                description: team.description || ""
-                              });
-                              setTeamForm({
-                                name: team.name,
-                                ageCategory: team.age_category,
-                                gender: "coed", // Default since backend doesn't have this field yet
-                                description: team.description || "",
-                                coachIds: coachIds,
-                                athleteIds: teamAthletes.map((athlete) => athlete.id)
-                              });
-                              setTeamFormError(null);
-                              setTeamFormOpen(true);
-                            }}
-                            className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition hover:bg-action-primary/10 hover:text-action-primary"
-                            aria-label={`Edit ${team.name}`}
-                          >
-                            <FontAwesomeIcon icon={faPenToSquare} className="text-lg" />
-                          </button>
-                          {permissions.canManageUsers ? (
-                            <button
-                              type="button"
-                              onClick={() => handleTeamDelete(team.id, team.name)}
-                              disabled={deleteTeamMutation.isPending}
-                              className="flex h-8 w-8 items-center justify-center rounded-full text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
-                              aria-label={`Delete ${team.name}`}
-                            >
-                              <FontAwesomeIcon icon={faTrash} className="text-sm" />
-                            </button>
-                          ) : null}
-                        </div>
-                      </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Report Cards Container - Placeholder */}
-        <div className="rounded-xl border border-action-primary/25 bg-container-gradient p-4 sm:p-6 shadow-xl backdrop-blur">
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-container-foreground">Analytics</h2>
-                <p className="text-sm text-muted">Key metrics and statistics</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="overflow-hidden rounded-lg border border-white/10 bg-white/90 p-8">
-                <div className="text-center">
-                  <p className="text-sm text-muted">Report cards feature coming soon...</p>
-                  <p className="mt-2 text-xs text-muted">
-                    Generate and view athlete performance reports and assessments.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <TeamListCard
+          teams={teams}
+          athletesByTeamId={athletesByTeamId}
+          notice={teamNotice}
+          isLoading={teamsQuery.isLoading}
+          isError={teamsQuery.isError}
+          canManageUsers={permissions.canManageUsers}
+          isCreatePending={createTeamMutation.isPending}
+          isDeletePending={deleteTeamMutation.isPending}
+          onAddTeam={handleTeamCreateClick}
+          onEditTeam={handleTeamEdit}
+          onDeleteTeam={handleTeamDelete}
+          addButtonLabel={createTeamLabels.button}
+          statusCopy={{
+            loading: `${t.common.loading}...`,
+            error: "Unable to load teams.",
+            empty: "No teams created yet.",
+          }}
+        />
+        <LeaderboardCard />
       </section>
 
       <section className="print-hidden flex flex-col gap-6 xl:flex-row">

@@ -18,7 +18,7 @@ class EmailService:
         self.smtp_user = settings.SMTP_USER or ""
         self.smtp_password = settings.SMTP_PASSWORD or ""
         self.from_email = settings.SMTP_FROM_EMAIL or self.smtp_user
-        self.from_name = settings.SMTP_FROM_NAME or "StatCat Events"
+        self.from_name = settings.SMTP_FROM_NAME or "StatCat Sports Analytics"
         
         # Check if email is configured
         self.is_configured = bool(self.smtp_user and self.smtp_password)

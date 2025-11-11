@@ -2,6 +2,8 @@ import { FormEvent, useState, useEffect } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import type { Location } from "react-router-dom";
 import { Divider } from "@tremor/react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCat } from "@fortawesome/free-solid-svg-icons";
 
 import {
   login,
@@ -52,6 +54,29 @@ const Login = () => {
 
   const from = (location.state as { from?: Location })?.from?.pathname ?? "/dashboard";
   const isRegister = mode === "register";
+  const renderLoginTitle = () => {
+    if (isRegister) {
+      return "Create your account";
+    }
+    const title = t.login.title;
+    const keyword = "StatCat";
+    const highlightIndex = title.indexOf(keyword);
+    if (highlightIndex === -1) {
+      return title;
+    }
+    const before = title.slice(0, highlightIndex);
+    const after = title.slice(highlightIndex + keyword.length);
+    return (
+      <>
+        {before}
+        <span className="inline-flex items-center gap-1 text-action-primary">
+          {keyword}
+          <FontAwesomeIcon icon={faCat} className="text-lg" />
+        </span>
+        {after}
+      </>
+    );
+  };
 
   // Fetch existing athlete if user already has athlete_id
   const { data: existingAthlete, error: athleteError } = useQuery<Athlete | null>({
@@ -290,7 +315,7 @@ const Login = () => {
         }`}>
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-semibold text-container-foreground">
-              {isRegister ? "Create your account" : t.login.title}
+              {renderLoginTitle()}
             </h1>
             <p className="mt-2 text-sm text-muted">
               {isRegister
