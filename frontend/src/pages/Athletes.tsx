@@ -1,171 +1,18 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Dialog, Transition } from "@headlessui/react";
 
 import { useAthletes } from "../hooks/useAthletes";
 import { useTeams } from "../hooks/useTeams";
-import { usePendingAthletesCount } from "../hooks/usePendingAthletesCount";
 import { usePermissions } from "../hooks/usePermissions";
 import { useTranslation } from "../i18n/useTranslation";
-import NotificationBadge from "../components/NotificationBadge";
 import ConfirmDeleteModal from "../components/ConfirmDeleteModal";
-import { deleteAthlete, getPendingAthletes, approveAthlete, rejectAthlete } from "../api/athletes";
+import { deleteAthlete } from "../api/athletes";
 import type { Athlete } from "../types/athlete";
 import NewAthleteStepOneForm from "../components/NewAthleteStepOneForm";
 import NewAthleteStepTwoForm from "../components/NewAthleteStepTwoForm";
-
-// Inline AthleteApprovalList component to avoid module loading issues
-interface PendingAthlete {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone?: string;
-  date_of_birth?: string;
-  gender?: string;
-}
-
-function AthleteApprovalList() {
-  const queryClient = useQueryClient();
-  const [rejectionReason, setRejectionReason] = useState<Record<number, string>>({});
-
-  const { data: pendingAthletes, isLoading } = useQuery({
-    queryKey: ["pending-athletes"],
-    queryFn: getPendingAthletes,
-  });
-
-  const approveMutation = useMutation({
-    mutationFn: approveAthlete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pending-athletes"] });
-      queryClient.invalidateQueries({ queryKey: ["pending-athletes-count"] });
-      queryClient.invalidateQueries({ queryKey: ["athletes"] });
-    },
-  });
-
-  const rejectMutation = useMutation({
-    mutationFn: ({ athleteId, reason }: { athleteId: number; reason: string }) =>
-      rejectAthlete(athleteId, reason),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pending-athletes"] });
-      queryClient.invalidateQueries({ queryKey: ["pending-athletes-count"] });
-      queryClient.invalidateQueries({ queryKey: ["athletes"] });
-      setRejectionReason({});
-    },
-  });
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-      </div>
-    );
-  }
-
-  if (!pendingAthletes || pendingAthletes.length === 0) {
-    return (
-      <div className="py-12 text-center">
-        <p className="text-muted">No pending athletes for approval</p>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      <h2 className="mb-6 text-2xl font-semibold text-primary">
-        Pending Athletes ({pendingAthletes.length})
-      </h2>
-      
-      <div className="space-y-4">
-        {pendingAthletes.map((athlete: PendingAthlete) => (
-          <div
-            key={athlete.id}
-            className="rounded-xl border border-black/10 bg-white p-6 shadow-sm"
-          >
-            <div className="mb-4 flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-primary">
-                  {athlete.first_name} {athlete.last_name}
-                </h3>
-                <p className="text-sm text-muted">{athlete.email}</p>
-                {athlete.phone && (
-                  <p className="text-sm text-muted">{athlete.phone}</p>
-                )}
-              </div>
-              <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800">
-                Pending
-              </span>
-            </div>
-
-            <div className="mb-4 grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="font-medium text-muted">Date of Birth:</span>
-                <span className="ml-2 text-primary">
-                  {athlete.date_of_birth
-                    ? new Date(athlete.date_of_birth).toLocaleDateString()
-                    : "-"}
-                </span>
-              </div>
-              <div>
-                <span className="font-medium text-muted">Gender:</span>
-                <span className="ml-2 text-primary capitalize">
-                  {athlete.gender || "-"}
-                </span>
-              </div>
-            </div>
-
-            <div className="border-t border-black/10 pt-4">
-              <div className="mb-3">
-                <label
-                  htmlFor={`rejection-reason-${athlete.id}`}
-                  className="mb-2 block text-sm font-medium text-muted"
-                >
-                  Rejection Reason (optional)
-                </label>
-                <textarea
-                  id={`rejection-reason-${athlete.id}`}
-                  value={rejectionReason[athlete.id] || ""}
-                  onChange={(e) =>
-                    setRejectionReason((prev) => ({
-                      ...prev,
-                      [athlete.id]: e.target.value,
-                    }))
-                  }
-                  rows={2}
-                  className="w-full rounded-lg border border-black/20 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  placeholder="Enter reason for rejection (optional)"
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => approveMutation.mutate(athlete.id)}
-                  disabled={approveMutation.isPending}
-                  className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {approveMutation.isPending ? "Approving..." : "Approve"}
-                </button>
-                <button
-                  onClick={() =>
-                    rejectMutation.mutate({
-                      athleteId: athlete.id,
-                      reason: rejectionReason[athlete.id] || "No reason provided",
-                    })
-                  }
-                  disabled={rejectMutation.isPending}
-                  className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {rejectMutation.isPending ? "Rejecting..." : "Reject"}
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+import AthleteApprovalList from "../components/AthleteApprovalList";
 
 const normalizeText = (value: string) =>
   value
@@ -197,20 +44,17 @@ const Athletes = () => {
   const teamsQuery = useTeams();
   const t = useTranslation();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const permissions = usePermissions();
-  const { data: pendingCount } = usePendingAthletesCount();
   const [selected, setSelected] = useState<Athlete | null>(null);
   const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(
     null
   );
   const [isNewAthleteOpen, setIsNewAthleteOpen] = useState(false);
-  const [isPendingAthletesOpen, setIsPendingAthletesOpen] = useState(false);
   const [isAthleteDetailsOpen, setIsAthleteDetailsOpen] = useState(false);
   const [registeredAthlete, setRegisteredAthlete] = useState<Athlete | null>(null);
   const [nameFilter, setNameFilter] = useState("");
   const [emailFilter, setEmailFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [statusFilter] = useState<"all" | "active" | "inactive">("all");
   const [genderFilter, setGenderFilter] = useState<"all" | "male" | "female">("all");
   const [ageFilter, setAgeFilter] = useState<{ min: string; max: string }>({ min: "", max: "" });
   const [sortConfig, setSortConfig] = useState<{
@@ -514,53 +358,6 @@ const Athletes = () => {
 
   return (
     <>
-      {/* Pending Athletes Modal */}
-      <Transition appear show={isPendingAthletesOpen} as={Fragment}>
-        <Dialog as="div" className="relative z-20" onClose={() => setIsPendingAthletesOpen(false)}>
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-black/25" />
-          </Transition.Child>
-
-          <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4 text-center">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-              >
-                <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-3xl bg-container-gradient shadow-2xl transition-all">
-                  <div className="relative px-8 py-8">
-                    <button
-                      type="button"
-                      onClick={() => setIsPendingAthletesOpen(false)}
-                      className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/70 text-muted shadow-sm transition hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
-                    >
-                      <span className="sr-only">Close</span>
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                    <AthleteApprovalList />
-                  </div>
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
-          </div>
-        </Dialog>
-      </Transition>
-
       {/* New Athlete Modal */}
       <Transition appear show={isNewAthleteOpen} as={Fragment}>
         <Dialog as="div" className="relative z-40" onClose={setIsNewAthleteOpen}>
@@ -626,20 +423,7 @@ const Athletes = () => {
             <p className="text-sm text-muted">{t.athletes.description}</p>
           </div>
           <div className="flex gap-3">
-            {permissions.canCreateAthletes && (
-              <button
-                type="button"
-                onClick={() => setIsPendingAthletesOpen(true)}
-                className="relative rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
-              >
-                Pending Athletes
-                {pendingCount && pendingCount.count > 0 && (
-                  <div className="absolute -top-2 -right-2">
-                    <NotificationBadge count={pendingCount.count} />
-                  </div>
-                )}
-              </button>
-            )}
+            {permissions.canCreateAthletes && <AthleteApprovalList />}
             <button
               type="button"
               onClick={() => setIsNewAthleteOpen(true)}

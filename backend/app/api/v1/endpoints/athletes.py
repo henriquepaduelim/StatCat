@@ -392,14 +392,33 @@ def get_pending_athletes(
         
         result = []
         for user in pending_users:
+            athlete = (
+                session.get(Athlete, user.athlete_id)
+                if user.athlete_id is not None
+                else None
+            )
+
+            first_name = athlete.first_name if athlete else (user.full_name.split(" ")[0] if user.full_name else "")
+            last_name = (
+                athlete.last_name
+                if athlete
+                else (" ".join(user.full_name.split(" ")[1:]) if user.full_name and len(user.full_name.split(" ")) > 1 else "")
+            )
+
             result.append({
-                "id": user.id,
-                "email": user.email,
-                "full_name": user.full_name,
+                "id": athlete.id if athlete else user.athlete_id,
+                "user_id": user.id,
+                "first_name": first_name,
+                "last_name": last_name,
+                "email": athlete.email if athlete and athlete.email else user.email,
+                "user_email": user.email,
+                "phone": athlete.phone if athlete else user.phone,
+                "date_of_birth": athlete.birth_date.isoformat() if hasattr(athlete, "birth_date") and athlete and athlete.birth_date else None,
+                "gender": athlete.gender.value if hasattr(athlete, "gender") and athlete and athlete.gender else None,
                 "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
-                "athlete_id": user.athlete_id,
+                "athlete_id": athlete.id if athlete else user.athlete_id,
                 "athlete_status": user.athlete_status.value if hasattr(user.athlete_status, 'value') else str(user.athlete_status),
-            })
+              })
         
         print(f"Returning {len(result)} results")
         return result

@@ -1,7 +1,7 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPenToSquare, faUsers, faUserTie, faPlus, faChevronLeft, faChevronRight, faCheck, faTimes, faQuestion } from "@fortawesome/free-solid-svg-icons";
+import { faPenToSquare, faUsers, faUserTie, faPlus, faCheck, faTimes, faQuestion, faTrash, faUserXmark, faAnglesLeft, faAnglesRight } from "@fortawesome/free-solid-svg-icons";
 
 import {
   assignCoachToTeam,
@@ -13,20 +13,19 @@ import {
   deleteTeamCoach,
   listAllCoaches,
   listTeamCoaches,
+  deleteTeam as deleteTeamApi,
+  deleteCoach as deleteCoachApi,
   type TeamCoach,
   type Team,
 } from "../api/teams";
 import { updateAthlete } from "../api/athletes";
 import { useAthletes } from "../hooks/useAthletes";
-import { useTeamCoaches } from "../hooks/useTeamCoaches";
 import { useTeams } from "../hooks/useTeams";
-import { useScoringLeaderboard } from "../hooks/useScoringLeaderboard";
-import { useMetricRanking } from "../hooks/useMetricRanking";
 import { usePermissions } from "../hooks/usePermissions";
 import { useTranslation } from "../i18n/useTranslation";
 import type { Athlete } from "../types/athlete";
 import { useAuthStore } from "../stores/useAuthStore";
-import { useMyEvents, useCreateEvent, useConfirmEventAttendance } from "../hooks/useEvents";
+import { useMyEvents, useCreateEvent, useConfirmEventAttendance, useDeleteEvent } from "../hooks/useEvents";
 import type { Event, ParticipantStatus } from "../types/event";
 
 type EventFormState = {
@@ -37,7 +36,6 @@ type EventFormState = {
   location: string;
   notes: string;
   teamIds: number[];
-  coachId: number | null;
   inviteeIds: number[];
   sendEmail: boolean;
   sendPush: boolean;
@@ -57,6 +55,8 @@ type AthleteFilter = {
   gender: string;
   teamStatus: "all" | "assigned" | "unassigned";
 };
+
+type NoticeState = { variant: "success" | "error"; message: string } | null;
 
 const weekdayInitials = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -83,6 +83,19 @@ const createEmptyTeamForm = (): NewTeamFormState => ({
   athleteIds: [],
 });
 
+const createEmptyEventForm = (): EventFormState => ({
+  name: "",
+  date: "",
+  startTime: "",
+  endTime: "",
+  location: "",
+  notes: "",
+  teamIds: [],
+  inviteeIds: [],
+  sendEmail: true,
+  sendPush: false,
+});
+
 // Generate date key (YYYY-MM-DD) in local time, avoiding day regression due to UTC
 const formatDateKey = (date: Date) => {
   const y = date.getFullYear();
@@ -103,26 +116,76 @@ const readableDate = (dateStr: string) => {
   });
 };
 
+const isDateInPast = (date: Date) => {
+  const current = new Date();
+  current.setHours(0, 0, 0, 0);
+  const target = new Date(date);
+  target.setHours(0, 0, 0, 0);
+  return target < current;
+};
+
+const createTeamLabels = {
+  button: "Add team",
+  modalTitle: "Create new team",
+  helper: "Set up the roster by inviting coaches and assigning athletes.",
+  nameLabel: "Team name",
+  ageLabel: "Age category",
+  descriptionLabel: "Description (optional)",
+  coachesSection: "Coaches",
+  coachesHelper: "Select coaches that are already registered to manage this team.",
+  coachesLoading: "Loading coaches...",
+  coachesError: "Unable to load coaches.",
+  noCoaches: "No coaches available. Create coaches first.",
+  athletesSection: "Assign athletes",
+  athletesHelper: "Select players to include in this team.",
+  athletesHeaderSelect: "Select",
+  athletesHeaderAthlete: "Athlete",
+  submitLabel: "Create team",
+  cancelLabel: "Cancel",
+  noAthletes: "No athletes available.",
+  errorName: "Team name is required.",
+  errorCoach: "Select at least one coach.",
+} as const;
+
+const teamAgeOptions = ["U12", "U13", "U14", "U15", "U16", "U19"] as const;
+const athleteAgeFilters = ["", "U14", "U16", "U18", "U21", "Senior"] as const;
+const athleteGenderFilters = ["", "male", "female"] as const;
+const athleteStatusFilters = ["all", "unassigned", "assigned"] as const;
+
 const Dashboard = () => {
   const athletesQuery = useAthletes();
   const teamsQuery = useTeams();
   const permissions = usePermissions();
+  const canManageEvents = permissions.canManageUsers || permissions.canCreateCoaches;
 
-  const displayAthletes = useMemo(() => athletesQuery.data ?? [], [athletesQuery.data]);
-  const teams = useMemo(() => teamsQuery.data ?? [], [teamsQuery.data]);
+  const athletes = athletesQuery.data ?? [];
+  const teams = teamsQuery.data ?? [];
   const token = useAuthStore((state) => state.token);
   const teamNameById = useMemo(() => {
-    if (!Array.isArray(teams) || teams.length === 0) {
-      return {};
-    }
     return teams.reduce<Record<number, string>>((acc, team) => {
       acc[team.id] = team.name;
       return acc;
     }, {});
   }, [teams]);
+  const athletesByTeamId = useMemo(() => {
+    return athletes.reduce<Record<number, Athlete[]>>((acc, athlete) => {
+      if (typeof athlete.team_id === "number") {
+        if (!acc[athlete.team_id]) {
+          acc[athlete.team_id] = [];
+        }
+        acc[athlete.team_id].push(athlete);
+      }
+      return acc;
+    }, {});
+  }, [athletes]);
+  const athleteById = useMemo(() => {
+    const map = new Map<number, Athlete>();
+    athletes.forEach((athlete) => {
+      map.set(athlete.id, athlete);
+    });
+    return map;
+  }, [athletes]);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
-  const [speedAgeCategory, setSpeedAgeCategory] = useState<string>("U14");
-  const [speedGenderFilter, setSpeedGenderFilter] = useState<string>("boys");
   const [isCoachFormOpen, setCoachFormOpen] = useState(false);
   const [isTeamFormOpen, setTeamFormOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<{ id: number; name: string; ageCategory: string; gender: string; description: string } | null>(null);
@@ -133,45 +196,60 @@ const Dashboard = () => {
     gender: "",
     teamStatus: "all"
   });
+  const { age: filterAge, gender: filterGender, teamStatus: filterTeamStatus } = athleteFilter;
   const [draggedAthleteId, setDraggedAthleteId] = useState<number | null>(null);
-  const createEmptyCoachForm = (assignToTeam: boolean) => ({
+  const createEmptyCoachForm = () => ({
     fullName: "",
     email: "",
     phone: "",
     password: "",
-    assignToTeam,
   });
-  const [coachForm, setCoachForm] = useState(() => createEmptyCoachForm(false));
+  const [coachForm, setCoachForm] = useState(createEmptyCoachForm);
   const [coachFormError, setCoachFormError] = useState<string | null>(null);
   const [coachFormSuccess, setCoachFormSuccess] = useState<string | null>(null);
   const [teamForm, setTeamForm] = useState<NewTeamFormState>(() => createEmptyTeamForm());
   const [teamFormError, setTeamFormError] = useState<string | null>(null);
+  const [teamNotice, setTeamNotice] = useState<NoticeState>(null);
+  const [coachNotice, setCoachNotice] = useState<NoticeState>(null);
+  const teamBuilderCandidates = useMemo(() => {
+    return athletes
+      .filter((athlete) => !teamForm.athleteIds.includes(athlete.id))
+      .filter((athlete) => {
+        if (filterGender && athlete.gender !== filterGender) {
+          return false;
+        }
+        if (filterTeamStatus === "assigned" && !athlete.team_id) {
+          return false;
+        }
+        if (filterTeamStatus === "unassigned" && athlete.team_id) {
+          return false;
+        }
+        if (filterAge) {
+          if (!athlete.birth_date) {
+            return false;
+          }
+          const ageLimit = parseInt(filterAge.replace(/\D/g, ""), 10);
+          if (Number.isFinite(ageLimit)) {
+            const currentAge = calculateAge(athlete.birth_date);
+            if (currentAge >= ageLimit) {
+              return false;
+            }
+          }
+        }
+        return true;
+      });
+  }, [athletes, filterAge, filterGender, filterTeamStatus, teamForm.athleteIds]);
+  const remainingAthleteCount = useMemo(() => {
+    return athletes.filter((athlete) => !teamForm.athleteIds.includes(athlete.id)).length;
+  }, [athletes, teamForm.athleteIds]);
   const t = useTranslation();
   const queryClient = useQueryClient();
-  const teamCoachesQuery = useTeamCoaches(selectedTeamId);
+  const fetchTeamCoaches = (teamId: number) =>
+    queryClient.ensureQueryData({
+      queryKey: ["team-coaches", teamId],
+      queryFn: () => listTeamCoaches(teamId),
+    });
   const summaryLabels = t.dashboard.summary;
-  const createTeamLabels = {
-    button: "Add team",
-    modalTitle: "Create new team",
-    helper: "Set up the roster by inviting coaches and assigning athletes.",
-    nameLabel: "Team name",
-    ageLabel: "Age category",
-    descriptionLabel: "Description (optional)",
-    coachesSection: "Coaches",
-    coachesHelper: "Select coaches that are already registered to manage this team.",
-    coachesLoading: "Loading coaches...",
-    coachesError: "Unable to load coaches.",
-    noCoaches: "No coaches available. Create coaches first.",
-    athletesSection: "Assign athletes",
-    athletesHelper: "Select players to include in this team.",
-    athletesHeaderSelect: "Select",
-    athletesHeaderAthlete: "Athlete",
-    submitLabel: "Create team",
-    cancelLabel: "Cancel",
-    noAthletes: "No athletes available.",
-    errorName: "Team name is required.",
-    errorCoach: "Select at least one coach.",
-  };
   const coachDirectoryLabels = summaryLabels.coachDirectory;
   const allCoachesQuery = useQuery<TeamCoach[]>({
     queryKey: ["all-team-coaches"],
@@ -183,7 +261,6 @@ const Dashboard = () => {
     const coaches = allCoachesQuery.data ?? [];
     return [...coaches].sort((a, b) => (a?.full_name || '').localeCompare(b?.full_name || ''));
   }, [allCoachesQuery.data]);
-  const teamAgeOptions = ["U12", "U13", "U14", "U15", "U16", "U19"];
   const [calendarCursor, setCalendarCursor] = useState(() => {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1);
@@ -191,24 +268,11 @@ const Dashboard = () => {
   
   // Fetch events from backend
   const myEventsQuery = useMyEvents();
-  const events = useMemo(() => myEventsQuery.data ?? [], [myEventsQuery.data]);
+  const events = myEventsQuery.data ?? [];
   
   const [selectedEventDate, setSelectedEventDate] = useState<string | null>(null);
-  const [eventFormOpen, setEventFormOpen] = useState(false);
   const [isEventModalOpen, setEventModalOpen] = useState(false);
-  const [eventForm, setEventForm] = useState<EventFormState>({
-    name: "",
-    date: "",
-    startTime: "",
-    endTime: "",
-    location: "",
-    notes: "",
-    teamIds: [],
-    coachId: null,
-    inviteeIds: [],
-    sendEmail: true,
-    sendPush: false,
-  });
+  const [eventForm, setEventForm] = useState<EventFormState>(createEmptyEventForm);
   const [eventFormError, setEventFormError] = useState<string | null>(null);
   
   // Athlete filters for event invitation
@@ -216,9 +280,14 @@ const Dashboard = () => {
   const [athleteFilterAge, setAthleteFilterAge] = useState<string>("");
   const [athleteFilterGender, setAthleteFilterGender] = useState<string>("");
   
-  // Mutations
-  const createEventMutation = useCreateEvent();
-  const confirmAttendanceMutation = useConfirmEventAttendance();
+  const resetEventForm = useCallback(() => {
+    setEventForm(createEmptyEventForm());
+    setEventFormError(null);
+    setAthleteFilterTeam(null);
+    setAthleteFilterAge("");
+    setAthleteFilterGender("");
+  }, []);
+  
   const selectAllInviteesRef = useRef<HTMLInputElement | null>(null);
 
   const eventsOnSelectedDate = useMemo(() => {
@@ -259,26 +328,10 @@ const Dashboard = () => {
     return teams.filter((team) => teamsWithEvents.has(team.id));
   }, [teams, events, selectedEventDate, eventTeamIdsForSelectedDate]);
 
-  const apiGender = speedGenderFilter === "girls" ? "female" : "male";
-  const speedRankingQuery = useMetricRanking("top_end_speed", {
-    limit: 5,
-    age_category: speedAgeCategory,
-    gender: apiGender,
-  });
-
-  const scorersLeaderboard = useScoringLeaderboard({
-    leaderboard_type: "scorers",
-    limit: 5,
-    age_category: speedAgeCategory,
-    gender: apiGender,
-  });
-
-  const shootoutsLeaderboard = useScoringLeaderboard({
-    leaderboard_type: "shootouts",
-    limit: 5,
-    age_category: speedAgeCategory,
-    gender: apiGender,
-  });
+  // Mutations
+  const createEventMutation = useCreateEvent();
+  const confirmAttendanceMutation = useConfirmEventAttendance();
+  const deleteEventMutation = useDeleteEvent();
 
   useEffect(() => {
     if (!teams.length || !teamsForSelectedDate.length) {
@@ -308,43 +361,23 @@ const Dashboard = () => {
   }, [teams, teamsForSelectedDate, selectedEventDate, eventTeamIdsForSelectedDate, selectedTeamId]);
 
   useEffect(() => {
-    setCoachForm(createEmptyCoachForm(Boolean(selectedTeamId)));
+    setCoachForm(createEmptyCoachForm());
     setCoachFormError(null);
     setCoachFormSuccess(null);
   }, [selectedTeamId]);
 
-  const rosterAthletes = useMemo(() => {
-    // Show all athletes, grouped by team
-    if (!Array.isArray(displayAthletes)) {
-      return [];
-    }
-    return displayAthletes;
-  }, [displayAthletes]);
-
-
-
-  // Get all athletes from selected teams
-  // Base list of athletes for event invitation (all athletes available)
-  const eventTeamAthletes = useMemo(() => {
-    return displayAthletes;
-  }, [displayAthletes]);
-
-  // Apply filters to athletes
   const filteredEventAthletes = useMemo(() => {
-    let filtered = [...eventTeamAthletes];
+    let filtered = [...athletes];
     
-    // Filter by team
     if (athleteFilterTeam) {
       filtered = filtered.filter(athlete => athlete.team_id === athleteFilterTeam);
     }
     
-    // Filter by age category (calculated from birth_date)
     if (athleteFilterAge) {
       filtered = filtered.filter(athlete => {
         if (!athlete.birth_date) return false;
         const age = calculateAge(athlete.birth_date);
         
-        // Match age category
         if (athleteFilterAge === "U14" && age < 14) return true;
         if (athleteFilterAge === "U16" && age >= 14 && age < 16) return true;
         if (athleteFilterAge === "U18" && age >= 16 && age < 18) return true;
@@ -354,13 +387,12 @@ const Dashboard = () => {
       });
     }
     
-    // Filter by gender
     if (athleteFilterGender) {
       filtered = filtered.filter(athlete => athlete.gender === athleteFilterGender);
     }
     
     return filtered;
-  }, [eventTeamAthletes, athleteFilterTeam, athleteFilterAge, athleteFilterGender]);
+  }, [athletes, athleteFilterTeam, athleteFilterAge, athleteFilterGender]);
 
   const allInviteeIds = useMemo(() => filteredEventAthletes.map((athlete) => athlete.id), [filteredEventAthletes]);
   const areAllInviteesSelected = useMemo(
@@ -392,29 +424,18 @@ const Dashboard = () => {
     return map;
   }, [events]);
 
-  // Unique dates with events (sorted), to navigate between days with events
   const eventDatesSorted = useMemo(() => {
     const set = new Set<string>();
     events.forEach((e) => { if (e.date) set.add(e.date); });
     return Array.from(set).sort();
   }, [events]);
+
   const eventDateIndex = useMemo(() => (
     selectedEventDate ? eventDatesSorted.indexOf(selectedEventDate) : -1
   ), [eventDatesSorted, selectedEventDate]);
+
   const hasPrevEventDay = eventDateIndex > 0;
   const hasNextEventDay = eventDateIndex >= 0 && eventDateIndex < eventDatesSorted.length - 1;
-  const goToPrevEventDay = () => {
-    if (!hasPrevEventDay) return;
-    const d = eventDatesSorted[eventDateIndex - 1];
-    setSelectedEventDate(d);
-    setEventForm((prev) => ({ ...prev, date: d }));
-  };
-  const goToNextEventDay = () => {
-    if (!hasNextEventDay) return;
-    const d = eventDatesSorted[eventDateIndex + 1];
-    setSelectedEventDate(d);
-    setEventForm((prev) => ({ ...prev, date: d }));
-  };
 
   const upcomingEvents = useMemo(() => {
     const toLocalTs = (dateStr: string, timeStr?: string | null) => {
@@ -445,13 +466,11 @@ const Dashboard = () => {
     return { cells, year, month };
   }, [calendarCursor]);
 
-  // Get athlete participation status for events on selected date
   const getAthleteEventStatus = (athleteId: number): ParticipantStatus | null => {
     if (!selectedEventDate || !eventsOnSelectedDate.length) {
       return null;
     }
     
-    // Find if athlete is participant in any event on selected date
     for (const event of eventsOnSelectedDate) {
       const participant = event.participants?.find(p => p.athlete_id === athleteId);
       if (participant) {
@@ -466,7 +485,6 @@ const Dashboard = () => {
     const eventStatus = getAthleteEventStatus(athlete.id);
     
     if (eventStatus) {
-      // Athlete has event invitation/confirmation
       switch (eventStatus) {
         case 'confirmed':
           return {
@@ -496,7 +514,6 @@ const Dashboard = () => {
       }
     }
     
-    // No event - show athlete status
     return {
       className: athlete.status === "active"
         ? "flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -508,16 +525,12 @@ const Dashboard = () => {
 
   const isRosterLoading = athletesQuery.isLoading || teamsQuery.isLoading;
   const rosterHasError = athletesQuery.isError || teamsQuery.isError;
-  const teamCoaches = useMemo(() => teamCoachesQuery.data ?? [], [teamCoachesQuery.data]);
-  const assignedCoachIds = useMemo(() => new Set(teamCoaches.map((coach) => coach.id)), [teamCoaches]);
   const selectedTeamName = useMemo(() => {
     if (!selectedTeamId) {
       return null;
     }
     return teams.find((team) => team.id === selectedTeamId)?.name ?? null;
   }, [teams, selectedTeamId]);
-  const isCoachListLoading = teamCoachesQuery.isLoading && Boolean(selectedTeamId);
-  const coachListHasError = teamCoachesQuery.isError;
   const isTeamSelectDisabled = !teamsForSelectedDate.length;
 
   const goToPrevMonth = () => {
@@ -529,7 +542,7 @@ const Dashboard = () => {
   };
 
   const openEventFormPanel = (dateKey?: string) => {
-    const targetDate = dateKey ?? formatDateKey(new Date());
+    const targetDate = dateKey || formatDateKey(new Date());
     setEventForm((prev) => ({
       ...prev,
       date: targetDate,
@@ -546,21 +559,17 @@ const Dashboard = () => {
     const target = new Date(calendarCursor.getFullYear(), calendarCursor.getMonth(), day);
     const dateKey = formatDateKey(target);
     const dayEvents = eventsByDate.get(dateKey) ?? [];
+    const canCreateOnDay = !isDateInPast(target);
 
-    // Two-click behavior:
-    // - First click: select day and show events only
-    // - Second click on same day: open event creation modal
     if (selectedEventDate === dateKey) {
-      // Second click on same day - open the event creation modal
-      openEventFormPanel(dateKey);
+      if (canCreateOnDay) {
+        openEventFormPanel(dateKey);
+      }
     } else {
-      // First click - just select the day and show events
-      setEventFormOpen(false);
       setEventFormError(null);
       setSelectedEventDate(dateKey);
-      setEventModalOpen(false); // Make sure modal is closed
+      setEventModalOpen(false);
 
-      // If there are teams with events on this day, select a valid one by default
       const teamsWithEventsOnDate = new Set<number>();
       dayEvents.forEach((ev) => {
         if (ev.team_id !== null) teamsWithEventsOnDate.add(ev.team_id);
@@ -614,11 +623,8 @@ const Dashboard = () => {
       return;
     }
 
-    // Use startTime for the backend (backend expects HH:MM format only)
-    // We'll store endTime separately or in notes for now
     const timeValue = eventForm.startTime || null;
     
-    // Add end time to notes if provided
     let notesWithTime = eventForm.notes || "";
     if (eventForm.startTime && eventForm.endTime) {
       const timeNote = `Time: ${eventForm.startTime} - ${eventForm.endTime}`;
@@ -635,9 +641,8 @@ const Dashboard = () => {
         location: eventForm.location || null,
         notes: notesWithTime || null,
         team_id: eventForm.teamIds.length === 1 ? eventForm.teamIds[0] : null,
-        coach_id: eventForm.coachId,
-        invitee_ids: [], // Empty for now - we're inviting athletes, not users
-        athlete_ids: eventForm.inviteeIds, // These are athlete IDs
+        invitee_ids: [],
+        athlete_ids: eventForm.inviteeIds,
         send_email: eventForm.sendEmail,
         send_push: eventForm.sendPush,
       });
@@ -647,29 +652,10 @@ const Dashboard = () => {
         setSelectedTeamId(eventForm.teamIds[0]);
       }
       
-      // Reset form
-      setEventForm({
-        name: "",
-        date: "",
-        startTime: "",
-        endTime: "",
-        location: "",
-        notes: "",
-        teamIds: [],
-        coachId: null,
-        inviteeIds: [],
-        sendEmail: true,
-        sendPush: false,
-      });
-      setEventFormError(null);
+      resetEventForm();
       setEventModalOpen(false);
-      // Reset filters
-      setAthleteFilterTeam(null);
-      setAthleteFilterAge("");
-      setAthleteFilterGender("");
     } catch (error: any) {
       const errorDetail = error?.response?.data?.detail;
-      // Handle validation errors (array) or string errors
       const errorMessage = Array.isArray(errorDetail)
         ? errorDetail.map((e: any) => e.msg || JSON.stringify(e)).join(", ")
         : typeof errorDetail === "string"
@@ -690,9 +676,20 @@ const Dashboard = () => {
     }
   };
 
+  const handleDeleteEvent = async (eventId: number) => {
+    if (!window.confirm("Are you sure you want to delete this event?")) {
+      return;
+    }
+    try {
+      await deleteEventMutation.mutateAsync(eventId);
+    } catch (error) {
+      console.error("Error deleting event:", error);
+    }
+  };
+
   const handleEventCancel = () => {
+    resetEventForm();
     setEventModalOpen(false);
-    setEventFormError(null);
   };
 
   const closeTeamFormModal = () => {
@@ -703,7 +700,7 @@ const Dashboard = () => {
   };
   const closeCoachFormModal = () => {
     setCoachFormOpen(false);
-    setCoachForm(createEmptyCoachForm(Boolean(selectedTeamId)));
+    setCoachForm(createEmptyCoachForm());
     setCoachFormError(null);
     setCoachFormSuccess(null);
     setEditingCoach(null);
@@ -718,17 +715,14 @@ const Dashboard = () => {
         description: form.description.trim() ? form.description.trim() : null,
       };
 
-      // Update existing team or create new one
       const team = form.teamId 
         ? await updateTeam(form.teamId, teamPayload)
         : await createTeam(teamPayload);
 
-      // Get all athletes currently in this team
-      const currentTeamAthletes = displayAthletes.filter(a => a.team_id === team.id);
+      const currentTeamAthletes = athletes.filter((athlete) => athlete.team_id === team.id);
       const currentAthleteIds = new Set(currentTeamAthletes.map(a => a.id));
       const newAthleteIds = new Set(form.athleteIds);
 
-      // Remove athletes that are no longer in the team
       const athletesToRemove = currentTeamAthletes.filter(a => !newAthleteIds.has(a.id));
       if (athletesToRemove.length) {
         await Promise.all(
@@ -736,19 +730,16 @@ const Dashboard = () => {
         );
       }
 
-      // Add new athletes to the team
-      const athletesToAdd = form.athleteIds.filter(id => !currentAthleteIds.has(id));
+      const athletesToAdd = form.athleteIds.filter((id) => !currentAthleteIds.has(id));
       if (athletesToAdd.length) {
         await Promise.all(
           athletesToAdd.map((athleteId) => updateAthlete(athleteId, { team_id: team.id }))
         );
       }
 
-      // Handle coach assignments (simplified for now - may need more sophisticated logic)
       if (form.coachIds.length) {
         await Promise.all(
           form.coachIds.map((coachId) => assignCoachToTeam(team.id, coachId).catch(() => {
-            // Ignore if already assigned
           }))
         );
       }
@@ -767,6 +758,25 @@ const Dashboard = () => {
     onError: (error) => {
       const message = error instanceof Error ? error.message : editingTeam ? "Unable to update team." : "Unable to create team.";
       setTeamFormError(message);
+    },
+  });
+  const deleteTeamMutation = useMutation<void, Error, number>({
+    mutationFn: deleteTeamApi,
+    onSuccess: (_data, teamId) => {
+      queryClient.invalidateQueries({ queryKey: ["teams"] });
+      queryClient.invalidateQueries({ queryKey: ["athletes"] });
+      queryClient.invalidateQueries({ queryKey: ["team-coaches"] });
+      setTeamNotice({ variant: "success", message: "Team removed successfully." });
+      if (selectedTeamId === teamId) {
+        setSelectedTeamId(null);
+      }
+      if (isTeamFormOpen && editingTeam?.id === teamId) {
+        closeTeamFormModal();
+      }
+    },
+    onError: (error) => {
+      const message = error instanceof Error ? error.message : "Unable to remove team.";
+      setTeamNotice({ variant: "error", message });
     },
   });
 
@@ -801,7 +811,7 @@ const Dashboard = () => {
       if (result.teamId) {
         queryClient.invalidateQueries({ queryKey: ["team-coaches", result.teamId] });
       }
-      setCoachForm(createEmptyCoachForm(Boolean(selectedTeamId)));
+      setCoachForm(createEmptyCoachForm());
       setCoachFormError(null);
       const successMessage = result.teamId
         ? coachDirectoryLabels.assignSuccess
@@ -887,6 +897,24 @@ const Dashboard = () => {
       setCoachFormSuccess(null);
     },
   });
+  const deleteCoachMutation = useMutation<void, Error, number>({
+    mutationFn: deleteCoachApi,
+    onSuccess: (_data, coachId) => {
+      queryClient.invalidateQueries({ queryKey: ["all-team-coaches"] });
+      queryClient.invalidateQueries({ queryKey: ["team-coaches"] });
+      setCoachNotice({ variant: "success", message: coachDirectoryLabels.removeSuccess });
+      if (editingCoach?.id === coachId) {
+        closeCoachFormModal();
+      }
+    },
+    onError: (error) => {
+      const message =
+        error instanceof Error
+          ? error.message
+          : coachDirectoryLabels.removeError;
+      setCoachNotice({ variant: "error", message });
+    },
+  });
 
   const generatePassword = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
@@ -909,7 +937,6 @@ const Dashboard = () => {
       return;
     }
     
-    // Password is required for new coaches, optional for editing
     if (!editingCoach && !trimmedPassword) {
       setCoachFormError("Password is required for new coaches.");
       return;
@@ -925,7 +952,6 @@ const Dashboard = () => {
         email: trimmedEmail,
         phone: trimmedPhone,
         password: trimmedPassword,
-        assignToTeam: false,
         teamId: null,
       });
     } else {
@@ -934,7 +960,6 @@ const Dashboard = () => {
         email: trimmedEmail,
         phone: trimmedPhone,
         password: trimmedPassword,
-        assignToTeam: false,
         teamId: null,
       });
     }
@@ -960,6 +985,18 @@ const Dashboard = () => {
     assignCoachMutation.mutate({ teamId: selectedTeamId, coachId });
   };
 
+  const handleCoachDelete = (coachId: number, coachName: string) => {
+    if (!permissions.canManageUsers && !permissions.canCreateCoaches) {
+      return;
+    }
+    const confirmed = window.confirm(`Delete coach ${coachName}? This will remove access and unassign from teams.`);
+    if (!confirmed) {
+      return;
+    }
+    setCoachNotice(null);
+    deleteCoachMutation.mutate(coachId);
+  };
+
   const handleTeamFormFieldChange = <T extends keyof NewTeamFormState>(
     field: T,
     value: NewTeamFormState[T]
@@ -968,7 +1005,17 @@ const Dashboard = () => {
     setTeamFormError(null);
   };
 
-
+  const handleTeamDelete = (teamId: number, teamName: string) => {
+    if (!permissions.canManageUsers) {
+      return;
+    }
+    const confirmed = window.confirm(`Delete team ${teamName}? Athletes will remain unassigned.`);
+    if (!confirmed) {
+      return;
+    }
+    setTeamNotice(null);
+    deleteTeamMutation.mutate(teamId);
+  };
 
   const handleTeamFormSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -1000,135 +1047,6 @@ const Dashboard = () => {
         <p className="text-sm text-muted">{t.dashboard.description}</p>
       </section>
 
-      <section className="print-hidden space-y-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-container-foreground">Live leaderboards</h2>
-            <p className="text-sm text-muted">
-              Track top speed leaders and get ready for scoring leaderboards as match data arrives.
-            </p>
-          </div>
-          <div className="flex flex-col gap-2 text-xs text-muted sm:flex-row sm:items-center">
-            <label className="flex items-center gap-2">
-              <span>Category</span>
-              <select
-                value={speedAgeCategory}
-                onChange={(event) => setSpeedAgeCategory(event.target.value)}
-                className="rounded-md border border-black/10 bg-white/90 px-2 py-1 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-              >
-                <option value="U12">U12</option>
-                <option value="U13">U13</option>
-                <option value="U14">U14</option>
-                <option value="U15">U15</option>
-                <option value="U16">U16</option>
-                <option value="U19">U19</option>
-              </select>
-            </label>
-            <label className="flex items-center gap-2">
-              <span>Gender</span>
-              <select
-                value={speedGenderFilter}
-                onChange={(event) => setSpeedGenderFilter(event.target.value)}
-                className="rounded-md border border-black/10 bg-white/90 px-2 py-1 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-              >
-                <option value="boys">Boys</option>
-                <option value="girls">Girls</option>
-              </select>
-            </label>
-          </div>
-        </div>
-        <div className="grid gap-6 md:grid-cols-3">
-          <div className="flex h-full flex-col rounded-2xl border border-white/10 bg-white/80 p-6 shadow-[0_30px_70px_-50px_rgba(51,153,137,0.55)] backdrop-blur">
-            <h3 className="text-lg font-semibold text-container-foreground">30m Leaders</h3>
-            {speedRankingQuery.isLoading ? (
-              <p className="mt-4 text-sm text-muted">{t.common.loading}...</p>
-            ) : speedRankingQuery.isError ? (
-              <p className="mt-4 text-sm text-red-500">Unable to load leaderboard.</p>
-            ) : !speedRankingQuery.data?.entries?.length ? (
-              <p className="mt-4 text-sm text-muted">No athletes with recorded data.</p>
-            ) : (
-              <ol className="mt-4 flex-1 space-y-3 text-sm text-muted">
-                {speedRankingQuery.data.entries.map((entry, index) => (
-                  <li key={entry.athlete_id} className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-action-primary/10 text-xs font-semibold text-[#039903]">
-                        {index + 1}
-                      </span>
-                      <div>
-                        <p className="font-semibold text-container-foreground">{entry.full_name}</p>
-                        <p className="text-xs text-muted">{entry.team ?? "Club not set"}</p>
-                      </div>
-                    </div>
-                    <span className="text-sm font-semibold text-[#039903]">
-                      {entry.value.toFixed(2)} {entry.unit ?? ""}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </div>
-          <div className="flex h-full flex-col rounded-2xl border border-white/10 bg-white/80 p-6 shadow-[0_30px_70px_-50px_rgba(51,153,137,0.55)] backdrop-blur">
-            <h3 className="text-lg font-semibold text-container-foreground">Goal Leaders</h3>
-            {scorersLeaderboard.isLoading ? (
-              <p className="mt-4 text-sm text-muted">{t.common.loading}...</p>
-            ) : scorersLeaderboard.isError ? (
-              <p className="mt-4 text-sm text-red-500">Unable to load scoring leaderboard.</p>
-            ) : !scorersLeaderboard.data?.entries?.length ? (
-              <p className="mt-4 text-sm text-muted">No match data recorded yet.</p>
-            ) : (
-              <ol className="mt-4 flex-1 space-y-3 text-sm text-muted">
-                {scorersLeaderboard.data.entries.map((entry, index) => (
-                  <li key={entry.athlete_id} className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-action-primary/10 text-xs font-semibold text-[#039903]">
-                        {index + 1}
-                      </span>
-                      <div>
-                        <p className="font-semibold text-container-foreground">{entry.full_name}</p>
-                        <p className="text-xs text-muted">
-                          {[entry.team, entry.position].filter(Boolean).join(" • ") || "No team"}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-sm font-semibold text-[#039903]">{entry.goals}</span>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </div>
-          <div className="flex h-full flex-col rounded-2xl border border-white/10 bg-white/80 p-6 shadow-[0_30px_70px_-50px_rgba(51,153,137,0.55)] backdrop-blur">
-            <h3 className="text-lg font-semibold text-container-foreground">Clean Sheet Leaders</h3>
-            {shootoutsLeaderboard.isLoading ? (
-              <p className="mt-4 text-sm text-muted">{t.common.loading}...</p>
-            ) : shootoutsLeaderboard.isError ? (
-              <p className="mt-4 text-sm text-red-500">Unable to load shootout leaderboard.</p>
-            ) : !shootoutsLeaderboard.data?.entries?.length ? (
-              <p className="mt-4 text-sm text-muted">No shootout data recorded yet.</p>
-            ) : (
-              <ol className="mt-4 flex-1 space-y-3 text-sm text-muted">
-                {shootoutsLeaderboard.data.entries.map((entry, index) => (
-                  <li key={entry.athlete_id} className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-action-primary/10 text-xs font-semibold text-[#039903]">
-                        {index + 1}
-                      </span>
-                      <div>
-                        <p className="font-semibold text-container-foreground">{entry.full_name}</p>
-                        <p className="text-xs text-muted">
-                          {[entry.team, entry.position].filter(Boolean).join(" • ") || "No team"}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="text-sm font-semibold text-[#039903]">{entry.shootout_goals}</span>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Teams and Report Cards Containers */}
       <section className="print-hidden grid gap-6 md:grid-cols-2">
         {/* Teams Container */}
         <div className="rounded-xl border border-action-primary/25 bg-container-gradient p-4 sm:p-6 shadow-xl backdrop-blur">
@@ -1156,6 +1074,17 @@ const Dashboard = () => {
               </button>
             </div>
             <div className="space-y-3">
+              {teamNotice ? (
+                <div
+                  className={`rounded-md border px-3 py-2 text-xs font-medium ${
+                    teamNotice.variant === "success"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-rose-200 bg-rose-50 text-rose-700"
+                  }`}
+                >
+                  {teamNotice.message}
+                </div>
+              ) : null}
               {teamsQuery.isLoading ? (
                 <p className="text-sm text-muted">{t.common.loading}...</p>
               ) : teamsQuery.isError ? (
@@ -1165,19 +1094,23 @@ const Dashboard = () => {
               ) : (
                 <div className="overflow-hidden rounded-lg border border-white/10 bg-white/90">
                   {/* Header - Desktop only */}
-                  <div className="hidden sm:grid grid-cols-[auto_1fr_80px_60px_50px] gap-3 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                  <div className="hidden sm:grid grid-cols-[auto_1fr_80px_60px_minmax(60px,110px)] gap-3 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
                     <FontAwesomeIcon icon={faUsers} className="self-center text-action-primary" />
                     <span>Team Name</span>
                     <span className="text-center">Category</span>
                     <span className="text-center">Athletes</span>
-                    <span className="text-center">Edit</span>
+                    <span className="text-center">Actions</span>
                   </div>
                   {/* Rows */}
-                  {teams.map((team) => (
-                    <div
-                      key={team.id}
-                      className="grid grid-cols-1 sm:grid-cols-[auto_1fr_80px_60px_50px] gap-3 items-start sm:items-center border-b border-black/5 px-3 sm:px-4 py-3 text-sm hover:bg-white/50 last:border-b-0"
-                    >
+                  {teams.map((team) => {
+                    const teamAthletes = athletesByTeamId[team.id] ?? [];
+                    const teamAthleteCount = teamAthletes.length;
+
+                    return (
+                      <div
+                        key={team.id}
+                        className="grid grid-cols-1 sm:grid-cols-[auto_1fr_80px_60px_minmax(60px,110px)] gap-3 items-start sm:items-center border-b border-black/5 px-3 sm:px-4 py-3 text-sm hover:bg-white/50 last:border-b-0"
+                      >
                       <div className="flex items-center gap-3 sm:contents">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-action-primary/10">
                           <FontAwesomeIcon icon={faUsers} className="text-xs text-action-primary" />
@@ -1194,48 +1127,62 @@ const Dashboard = () => {
                       <div className="flex justify-between items-center sm:contents">
                         <div className="flex gap-4 text-xs text-muted sm:hidden">
                           <span>{team.age_category}</span>
-                          <span>{displayAthletes.filter(athlete => athlete.team_id === team.id).length} athletes</span>
+                          <span>{teamAthleteCount} athletes</span>
                         </div>
                         
                         {/* Desktop layout - separate columns */}
                         <span className="hidden sm:block text-center text-xs text-muted">{team.age_category}</span>
                         <span className="hidden sm:block text-center text-xs font-medium text-container-foreground">
-                          {displayAthletes.filter(athlete => athlete.team_id === team.id).length}
+                          {teamAthleteCount}
                         </span>
                         
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            // Load coaches for this team
-                            const teamCoachesData = await listTeamCoaches(team.id);
-                            const coachIds = teamCoachesData.map((coach: TeamCoach) => coach.id);
-                            
-                            setEditingTeam({
-                              id: team.id,
-                              name: team.name,
-                              ageCategory: team.age_category,
-                              gender: "coed", // Default since backend doesn't have this field yet
-                              description: team.description || ""
-                            });
-                            setTeamForm({
-                              name: team.name,
-                              ageCategory: team.age_category,
-                              gender: "coed", // Default since backend doesn't have this field yet
-                              description: team.description || "",
-                              coachIds: coachIds,
-                              athleteIds: displayAthletes.filter(athlete => athlete.team_id === team.id).map(athlete => athlete.id)
-                            });
-                            setTeamFormError(null);
-                            setTeamFormOpen(true);
-                          }}
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition hover:bg-action-primary/10 hover:text-action-primary sm:mx-auto"
-                          aria-label={`Edit ${team.name}`}
-                        >
-                          <FontAwesomeIcon icon={faPenToSquare} className="text-lg" />
-                        </button>
+                        <div className="flex items-center justify-end gap-2 sm:justify-center">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              // Load coaches for this team (cached via react-query)
+                              const teamCoachesData = await fetchTeamCoaches(team.id);
+                              const coachIds = teamCoachesData.map((coach: TeamCoach) => coach.id);
+                              
+                              setEditingTeam({
+                                id: team.id,
+                                name: team.name,
+                                ageCategory: team.age_category,
+                                gender: "coed", // Default since backend doesn't have this field yet
+                                description: team.description || ""
+                              });
+                              setTeamForm({
+                                name: team.name,
+                                ageCategory: team.age_category,
+                                gender: "coed", // Default since backend doesn't have this field yet
+                                description: team.description || "",
+                                coachIds: coachIds,
+                                athleteIds: teamAthletes.map((athlete) => athlete.id)
+                              });
+                              setTeamFormError(null);
+                              setTeamFormOpen(true);
+                            }}
+                            className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition hover:bg-action-primary/10 hover:text-action-primary"
+                            aria-label={`Edit ${team.name}`}
+                          >
+                            <FontAwesomeIcon icon={faPenToSquare} className="text-lg" />
+                          </button>
+                          {permissions.canManageUsers ? (
+                            <button
+                              type="button"
+                              onClick={() => handleTeamDelete(team.id, team.name)}
+                              disabled={deleteTeamMutation.isPending}
+                              className="flex h-8 w-8 items-center justify-center rounded-full text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
+                              aria-label={`Delete ${team.name}`}
+                            >
+                              <FontAwesomeIcon icon={faTrash} className="text-sm" />
+                            </button>
+                          ) : null}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1247,8 +1194,8 @@ const Dashboard = () => {
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h2 className="text-lg font-semibold text-container-foreground">Report Cards</h2>
-                <p className="text-sm text-muted">Performance reports and analytics</p>
+                <h2 className="text-lg font-semibold text-container-foreground">Analytics</h2>
+                <p className="text-sm text-muted">Key metrics and statistics</p>
               </div>
             </div>
             <div className="space-y-3">
@@ -1273,8 +1220,10 @@ const Dashboard = () => {
                 type="button"
                 onClick={goToPrevMonth}
                 className="rounded-full border border-action-primary/40 bg-action-primary px-3 py-1 text-xs font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
+                aria-label={summaryLabels.calendar.prevMonth}
               >
-                {summaryLabels.calendar.prevMonth}
+                <span className="sr-only">{summaryLabels.calendar.prevMonth}</span>
+                <FontAwesomeIcon icon={faAnglesLeft} className="text-base" />
               </button>
               <div className="text-center">
                 <p className="text-lg font-semibold text-container-foreground">
@@ -1286,8 +1235,10 @@ const Dashboard = () => {
                 type="button"
                 onClick={goToNextMonth}
                 className="rounded-full border border-action-primary/40 bg-action-primary px-3 py-1 text-xs font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
+                aria-label={summaryLabels.calendar.nextMonth}
               >
-                {summaryLabels.calendar.nextMonth}
+                <span className="sr-only">{summaryLabels.calendar.nextMonth}</span>
+                <FontAwesomeIcon icon={faAnglesRight} className="text-base" />
               </button>
             </div>
             <div className="mt-4">
@@ -1347,39 +1298,51 @@ const Dashboard = () => {
               {upcomingEvents.length ? (
                 <ul className="mt-3 space-y-3 text-sm">
                   {upcomingEvents.map((event) => {
-                    const handleUpcomingClick = () => {
-                      setSelectedEventDate(event.date);
-                      setEventFormOpen(false);
-                      setEventFormError(null);
-                      if (event.team_id) {
-                        setSelectedTeamId(event.team_id);
-                      }
-                      setCalendarCursor((prev) => {
-                        const eventDate = new Date(event.date);
-                        if (
-                          prev.getFullYear() === eventDate.getFullYear() &&
-                          prev.getMonth() === eventDate.getMonth()
-                        ) {
-                          return prev;
-                        }
-                        return new Date(eventDate.getFullYear(), eventDate.getMonth(), 1);
-                      });
-                    };
                     return (
                       <li key={event.id}>
-                        <button
-                          type="button"
-                          onClick={handleUpcomingClick}
-                          className="w-full rounded-lg border border-black/10 bg-white/70 px-3 py-2 text-left shadow-sm transition hover:border-action-primary/40 hover:shadow-md"
-                        >
-                          <p className="font-semibold text-container-foreground">{event.name}</p>
-                          <p className="text-xs text-muted">
-                            {readableDate(event.date)} • {event.time || summaryLabels.calendar.timeTbd}
-                          </p>
-                          {event.location ? (
-                            <p className="text-xs text-muted">{event.location}</p>
-                          ) : null}
-                        </button>
+                        <div className="rounded-lg border border-black/10 bg-white/70 px-3 py-2 shadow-sm">
+                          <div className="flex items-start gap-3">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedEventDate(event.date);
+                                if (event.team_id) {
+                                  setSelectedTeamId(event.team_id);
+                                }
+                                setCalendarCursor((prev) => {
+                                  const eventDate = new Date(event.date);
+                                  if (
+                                    prev.getFullYear() === eventDate.getFullYear() &&
+                                    prev.getMonth() === eventDate.getMonth()
+                                  ) {
+                                    return prev;
+                                  }
+                                  return new Date(eventDate.getFullYear(), eventDate.getMonth(), 1);
+                                });
+                              }}
+                              className="flex-1 text-left"
+                            >
+                              <p className="font-semibold text-container-foreground">{event.name}</p>
+                              <p className="text-xs text-muted">
+                                {readableDate(event.date)} • {event.time || summaryLabels.calendar.timeTbd}
+                              </p>
+                              {event.location ? (
+                                <p className="text-xs text-muted">{event.location}</p>
+                              ) : null}
+                            </button>
+                            {canManageEvents ? (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteEvent(event.id)}
+                                disabled={deleteEventMutation.isPending}
+                                className="flex h-7 w-7 items-center justify-center rounded-full text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
+                                aria-label={`Delete ${event.name}`}
+                              >
+                                <FontAwesomeIcon icon={faTrash} className="text-xs" />
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
                       </li>
                     );
                   })}
@@ -1480,15 +1443,15 @@ const Dashboard = () => {
                     <div className="px-4 py-6 text-sm text-muted">{summaryLabels.loading}</div>
                   ) : rosterHasError ? (
                     <div className="px-4 py-6 text-sm text-red-500">{summaryLabels.error}</div>
-                  ) : !rosterAthletes.length ? (
+                  ) : !athletes.length ? (
                     <div className="px-4 py-6 text-sm text-muted">{summaryLabels.empty}</div>
                   ) : (
                     <ul className="divide-y divide-black/5">
                       {/* Group athletes by team */}
                       {teams
-                        .filter((team) => rosterAthletes.some((athlete) => athlete.team_id === team.id))
+                        .filter((team) => (athletesByTeamId[team.id] ?? []).length)
                         .map((team) => {
-                          const teamAthletes = rosterAthletes.filter((athlete) => athlete.team_id === team.id);
+                          const teamAthletes = athletesByTeamId[team.id] ?? [];
                           return (
                             <li key={`team-group-${team.id}`} className="border-b border-black/5 last:border-b-0">
                               {/* Team header */}
@@ -1544,13 +1507,13 @@ const Dashboard = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-semibold text-container-foreground">Coaches</h2>
-                <p className="text-sm text-muted">Manage coaching staff and assignments</p>
+                
               </div>
               {permissions.canCreateCoaches && (
                 <button
                   type="button"
                   onClick={() => {
-                    setCoachForm(createEmptyCoachForm(Boolean(selectedTeamId)));
+                    setCoachForm(createEmptyCoachForm());
                     setCoachFormOpen(true);
                     setCoachFormError(null);
                     setCoachFormSuccess(null);
@@ -1567,6 +1530,17 @@ const Dashboard = () => {
               )}
             </div>
             <div className="space-y-3">
+              {coachNotice ? (
+                <div
+                  className={`rounded-md border px-3 py-2 text-xs font-medium ${
+                    coachNotice.variant === "success"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-rose-200 bg-rose-50 text-rose-700"
+                  }`}
+                >
+                  {coachNotice.message}
+                </div>
+              ) : null}
               {allCoachesQuery.isLoading ? (
                 <p className="text-sm text-muted">{t.common.loading}...</p>
               ) : allCoachesQuery.isError ? (
@@ -1576,17 +1550,17 @@ const Dashboard = () => {
               ) : (
                 <div className="overflow-hidden rounded-lg border border-white/10 bg-white/90">
                   {/* Header - Desktop only */}
-                  <div className="hidden sm:grid grid-cols-[auto_1fr_120px_50px] gap-3 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                  <div className="hidden sm:grid grid-cols-[auto_1fr_120px_minmax(60px,110px)] gap-3 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted">
                     <FontAwesomeIcon icon={faUserTie} className="self-center text-action-primary" />
                     <span>Coach Name</span>
                     <span className="text-center">Contact</span>
-                    <span className="text-center">Edit</span>
+                    <span className="text-center">Actions</span>
                   </div>
                   {/* Rows */}
                   {availableCoaches.map((coach) => (
                     <div
                       key={coach.id}
-                      className="grid grid-cols-1 sm:grid-cols-[auto_1fr_120px_50px] gap-3 items-start sm:items-center border-b border-black/5 px-3 sm:px-4 py-3 text-sm hover:bg-white/50 last:border-b-0"
+                      className="grid grid-cols-1 sm:grid-cols-[auto_1fr_120px_minmax(60px,110px)] gap-3 items-start sm:items-center border-b border-black/5 px-3 sm:px-4 py-3 text-sm hover:bg-white/50 last:border-b-0"
                     >
                       <div className="flex items-center gap-3 sm:contents">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-action-primary/10">
@@ -1609,35 +1583,47 @@ const Dashboard = () => {
                           {coach.phone ?? "Not set"}
                         </span>
                         
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            // Load teams for this coach
-                            const teams = await getCoachTeams(coach.id);
-                            setCoachTeams(teams);
-                            
-                            setEditingCoach({
-                              id: coach.id,
-                              fullName: coach.full_name,
-                              email: coach.email,
-                              phone: coach.phone || ""
-                            });
-                            setCoachForm({
-                              fullName: coach.full_name,
-                              email: coach.email,
-                              phone: coach.phone || "",
-                              password: "", // Password field will be optional for edits
-                              assignToTeam: false
-                            });
-                            setCoachFormError(null);
-                            setCoachFormSuccess(null);
-                            setCoachFormOpen(true);
-                          }}
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition hover:bg-action-primary/10 hover:text-action-primary sm:mx-auto"
-                          aria-label={`Edit ${coach.full_name}`}
-                        >
-                          <FontAwesomeIcon icon={faPenToSquare} className="text-lg" />
-                        </button>
+                        <div className="flex items-center gap-[0.275rem] sm:justify-center">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              // Load teams for this coach
+                              const teams = await getCoachTeams(coach.id);
+                              setCoachTeams(teams);
+                              
+                              setEditingCoach({
+                                id: coach.id,
+                                fullName: coach.full_name,
+                                email: coach.email,
+                                phone: coach.phone || ""
+                              });
+                              setCoachForm({
+                                fullName: coach.full_name,
+                                email: coach.email,
+                                phone: coach.phone || "",
+                                password: "", // Password field will be optional for edits
+                              });
+                              setCoachFormError(null);
+                              setCoachFormSuccess(null);
+                              setCoachFormOpen(true);
+                            }}
+                            className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition hover:bg-action-primary/10 hover:text-action-primary"
+                            aria-label={`Edit ${coach.full_name}`}
+                          >
+                            <FontAwesomeIcon icon={faPenToSquare} className="text-base" />
+                          </button>
+                          {(permissions.canManageUsers || permissions.canCreateCoaches) ? (
+                            <button
+                              type="button"
+                              onClick={() => handleCoachDelete(coach.id, coach.full_name)}
+                              disabled={deleteCoachMutation.isPending}
+                              className="flex h-8 w-8 items-center justify-center rounded-full text-red-500 transition hover:bg-rose-100 disabled:opacity-50"
+                              aria-label={`Delete ${coach.full_name}`}
+                            >
+                              <FontAwesomeIcon icon={faUserXmark} className="text-sm" />
+                            </button>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1718,6 +1704,7 @@ const Dashboard = () => {
                   ))}
                 </select>
               </label>
+              
               <label className="text-xs font-medium text-muted">
                 Gender Category
                 <select
@@ -1844,7 +1831,7 @@ const Dashboard = () => {
                   ) : (
                     <div className="space-y-1">
                       {teamForm.athleteIds.map((athleteId) => {
-                        const athlete = displayAthletes.find(a => a.id === athleteId);
+                        const athlete = athleteById.get(athleteId);
                         if (!athlete) return null;
                         return (
                           <div
@@ -1892,111 +1879,115 @@ const Dashboard = () => {
                 <p className="text-xs text-muted">Drag athletes to add them to the roster</p>
                 
                 {/* Filters */}
-                <div className="grid gap-2 grid-cols-3 rounded-lg border border-black/10 bg-white/90 p-2">
-                  <select
-                    value={athleteFilter.age}
-                    onChange={(e) => setAthleteFilter(prev => ({ ...prev, age: e.target.value }))}
-                    className="w-full rounded-md border border-black/10 bg-white px-2 py-1 text-xs shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                  >
-                    <option value="">All Ages</option>
-                    <option value="U14">U14</option>
-                    <option value="U16">U16</option>
-                    <option value="U18">U18</option>
-                    <option value="U21">U21</option>
-                    <option value="Senior">Senior</option>
-                  </select>
-                  <select
-                    value={athleteFilter.gender}
-                    onChange={(e) => setAthleteFilter(prev => ({ ...prev, gender: e.target.value }))}
-                    className="w-full rounded-md border border-black/10 bg-white px-2 py-1 text-xs shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                  >
-                    <option value="">All Genders</option>
-                    <option value="male">Boys</option>
-                    <option value="female">Girls</option>
-                  </select>
-                  <select
-                    value={athleteFilter.teamStatus}
-                    onChange={(e) => setAthleteFilter(prev => ({ ...prev, teamStatus: e.target.value as "all" | "assigned" | "unassigned" }))}
-                    className="w-full rounded-md border border-black/10 bg-white px-2 py-1 text-xs shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="unassigned">Unassigned</option>
-                    <option value="assigned">Assigned</option>
-                  </select>
+                <div className="rounded-lg border border-black/10 bg-white/90 p-2 text-xs text-muted">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="flex items-center gap-1">
+                      <span className="text-[0.65rem] uppercase">Age</span>
+                      <select
+                        value={athleteFilter.age}
+                        onChange={(e) => setAthleteFilter((prev) => ({ ...prev, age: e.target.value }))}
+                        className="rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
+                      >
+                        <option value="">All</option>
+                        <option value="U14">U14</option>
+                        <option value="U16">U16</option>
+                        <option value="U18">U18</option>
+                        <option value="U21">U21</option>
+                        <option value="Senior">Senior</option>
+                      </select>
+                    </label>
+                    <label className="flex items-center gap-1">
+                      <span className="text-[0.65rem] uppercase">Gender</span>
+                      <select
+                        value={athleteFilter.gender}
+                        onChange={(e) => setAthleteFilter((prev) => ({ ...prev, gender: e.target.value }))}
+                        className="rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
+                      >
+                        <option value="">All</option>
+                        <option value="male">Boys</option>
+                        <option value="female">Girls</option>
+                      </select>
+                    </label>
+                    <div className="flex items-center gap-1 text-[0.65rem] uppercase">
+                      <span>Status</span>
+                      <div className="inline-flex overflow-hidden rounded border border-black/10">
+                        {athleteStatusFilters.map((option) => (
+                          <button
+                            key={`team-filter-status-pill-${option}`}
+                            type="button"
+                            onClick={() => setAthleteFilter((prev) => ({ ...prev, teamStatus: option }))}
+                            className={`px-2 py-1 text-xs font-semibold ${
+                              athleteFilter.teamStatus === option
+                                ? "bg-action-primary text-white"
+                                : "bg-white text-muted"
+                            }`}
+                          >
+                            {option === "all" ? "All" : option === "unassigned" ? "Unassigned" : "Assigned"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setAthleteFilter({ age: "", gender: "", teamStatus: "all" })}
+                      className="ml-auto text-[0.65rem] uppercase text-action-primary hover:text-action-primary/80"
+                    >
+                      Clear
+                    </button>
+                  </div>
                 </div>
 
                 {/* Available Athletes List */}
                 <div className="min-h-[300px] max-h-[400px] overflow-y-auto rounded-lg border border-black/10 bg-white/70 p-2">
-                  {(() => {
-                    const availableAthletes = displayAthletes
-                      .filter(athlete => !teamForm.athleteIds.includes(athlete.id))
-                      .filter(athlete => {
-                        if (athleteFilter.gender && athlete.gender !== athleteFilter.gender) return false;
-                        if (athleteFilter.teamStatus === "assigned" && !athlete.team_id) return false;
-                        if (athleteFilter.teamStatus === "unassigned" && athlete.team_id) return false;
-                        if (athleteFilter.age) {
-                          if (!athlete.birth_date) return false;
-                          const age = calculateAge(athlete.birth_date);
-                          const ageLimit = parseInt(athleteFilter.age.substring(1));
-                          if (age >= ageLimit) return false;
-                        }
-                        return true;
-                      });
-
-                    if (availableAthletes.length === 0) {
-                      return (
-                        <div className="flex items-center justify-center h-32 text-xs text-muted">
-                          No athletes available with selected filters
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div className="space-y-1">
-                        {availableAthletes.map((athlete) => {
-                          const assignedTeamName = athlete.team_id && teamNameById[athlete.team_id] 
-                            ? teamNameById[athlete.team_id] 
-                            : null;
-                          return (
-                            <div
-                              key={`available-athlete-${athlete.id}`}
-                              draggable
-                              onDragStart={() => setDraggedAthleteId(athlete.id)}
-                              className="flex items-center justify-between gap-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm cursor-move hover:bg-blue-50 transition"
-                            >
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-container-foreground truncate">
-                                  {athlete.first_name} {athlete.last_name}
-                                </p>
-                                <p className="text-xs text-muted truncate">
-                                  {athlete.birth_date ? `Age: ${calculateAge(athlete.birth_date)}` : ""}
-                                  {athlete.gender ? ` • ${athlete.gender === "male" ? "Boys" : "Girls"}` : ""}
-                                  {assignedTeamName ? ` • ${assignedTeamName}` : " • Unassigned"}
-                                </p>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (!teamForm.athleteIds.includes(athlete.id)) {
-                                    setTeamForm((prev) => ({
-                                      ...prev,
-                                      athleteIds: [...prev.athleteIds, athlete.id]
-                                    }));
-                                  }
-                                }}
-                                className="flex h-6 w-6 items-center justify-center rounded-full bg-action-primary/10 text-action-primary hover:bg-action-primary/20 transition"
-                              >
-                                <FontAwesomeIcon icon={faPlus} className="text-xs" />
-                              </button>
+                  {teamBuilderCandidates.length === 0 ? (
+                    <div className="flex h-32 items-center justify-center text-xs text-muted">
+                      No athletes available with selected filters
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {teamBuilderCandidates.map((athlete) => {
+                        const assignedTeamName = athlete.team_id && teamNameById[athlete.team_id]
+                          ? teamNameById[athlete.team_id]
+                          : null;
+                        return (
+                          <div
+                            key={`available-athlete-${athlete.id}`}
+                            draggable
+                            onDragStart={() => setDraggedAthleteId(athlete.id)}
+                            className="flex items-center justify-between gap-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm cursor-move hover:bg-blue-50 transition"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-container-foreground truncate">
+                                {athlete.first_name} {athlete.last_name}
+                              </p>
+                              <p className="text-xs text-muted truncate">
+                                {athlete.birth_date ? `Age: ${calculateAge(athlete.birth_date)}` : ""}
+                                {athlete.gender ? ` • ${athlete.gender === "male" ? "Boys" : "Girls"}` : ""}
+                                {assignedTeamName ? ` • ${assignedTeamName}` : " • Unassigned"}
+                              </p>
                             </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!teamForm.athleteIds.includes(athlete.id)) {
+                                  setTeamForm((prev) => ({
+                                    ...prev,
+                                    athleteIds: [...prev.athleteIds, athlete.id],
+                                  }));
+                                }
+                              }}
+                              className="flex h-6 w-6 items-center justify-center rounded-full bg-action-primary/10 text-action-primary hover:bg-action-primary/20 transition"
+                            >
+                              <FontAwesomeIcon icon={faPlus} className="text-xs" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
                 <p className="text-xs text-muted">
-                  {displayAthletes.filter(athlete => !teamForm.athleteIds.includes(athlete.id)).length} athletes available
+                  {remainingAthleteCount} athletes available
                 </p>
               </div>
             </div>
@@ -2167,12 +2158,12 @@ const Dashboard = () => {
     
     {isEventModalOpen ? (
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-0 py-0"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-2 sm:px-0 py-2 sm:py-0"
         onClick={handleEventCancel}
         role="presentation"
       >
         <div
-          className="w-full max-w-none h-[92vh] sm:h-[94vh] overflow-y-auto rounded-none bg-white p-4 sm:p-6 shadow-2xl"
+          className="w-full max-w-none h-[96vh] sm:h-[94vh] overflow-y-auto rounded-lg sm:rounded-none bg-white p-3 sm:p-6 shadow-2xl"
           onClick={(event) => event.stopPropagation()}
         >
           <div className="relative">
@@ -2223,14 +2214,29 @@ const Dashboard = () => {
                           <div className="flex-1">
                             <div className="flex items-start justify-between gap-2">
                               <p className="font-semibold text-container-foreground">{ev.name}</p>
-                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                                ev.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
-                                ev.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}>
-                                {ev.status === 'scheduled' ? 'Scheduled' : 
-                                 ev.status === 'completed' ? 'Completed' : 'Cancelled'}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                                  ev.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
+                                  ev.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {ev.status === 'scheduled' ? 'Scheduled' : 
+                                   ev.status === 'completed' ? 'Completed' : 'Cancelled'}
+                                </span>
+                                {canManageEvents && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteEvent(ev.id);
+                                    }}
+                                    disabled={deleteEventMutation.isPending}
+                                    className="flex h-6 w-6 items-center justify-center rounded-full text-rose-600 hover:bg-rose-100 transition disabled:opacity-50"
+                                    title="Delete event"
+                                  >
+                                    <FontAwesomeIcon icon={faTrash} className="h-3 w-3" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
                             <p className="text-xs text-muted mt-1">
                               {ev.time || summaryLabels.calendar.timeTbd}
@@ -2288,7 +2294,7 @@ const Dashboard = () => {
                                   disabled={confirmAttendanceMutation.isPending}
                                   className="flex items-center gap-1 rounded-md bg-rose-600 px-2 py-1 text-xs font-medium text-white hover:bg-rose-700 disabled:opacity-50"
                                 >
-                                  <FontAwesomeIcon icon={faTimes} className="h-3 w-3" />
+                                  <FontAwesomeIcon icon={faTrash} className="h-3 w-3" />
                                   Decline
                                 </button>
                               </div>
@@ -2391,48 +2397,61 @@ const Dashboard = () => {
                   <p className="mb-3 text-sm font-semibold">Invite Athletes</p>
                   
                   {/* Filter Controls */}
-                  <div className="mb-3 grid gap-2 sm:grid-cols-3 rounded-lg border border-black/10 bg-white/70 p-3">
-                    <div>
-                      <label className="block text-xs font-medium text-muted mb-1">Filter by Team</label>
-                      <select
-                        value={athleteFilterTeam ?? ""}
-                        onChange={(e) => setAthleteFilterTeam(e.target.value ? Number(e.target.value) : null)}
-                        className="w-full rounded-md border border-black/10 bg-white px-2 py-1 text-xs shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  <div className="mb-3 rounded-lg border border-black/10 bg-white/70 p-2 text-xs text-muted">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <label className="flex items-center gap-1">
+                        <span className="text-[0.65rem] uppercase">Team</span>
+                        <select
+                          value={athleteFilterTeam ?? ""}
+                          onChange={(e) => setAthleteFilterTeam(e.target.value ? Number(e.target.value) : null)}
+                          className="rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
+                        >
+                          <option value="">All</option>
+                          {teams.map((team) => (
+                            <option key={`filter-team-${team.id}`} value={team.id}>
+                              {team.name}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="flex items-center gap-1">
+                        <span className="text-[0.65rem] uppercase">Age</span>
+                        <select
+                          value={athleteFilterAge}
+                          onChange={(e) => setAthleteFilterAge(e.target.value)}
+                          className="rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
+                        >
+                          <option value="">All</option>
+                          <option value="U14">U14</option>
+                          <option value="U16">U16</option>
+                          <option value="U18">U18</option>
+                          <option value="U21">U21</option>
+                          <option value="Senior">Senior</option>
+                        </select>
+                      </label>
+                      <label className="flex items-center gap-1">
+                        <span className="text-[0.65rem] uppercase">Gender</span>
+                        <select
+                          value={athleteFilterGender}
+                          onChange={(e) => setAthleteFilterGender(e.target.value)}
+                          className="rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
+                        >
+                          <option value="">All</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                        </select>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAthleteFilterTeam(null);
+                          setAthleteFilterAge("");
+                          setAthleteFilterGender("");
+                        }}
+                        className="ml-auto text-[0.65rem] uppercase text-action-primary hover:text-action-primary/80"
                       >
-                        <option value="">All Teams</option>
-                        {teams.map((team) => (
-                          <option key={`filter-team-${team.id}`} value={team.id}>
-                            {team.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-muted mb-1">Filter by Age</label>
-                      <select
-                        value={athleteFilterAge}
-                        onChange={(e) => setAthleteFilterAge(e.target.value)}
-                        className="w-full rounded-md border border-black/10 bg-white px-2 py-1 text-xs shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                      >
-                        <option value="">All Ages</option>
-                        <option value="U14">U14</option>
-                        <option value="U16">U16</option>
-                        <option value="U18">U18</option>
-                        <option value="U21">U21</option>
-                        <option value="Senior">Senior</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-muted mb-1">Filter by Gender</label>
-                      <select
-                        value={athleteFilterGender}
-                        onChange={(e) => setAthleteFilterGender(e.target.value)}
-                        className="w-full rounded-md border border-black/10 bg-white px-2 py-1 text-xs shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                      >
-                        <option value="">All Genders</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                      </select>
+                        Clear
+                      </button>
                     </div>
                   </div>
 
@@ -2498,7 +2517,7 @@ const Dashboard = () => {
                       </table>
                     ) : (
                       <p className="px-3 py-6 text-center text-xs text-muted">
-                        {displayAthletes.length === 0 
+                        {athletes.length === 0 
                           ? "No athletes registered yet. Create athletes first to invite them to events." 
                           : "No athletes found with the selected filters"}
                       </p>
@@ -2531,13 +2550,20 @@ const Dashboard = () => {
                 {eventFormError ? (
                   <p className="text-xs text-red-500">{eventFormError}</p>
                 ) : null}
-                <div className="flex justify-end">
+                <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={handleEventCancel}
+                    className="w-full sm:w-auto rounded-md border border-black/10 px-4 py-2 text-sm font-semibold text-container-foreground hover:bg-white"
+                  >
+                    Cancel
+                  </button>
                   <button
                     type="submit"
                     disabled={createEventMutation.isPending}
                     className="w-full sm:w-auto rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground hover:bg-action-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {createEventMutation.isPending ? "Criando..." : summaryLabels.calendar.createButton}
+                    {createEventMutation.isPending ? "Loading..." : summaryLabels.calendar.createButton}
                   </button>
                 </div>
               </form>

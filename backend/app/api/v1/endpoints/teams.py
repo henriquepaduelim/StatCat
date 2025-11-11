@@ -3,16 +3,17 @@ from __future__ import annotations
 from typing import Iterable
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlmodel import Session
 
 from app.api.deps import ensure_roles, get_current_active_user
 from app.core.security import get_password_hash
 from app.db.session import get_session
 from app.models.athlete import Athlete
+from app.models.event import Event
 from app.models.team import CoachTeamLink, Team
 from app.models.user import User, UserRole
-from app.schemas.team import TeamCreate, TeamCoachCreate, TeamRead
+from app.schemas.team import TeamCoachCreate, TeamCreate, TeamRead
 from app.schemas.user import UserRead
 
 router = APIRouter()
@@ -295,6 +296,55 @@ def update_coach(
     return coach
 
 
+@router.delete("/coaches/{coach_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_coach(
+    coach_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> None:
+    """Remove a coach user entirely and detach from any teams."""
+    ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF})
+
+    coach = session.get(User, coach_id)
+    if not coach or coach.role != UserRole.COACH:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Coach not found")
+
+    linked_team_ids = [
+        row.team_id
+        for row in session.exec(
+            select(CoachTeamLink).where(CoachTeamLink.user_id == coach_id)
+        ).all()
+    ]
+
+    session.exec(delete(CoachTeamLink).where(CoachTeamLink.user_id == coach_id))
+
+    # Remove coach references from events
+    events_as_coach = session.exec(select(Event).where(Event.coach_id == coach_id)).all()
+    for event in events_as_coach:
+        event.coach_id = None
+        session.add(event)
+
+    # Reassign created_by to current admin/staff to preserve FK integrity
+    events_created = session.exec(select(Event).where(Event.created_by_id == coach_id)).all()
+    for event in events_created:
+        event.created_by_id = current_user.id
+        session.add(event)
+
+    # Clear coach_name if no other coaches remain for affected teams
+    for team_id in linked_team_ids:
+        remaining = session.exec(
+            select(CoachTeamLink).where(CoachTeamLink.team_id == team_id)
+        ).first()
+        if remaining is None:
+            team = session.get(Team, team_id)
+            if team:
+                team.coach_name = None
+                session.add(team)
+
+    session.delete(coach)
+    session.commit()
+
+
 @router.get("/coaches/{coach_id}/teams", response_model=list[TeamRead])
 def get_coach_teams(
     coach_id: int,
@@ -370,3 +420,32 @@ def remove_team_coach(
         team.coach_name = None
         session.add(team)
         session.commit()
+
+
+@router.delete("/{team_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_team(
+    team_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> None:
+    """Delete a team and detach associated athletes/coaches."""
+    ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF})
+    team = _get_team_or_404(session, team_id)
+
+    # Unassign athletes from the team
+    athletes = session.exec(select(Athlete).where(Athlete.team_id == team_id)).all()
+    for athlete in athletes:
+        athlete.team_id = None
+        session.add(athlete)
+
+    # Remove any coach links for this team
+    session.exec(delete(CoachTeamLink).where(CoachTeamLink.team_id == team_id))
+
+    # Detach events referencing this team so FK constraints don't fail
+    events = session.exec(select(Event).where(Event.team_id == team_id)).all()
+    for event in events:
+        event.team_id = None
+        session.add(event)
+
+    session.delete(team)
+    session.commit()

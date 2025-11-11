@@ -1,18 +1,20 @@
 """API endpoints for events management."""
 from datetime import datetime
 from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import delete
 from sqlmodel import Session, select
 
 from app.api.deps import SessionDep, get_current_active_user
+from app.models.event import Event, EventParticipant, Notification, ParticipantStatus
 from app.models.user import User
-from app.models.event import Event, EventParticipant, ParticipantStatus
 from app.schemas.event import (
-    EventCreate,
-    EventUpdate,
-    EventResponse,
     EventConfirmation,
+    EventCreate,
     EventParticipantResponse,
+    EventResponse,
+    EventUpdate,
 )
 from app.services.notification_service import notification_service
 
@@ -236,7 +238,11 @@ def delete_event(
     # Check permission
     if event.created_by_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this event")
-    
+
+    # Remove participants and notifications explicitly to avoid FK issues
+    db.exec(delete(EventParticipant).where(EventParticipant.event_id == event_id))
+    db.exec(delete(Notification).where(Notification.event_id == event_id))
+
     db.delete(event)
     db.commit()
 

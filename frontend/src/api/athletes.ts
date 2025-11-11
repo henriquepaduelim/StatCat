@@ -5,6 +5,7 @@ import type {
   AthleteRegistrationPayload,
   AthleteRegistrationCompletionPayload,
   AthleteDocumentMetadata,
+  PendingAthleteSummary,
 } from "../types/athlete";
 
 export const createAthlete = async (payload: AthletePayload): Promise<Athlete> => {
@@ -74,11 +75,18 @@ export const approveAthlete = async (athleteId: number): Promise<any> => {
   return data;
 };
 
+export const approveAllAthletes = async (): Promise<any> => {
+  const { data } = await api.post(`/athletes/approve-all`);
+  return data;
+};
+
 export const rejectAthlete = async (
   athleteId: number, 
   reason: string
 ): Promise<any> => {
-  const { data } = await api.post(`/athletes/${athleteId}/reject?reason=${encodeURIComponent(reason)}`);
+  const { data } = await api.post(`/athletes/${athleteId}/reject`, null, {
+    params: { reason },
+  });
   return data;
 };
 
@@ -87,8 +95,8 @@ export const getPendingAthletesCount = async (): Promise<{ count: number }> => {
   return data;
 };
 
-export const getPendingAthletes = async (): Promise<any[]> => {
-  const { data } = await api.get("/athletes/pending");
+export const getPendingAthletes = async (): Promise<PendingAthleteSummary[]> => {
+  const { data } = await api.get<PendingAthleteSummary[]>("/athletes/pending");
   return data;
 };
 

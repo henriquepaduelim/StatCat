@@ -87,7 +87,8 @@ Navigate to the backend directory and create a virtual environment:
 ```bash
 cd backend
 python3 -m venv .venv
-source .venv/bin/activate
+
+
 ```
 
 On Windows, use:

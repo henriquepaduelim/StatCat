@@ -1,28 +1,35 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getPendingAthletes, approveAthlete, rejectAthlete } from "../api/athletes";
-
-interface PendingAthlete {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone?: string;
-  date_of_birth?: string;
-  gender?: string;
-}
+import {
+  getPendingAthletes,
+  approveAthlete,
+  rejectAthlete,
+  approveAllAthletes,
+} from "../api/athletes";
+import { Check, X, ChevronDown } from "lucide-react";
+import type { PendingAthleteSummary } from "../types/athlete";
+import NotificationBadge from "./NotificationBadge";
 
 function AthleteApprovalList() {
   const queryClient = useQueryClient();
-  const [rejectionReason, setRejectionReason] = useState<Record<number, string>>({});
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const { data: pendingAthletes, isLoading } = useQuery({
+  const { data: pendingAthletes = [], isLoading } = useQuery<PendingAthleteSummary[]>({
     queryKey: ["pending-athletes"],
     queryFn: getPendingAthletes,
   });
 
   const approveMutation = useMutation({
     mutationFn: approveAthlete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pending-athletes"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-athletes-count"] });
+      queryClient.invalidateQueries({ queryKey: ["athletes"] });
+    },
+  });
+
+  const approveAllMutation = useMutation({
+    mutationFn: approveAllAthletes,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pending-athletes"] });
       queryClient.invalidateQueries({ queryKey: ["pending-athletes-count"] });
@@ -37,9 +44,60 @@ function AthleteApprovalList() {
       queryClient.invalidateQueries({ queryKey: ["pending-athletes"] });
       queryClient.invalidateQueries({ queryKey: ["pending-athletes-count"] });
       queryClient.invalidateQueries({ queryKey: ["athletes"] });
-      setRejectionReason({});
     },
   });
+
+  const toggleDropdown = () => {
+    if (pendingAthletes.length === 0) {
+      return;
+    }
+    setIsDropdownOpen((prev) => !prev);
+  };
+
+  const resolveAthleteId = (athlete: PendingAthleteSummary): number | undefined => {
+    return athlete.id ?? athlete.athlete_id ?? undefined;
+  };
+
+  const handleApprove = (athlete: PendingAthleteSummary) => {
+    const athleteId = resolveAthleteId(athlete);
+    if (!athleteId) {
+      return;
+    }
+    approveMutation.mutate(athleteId);
+  };
+
+  const handleReject = (athlete: PendingAthleteSummary) => {
+    const athleteId = resolveAthleteId(athlete);
+    if (!athleteId || typeof window === "undefined") {
+      return;
+    }
+    const reasonInput = window.prompt("Provide a reason for rejection (optional):");
+    if (reasonInput === null) {
+      return;
+    }
+    const reason = reasonInput.trim() || "No reason provided";
+    rejectMutation.mutate({ athleteId, reason });
+  };
+
+  const handleApproveAll = () => {
+    if (pendingAthletes.length === 0 || approveAllMutation.isPending) {
+      return;
+    }
+
+    const shouldApproveAll =
+      typeof window === "undefined"
+        ? true
+        : window.confirm(
+            `Approve all ${pendingAthletes.length} pending ${
+              pendingAthletes.length === 1 ? "athlete" : "athletes"
+            }?`,
+          );
+
+    if (shouldApproveAll) {
+      approveAllMutation.mutate();
+      setIsDropdownOpen(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -49,106 +107,93 @@ function AthleteApprovalList() {
     );
   }
 
-  if (!pendingAthletes || pendingAthletes.length === 0) {
+  if (pendingAthletes.length === 0) {
     return (
-      <div className="py-12 text-center">
-        <p className="text-muted">No pending athletes for approval</p>
+      <div className="text-center">
+        <button
+          type="button"
+          className="flex items-center justify-between rounded-lg border border-black/10 bg-gray-50 px-4 py-2 text-sm font-medium text-muted"
+          disabled
+        >
+          Pending Athletes (0)
+          <ChevronDown size={16} className="text-muted" />
+        </button>
+        <p className="mt-3 text-sm text-muted">No pending athletes for approval</p>
       </div>
     );
   }
 
   return (
-    <div>
-      <h2 className="mb-6 text-2xl font-semibold text-primary">
-        Pending Athletes ({pendingAthletes.length})
-      </h2>
-      
-      <div className="space-y-4">
-        {pendingAthletes.map((athlete: PendingAthlete) => (
-          <div
-            key={athlete.id}
-            className="rounded-xl border border-black/10 bg-white p-6 shadow-sm"
-          >
-            <div className="mb-4 flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-primary">
-                  {athlete.first_name} {athlete.last_name}
-                </h3>
-                <p className="text-sm text-muted">{athlete.email}</p>
-                {athlete.phone && (
-                  <p className="text-sm text-muted">{athlete.phone}</p>
-                )}
-              </div>
-              <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800">
-                Pending
-              </span>
-            </div>
+    <div className="relative inline-block text-left">
+      <button
+        type="button"
+        onClick={toggleDropdown}
+        className="relative inline-flex items-center gap-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+      >
+        <span>Pending Athletes</span>
+        {pendingAthletes.length > 0 && (
+          <NotificationBadge count={pendingAthletes.length} className="absolute -top-2 -right-2" />
+        )}
+        <ChevronDown
+          size={18}
+          className={`transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
+        />
+      </button>
 
-            <div className="mb-4 grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="font-medium text-muted">Date of Birth:</span>
-                <span className="ml-2 text-primary">
-                  {athlete.date_of_birth
-                    ? new Date(athlete.date_of_birth).toLocaleDateString()
-                    : "-"}
-                </span>
-              </div>
-              <div>
-                <span className="font-medium text-muted">Gender:</span>
-                <span className="ml-2 text-primary capitalize">
-                  {athlete.gender || "-"}
-                </span>
-              </div>
-            </div>
-
-            <div className="border-t border-black/10 pt-4">
-              <div className="mb-3">
-                <label
-                  htmlFor={`rejection-reason-${athlete.id}`}
-                  className="mb-2 block text-sm font-medium text-muted"
-                >
-                  Rejection Reason (optional)
-                </label>
-                <textarea
-                  id={`rejection-reason-${athlete.id}`}
-                  value={rejectionReason[athlete.id] || ""}
-                  onChange={(e) =>
-                    setRejectionReason((prev) => ({
-                      ...prev,
-                      [athlete.id]: e.target.value,
-                    }))
-                  }
-                  rows={2}
-                  className="w-full rounded-lg border border-black/20 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  placeholder="Enter reason for rejection (optional)"
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => approveMutation.mutate(athlete.id)}
-                  disabled={approveMutation.isPending}
-                  className="flex-1 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {approveMutation.isPending ? "Approving..." : "Approve"}
-                </button>
-                <button
-                  onClick={() =>
-                    rejectMutation.mutate({
-                      athleteId: athlete.id,
-                      reason: rejectionReason[athlete.id] || "No reason provided",
-                    })
-                  }
-                  disabled={rejectMutation.isPending}
-                  className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {rejectMutation.isPending ? "Rejecting..." : "Reject"}
-                </button>
-              </div>
-            </div>
+      {isDropdownOpen && (
+        <div className="absolute left-0 z-10 mt-2 w-full min-w-[320px] rounded-xl border border-black/10 bg-white shadow-lg">
+          <div className="flex items-center justify-between border-b border-black/10 px-4 py-3">
+            <span className="text-sm font-semibold text-primary">Pending list</span>
+            <button
+              type="button"
+              onClick={handleApproveAll}
+              disabled={approveAllMutation.isPending}
+              className="rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {approveAllMutation.isPending ? "Approving..." : "Approve All"}
+            </button>
           </div>
-        ))}
-      </div>
+
+          <ul className="max-h-80 divide-y divide-black/5 overflow-y-auto">
+            {pendingAthletes.map((athlete) => {
+              const athleteId = resolveAthleteId(athlete) ?? athlete.user_id;
+              return (
+                <li
+                  key={athleteId}
+                  className="flex items-center justify-between px-4 py-3 text-sm"
+                >
+                  <div>
+                    <p className="font-semibold text-primary">
+                      {athlete.first_name} {athlete.last_name}
+                    </p>
+                    <p className="text-xs text-muted">{athlete.email}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleApprove(athlete)}
+                      disabled={approveMutation.isPending}
+                      className="flex items-center justify-center rounded-full bg-green-100 p-2 text-green-700 transition hover:bg-green-200 disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label="Approve"
+                    >
+                      <Check size={18} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleReject(athlete)}
+                      disabled={rejectMutation.isPending}
+                      className="flex items-center justify-center rounded-full bg-red-100 p-2 text-red-700 transition hover:bg-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+                      aria-label="Reject"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

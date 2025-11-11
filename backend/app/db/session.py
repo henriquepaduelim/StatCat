@@ -1,11 +1,19 @@
 from collections.abc import Generator
 
+from sqlalchemy import event
 from sqlmodel import Session, SQLModel, create_engine
 
 from app.core.config import settings
 from app.db.seed import seed_database
 
 engine = create_engine(settings.DATABASE_URL, echo=False, future=True)
+
+if settings.DATABASE_URL.startswith("sqlite"):
+    @event.listens_for(engine, "connect")
+    def _set_sqlite_pragma(dbapi_connection, connection_record) -> None:
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
 
 def _ensure_optional_columns() -> None:

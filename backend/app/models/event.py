@@ -1,7 +1,7 @@
 """Event models for calendar functionality with notifications."""
 import enum
 from datetime import datetime
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
 
 from sqlalchemy import Column, Enum
 from sqlmodel import Field, Relationship, SQLModel
@@ -50,7 +50,10 @@ class Event(SQLModel, table=True):
     push_sent: bool = Field(default=False)
     
     # Relationships
-    participants: List["EventParticipant"] = Relationship(back_populates="event")
+    participants: List["EventParticipant"] = Relationship(
+        back_populates="event",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan", "passive_deletes": True},
+    )
     created_by: "User" = Relationship(sa_relationship_kwargs={"foreign_keys": "[Event.created_by_id]"})
 
 

@@ -114,3 +114,17 @@ export interface AthleteReport {
   athlete: Athlete;
   sessions: AthleteReportSession[];
 }
+
+export interface PendingAthleteSummary {
+  id: number | null;
+  athlete_id: number | null;
+  user_id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  user_email: string;
+  phone?: string | null;
+  date_of_birth?: string | null;
+  gender?: string | null;
+  athlete_status: string;
+}

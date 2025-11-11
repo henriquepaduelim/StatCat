@@ -35,6 +35,10 @@ export const updateTeam = async (teamId: number, payload: TeamPayload) => {
   return data;
 };
 
+export const deleteTeam = async (teamId: number) => {
+  await api.delete(`/teams/${teamId}`);
+};
+
 export interface TeamCoach {
   id: number;
   email: string;
@@ -84,6 +88,10 @@ export const assignCoachToTeam = async (teamId: number, coachId: number) => {
 export const updateCoach = async (coachId: number, payload: TeamCoachPayload) => {
   const { data } = await api.put<TeamCoach>(`/teams/coaches/${coachId}`, payload);
   return data;
+};
+
+export const deleteCoach = async (coachId: number) => {
+  await api.delete(`/teams/coaches/${coachId}`);
 };
 
 export const getCoachTeams = async (coachId: number) => {
