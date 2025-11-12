@@ -111,82 +111,66 @@ export function InstallPrompt() {
     localStorage.setItem('pwa-install-dismissed', expiryDate.toISOString());
   };
 
-  // Safari Instructions Banner
-  if (showSafariInstructions && !isDismissed && !isInstalled) {
-    return (
-      <div className="fixed top-0 left-0 right-0 z-50 animate-slideDown">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 flex-1">
-                <svg className="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-blue-100 mt-0.5">
-                    {isIOSSafari() 
-                      ? 'Tap Share → Add to Home Screen to install this app.'
-                      : 'Tap ⋮ in your browser and select Add to Home screen to install.'
-                    }
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={handleDismiss}
-                className="px-3 py-1.5 text-sm font-medium text-white hover:text-blue-100 transition flex-shrink-0"
-              >
-                Got it
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const shouldShowSafariBanner = showSafariInstructions && !isDismissed && !isInstalled;
+  const shouldShowInstallPrompt = showPrompt && !isDismissed && !isInstalled;
 
-  // Chrome/Edge Install Prompt
-  if (!showPrompt || isDismissed || isInstalled) {
+  if (!shouldShowSafariBanner && !shouldShowInstallPrompt) {
     return null;
   }
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 animate-slideDown">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <svg className="w-8 h-8 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div className="fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
+      <div className="w-full max-w-md rounded-2xl border border-black/10 bg-white/95 p-4 text-container-foreground shadow-2xl backdrop-blur">
+        {shouldShowSafariBanner ? (
+          <div className="flex items-start gap-3">
+            <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            <div className="flex-1 text-sm">
+              <p className="font-semibold">Install StatCat</p>
+              <p className="text-xs text-muted mt-1">
+                {isIOSSafari()
+                  ? "Tap Share → Add to Home Screen to install this app on your device."
+                  : "Tap ⋮ in your browser and select Add to Home screen to install."}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleDismiss}
+              className="text-xs font-semibold text-blue-600 hover:text-blue-800"
+            >
+              Got it
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-1 items-center gap-3">
+              <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>
-              <div className="flex-1">
-                <p className="font-semibold text-sm">
-                  Install StatCat App
-                </p>
-                <p className="text-xs text-blue-100">
-                  Quick access, offline support, and native experience
-                </p>
+              <div className="flex-1 text-sm">
+                <p className="font-semibold">Install StatCat</p>
+                <p className="text-xs text-muted">Quick access, offline support, and native experience</p>
               </div>
             </div>
-            
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={handleInstall}
-                className="px-4 py-2 bg-white text-blue-600 text-sm font-medium rounded-md hover:bg-blue-50 transition whitespace-nowrap"
+                className="rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-blue-500"
               >
-                Install Now
+                Install
               </button>
               <button
                 type="button"
                 onClick={handleDismiss}
-                className="px-3 py-2 text-sm font-medium text-white hover:text-blue-100 transition whitespace-nowrap"
+                className="text-xs font-semibold text-muted hover:text-container-foreground"
               >
-                Not now
+                Later
               </button>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

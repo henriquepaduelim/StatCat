@@ -292,14 +292,15 @@ const Dashboard = () => {
         return;
       }
       (event.participants ?? []).forEach((participant) => {
-        if (!participant.athlete_id) {
+        const athleteId = participant.athlete_id;
+        if (athleteId == null) {
           return;
         }
         teamIds.forEach((teamId) => {
           if (!map.has(teamId)) {
             map.set(teamId, new Set());
           }
-          map.get(teamId)?.add(participant.athlete_id);
+          map.get(teamId)?.add(athleteId);
         });
       });
     });

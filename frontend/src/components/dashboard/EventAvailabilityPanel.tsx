@@ -157,7 +157,7 @@ const EventAvailabilityPanel = ({
           </div>
         ) : (
           <div className="rounded-lg border border-black/10 bg-white/70 px-3 py-6 text-center text-xs text-muted">
-            {summaryLabels.summaryHelper ?? "Select a date to view RSVP availability."}
+            Select a date to view RSVP availability.
           </div>
         )}
         {!selectedEventDate ? null : !eventsOnSelectedDate.length ? (
