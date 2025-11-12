@@ -10,13 +10,27 @@ import LocaleProvider from "./i18n/LocaleProvider";
 const MIN_SPLASH_DURATION = 1500;
 const splashMountedAt = performance.now();
 
+const removeSplashBackground = () => {
+  document.body.classList.remove("pwa-splash-active");
+};
+
 const hideSplashScreen = () => {
   const splash = document.getElementById("pwa-splash");
-  if (!splash || splash.classList.contains("splash-hidden")) return;
+  if (!splash) {
+    removeSplashBackground();
+    return;
+  }
+  if (splash.classList.contains("splash-hidden")) {
+    removeSplashBackground();
+    return;
+  }
   splash.classList.add("splash-hidden");
   splash.addEventListener(
     "transitionend",
-    () => splash.remove(),
+    () => {
+      splash.remove();
+      removeSplashBackground();
+    },
     { once: true }
   );
 };

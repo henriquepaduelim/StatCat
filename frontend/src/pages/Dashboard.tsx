@@ -25,6 +25,7 @@ import { useMyEvents, useCreateEvent, useConfirmEventAttendance, useDeleteEvent 
 import type { Event, ParticipantStatus } from "../types/event";
 import TeamListCard from "../components/dashboard/TeamListCard";
 import LeaderboardCard from "../components/dashboard/LeaderboardCard";
+import TeamInsightsCard from "../components/dashboard/TeamInsightsCard";
 import TeamFormModal from "../components/dashboard/TeamFormModal";
 import CoachFormModal from "../components/dashboard/CoachFormModal";
 import CoachDirectoryCard from "../components/dashboard/CoachDirectoryCard";
@@ -413,10 +414,20 @@ const Dashboard = () => {
         if (!athlete.birth_date) return false;
         const age = calculateAge(athlete.birth_date);
         
-        if (athleteFilterAge === "U14" && age < 14) return true;
+        if (athleteFilterAge === "U8" && age < 8) return true;
+        if (athleteFilterAge === "U9" && age >= 8 && age < 9) return true;
+        if (athleteFilterAge === "U10" && age >= 9 && age < 10) return true;
+        if (athleteFilterAge === "U11" && age >= 10 && age < 11) return true;
+        if (athleteFilterAge === "U12" && age >= 11 && age < 12) return true;
+        if (athleteFilterAge === "U13" && age >= 12 && age < 13) return true;
+        if (athleteFilterAge === "U14" && age >= 13 && age < 14) return true;
+        if (athleteFilterAge === "U15" && age >= 14 && age < 15) return true;
         if (athleteFilterAge === "U16" && age >= 14 && age < 16) return true;
+        if (athleteFilterAge === "U17" && age >= 16 && age < 17) return true;
         if (athleteFilterAge === "U18" && age >= 16 && age < 18) return true;
-        if (athleteFilterAge === "U21" && age >= 18 && age < 21) return true;
+        if (athleteFilterAge === "U19" && age >= 18 && age < 19) return true;
+        if (athleteFilterAge === "U20" && age >= 19 && age < 20) return true;
+        if (athleteFilterAge === "U21" && age >= 20 && age < 21) return true;
         if (athleteFilterAge === "Senior" && age >= 21) return true;
         return false;
       });
@@ -1058,6 +1069,14 @@ const Dashboard = () => {
       athleteIds: teamForm.athleteIds,
     });
   };
+
+  const handleNewReportCard = () => {
+    console.info("Report card creation requested.");
+  };
+
+  const handleGameReport = () => {
+    console.info("Game report creation requested.");
+  };
   return (
     <>
     <div className="space-y-8">
@@ -1066,7 +1085,11 @@ const Dashboard = () => {
         <p className="text-sm text-muted">{t.dashboard.description}</p>
       </section>
 
-      <section className="print-hidden grid gap-6 md:grid-cols-2">
+      <section className="print-hidden">
+        <LeaderboardCard />
+      </section>
+
+      <section className="print-hidden grid gap-6 lg:grid-cols-2">
         <TeamListCard
           teams={teams}
           athletesByTeamId={athletesByTeamId}
@@ -1086,7 +1109,13 @@ const Dashboard = () => {
             empty: "No teams created yet.",
           }}
         />
-        <LeaderboardCard />
+        <TeamInsightsCard
+          teams={teams}
+          athletes={athletes}
+          athletesByTeamId={athletesByTeamId}
+          onNewReportCard={handleNewReportCard}
+          onGameReport={handleGameReport}
+        />
       </section>
 
       <section className="print-hidden flex flex-col gap-6 xl:flex-row">
