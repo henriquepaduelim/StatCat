@@ -37,30 +37,15 @@
 
       #pwa-splash .splash-content {
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 1.25rem;
-        color: #f1f5f9;
-        text-transform: uppercase;
-        letter-spacing: 0.25em;
-        font-size: 0.85rem;
-      }
-
-      #pwa-splash .logo-ring {
-        display: inline-flex;
         align-items: center;
         justify-content: center;
-        width: 176px;
-        height: 176px;
-        border-radius: 32px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(248, 250, 252, 0.15);
-        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
       }
 
       #pwa-splash img {
-        width: 148px;
-        height: 148px;
+        width: min(220px, 60vw);
+        height: min(220px, 60vw);
+        border-radius: 32px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.55);
       }
 
       #pwa-splash.splash-hidden {
@@ -72,10 +57,7 @@
   <body class="bg-slate-400">
     <div id="pwa-splash" role="status" aria-live="polite">
       <div class="splash-content">
-        <div class="logo-ring">
-          <img src="/pwa-192x192.png" alt="StatCat logo" width="148" height="148" />
-        </div>
-        <span>StatCat</span>
+        <img src="/pwa-192x192.png" alt="StatCat logo" width="220" height="220" />
       </div>
     </div>
     <div id="root"></div>
