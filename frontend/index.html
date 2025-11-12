@@ -23,8 +23,47 @@
    <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+      #pwa-splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at 30% 20%, rgba(30, 64, 175, 0.95), #0f172a);
+        z-index: 9999;
+        transition: opacity 250ms ease, visibility 250ms ease;
+      }
+
+      #pwa-splash .splash-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        color: #f8fafc;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        font-size: 0.9rem;
+      }
+
+      #pwa-splash img {
+        width: 96px;
+        height: 96px;
+      }
+
+      #pwa-splash.splash-hidden {
+        opacity: 0;
+        visibility: hidden;
+      }
+    </style>
   </head>
   <body class="bg-slate-400">
+    <div id="pwa-splash" role="status" aria-live="polite">
+      <div class="splash-content">
+        <img src="/pwa-192x192.png" alt="StatCat logo" width="96" height="96" />
+        <span>Loading</span>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

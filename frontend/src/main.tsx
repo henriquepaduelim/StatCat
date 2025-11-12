@@ -7,6 +7,19 @@ import App from "./App";
 import "./styles/index.css";
 import LocaleProvider from "./i18n/LocaleProvider";
 
+const hideSplashScreen = () => {
+  const splash = document.getElementById("pwa-splash");
+  if (!splash) return;
+  splash.classList.add("splash-hidden");
+  splash.addEventListener(
+    "transitionend",
+    () => {
+      splash.remove();
+    },
+    { once: true }
+  );
+};
+
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
@@ -20,3 +33,5 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     </QueryClientProvider>
   </React.StrictMode>
 );
+
+requestAnimationFrame(hideSplashScreen);
