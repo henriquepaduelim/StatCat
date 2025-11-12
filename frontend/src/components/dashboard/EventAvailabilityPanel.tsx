@@ -1,7 +1,8 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { faCheck, faQuestion, faTimes } from "@fortawesome/free-solid-svg-icons";
 
-import type { Event } from "../../types/event";
+import type { Event, ParticipantStatus } from "../../types/event";
 import type { Athlete } from "../../types/athlete";
 import type { TranslationDictionary } from "../../i18n/translations";
 
@@ -19,6 +20,8 @@ type EventAvailabilityEntry = {
     teamId: number;
     teamName: string;
     athletes: Athlete[];
+    coachName: string | null;
+    coachStatus: ParticipantStatus | null;
   }>;
   guests: Athlete[];
 };
@@ -58,6 +61,40 @@ const EventAvailabilityPanel = ({
   onClearSelectedDate,
   getAvailabilityDisplay,
 }: EventAvailabilityPanelProps) => {
+  const getCoachStatusBadge = (status: ParticipantStatus | null) => {
+    switch (status) {
+      case "confirmed":
+        return {
+          className:
+            "flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700",
+          label: "Confirmed",
+          icon: faCheck,
+        };
+      case "declined":
+        return {
+          className:
+            "flex h-6 w-6 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700",
+          label: "Declined",
+          icon: faTimes,
+        };
+      case "maybe":
+        return {
+          className:
+            "flex h-6 w-6 items-center justify-center rounded-full border border-amber-200 bg-amber-50 text-amber-700",
+          label: "Maybe",
+          icon: faQuestion,
+        };
+      case "invited":
+      default:
+        return {
+          className:
+            "flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 bg-gray-50 text-gray-600",
+          label: summaryLabels.coachLine.unknownAvailability,
+          icon: faQuestion,
+        };
+    }
+  };
+
   const totalPages = availabilityPages.length;
   const currentMeta = totalPages ? availabilityPages[Math.min(availabilityPage, totalPages - 1)] : null;
   const currentEntry = currentMeta ? eventsAvailability[currentMeta.eventIndex] : null;
@@ -120,6 +157,8 @@ const EventAvailabilityPanel = ({
 
     const event = currentEntry.event;
     const teamAthletes = currentTeam.athletes;
+    const coachStatusBadge = getCoachStatusBadge(currentTeam.coachStatus);
+    const coachName = currentTeam.coachName ?? summaryLabels.coachLine.unknownCoach;
 
     return (
       <div className="flex h-[500px] flex-col overflow-hidden rounded-lg border border-white/10 bg-white/70">
@@ -178,6 +217,23 @@ const EventAvailabilityPanel = ({
               </>
             ) : null}
           </ul>
+        </div>
+        <div className="border-t border-dashed border-black/10 bg-white/80 px-4 py-3 text-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted">{summaryLabels.coachLine.label}</p>
+              <p className="font-semibold text-container-foreground">{coachName}</p>
+            </div>
+            <div className="flex flex-col items-start gap-1 sm:items-end">
+              <span className="text-xs uppercase tracking-wide text-muted">{summaryLabels.coachLine.availability}</span>
+              <div className="flex items-center gap-2">
+                <span className={coachStatusBadge.className}>
+                  <FontAwesomeIcon icon={coachStatusBadge.icon} className="h-3 w-3" />
+                </span>
+                <span className="text-sm font-semibold text-container-foreground">{coachStatusBadge.label}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );

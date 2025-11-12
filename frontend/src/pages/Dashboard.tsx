@@ -207,8 +207,26 @@ const Dashboard = () => {
   });
   const availableCoaches = useMemo(() => {
     const coaches = allCoachesQuery.data ?? [];
-    return [...coaches].sort((a, b) => (a?.full_name || '').localeCompare(b?.full_name || ''));
+    return [...coaches].sort((a, b) => (a?.full_name || "").localeCompare(b?.full_name || ""));
   }, [allCoachesQuery.data]);
+
+  const teamCoachMetaById = useMemo(() => {
+    const map = new Map<number, { coachName: string | null; coachUserId: number | null }>();
+    teams.forEach((team) => {
+      const normalizedCoach = team.coach_name?.trim().toLowerCase() || "";
+      const matchedCoach =
+        normalizedCoach && availableCoaches.length
+          ? availableCoaches.find(
+              (coach) => (coach.full_name || "").trim().toLowerCase() === normalizedCoach
+            )
+          : null;
+      map.set(team.id, {
+        coachName: team.coach_name ?? null,
+        coachUserId: matchedCoach?.id ?? null,
+      });
+    });
+    return map;
+  }, [teams, availableCoaches]);
   const [calendarCursor, setCalendarCursor] = useState(() => {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1);
@@ -296,8 +314,12 @@ const Dashboard = () => {
         return acc;
       }, {});
       const guests: Athlete[] = [];
+      const participantStatusByUserId = new Map<number, ParticipantStatus>();
 
       participants.forEach((participant) => {
+        if (participant.user_id) {
+          participantStatusByUserId.set(participant.user_id, participant.status);
+        }
         const athleteId = participant.athlete_id;
         if (!athleteId) {
           return;
@@ -315,15 +337,30 @@ const Dashboard = () => {
 
       return {
         event,
-        teams: teamIds.map((teamId) => ({
-          teamId,
-          teamName: teamNameById[teamId] ?? summaryLabels.teamPlaceholder,
-          athletes: teamMap[teamId] ?? [],
-        })),
+        teams: teamIds.map((teamId) => {
+          const meta = teamCoachMetaById.get(teamId);
+          const coachStatus =
+            meta?.coachUserId != null ? participantStatusByUserId.get(meta.coachUserId) ?? null : null;
+          return {
+            teamId,
+            teamName: teamNameById[teamId] ?? summaryLabels.teamPlaceholder,
+            athletes: teamMap[teamId] ?? [],
+            coachName: meta?.coachName ?? null,
+            coachStatus,
+          };
+        }),
         guests,
       };
     });
-  }, [selectedEventDate, eventsOnSelectedDate, getEventTeamIds, athleteById, teamNameById, summaryLabels.teamPlaceholder]);
+  }, [
+    selectedEventDate,
+    eventsOnSelectedDate,
+    getEventTeamIds,
+    athleteById,
+    teamNameById,
+    summaryLabels.teamPlaceholder,
+    teamCoachMetaById,
+  ]);
 
   const availabilityPages = useMemo(() => {
     const pages: Array<{ eventIndex: number; teamIndex: number; includeGuests: boolean }> = [];

@@ -2,10 +2,11 @@
 Tests for athlete CRUD operations.
 """
 from fastapi.testclient import TestClient
-from sqlmodel import Session
+from sqlmodel import Session, select
 
-from app.models.user import User
-from app.models.athlete import Athlete, AthleteGender
+from app.core.security import get_password_hash
+from app.models.athlete import Athlete, AthleteDetail, AthleteDocument, AthleteGender, AthletePayment
+from app.models.user import User, UserRole, UserAthleteApprovalStatus
 from tests.conftest import get_auth_token
 
 
@@ -171,7 +172,7 @@ def test_update_athlete(client: TestClient, session: Session, admin_user: User):
 
 
 def test_delete_athlete(client: TestClient, session: Session, admin_user: User):
-    """Test deleting an athlete."""
+    """Deleting an athlete should remove dependent rows and return 204."""
     athlete = Athlete(
         first_name="ToDelete",
         last_name="User",
@@ -181,21 +182,39 @@ def test_delete_athlete(client: TestClient, session: Session, admin_user: User):
     session.add(athlete)
     session.commit()
     session.refresh(athlete)
-    
+
+    # Attach related rows that reference athlete_id
+    session.add(AthleteDocument(athlete_id=athlete.id, label="ID", file_url="/media/doc"))
+    session.add(AthletePayment(athlete_id=athlete.id, amount=100, currency="USD"))
+    session.add(AthleteDetail(athlete_id=athlete.id, email="detail@example.com"))
+    linked_user = User(
+        email="linked@example.com",
+        hashed_password=get_password_hash("linkedpass123"),
+        full_name="Linked Athlete",
+        role=UserRole.ATHLETE,
+        athlete_id=athlete.id,
+        athlete_status=UserAthleteApprovalStatus.APPROVED,
+        is_active=True,
+    )
+    session.add(linked_user)
+    session.commit()
+
     token = get_auth_token(client, admin_user.email, "adminpass123")
-    
+
     response = client.delete(
         f"/api/v1/athletes/{athlete.id}",
         headers={"Authorization": f"Bearer {token}"},
     )
-    assert response.status_code == 200
-    
-    # Verify deletion
+    assert response.status_code == 204
+
+    # Verify athlete and linked rows are gone
     response = client.get(
         f"/api/v1/athletes/{athlete.id}",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 404
+    assert session.get(Athlete, athlete.id) is None
+    assert session.exec(select(User).where(User.id == linked_user.id)).first() is None
 
 
 def test_delete_athlete_forbidden(client: TestClient, session: Session, athlete_user: User):

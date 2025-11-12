@@ -2,20 +2,19 @@ from datetime import datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
-from sqlmodel import Session, select
+from sqlmodel import Session, delete, select
 
 from app.api.deps import ensure_roles, get_current_active_user
 from app.core.config import settings
 from app.core.crypto import encrypt_text
 from app.core.security import get_password_hash
 from app.db.session import get_session
-from app.models.athlete import (
-    Athlete,
-    AthleteDetail,
-    AthleteDocument,
-    AthleteGender,
-    AthletePayment,
-)
+from app.models.athlete import Athlete, AthleteDetail, AthleteDocument, AthleteGender, AthletePayment
+from app.models.assessment_session import AssessmentSession
+from app.models.event import EventParticipant
+from app.models.group import GroupMembership
+from app.models.match_stat import MatchStat
+from app.models.session_result import SessionResult
 from app.models.team import Team
 from app.models.user import User, UserRole, UserAthleteApprovalStatus
 from app.schemas.athlete import (
@@ -94,6 +93,19 @@ def _ensure_can_edit(current_user: User, athlete: Athlete) -> None:
     if current_user.role == UserRole.ATHLETE and current_user.athlete_id == athlete.id:
         return
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+
+
+def _cascade_delete_athlete(session: Session, athlete_id: int) -> None:
+    """Remove dependent records before deleting the athlete to avoid FK errors."""
+    session.exec(delete(SessionResult).where(SessionResult.athlete_id == athlete_id))
+    session.exec(delete(MatchStat).where(MatchStat.athlete_id == athlete_id))
+    session.exec(delete(EventParticipant).where(EventParticipant.athlete_id == athlete_id))
+    session.exec(delete(GroupMembership).where(GroupMembership.athlete_id == athlete_id))
+    session.exec(delete(AssessmentSession).where(AssessmentSession.athlete_id == athlete_id))
+    session.exec(delete(AthleteDocument).where(AthleteDocument.athlete_id == athlete_id))
+    session.exec(delete(AthletePayment).where(AthletePayment.athlete_id == athlete_id))
+    session.exec(delete(AthleteDetail).where(AthleteDetail.athlete_id == athlete_id))
+    session.exec(delete(User).where(User.athlete_id == athlete_id))
 
 
 @router.post("/register", response_model=AthleteRead, status_code=status.HTTP_201_CREATED)
@@ -534,6 +546,7 @@ def delete_athlete(
     if not athlete:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
 
+    _cascade_delete_athlete(session, athlete_id)
     session.delete(athlete)
     session.commit()
     return None

@@ -149,6 +149,12 @@ export type TranslationDictionary = {
       noEvents: string;
       contactFallback: string;
       positionFallback: string;
+      coachLine: {
+        label: string;
+        availability: string;
+        unknownCoach: string;
+        unknownAvailability: string;
+      };
       coachForm: {
         nameLabel: string;
         emailLabel: string;
@@ -718,6 +724,12 @@ export const translations: Record<Locale, TranslationDictionary> = {
       noEvents: "No events scheduled. Create an event to view team availability.",
       contactFallback: "No email provided",
       positionFallback: "Position not set",
+      coachLine: {
+        label: "Coach",
+        availability: "Availability",
+        unknownCoach: "Coach not set",
+        unknownAvailability: "No response yet",
+      },
       coachForm: {
         nameLabel: "Full name",
         emailLabel: "Email",
