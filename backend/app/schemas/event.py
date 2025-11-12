@@ -22,6 +22,7 @@ class EventCreate(BaseModel):
     location: Optional[str] = Field(None, max_length=500)
     notes: Optional[str] = None
     team_id: Optional[int] = None
+    team_ids: List[int] = Field(default_factory=list)
     coach_id: Optional[int] = None
     invitee_ids: List[int] = Field(default_factory=list)  # List of user IDs to invite (coaches, etc.)
     athlete_ids: List[int] = Field(default_factory=list)  # List of athlete IDs to invite
@@ -38,6 +39,7 @@ class EventUpdate(BaseModel):
     notes: Optional[str] = None
     status: Optional[str] = None  # scheduled, cancelled, completed
     team_id: Optional[int] = None
+    team_ids: Optional[List[int]] = None
     coach_id: Optional[int] = None
     send_notification: bool = Field(default=True)
 
@@ -52,6 +54,7 @@ class EventResponse(BaseModel):
     notes: Optional[str] = None
     status: str
     team_id: Optional[int] = None
+    team_ids: List[int] = Field(default_factory=list)
     created_by_id: int
     coach_id: Optional[int] = None
     created_at: datetime

@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 import os
+import smtplib
+import socket
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+import pytest
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -25,8 +28,7 @@ def test_smtp():
     print(f"From: {from_email}")
     
     if not smtp_user or not smtp_password:
-        print("❌ ERROR: SMTP_USER or SMTP_PASSWORD not configured")
-        return False
+        pytest.skip("SMTP credentials not configured in environment variables.")
     
     try:
         # Create message
@@ -62,21 +64,18 @@ def test_smtp():
         
         print("✅ SUCCESS: Test email sent successfully!")
         print(f"📧 Check your inbox: {smtp_user}")
-        return True
         
-    except smtplib.SMTPAuthenticationError:
-        print("❌ ERROR: SMTP Authentication failed")
-        print("Check your email and app password")
-        return False
+    except smtplib.SMTPAuthenticationError as exc:
+        pytest.fail(f"SMTP authentication failed: {exc}")
         
-    except smtplib.SMTPConnectError:
-        print("❌ ERROR: Could not connect to SMTP server")
-        print("Check your host and port configuration")
-        return False
-        
-    except Exception as e:
-        print(f"❌ ERROR: {str(e)}")
-        return False
+    except smtplib.SMTPConnectError as exc:
+        pytest.fail(f"SMTP connection failed: {exc}")
+
+    except (socket.gaierror, OSError) as exc:
+        pytest.skip(f"SMTP host unavailable in current environment: {exc}")
+
+    except Exception as exc:
+        pytest.fail(f"Unexpected SMTP error: {exc}")
 
 if __name__ == "__main__":
     print("🧪 StatCat SMTP Test")

@@ -3,11 +3,12 @@ from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import delete
+from sqlalchemy import delete, or_
 from sqlmodel import Session, select
 
 from app.api.deps import SessionDep, get_current_active_user
 from app.models.event import Event, EventParticipant, Notification, ParticipantStatus
+from app.models.event_team_link import EventTeamLink
 from app.models.user import User
 from app.schemas.event import (
     EventConfirmation,
@@ -17,6 +18,14 @@ from app.schemas.event import (
     EventUpdate,
 )
 from app.services.notification_service import notification_service
+from app.services.event_team_service import (
+    attach_team_ids,
+    ensure_roster_participants,
+    get_event_athlete_ids,
+    get_team_roster_athlete_ids,
+    persist_event_team_links,
+    resolve_event_team_ids,
+)
 
 router = APIRouter()
 
@@ -41,8 +50,15 @@ async def create_event(
         created_by_id=current_user.id,
     )
     db.add(event)
-    db.commit()
-    db.refresh(event)
+    db.flush()
+
+    team_ids = resolve_event_team_ids(
+        db=db,
+        event=event,
+        requested_team_ids=event_in.team_ids,
+        invited_athlete_ids=event_in.athlete_ids,
+    )
+    persist_event_team_links(db, event, team_ids)
     
     # Create participants for users (coaches, etc.)
     for user_id in event_in.invitee_ids:
@@ -53,9 +69,13 @@ async def create_event(
         )
         db.add(participant)
     
+    team_roster_ids = get_team_roster_athlete_ids(db, team_ids)
+    explicit_athlete_ids = set(event_in.athlete_ids)
+    all_athlete_ids = sorted(explicit_athlete_ids.union(team_roster_ids))
+    
     # Create participants for athletes
     # Athletes don't have user accounts, so user_id is None
-    for athlete_id in event_in.athlete_ids:
+    for athlete_id in all_athlete_ids:
         participant = EventParticipant(
             event_id=event.id,
             user_id=None,  # Athletes don't have user accounts
@@ -65,6 +85,8 @@ async def create_event(
         db.add(participant)
     
     db.commit()
+    db.refresh(event)
+    attach_team_ids(db, [event])
     
     # Send notifications
     all_invitee_ids = event_in.invitee_ids + event_in.athlete_ids
@@ -94,9 +116,10 @@ def list_events(
     """List all events, optionally filtered."""
     stmt = select(Event)
     
-    # Filter by team if provided
+    # Filter by team if provided (include multi-team associations)
     if team_id is not None:
-        stmt = stmt.where(Event.team_id == team_id)
+        linked_event_ids = select(EventTeamLink.event_id).where(EventTeamLink.team_id == team_id)
+        stmt = stmt.where(or_(Event.team_id == team_id, Event.id.in_(linked_event_ids)))
     
     # Filter by date range
     if date_from:
@@ -107,6 +130,7 @@ def list_events(
     stmt = stmt.order_by(Event.date.desc(), Event.time.desc())
     
     events = db.exec(stmt).all()
+    attach_team_ids(db, events)
     return events
 
 
@@ -140,6 +164,7 @@ def list_my_events(
     
     # Sort by date
     events = sorted(all_events.values(), key=lambda e: (e.date, e.time or ""), reverse=True)
+    attach_team_ids(db, events)
     return events
 
 
@@ -154,6 +179,7 @@ def get_event(
     event = db.get(Event, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
+    attach_team_ids(db, [event])
     return event
 
 
@@ -206,10 +232,26 @@ async def update_event(
         event.coach_id = event_in.coach_id
     
     event.updated_at = datetime.utcnow()
+
+    should_sync_team_links = event_in.team_ids is not None or event_in.team_id is not None
     
     db.add(event)
+
+    if should_sync_team_links:
+        invited_athletes = get_event_athlete_ids(db, event.id)
+        resolved_team_ids = resolve_event_team_ids(
+            db=db,
+            event=event,
+            requested_team_ids=event_in.team_ids,
+            invited_athlete_ids=invited_athletes,
+        )
+        persist_event_team_links(db, event, resolved_team_ids)
+        roster_ids = get_team_roster_athlete_ids(db, resolved_team_ids)
+        ensure_roster_participants(db, event, roster_ids)
+    
     db.commit()
     db.refresh(event)
+    attach_team_ids(db, [event])
     
     # Send notifications if there are changes
     if changes and event_in.send_notification:
@@ -242,6 +284,7 @@ def delete_event(
     # Remove participants and notifications explicitly to avoid FK issues
     db.exec(delete(EventParticipant).where(EventParticipant.event_id == event_id))
     db.exec(delete(Notification).where(Notification.event_id == event_id))
+    db.exec(delete(EventTeamLink).where(EventTeamLink.event_id == event_id))
 
     db.delete(event)
     db.commit()

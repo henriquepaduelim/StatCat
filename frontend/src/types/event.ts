@@ -8,7 +8,7 @@ export type ParticipantStatus = 'invited' | 'confirmed' | 'declined' | 'maybe';
 
 export interface EventParticipant {
   id: number;
-  user_id: number;
+  user_id: number | null;
   athlete_id: number | null;
   status: ParticipantStatus;
   invited_at: string;
@@ -24,6 +24,7 @@ export interface Event {
   notes: string | null;
   status: EventStatus;
   team_id: number | null;
+  team_ids: number[];
   coach_id: number | null;
   created_by_id: number;
   created_at: string;
@@ -40,6 +41,7 @@ export interface EventCreatePayload {
   location?: string | null;
   notes?: string | null;
   team_id?: number | null;
+  team_ids?: number[];
   coach_id?: number | null;
   invitee_ids: number[]; // User IDs (coaches, etc.)
   athlete_ids: number[]; // Athlete IDs
@@ -55,6 +57,7 @@ export interface EventUpdatePayload {
   notes?: string | null;
   status?: EventStatus;
   team_id?: number | null;
+  team_ids?: number[];
   coach_id?: number | null;
   send_notification?: boolean;
 }

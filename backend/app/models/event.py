@@ -56,6 +56,18 @@ class Event(SQLModel, table=True):
     )
     created_by: "User" = Relationship(sa_relationship_kwargs={"foreign_keys": "[Event.created_by_id]"})
 
+    def set_team_ids(self, team_ids: List[int]) -> None:
+        """Cache resolved team ids for serialization."""
+        setattr(self, "_team_ids_cache", team_ids)
+
+    @property
+    def team_ids(self) -> List[int]:
+        """Return cached team ids, falling back to single team_id if unset."""
+        cached = getattr(self, "_team_ids_cache", None)
+        if cached is not None:
+            return cached
+        return [self.team_id] if self.team_id else []
+
 
 class EventParticipant(SQLModel, table=True):
     """Many-to-many relationship between events and participants (athletes/users)."""

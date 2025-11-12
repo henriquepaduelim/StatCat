@@ -1,0 +1,422 @@
+import { FormEvent, Dispatch, SetStateAction } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
+
+import type { TeamCoach } from "../../api/teams";
+import type { Athlete } from "../../types/athlete";
+import type { AthleteFilter, NewTeamFormState } from "../../types/dashboard";
+import { calculateAge } from "../../utils/athletes";
+import { createTeamLabels } from "../../constants/dashboard";
+
+type EditingTeam = { id: number; name: string } | null;
+type TeamFormLabels = typeof createTeamLabels;
+
+type TeamFormModalProps = {
+  isOpen: boolean;
+  isSubmitting: boolean;
+  editingTeam: EditingTeam;
+  labels: TeamFormLabels;
+  teamForm: NewTeamFormState;
+  teamFormError: string | null;
+  teamAgeOptions: readonly string[];
+  availableCoaches: TeamCoach[];
+  teamBuilderCandidates: Athlete[];
+  remainingAthleteCount: number;
+  teamNameById: Record<number, string>;
+  athleteById: Map<number, Athlete>;
+  draggedAthleteId: number | null;
+  athleteFilter: AthleteFilter;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onClose: () => void;
+  onFieldChange: <T extends keyof NewTeamFormState>(field: T, value: NewTeamFormState[T]) => void;
+  setTeamForm: Dispatch<SetStateAction<NewTeamFormState>>;
+  setDraggedAthleteId: (id: number | null) => void;
+  setAthleteFilter: Dispatch<SetStateAction<AthleteFilter>>;
+};
+
+const TeamFormModal = ({
+  isOpen,
+  isSubmitting,
+  editingTeam,
+  labels,
+  teamForm,
+  teamFormError,
+  teamAgeOptions,
+  availableCoaches,
+  teamBuilderCandidates,
+  remainingAthleteCount,
+  teamNameById,
+  athleteById,
+  draggedAthleteId,
+  athleteFilter,
+  onSubmit,
+  onClose,
+  onFieldChange,
+  setTeamForm,
+  setDraggedAthleteId,
+  setAthleteFilter,
+}: TeamFormModalProps) => {
+  if (!isOpen) {
+    return null;
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-2 py-4 sm:px-4 sm:py-8"
+      onClick={() => {
+        if (!isSubmitting) {
+          onClose();
+        }
+      }}
+      role="presentation"
+    >
+      <div
+        className="w-full max-w-lg space-y-4 overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:max-w-7xl sm:max-h-[98vh] sm:p-6 md:px-10"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="relative">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="absolute right-0 top-0 inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/70 text-muted shadow-sm transition hover:text-accent focus-visible:ring-2 focus-visible:ring-action-primary disabled:cursor-not-allowed disabled:opacity-60"
+            aria-label="Close"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
+              <path d="M5 5l10 10M15 5L5 15" strokeLinecap="round" />
+            </svg>
+          </button>
+          <div>
+            <h3 className="text-lg font-semibold text-container-foreground">
+              {editingTeam ? `Edit ${editingTeam.name}` : labels.modalTitle}
+            </h3>
+            <p className="text-sm text-muted">{labels.helper}</p>
+          </div>
+        </div>
+
+        <form onSubmit={onSubmit} className="space-y-5">
+          <div className="grid gap-4 md:grid-cols-3">
+            <label className="text-xs font-medium text-muted md:col-span-3">
+              {labels.nameLabel}
+              <input
+                type="text"
+                value={teamForm.name}
+                onChange={(event) => onFieldChange("name", event.target.value)}
+                disabled={isSubmitting}
+                className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
+                placeholder="U14 National"
+                required
+              />
+            </label>
+            <label className="text-xs font-medium text-muted">
+              {labels.ageLabel}
+              <select
+                value={teamForm.ageCategory}
+                onChange={(event) => onFieldChange("ageCategory", event.target.value)}
+                disabled={isSubmitting}
+                className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
+              >
+                {teamAgeOptions.map((option) => (
+                  <option key={`team-age-${option}`} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs font-medium text-muted">
+              Gender Category
+              <select
+                value={teamForm.gender}
+                onChange={(event) =>
+                  onFieldChange("gender", event.target.value as "boys" | "girls" | "coed")
+                }
+                disabled={isSubmitting}
+                className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
+              >
+                <option value="boys">Boys</option>
+                <option value="girls">Girls</option>
+                <option value="coed">Coed</option>
+              </select>
+            </label>
+            <label className="text-xs font-medium text-muted md:col-span-3">
+              {labels.descriptionLabel}
+              <textarea
+                value={teamForm.description}
+                onChange={(event) => onFieldChange("description", event.target.value)}
+                disabled={isSubmitting}
+                className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
+                rows={2}
+              />
+            </label>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-container-foreground">{labels.coachesSection}</p>
+            <p className="text-xs text-muted">{labels.coachesHelper}</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="text-xs font-medium text-muted">
+                Head Coach
+                <select
+                  value={teamForm.coachIds[0] ?? ""}
+                  onChange={(event) => {
+                    const value = event.target.value ? Number(event.target.value) : null;
+                    const next = [...teamForm.coachIds];
+                    if (value) {
+                      next[0] = value;
+                      if (next.length > 1 && next[0] === next[1]) {
+                        next.splice(1, 1);
+                      }
+                    } else {
+                      next.splice(0, 1);
+                    }
+                    setTeamForm((prev) => ({ ...prev, coachIds: next.filter((id) => id > 0) }));
+                  }}
+                  disabled={isSubmitting}
+                  className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
+                >
+                  <option value="">Select a coach</option>
+                  {availableCoaches.map((coach) => (
+                    <option key={`head-coach-${coach.id}`} value={coach.id}>
+                      {coach.full_name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs font-medium text-muted">
+                Assistant Coach
+                <select
+                  value={teamForm.coachIds[1] ?? ""}
+                  onChange={(event) => {
+                    const value = event.target.value ? Number(event.target.value) : null;
+                    const next = [...teamForm.coachIds];
+                    if (value && next[0] && value !== next[0]) {
+                      next[1] = value;
+                    } else if (!value && next.length > 1) {
+                      next.splice(1, 1);
+                    }
+                    setTeamForm((prev) => ({ ...prev, coachIds: next.filter((id) => id > 0) }));
+                  }}
+                  disabled={isSubmitting || !teamForm.coachIds[0]}
+                  className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
+                >
+                  <option value="">Select an assistant coach</option>
+                  {availableCoaches
+                    .filter((coach) => coach.id !== teamForm.coachIds[0])
+                    .map((coach) => (
+                      <option key={`assistant-coach-${coach.id}`} value={coach.id}>
+                        {coach.full_name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div className="grid items-start gap-6 lg:grid-cols-2">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-container-foreground">Team Roster</p>
+              <p className="text-xs text-muted">Athletes currently on this team</p>
+              <div
+                className="min-h-[300px] max-h-[400px] overflow-y-auto rounded-lg border-2 border-dashed border-action-primary/30 bg-blue-50/30 p-2"
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  event.currentTarget.classList.add("border-action-primary", "bg-blue-100/50");
+                }}
+                onDragLeave={(event) => {
+                  event.currentTarget.classList.remove("border-action-primary", "bg-blue-100/50");
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  event.currentTarget.classList.remove("border-action-primary", "bg-blue-100/50");
+                  if (draggedAthleteId && !teamForm.athleteIds.includes(draggedAthleteId)) {
+                    setTeamForm((prev) => ({
+                      ...prev,
+                      athleteIds: [...prev.athleteIds, draggedAthleteId],
+                    }));
+                  }
+                  setDraggedAthleteId(null);
+                }}
+              >
+                {teamForm.athleteIds.length === 0 ? (
+                  <div className="flex h-32 items-center justify-center text-xs text-muted">
+                    Drag athletes here to add them to the team
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {teamForm.athleteIds.map((athleteId) => {
+                      const athlete = athleteById.get(athleteId);
+                      if (!athlete) return null;
+                      return (
+                        <div
+                          key={`roster-athlete-${athlete.id}`}
+                          draggable
+                          onDragStart={() => setDraggedAthleteId(athlete.id)}
+                          className="flex items-center justify-between gap-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm transition hover:bg-gray-50"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-medium text-container-foreground">
+                              {athlete.first_name} {athlete.last_name}
+                            </p>
+                            <p className="truncate text-xs text-muted">
+                              {athlete.birth_date ? `Age: ${calculateAge(athlete.birth_date)}` : ""}
+                              {athlete.gender ? ` • ${athlete.gender === "male" ? "Boys" : "Girls"}` : ""}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setTeamForm((prev) => ({
+                                ...prev,
+                                athleteIds: prev.athleteIds.filter((id) => id !== athlete.id),
+                              }))
+                            }
+                            className="px-2 py-1 text-xs text-red-500 hover:text-red-700"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-muted">
+                Total: {teamForm.athleteIds.length}{" "}
+                {teamForm.athleteIds.length === 1 ? "athlete" : "athletes"}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-container-foreground">Available Athletes</p>
+              <p className="text-xs text-muted">Drag athletes to add them to the roster</p>
+              <div className="rounded-lg border border-black/10 bg-white/90 p-2 text-xs text-muted">
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="flex items-center gap-1">
+                    <span className="text-[0.65rem] uppercase">Age</span>
+                    <select
+                      value={athleteFilter.age}
+                      onChange={(event) =>
+                        setAthleteFilter((prev) => ({ ...prev, age: event.target.value }))
+                      }
+                      className="rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
+                    >
+                      <option value="">All</option>
+                      <option value="U14">U14</option>
+                      <option value="U16">U16</option>
+                      <option value="U18">U18</option>
+                      <option value="U21">U21</option>
+                      <option value="Senior">Senior</option>
+                    </select>
+                  </label>
+                  <label className="flex items-center gap-1">
+                    <span className="text-[0.65rem] uppercase">Gender</span>
+                    <select
+                      value={athleteFilter.gender}
+                      onChange={(event) =>
+                        setAthleteFilter((prev) => ({ ...prev, gender: event.target.value }))
+                      }
+                      className="rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
+                    >
+                      <option value="">All</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                    </select>
+                  </label>
+                  <label className="flex items-center gap-1">
+                    <span className="text-[0.65rem] uppercase">Status</span>
+                    <select
+                      value={athleteFilter.teamStatus}
+                      onChange={(event) =>
+                        setAthleteFilter((prev) => ({
+                          ...prev,
+                          teamStatus: event.target.value as AthleteFilter["teamStatus"],
+                        }))
+                      }
+                      className="rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
+                    >
+                      <option value="all">All</option>
+                      <option value="assigned">Assigned</option>
+                      <option value="unassigned">Unassigned</option>
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setAthleteFilter({ age: "", gender: "", teamStatus: "all" })}
+                    className="ml-auto text-[0.65rem] uppercase text-action-primary hover:text-action-primary/80"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              <div className="min-h-[300px] max-h-[400px] overflow-y-auto rounded-lg border border-black/10 bg-white/70 p-2">
+                {teamBuilderCandidates.length === 0 ? (
+                  <div className="flex h-32 items-center justify-center text-xs text-muted">
+                    No athletes available with selected filters
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {teamBuilderCandidates.map((athlete) => {
+                      const assignedTeamName =
+                        athlete.team_id && teamNameById[athlete.team_id]
+                          ? teamNameById[athlete.team_id]
+                          : null;
+                      return (
+                        <div
+                          key={`available-athlete-${athlete.id}`}
+                          draggable
+                          onDragStart={() => setDraggedAthleteId(athlete.id)}
+                          className="flex items-center justify-between gap-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm transition hover:bg-blue-50"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-medium text-container-foreground">
+                              {athlete.first_name} {athlete.last_name}
+                            </p>
+                            <p className="truncate text-xs text-muted">
+                              {athlete.birth_date ? `Age: ${calculateAge(athlete.birth_date)}` : ""}
+                              {athlete.gender ? ` • ${athlete.gender === "male" ? "Boys" : "Girls"}` : ""}
+                              {assignedTeamName ? ` • ${assignedTeamName}` : " • Unassigned"}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!teamForm.athleteIds.includes(athlete.id)) {
+                                setTeamForm((prev) => ({
+                                  ...prev,
+                                  athleteIds: [...prev.athleteIds, athlete.id],
+                                }));
+                              }
+                            }}
+                            className="flex h-6 w-6 items-center justify-center rounded-full bg-action-primary/10 text-action-primary hover:bg-action-primary/20 transition"
+                          >
+                            <FontAwesomeIcon icon={faPlus} className="text-xs" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              <p className="text-xs text-muted">{remainingAthleteCount} athletes available</p>
+            </div>
+          </div>
+
+          {teamFormError ? <p className="text-xs text-red-500">{teamFormError}</p> : null}
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+            >
+              {editingTeam ? "Save" : labels.submitLabel}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default TeamFormModal;

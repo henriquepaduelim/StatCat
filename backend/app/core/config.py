@@ -1,11 +1,13 @@
 from functools import lru_cache
 
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application configuration pulled from environment variables."""
+
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     PROJECT_NAME: str = "Combine Backend"
     VERSION: str = "0.1.0"
@@ -45,10 +47,6 @@ class Settings(BaseSettings):
     SMTP_FROM_EMAIL: str | None = None
     SMTP_FROM_NAME: str | None = "Combine Platform"
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 30
-
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
 
 
 @lru_cache

@@ -11,6 +11,7 @@ from app.core.security import get_password_hash
 from app.db.session import get_session
 from app.models.athlete import Athlete
 from app.models.event import Event
+from app.models.event_team_link import EventTeamLink
 from app.models.team import CoachTeamLink, Team
 from app.models.user import User, UserRole
 from app.schemas.team import TeamCoachCreate, TeamCreate, TeamRead
@@ -438,8 +439,9 @@ def delete_team(
         athlete.team_id = None
         session.add(athlete)
 
-    # Remove any coach links for this team
+    # Remove any coach links and event associations for this team
     session.exec(delete(CoachTeamLink).where(CoachTeamLink.team_id == team_id))
+    session.exec(delete(EventTeamLink).where(EventTeamLink.team_id == team_id))
 
     # Detach events referencing this team so FK constraints don't fail
     events = session.exec(select(Event).where(Event.team_id == team_id)).all()
