@@ -30,25 +30,37 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: radial-gradient(circle at 30% 20%, rgba(30, 64, 175, 0.95), #0f172a);
+        background: #0f172a;
         z-index: 9999;
-        transition: opacity 250ms ease, visibility 800ms ease;
+        transition: opacity 350ms ease, visibility 350ms ease;
       }
 
       #pwa-splash .splash-content {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 1rem;
-        color: #f8fafc;
+        gap: 1.25rem;
+        color: #f1f5f9;
         text-transform: uppercase;
-        letter-spacing: 0.2em;
-        font-size: 0.9rem;
+        letter-spacing: 0.25em;
+        font-size: 0.85rem;
+      }
+
+      #pwa-splash .logo-ring {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 176px;
+        height: 176px;
+        border-radius: 32px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(248, 250, 252, 0.15);
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
       }
 
       #pwa-splash img {
-        width: 96px;
-        height: 96px;
+        width: 148px;
+        height: 148px;
       }
 
       #pwa-splash.splash-hidden {
@@ -60,8 +72,10 @@
   <body class="bg-slate-400">
     <div id="pwa-splash" role="status" aria-live="polite">
       <div class="splash-content">
-        <img src="/pwa-192x192.png" alt="StatCat logo" width="96" height="96" />
-        <span>Loading</span>
+        <div class="logo-ring">
+          <img src="/pwa-192x192.png" alt="StatCat logo" width="148" height="148" />
+        </div>
+        <span>StatCat</span>
       </div>
     </div>
     <div id="root"></div>

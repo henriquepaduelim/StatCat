@@ -7,17 +7,24 @@ import App from "./App";
 import "./styles/index.css";
 import LocaleProvider from "./i18n/LocaleProvider";
 
+const MIN_SPLASH_DURATION = 1500;
+const splashMountedAt = performance.now();
+
 const hideSplashScreen = () => {
   const splash = document.getElementById("pwa-splash");
-  if (!splash) return;
+  if (!splash || splash.classList.contains("splash-hidden")) return;
   splash.classList.add("splash-hidden");
   splash.addEventListener(
     "transitionend",
-    () => {
-      splash.remove();
-    },
+    () => splash.remove(),
     { once: true }
   );
+};
+
+const scheduleSplashRemoval = () => {
+  const elapsed = performance.now() - splashMountedAt;
+  const delay = Math.max(MIN_SPLASH_DURATION - elapsed, 0);
+  window.setTimeout(hideSplashScreen, delay);
 };
 
 const queryClient = new QueryClient();
@@ -34,4 +41,8 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   </React.StrictMode>
 );
 
-requestAnimationFrame(hideSplashScreen);
+if (document.readyState === "complete") {
+  scheduleSplashRemoval();
+} else {
+  window.addEventListener("load", scheduleSplashRemoval, { once: true });
+}
