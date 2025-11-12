@@ -1,10 +1,10 @@
 import { FormEvent, Dispatch, SetStateAction } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash, faCheck, faQuestion, faTimes } from "@fortawesome/free-solid-svg-icons";
+import { faTrash, faCheck, faQuestion, faTimes, faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
 
 import type { Event } from "../../types/event";
 import type { ParticipantStatus } from "../../types/event";
-import type { Team } from "../../api/teams";
+import type { Team, TeamCoach } from "../../api/teams";
 import type { Athlete } from "../../types/athlete";
 import type { TranslationDictionary } from "../../i18n/translations";
 import type { EventFormState } from "../../types/dashboard";
@@ -21,6 +21,7 @@ type EventModalProps = {
   eventsOnSelectedDate: Event[];
   teamNameById: Record<number, string>;
   teams: Team[];
+  availableCoaches: TeamCoach[];
   getEventTeamIds: (event: Event) => number[];
   canManageEvents: boolean;
   onDeleteEvent: (eventId: number) => void;
@@ -55,6 +56,7 @@ const EventModal = ({
   eventsOnSelectedDate,
   teamNameById,
   teams,
+  availableCoaches,
   canManageEvents,
   onDeleteEvent,
   deleteEventPending,
@@ -87,9 +89,25 @@ const EventModal = ({
     ? teams.filter((team) => eventForm.teamIds.includes(team.id))
     : teams;
 
+  const handleTeamToggle = (teamId: number) => {
+    const isSelected = eventForm.teamIds.includes(teamId);
+    const updated = isSelected
+      ? eventForm.teamIds.filter((id) => id !== teamId)
+      : [...eventForm.teamIds, teamId];
+    onInputChange("teamIds", updated);
+  };
+
+  const handleCoachToggle = (coachId: number) => {
+    const isSelected = eventForm.coachIds.includes(coachId);
+    const updated = isSelected
+      ? eventForm.coachIds.filter((id) => id !== coachId)
+      : [...eventForm.coachIds, coachId];
+    onInputChange("coachIds", updated);
+  };
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-6 py-2 sm:px-0 sm:py-0"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-8 py-4 sm:px-2 sm:py-2"
       onClick={onCancel}
       role="presentation"
     >
@@ -335,27 +353,58 @@ const EventModal = ({
               />
             </label>
 
-            <label className="text-xs font-medium text-muted">
-              {summaryLabels.calendar.teamLabel}
-              <select
-                multiple
-                value={eventForm.teamIds.map((id) => String(id))}
-                onChange={(event) => {
-                  const selected = Array.from(event.target.selectedOptions).map((option) => Number(option.value));
-                  onInputChange("teamIds", selected);
-                }}
-                className="mt-1 h-32 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-              >
-                {teams.map((team) => (
-                  <option key={`event-form-team-${team.id}`} value={team.id}>
-                    {team.name}
-                  </option>
-                ))}
-              </select>
-              <span className="mt-1 block text-[0.65rem] text-muted">
-                Hold Cmd/Ctrl to select multiple teams. Leave empty to invite athletes individually.
-              </span>
-            </label>
+            <div className="grid gap-4 lg:grid-cols-3">
+              <div className="text-xs font-medium text-muted">
+                <p className="mb-1">{summaryLabels.calendar.teamLabel}</p>
+                <div className="space-y-1 rounded-lg border border-black/10 bg-white/90 p-2">
+                  {teams.map((team) => {
+                    const isSelected = eventForm.teamIds.includes(team.id);
+                    return (
+                      <button
+                        key={`team-toggle-${team.id}`}
+                        type="button"
+                        onClick={() => handleTeamToggle(team.id)}
+                        className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm transition ${
+                          isSelected ? "bg-action-primary/15 text-action-primary" : "text-container-foreground hover:bg-black/5"
+                        }`}
+                      >
+                        <span>{team.name}</span>
+                        <FontAwesomeIcon icon={isSelected ? faMinus : faPlus} className="h-3 w-3" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="text-xs font-medium text-muted">
+                <p className="mb-1">Invite coaches</p>
+                <div className="space-y-1 rounded-lg border border-black/10 bg-white/90 p-2">
+                  {availableCoaches.map((coach) => {
+                    const isSelected = eventForm.coachIds.includes(coach.id);
+                    return (
+                      <button
+                        key={`coach-toggle-${coach.id}`}
+                        type="button"
+                        onClick={() => handleCoachToggle(coach.id)}
+                        className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm transition ${
+                          isSelected ? "bg-action-primary/15 text-action-primary" : "text-container-foreground hover:bg-black/5"
+                        }`}
+                      >
+                        <span>{coach.full_name}</span>
+                        <FontAwesomeIcon icon={isSelected ? faMinus : faPlus} className="h-3 w-3" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-dashed border-black/10 bg-white/60 p-3 text-[0.7rem] text-muted lg:col-span-1">
+                <p className="font-semibold text-container-foreground">Tip</p>
+                <p className="mt-1">
+                  Selected teams automatically include all roster athletes. Use the coach selector to add assistant or guest coaches.
+                </p>
+              </div>
+            </div>
 
             <div className="text-xs font-medium text-muted">
               <p className="mb-3 text-sm font-semibold">Invite Athletes</p>
@@ -458,12 +507,18 @@ const EventModal = ({
                           </p>
                           <p className="text-xs text-muted">{athlete.email || "No email"}</p>
                         </div>
-                        <input
-                          type="checkbox"
-                          checked={eventForm.inviteeIds.includes(athlete.id)}
-                          onChange={() => onInviteToggle(athlete.id)}
-                          className="h-4 w-4 rounded border-gray-300 text-action-primary"
-                        />
+                        <button
+                          type="button"
+                          onClick={() => onInviteToggle(athlete.id)}
+                          className={`flex h-8 w-8 items-center justify-center rounded-full border text-sm transition ${
+                            eventForm.inviteeIds.includes(athlete.id)
+                              ? "border-action-primary text-action-primary"
+                              : "border-black/20 text-muted hover:text-container-foreground"
+                          }`}
+                          aria-label={eventForm.inviteeIds.includes(athlete.id) ? "Remove invitee" : "Add invitee"}
+                        >
+                          <FontAwesomeIcon icon={eventForm.inviteeIds.includes(athlete.id) ? faMinus : faPlus} />
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -473,28 +528,6 @@ const EventModal = ({
                   </p>
                 )}
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-sm font-semibold text-container-foreground">Notifications</p>
-              <label className="flex items-center gap-2 text-xs text-muted">
-                <input
-                  type="checkbox"
-                  checked={eventForm.sendEmail}
-                  onChange={(event) => onInputChange("sendEmail", event.target.checked)}
-                  className="rounded border-gray-300 text-action-primary"
-                />
-                <span>Send email notifications</span>
-              </label>
-              <label className="flex items-center gap-2 text-xs text-muted">
-                <input
-                  type="checkbox"
-                  checked={eventForm.sendPush}
-                  onChange={(event) => onInputChange("sendPush", event.target.checked)}
-                  className="rounded border-gray-300 text-action-primary"
-                />
-                <span>Send push notifications</span>
-              </label>
             </div>
 
             {eventFormError ? <p className="text-xs text-red-500">{eventFormError}</p> : null}

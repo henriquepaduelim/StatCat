@@ -15,6 +15,7 @@ export type EventFormState = {
   location: string;
   notes: string;
   teamIds: number[];
+  coachIds: number[];
   inviteeIds: number[];
   sendEmail: boolean;
   sendPush: boolean;

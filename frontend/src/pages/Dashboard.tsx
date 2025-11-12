@@ -64,6 +64,7 @@ const createEmptyEventForm = (): EventFormState => ({
   location: "",
   notes: "",
   teamIds: [],
+  coachIds: [],
   inviteeIds: [],
   sendEmail: true,
   sendPush: false,
@@ -281,51 +282,57 @@ const Dashboard = () => {
     return Array.from(ids);
   }, [eventsOnSelectedDate, selectedEventDate, getEventTeamIds]);
 
-  const invitedAthleteIdsByTeamId = useMemo(() => {
-    if (!selectedEventDate || !eventsOnSelectedDate.length) {
-      return new Map<number, Set<number>>();
+  const eventAvailabilityData = useMemo(() => {
+    if (!selectedEventDate) {
+      return [];
     }
-    const map = new Map<number, Set<number>>();
-    eventsOnSelectedDate.forEach((event) => {
+
+    return eventsOnSelectedDate.map((event) => {
       const teamIds = getEventTeamIds(event);
-      if (!teamIds.length) {
-        return;
-      }
-      (event.participants ?? []).forEach((participant) => {
+      const participants = event.participants ?? [];
+      const teamMap = teamIds.reduce<Record<number, Athlete[]>>((acc, id) => {
+        acc[id] = [];
+        return acc;
+      }, {});
+      const guests: Athlete[] = [];
+
+      participants.forEach((participant) => {
         const athleteId = participant.athlete_id;
-        if (athleteId == null) {
+        if (!athleteId) {
           return;
         }
-        teamIds.forEach((teamId) => {
-          if (!map.has(teamId)) {
-            map.set(teamId, new Set());
-          }
-          map.get(teamId)?.add(athleteId);
-        });
-      });
-    });
-    return map;
-  }, [selectedEventDate, eventsOnSelectedDate, getEventTeamIds]);
-
-  const availabilityAthletesByTeamId = useMemo(() => {
-    if (!selectedEventDate) {
-      return {};
-    }
-    const result: Record<number, Athlete[]> = {};
-    invitedAthleteIdsByTeamId.forEach((athleteIds, teamId) => {
-      const list: Athlete[] = [];
-      athleteIds.forEach((athleteId) => {
         const athlete = athleteById.get(athleteId);
-        if (athlete) {
-          list.push(athlete);
+        if (!athlete) {
+          return;
+        }
+        if (typeof athlete.team_id === "number" && teamMap[athlete.team_id]) {
+          teamMap[athlete.team_id].push(athlete);
+        } else {
+          guests.push(athlete);
         }
       });
-      if (list.length) {
-        result[teamId] = list;
-      }
+
+      return {
+        event,
+        teams: teamIds.map((teamId) => ({
+          teamId,
+          teamName: teamNameById[teamId] ?? summaryLabels.teamPlaceholder,
+          athletes: teamMap[teamId] ?? [],
+        })),
+        guests,
+      };
     });
-    return result;
-  }, [selectedEventDate, invitedAthleteIdsByTeamId, athleteById]);
+  }, [selectedEventDate, eventsOnSelectedDate, getEventTeamIds, athleteById, teamNameById, summaryLabels.teamPlaceholder]);
+
+  const availabilityPages = useMemo(() => {
+    const pages: Array<{ eventIndex: number; teamIndex: number; includeGuests: boolean }> = [];
+    eventAvailabilityData.forEach((entry, eventIndex) => {
+      entry.teams.forEach((_team, teamIndex) => {
+        pages.push({ eventIndex, teamIndex, includeGuests: teamIndex === entry.teams.length - 1 });
+      });
+    });
+    return pages;
+  }, [eventAvailabilityData]);
   const teamsForSelectedDate = useMemo(() => {
     if (!events.length) {
       return [];
@@ -353,9 +360,7 @@ const Dashboard = () => {
       if (selectedTeamId !== null) {
         setSelectedTeamId(null);
       }
-      if (availabilityPage !== 0) {
-        setAvailabilityPage(0);
-      }
+      setAvailabilityPage(0);
       return;
     }
 
@@ -366,9 +371,7 @@ const Dashboard = () => {
       if (nextId !== selectedTeamId) {
         setSelectedTeamId(nextId);
       }
-      if (availabilityPage !== 0) {
-        setAvailabilityPage(0);
-      }
+      setAvailabilityPage(0);
       return;
     }
 
@@ -379,10 +382,14 @@ const Dashboard = () => {
     if (nextId !== selectedTeamId) {
       setSelectedTeamId(nextId);
     }
-    if (availabilityPage !== 0) {
+    setAvailabilityPage(0);
+  }, [teams, teamsForSelectedDate, selectedEventDate, eventTeamIdsForSelectedDate, selectedTeamId]);
+
+  useEffect(() => {
+    if (availabilityPage >= availabilityPages.length && availabilityPages.length > 0) {
       setAvailabilityPage(0);
     }
-  }, [teams, teamsForSelectedDate, selectedEventDate, eventTeamIdsForSelectedDate, selectedTeamId, availabilityPage]);
+  }, [availabilityPage, availabilityPages.length]);
 
   useEffect(() => {
     setCoachForm(createEmptyCoachForm());
@@ -640,7 +647,7 @@ const Dashboard = () => {
         notes: notesWithTime || null,
         team_id: eventForm.teamIds.length === 1 ? eventForm.teamIds[0] : null,
         team_ids: eventForm.teamIds,
-        invitee_ids: [],
+        invitee_ids: eventForm.coachIds,
         athlete_ids: eventForm.inviteeIds,
         send_email: eventForm.sendEmail,
         send_push: eventForm.sendPush,
@@ -1108,23 +1115,16 @@ const Dashboard = () => {
         <EventAvailabilityPanel
           summaryLabels={summaryLabels}
           selectedEventDate={selectedEventDate}
-          selectedTeamId={selectedTeamId}
           readableDate={readableDate}
           clearLabel={t.common.clear}
-          eventsOnSelectedDate={eventsOnSelectedDate}
-          teamNameById={teamNameById}
-          eventTeamIdsForSelectedDate={eventTeamIdsForSelectedDate}
-          teams={teams}
-          onSelectTeam={setSelectedTeamId}
-          teamsForSelectedDate={teamsForSelectedDate}
-          isRosterLoading={isRosterLoading}
-          rosterHasError={rosterHasError}
-          athletesByTeamId={availabilityAthletesByTeamId}
-          onClearSelectedDate={() => setSelectedEventDate(null)}
-          getAvailabilityDisplay={getAvailabilityDisplay}
-          getEventTeamIds={getEventTeamIds}
+          eventsAvailability={eventAvailabilityData}
+          availabilityPages={availabilityPages}
           availabilityPage={availabilityPage}
           setAvailabilityPage={setAvailabilityPage}
+          isRosterLoading={isRosterLoading}
+          rosterHasError={rosterHasError}
+          onClearSelectedDate={() => setSelectedEventDate(null)}
+          getAvailabilityDisplay={getAvailabilityDisplay}
         />
       </section>
 
@@ -1188,6 +1188,7 @@ const Dashboard = () => {
       eventsOnSelectedDate={eventsOnSelectedDate}
       teamNameById={teamNameById}
       teams={teams}
+      availableCoaches={availableCoaches}
       canManageEvents={canManageEvents}
       onDeleteEvent={handleDeleteEvent}
       deleteEventPending={deleteEventMutation.isPending}
