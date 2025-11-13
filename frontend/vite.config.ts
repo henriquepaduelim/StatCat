@@ -6,6 +6,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // Workbox's internal bundler crashes under Node 22 when minifying the SW.
+      // Force the PWA plugin to run in "development" mode so it skips the Terser step.
+      mode: 'development',
       minify: false,
       registerType: 'autoUpdate',
       includeAssets: ['media/favicon.ico', 'media/logo.png'],
@@ -53,8 +56,7 @@ export default defineConfig({
         ]
       },
       workbox: {
-        // In production, precache will be generated automatically
-        // In dev, we don't need precaching (avoid warnings)
+        // Disable precache manifest generation while we rely on runtime caching only.
         globPatterns: [],
         runtimeCaching: [
           {
