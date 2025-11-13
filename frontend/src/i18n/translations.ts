@@ -247,6 +247,10 @@ export type TranslationDictionary = {
       status: string;
     };
     filters: {
+      name: string;
+      namePlaceholder: string;
+      email: string;
+      emailPlaceholder: string;
       search: string;
       searchPlaceholder: string;
       status: string;
@@ -822,6 +826,10 @@ export const translations: Record<Locale, TranslationDictionary> = {
         action: "Actions",
       },
       filters: {
+        name: "Name",
+        namePlaceholder: "Search by athlete name",
+        email: "Email",
+        emailPlaceholder: "Search by email",
         search: "Search",
         searchPlaceholder: "Search by name or email",
         status: "Status",
