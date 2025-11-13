@@ -14,7 +14,7 @@ export type TranslationDictionary = {
     athletes: string;
     newAthlete: string;
     sessions: string;
-    reports: string;
+    playerProfile: string;
     logout: string;
     loading: string;
     cancel: string;
@@ -430,7 +430,7 @@ export type TranslationDictionary = {
     empty: string;
     notesEmpty: string;
   };
-    reports: {
+    playerProfile: {
       title: string;
       description: string;
       selectAthlete: string;
@@ -444,9 +444,26 @@ export type TranslationDictionary = {
       summary: string;
       summarySessions: (count: number) => string;
       metricsBadge: (count: number) => string;
-    metricFallback: string;
-    sessionDate: (value: string | null) => string;
-  };
+      metricFallback: string;
+      sessionDate: (value: string | null) => string;
+      reportCardsTitle: string;
+      reportCardsSubtitle: string;
+      reportCardsLoading: string;
+      reportCardsError: string;
+      reportCardsEmpty: string;
+      reportCardApprovedTag: string;
+      reportCardSubmittedBy: (name: string, date: string) => string;
+      reportCardIndividual: string;
+      reportCardNoScore: string;
+      reportCardNoNotes: string;
+      ratings: {
+        technical: string;
+        physical: string;
+        training: string;
+        match: string;
+        general: string;
+      };
+    };
   forms: {
     session: {
       title: string;
@@ -529,7 +546,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       athletes: "ATHLETES",
       newAthlete: "New Athlete",
       sessions: "Sessions",
-      reports: "REPORTS",
+      playerProfile: "PLAYER PROFILE",
       logout: "SIGN OUT",
       loading: "Loading",
       cancel: "Cancel",
@@ -1016,8 +1033,8 @@ export const translations: Record<Locale, TranslationDictionary> = {
       empty: "No sessions yet. Create the first one to begin tracking.",
       notesEmpty: "No notes",
     },
-    reports: {
-      title: "Reports",
+    playerProfile: {
+      title: "Player Profile",
       description: "Analyse individual results and export branded deliverables.",
       selectAthlete: "Select athlete",
       selectPlaceholder: "Choose an athlete",
@@ -1036,6 +1053,26 @@ export const translations: Record<Locale, TranslationDictionary> = {
       metricFallback: "Metric",
       sessionDate: (value: string | null) =>
         value ? formatDate(new Date(value), "en") : "Date not available",
+      reportCardsTitle: "Coach report cards",
+      reportCardsSubtitle: "Approved evaluations that power the leaderboard.",
+      reportCardsLoading: "Loading report cards...",
+      reportCardsError: "Unable to load report cards.",
+      reportCardsEmpty: "No approved report cards recorded yet.",
+      reportCardApprovedTag: "Approved",
+      reportCardSubmittedBy: (name: string, date: string) =>
+        name
+          ? `Submitted by ${name} on ${formatDate(new Date(date), "en")}`
+          : `Submitted on ${formatDate(new Date(date), "en")}`,
+      reportCardIndividual: "Individual report",
+      reportCardNoScore: "Not rated",
+      reportCardNoNotes: "No general notes were added.",
+      ratings: {
+        technical: "Technical",
+        physical: "Physical",
+        training: "Training performance",
+        match: "Game performance",
+        general: "General observations",
+      },
     },
     forms: {
       session: {
@@ -1103,7 +1140,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
         actions: {
           view: "View",
           settings: "Settings",
-          reports: "Reports",
+          reports: "Player profile",
         },
       },
       charts: {

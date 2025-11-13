@@ -16,6 +16,39 @@ if settings.DATABASE_URL.startswith("sqlite"):
         cursor.close()
 
 
+def _ensure_report_submission_columns(connection) -> None:
+    """Ensure legacy SQLite databases have the latest report_submission columns."""
+    rows = connection.exec_driver_sql("PRAGMA table_info(report_submission)").fetchall()
+    if not rows:
+        return
+    existing = {row[1] for row in rows}
+    required_columns = {
+        "technical_rating": "INTEGER",
+        "physical_rating": "INTEGER",
+        "training_rating": "INTEGER",
+        "match_rating": "INTEGER",
+        "general_notes": "VARCHAR",
+        "review_notes": "TEXT",
+    }
+    for column_name, definition in required_columns.items():
+        if column_name not in existing:
+            connection.exec_driver_sql(
+                f"ALTER TABLE report_submission ADD COLUMN {column_name} {definition}"
+            )
+
+
+def _ensure_match_stat_columns(connection) -> None:
+    """Ensure legacy SQLite databases have the latest match_stat columns."""
+    rows = connection.exec_driver_sql("PRAGMA table_info(match_stat)").fetchall()
+    if not rows:
+        return
+    existing = {row[1] for row in rows}
+    if "report_submission_id" not in existing:
+        connection.exec_driver_sql(
+            "ALTER TABLE match_stat ADD COLUMN report_submission_id INTEGER"
+        )
+
+
 def _ensure_optional_columns() -> None:
     with engine.begin() as connection:
         columns = {
@@ -132,6 +165,9 @@ def init_db() -> None:
     # NOTE: _ensure_optional_columns() has been replaced by Alembic migrations
     # Use `alembic upgrade head` to apply schema changes
     # _ensure_optional_columns()
+    with engine.begin() as connection:
+        _ensure_report_submission_columns(connection)
+        _ensure_match_stat_columns(connection)
     with Session(engine) as session:
         seed_database(session)
 

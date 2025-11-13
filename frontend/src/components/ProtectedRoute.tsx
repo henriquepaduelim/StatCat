@@ -35,7 +35,7 @@ const ProtectedRoute = ({
   children, 
   requiredPermission, 
   allowedRoles,
-  fallbackPath = "/reports",
+  fallbackPath = "/player-profile",
   requireAuth = true
 }: ProtectedRouteProps): JSX.Element => {
   useAuthBootstrap();

@@ -26,9 +26,9 @@ export const NAV_ITEMS: NavItem[] = [
     requiredPermission: "canViewAthletes",
   },
   {
-    to: "/reports",
+    to: "/player-profile",
     icon: faFileCode,
-    label: (t) => t.common.reports,
+    label: (t) => t.common.playerProfile,
     requiredPermission: "canViewReports",
   },
 ];

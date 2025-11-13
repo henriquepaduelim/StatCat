@@ -23,17 +23,35 @@ import type { Athlete } from "../types/athlete";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useMyEvents, useCreateEvent, useConfirmEventAttendance, useDeleteEvent, useEvents } from "../hooks/useEvents";
 import type { Event, ParticipantStatus } from "../types/event";
-import TeamListCard from "../components/dashboard/TeamListCard";
 import LeaderboardCard from "../components/dashboard/LeaderboardCard";
-import TeamInsightsCard from "../components/dashboard/TeamInsightsCard";
+import GameReportModal from "../components/dashboard/GameReportModal";
+import ReportCardModal from "../components/dashboard/ReportCardModal";
+import DashboardHero from "../components/dashboard/DashboardHero";
+import TeamManagementSection from "../components/dashboard/TeamManagementSection";
+import EventsSection from "../components/dashboard/EventsSection";
+import CoachDirectorySection from "../components/dashboard/CoachDirectorySection";
+import ReportSubmissionReviewModal from "../components/dashboard/ReportSubmissionReviewModal";
+import { submitGameReport } from "../api/matchReports";
+import {
+  approveReportSubmission,
+  rejectReportSubmission,
+  submitReportCardRequest,
+  type ReportSubmissionSummary,
+} from "../api/reportSubmissions";
+import { usePendingReportSubmissions } from "../hooks/usePendingReportSubmissions";
+import { useMyReportSubmissions } from "../hooks/useMyReportSubmissions";
 import TeamFormModal from "../components/dashboard/TeamFormModal";
 import CoachFormModal from "../components/dashboard/CoachFormModal";
-import CoachDirectoryCard from "../components/dashboard/CoachDirectoryCard";
-import EventCalendarPanel from "../components/dashboard/EventCalendarPanel";
-import EventAvailabilityPanel from "../components/dashboard/EventAvailabilityPanel";
 import EventModal from "../components/dashboard/EventModal";
 import { calculateAge } from "../utils/athletes";
-import type { AthleteFilter, NewTeamFormState, NoticeState, CoachFormState, EventFormState } from "../types/dashboard";
+import type {
+  AthleteFilter,
+  NewTeamFormState,
+  NoticeState,
+  CoachFormState,
+  EventFormState,
+  GameReportFormState,
+} from "../types/dashboard";
 import { createTeamLabels, teamAgeOptions } from "../constants/dashboard";
 import { faCheck, faQuestion, faTimes } from "@fortawesome/free-solid-svg-icons";
 
@@ -71,6 +89,19 @@ const createEmptyEventForm = (): EventFormState => ({
   sendPush: false,
 });
 
+const createEmptyGameReportForm = (): GameReportFormState => ({
+  teamId: null,
+  opponent: "",
+  date: "",
+  location: "",
+  goalsFor: "",
+  goalsAgainst: "",
+  goalScorers: [],
+  goalkeepersPlayed: [],
+  goalkeeperConceded: [],
+  notes: "",
+});
+
 // Generate date key (YYYY-MM-DD) in local time, avoiding day regression due to UTC
 const formatDateKey = (date: Date) => {
   const y = date.getFullYear();
@@ -104,6 +135,7 @@ const Dashboard = () => {
   const teamsQuery = useTeams();
   const permissions = usePermissions();
   const canManageEvents = permissions.canManageUsers || permissions.canCreateCoaches;
+  const canApproveReports = permissions.canManageUsers;
 
   const athletes = useMemo(() => athletesQuery.data ?? [], [athletesQuery.data]);
   const teams = useMemo(() => teamsQuery.data ?? [], [teamsQuery.data]);
@@ -196,6 +228,101 @@ const Dashboard = () => {
   }, [athletes, teamForm.athleteIds]);
   const t = useTranslation();
   const queryClient = useQueryClient();
+  const pendingReportsQuery = usePendingReportSubmissions({ enabled: canApproveReports });
+  const pendingReports = pendingReportsQuery.data ?? [];
+  const myReportsQuery = useMyReportSubmissions();
+  const myReports = myReportsQuery.data ?? [];
+  const closeSubmissionModal = () => {
+    setSubmissionModalOpen(false);
+    setSelectedSubmission(null);
+  };
+  const createGameReportMutation = useMutation({
+    mutationFn: submitGameReport,
+    onSuccess: () => {
+      setGameReportError(null);
+      setGameReportModalOpen(false);
+      setGameReportForm(createEmptyGameReportForm());
+      setGameReportAthleteFilterTeam(null);
+      queryClient.invalidateQueries({ queryKey: ["scoring-leaderboard"] });
+      pendingReportsQuery.refetch();
+      myReportsQuery.refetch();
+    },
+    onError: (error: unknown) => {
+      const errorDetail = (error as ApiErrorResponse)?.response?.data?.detail;
+      const message =
+        typeof errorDetail === "string"
+          ? errorDetail
+          : "Unable to save the game report.";
+      setGameReportError(message);
+    },
+  });
+  const submitReportCardMutation = useMutation({
+    mutationFn: submitReportCardRequest,
+    onSuccess: () => {
+      setReportCardError(null);
+      setReportCardModalOpen(false);
+      setReportCardAthleteId(null);
+      setReportCardTeamId(null);
+      setReportCardNotes("");
+      pendingReportsQuery.refetch();
+      myReportsQuery.refetch();
+    },
+    onError: (error: unknown) => {
+      const errorDetail = (error as ApiErrorResponse)?.response?.data?.detail;
+      const message =
+        typeof errorDetail === "string"
+          ? errorDetail
+          : "Unable to submit report card request.";
+      setReportCardError(message);
+    },
+  });
+  const approveReportSubmissionMutation = useMutation({
+    mutationFn: approveReportSubmission,
+    onMutate: (submissionId: number) => {
+      setApprovingSubmissionId(submissionId);
+    },
+    onSuccess: (_data, submissionId) => {
+      pendingReportsQuery.refetch();
+      myReportsQuery.refetch();
+      if (selectedSubmission?.id === submissionId) {
+        closeSubmissionModal();
+      }
+    },
+    onError: (error: unknown) => {
+      const errorDetail = (error as ApiErrorResponse)?.response?.data?.detail;
+      const message =
+        typeof errorDetail === "string"
+          ? errorDetail
+          : "Unable to approve submission.";
+      setTeamNotice({ variant: "error", message });
+    },
+    onSettled: () => {
+      setApprovingSubmissionId(null);
+    },
+  });
+  const rejectReportSubmissionMutation = useMutation({
+    mutationFn: ({ submissionId, notes }: { submissionId: number; notes: string }) =>
+      rejectReportSubmission(submissionId, notes),
+    onMutate: ({ submissionId }) => {
+      setRejectingSubmissionId(submissionId);
+    },
+    onSuccess: (_data, variables) => {
+      pendingReportsQuery.refetch();
+      myReportsQuery.refetch();
+      if (selectedSubmission?.id === variables.submissionId) {
+        closeSubmissionModal();
+      }
+    },
+    onError: (error: unknown) => {
+      const errorDetail = (error as ApiErrorResponse)?.response?.data?.detail;
+      const message =
+        typeof errorDetail === "string" ? errorDetail : "Unable to return submission.";
+      setTeamNotice({ variant: "error", message });
+    },
+    onSettled: () => {
+      setRejectingSubmissionId(null);
+    },
+  });
   const fetchTeamCoaches = (teamId: number) =>
     queryClient.ensureQueryData({
       queryKey: ["team-coaches", teamId],
@@ -277,6 +404,25 @@ const Dashboard = () => {
   const [eventForm, setEventForm] = useState<EventFormState>(createEmptyEventForm);
   const [eventFormError, setEventFormError] = useState<string | null>(null);
   const [availabilityPage, setAvailabilityPage] = useState(0);
+  const [isGameReportModalOpen, setGameReportModalOpen] = useState(false);
+  const [gameReportForm, setGameReportForm] = useState<GameReportFormState>(createEmptyGameReportForm);
+  const [gameReportAthleteFilterTeam, setGameReportAthleteFilterTeam] = useState<number | null>(null);
+  const [gameReportError, setGameReportError] = useState<string | null>(null);
+  const [isReportCardModalOpen, setReportCardModalOpen] = useState(false);
+  const [reportCardAthleteId, setReportCardAthleteId] = useState<number | null>(null);
+  const [reportCardTeamId, setReportCardTeamId] = useState<number | null>(null);
+  const [reportCardNotes, setReportCardNotes] = useState("");
+  const [reportCardRatings, setReportCardRatings] = useState({
+    technical: 3,
+    physical: 3,
+    training: 3,
+    match: 3,
+  });
+  const [reportCardError, setReportCardError] = useState<string | null>(null);
+  const [approvingSubmissionId, setApprovingSubmissionId] = useState<number | null>(null);
+  const [rejectingSubmissionId, setRejectingSubmissionId] = useState<number | null>(null);
+  const [selectedSubmission, setSelectedSubmission] = useState<ReportSubmissionSummary | null>(null);
+  const [isSubmissionModalOpen, setSubmissionModalOpen] = useState(false);
   
   // Athlete filters for event invitation
   const [athleteFilterTeam, setAthleteFilterTeam] = useState<number | "unassigned" | null>(null);
@@ -661,6 +807,221 @@ const Dashboard = () => {
         }
       }
     }
+  };
+
+  const openGameReportModal = () => {
+    setGameReportForm(() => {
+      const template = createEmptyGameReportForm();
+      return {
+        ...template,
+        teamId: selectedTeamId ?? null,
+        date: formatDateKey(new Date()),
+      };
+    });
+    setGameReportAthleteFilterTeam(selectedTeamId ?? null);
+    setGameReportError(null);
+    setGameReportModalOpen(true);
+  };
+
+  const openReportCardModal = () => {
+    setReportCardAthleteId(athletes[0]?.id ?? null);
+    setReportCardTeamId(selectedTeamId ?? null);
+    setReportCardNotes("");
+    setReportCardRatings({ technical: 3, physical: 3, training: 3, match: 3 });
+    setReportCardError(null);
+    setReportCardModalOpen(true);
+  };
+
+  const handleGameReportInputChange = <T extends keyof GameReportFormState>(
+    field: T,
+    value: GameReportFormState[T]
+  ) => {
+    setGameReportForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddGoalScorer = (athleteId: number) => {
+    setGameReportForm((prev) => {
+      if (prev.goalScorers.some((entry) => entry.athleteId === athleteId)) {
+        return prev;
+      }
+      return {
+        ...prev,
+        goalScorers: [...prev.goalScorers, { athleteId, goals: 1, shootoutGoals: 0 }],
+      };
+    });
+  };
+
+  const handleRemoveGoalScorer = (athleteId: number) => {
+    setGameReportForm((prev) => ({
+      ...prev,
+      goalScorers: prev.goalScorers.filter((entry) => entry.athleteId !== athleteId),
+    }));
+  };
+
+  const handleUpdateGoalScorerGoals = (athleteId: number, goals: number) => {
+    const normalized = Number.isFinite(goals) && goals > 0 ? goals : 1;
+    setGameReportForm((prev) => ({
+      ...prev,
+      goalScorers: prev.goalScorers.map((entry) =>
+        entry.athleteId === athleteId ? { ...entry, goals: normalized } : entry
+      ),
+    }));
+  };
+
+  const handleUpdateGoalScorerShootoutGoals = (athleteId: number, goals: number) => {
+    const normalized = Number.isFinite(goals) && goals >= 0 ? goals : 0;
+    setGameReportForm((prev) => ({
+      ...prev,
+      goalScorers: prev.goalScorers.map((entry) =>
+        entry.athleteId === athleteId ? { ...entry, shootoutGoals: normalized } : entry
+      ),
+    }));
+  };
+
+  const handleToggleGoalkeeper = (athleteId: number) => {
+    setGameReportForm((prev) => {
+      const exists = prev.goalkeepersPlayed.includes(athleteId);
+      const nextKeepers = exists
+        ? prev.goalkeepersPlayed.filter((id) => id !== athleteId)
+        : [...prev.goalkeepersPlayed, athleteId];
+      const nextConceded = prev.goalkeeperConceded.filter((entry) =>
+        nextKeepers.includes(entry.athleteId)
+      );
+      return {
+        ...prev,
+        goalkeepersPlayed: nextKeepers,
+        goalkeeperConceded: nextConceded,
+      };
+    });
+  };
+
+  const handleToggleGoalkeeperConceded = (athleteId: number) => {
+    setGameReportForm((prev) => {
+      if (!prev.goalkeepersPlayed.includes(athleteId)) {
+        return prev;
+      }
+      const exists = prev.goalkeeperConceded.find((entry) => entry.athleteId === athleteId);
+      const nextConceded = exists
+        ? prev.goalkeeperConceded.filter((entry) => entry.athleteId !== athleteId)
+        : [...prev.goalkeeperConceded, { athleteId, conceded: 1 }];
+      return { ...prev, goalkeeperConceded: nextConceded };
+    });
+  };
+
+  const handleUpdateGoalkeeperConcededGoals = (athleteId: number, goals: number) => {
+    const normalized = Number.isFinite(goals) && goals >= 0 ? goals : 0;
+    setGameReportForm((prev) => ({
+      ...prev,
+      goalkeeperConceded: prev.goalkeeperConceded.some((entry) => entry.athleteId === athleteId)
+        ? prev.goalkeeperConceded.map((entry) =>
+            entry.athleteId === athleteId ? { ...entry, conceded: normalized } : entry
+          )
+        : [...prev.goalkeeperConceded, { athleteId, conceded: normalized }],
+    }));
+  };
+
+  const handleGameReportSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (createGameReportMutation.isPending) {
+      return;
+    }
+    const normalizedScorers = gameReportForm.goalScorers
+      .filter((entry) => entry.goals > 0 || entry.shootoutGoals > 0)
+      .map((entry) => ({
+        athlete_id: entry.athleteId,
+        goals: entry.goals,
+        shootout_goals: entry.shootoutGoals,
+      }));
+    const concededMap = new Map(
+      gameReportForm.goalkeeperConceded.map((entry) => [entry.athleteId, entry.conceded])
+    );
+    const goalkeeperPayload = gameReportForm.goalkeepersPlayed.map((athleteId) => ({
+      athlete_id: athleteId,
+      conceded: concededMap.get(athleteId) ?? 0,
+    }));
+    if (!normalizedScorers.length && !goalkeeperPayload.length) {
+      setGameReportError("Add at least one goal scorer or goalkeeper.");
+      return;
+    }
+
+    const toPositiveNumber = (value: string) => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+    };
+    const trimOrNull = (value: string) => {
+      const trimmed = value.trim();
+      return trimmed.length ? trimmed : null;
+    };
+
+    const payload = {
+      team_id: gameReportForm.teamId,
+      opponent: gameReportForm.opponent.trim(),
+      date: gameReportForm.date || formatDateKey(new Date()),
+      location: trimOrNull(gameReportForm.location),
+      goals_for: toPositiveNumber(gameReportForm.goalsFor),
+      goals_against: toPositiveNumber(gameReportForm.goalsAgainst),
+      goal_scorers: normalizedScorers,
+      goalkeepers: goalkeeperPayload,
+      notes: trimOrNull(gameReportForm.notes),
+    };
+
+    setGameReportError(null);
+    createGameReportMutation.mutate(payload);
+  };
+
+  const handleGameReportCancel = () => {
+    setGameReportModalOpen(false);
+    setGameReportForm(createEmptyGameReportForm());
+    setGameReportAthleteFilterTeam(null);
+    setGameReportError(null);
+  };
+
+  const handleReportCardRatingChange = (
+    field: keyof typeof reportCardRatings,
+    value: number,
+  ) => {
+    const clamped = Math.min(5, Math.max(1, value));
+    setReportCardRatings((prev) => ({ ...prev, [field]: clamped }));
+  };
+
+  const handleReportCardSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!reportCardAthleteId) {
+      setReportCardError("Select an athlete before submitting.");
+      return;
+    }
+    submitReportCardMutation.mutate({
+      athlete_id: reportCardAthleteId,
+      team_id: reportCardTeamId,
+      technical_rating: reportCardRatings.technical,
+      physical_rating: reportCardRatings.physical,
+      training_rating: reportCardRatings.training,
+      match_rating: reportCardRatings.match,
+      general_notes: reportCardNotes.trim() ? reportCardNotes.trim() : null,
+    });
+  };
+
+  const handleReportCardCancel = () => {
+    setReportCardModalOpen(false);
+    setReportCardAthleteId(null);
+    setReportCardTeamId(null);
+    setReportCardNotes("");
+    setReportCardRatings({ technical: 3, physical: 3, training: 3, match: 3 });
+    setReportCardError(null);
+  };
+
+  const handleApproveSubmission = (submissionId: number) => {
+    if (approvingSubmissionId) {
+      return;
+    }
+    approveReportSubmissionMutation.mutate(submissionId);
+  };
+
+  const handleRejectSubmission = (submissionId: number, notes: string) => {
+    if (rejectingSubmissionId) {
+      return;
+    }
+    rejectReportSubmissionMutation.mutate({ submissionId, notes });
   };
 
   const handleEventInputChange = <T extends keyof EventFormState>(field: T, value: EventFormState[T]) => {
@@ -1129,113 +1490,126 @@ const Dashboard = () => {
   };
 
   const handleNewReportCard = () => {
-    console.info("Report card creation requested.");
+    openReportCardModal();
   };
 
   const handleGameReport = () => {
-    console.info("Game report creation requested.");
+    openGameReportModal();
+  };
+
+  const handleSubmissionReviewOpen = (submission: ReportSubmissionSummary) => {
+    setSelectedSubmission(submission);
+    setSubmissionModalOpen(true);
+  };
+
+  const teamListCardProps = {
+    teams,
+    athletesByTeamId,
+    notice: teamNotice,
+    isLoading: teamsQuery.isLoading,
+    isError: teamsQuery.isError,
+    canManageUsers: permissions.canManageUsers,
+    isCreatePending: createTeamMutation.isPending,
+    isDeletePending: deleteTeamMutation.isPending,
+    onAddTeam: handleTeamCreateClick,
+    onEditTeam: handleTeamEdit,
+    onDeleteTeam: handleTeamDelete,
+    addButtonLabel: createTeamLabels.button,
+    statusCopy: {
+      loading: `${t.common.loading}...`,
+      error: "Unable to load teams.",
+      empty: "No teams created yet.",
+    },
+  };
+  const teamInsightsCardProps = {
+    teams,
+    athletes,
+    athletesByTeamId,
+    onNewReportCard: handleNewReportCard,
+    onGameReport: handleGameReport,
+    isGameReportPending: createGameReportMutation.isPending,
+    pendingReports: canApproveReports ? pendingReports : [],
+    mySubmissions: myReports,
+    onApproveReport: handleApproveSubmission,
+    onReviewSubmission: handleSubmissionReviewOpen,
+    onViewMySubmission: handleSubmissionReviewOpen,
+    approvingSubmissionId,
+    canApproveReports,
+  };
+  const calendarPanelProps = {
+    summaryLabels,
+    calendarCursor,
+    calendarGrid,
+    weekdayInitials,
+    eventsByDate,
+    selectedEventDate,
+    onPrevMonth: goToPrevMonth,
+    onNextMonth: goToNextMonth,
+    onDayClick: handleDayClick,
+    onOpenEventForm: () => openEventFormPanel(),
+    upcomingEvents,
+    readableDate,
+    formatDateKey,
+    canManageEvents,
+    onDeleteEvent: handleDeleteEvent,
+    deleteEventPending: deleteEventMutation.isPending,
+    setSelectedEventDate,
+    setSelectedTeamId,
+    setCalendarCursor,
+    getEventTeamIds,
+  };
+  const availabilityPanelProps = {
+    summaryLabels,
+    selectedEventDate,
+    readableDate,
+    clearLabel: t.common.clear,
+    eventsAvailability: eventAvailabilityData,
+    availabilityPages,
+    availabilityPage,
+    setAvailabilityPage,
+    isRosterLoading,
+    rosterHasError,
+    onClearSelectedDate: () => setSelectedEventDate(null),
+    getAvailabilityDisplay,
+    currentUserRole,
+    currentUserId,
+    currentUserAthleteId,
+    onConfirmAttendance: handleConfirmAttendance,
+    confirmAttendancePending: confirmAttendanceMutation.isPending,
+  };
+  const coachDirectorySectionProps = {
+    canCreateCoaches: permissions.canCreateCoaches,
+    isCreatePending: createCoachMutation.isPending,
+    notice: coachNotice,
+    coaches: availableCoaches,
+    isLoading: allCoachesQuery.isLoading,
+    isError: allCoachesQuery.isError,
+    onAddCoach: handleAddCoach,
+    onEditCoach: handleEditCoach,
+    onDeleteCoach: handleCoachDelete,
   };
   return (
     <>
-    <div className="space-y-8">
-      <section className="print-hidden space-y-2">
-        <h1 className="text-3xl font-semibold text-container-foreground">{t.dashboard.title}</h1>
-        <p className="text-sm text-muted">{t.dashboard.description}</p>
-      </section>
-
-      <section className="print-hidden">
-        <LeaderboardCard />
-      </section>
-
-      {!isAthleteView ? (
-        <section className="print-hidden grid gap-6 lg:grid-cols-2">
-          <TeamListCard
-            teams={teams}
-            athletesByTeamId={athletesByTeamId}
-            notice={teamNotice}
-            isLoading={teamsQuery.isLoading}
-            isError={teamsQuery.isError}
-            canManageUsers={permissions.canManageUsers}
-            isCreatePending={createTeamMutation.isPending}
-            isDeletePending={deleteTeamMutation.isPending}
-            onAddTeam={handleTeamCreateClick}
-            onEditTeam={handleTeamEdit}
-            onDeleteTeam={handleTeamDelete}
-            addButtonLabel={createTeamLabels.button}
-            statusCopy={{
-              loading: `${t.common.loading}...`,
-              error: "Unable to load teams.",
-              empty: "No teams created yet.",
-            }}
-          />
-          <TeamInsightsCard
-            teams={teams}
-            athletes={athletes}
-            athletesByTeamId={athletesByTeamId}
-            onNewReportCard={handleNewReportCard}
-            onGameReport={handleGameReport}
-          />
+      <div className="space-y-8">
+        <DashboardHero title={t.dashboard.title} description={t.dashboard.description} />
+        <section className="print-hidden">
+          <LeaderboardCard />
         </section>
-      ) : null}
 
-      <section className="print-hidden flex flex-col gap-6 xl:flex-row">
-        <EventCalendarPanel
-          summaryLabels={summaryLabels}
-          calendarCursor={calendarCursor}
-          calendarGrid={calendarGrid}
-          weekdayInitials={weekdayInitials}
-          eventsByDate={eventsByDate}
-          selectedEventDate={selectedEventDate}
-          onPrevMonth={goToPrevMonth}
-          onNextMonth={goToNextMonth}
-          onDayClick={handleDayClick}
-          onOpenEventForm={openEventFormPanel}
-          upcomingEvents={upcomingEvents}
-          readableDate={readableDate}
-          formatDateKey={formatDateKey}
-          canManageEvents={canManageEvents}
-          onDeleteEvent={handleDeleteEvent}
-          deleteEventPending={deleteEventMutation.isPending}
-          setSelectedEventDate={setSelectedEventDate}
-          setSelectedTeamId={setSelectedTeamId}
-          setCalendarCursor={setCalendarCursor}
-          getEventTeamIds={getEventTeamIds}
-        />
-        <EventAvailabilityPanel
-          summaryLabels={summaryLabels}
-          selectedEventDate={selectedEventDate}
-          readableDate={readableDate}
-          clearLabel={t.common.clear}
-          eventsAvailability={eventAvailabilityData}
-          availabilityPages={availabilityPages}
-          availabilityPage={availabilityPage}
-          setAvailabilityPage={setAvailabilityPage}
-          isRosterLoading={isRosterLoading}
-          rosterHasError={rosterHasError}
-          onClearSelectedDate={() => setSelectedEventDate(null)}
-          getAvailabilityDisplay={getAvailabilityDisplay}
-          currentUserRole={currentUserRole}
-          currentUserId={currentUserId}
-          currentUserAthleteId={currentUserAthleteId}
-          onConfirmAttendance={handleConfirmAttendance}
-          confirmAttendancePending={confirmAttendanceMutation.isPending}
-        />
-      </section>
+        {!isAthleteView ? (
+          <TeamManagementSection
+            teamListProps={teamListCardProps}
+            insightsProps={teamInsightsCardProps}
+          />
+        ) : null}
 
-      {canManageCoaches ? (
-        <CoachDirectoryCard
-          canCreateCoaches={permissions.canCreateCoaches}
-          isCreatePending={createCoachMutation.isPending}
-          notice={coachNotice}
-          coaches={availableCoaches}
-          isLoading={allCoachesQuery.isLoading}
-          isError={allCoachesQuery.isError}
-          onAddCoach={handleAddCoach}
-          onEditCoach={handleEditCoach}
-          onDeleteCoach={handleCoachDelete}
+        <EventsSection
+          calendarProps={calendarPanelProps}
+          availabilityProps={availabilityPanelProps}
         />
-      ) : null}
-    </div>
+
+        {canManageCoaches ? <CoachDirectorySection {...coachDirectorySectionProps} /> : null}
+      </div>
 
       <TeamFormModal
       isOpen={isTeamFormOpen}
@@ -1307,6 +1681,59 @@ const Dashboard = () => {
       createEventPending={createEventMutation.isPending}
       onCancel={handleEventCancel}
       getEventTeamIds={getEventTeamIds}
+      />
+      <GameReportModal
+        isOpen={isGameReportModalOpen}
+        teams={teams}
+        athletes={athletes}
+        form={gameReportForm}
+        athleteFilterTeam={gameReportAthleteFilterTeam}
+        setAthleteFilterTeam={setGameReportAthleteFilterTeam}
+        onInputChange={handleGameReportInputChange}
+      onAddScorer={handleAddGoalScorer}
+      onRemoveScorer={handleRemoveGoalScorer}
+      onUpdateScorerGoals={handleUpdateGoalScorerGoals}
+      onUpdateScorerShootoutGoals={handleUpdateGoalScorerShootoutGoals}
+      onToggleGoalkeeper={handleToggleGoalkeeper}
+        onToggleGoalkeeperConceded={handleToggleGoalkeeperConceded}
+        onUpdateGoalkeeperConceded={handleUpdateGoalkeeperConcededGoals}
+        isSubmitting={createGameReportMutation.isPending}
+        errorMessage={gameReportError}
+        onSubmit={handleGameReportSubmit}
+        onCancel={handleGameReportCancel}
+      />
+      <ReportCardModal
+        isOpen={isReportCardModalOpen}
+        athletes={athletes}
+        teams={teams}
+        selectedAthleteId={reportCardAthleteId}
+        selectedTeamId={reportCardTeamId}
+        notes={reportCardNotes}
+        ratings={reportCardRatings}
+        isSubmitting={submitReportCardMutation.isPending}
+        errorMessage={reportCardError}
+        onAthleteSelect={setReportCardAthleteId}
+        onTeamSelect={setReportCardTeamId}
+        onNotesChange={setReportCardNotes}
+        onRatingChange={handleReportCardRatingChange}
+        onSubmit={handleReportCardSubmit}
+        onCancel={handleReportCardCancel}
+      />
+      <ReportSubmissionReviewModal
+        submission={selectedSubmission}
+        isOpen={isSubmissionModalOpen && Boolean(selectedSubmission)}
+        canResolve={Boolean(canApproveReports && selectedSubmission?.status === "pending")}
+        onClose={closeSubmissionModal}
+        onApprove={handleApproveSubmission}
+        onReject={handleRejectSubmission}
+        isApprovePending={
+          approveReportSubmissionMutation.isPending &&
+          approvingSubmissionId === (selectedSubmission?.id ?? null)
+        }
+        isRejectPending={
+          rejectReportSubmissionMutation.isPending &&
+          rejectingSubmissionId === (selectedSubmission?.id ?? null)
+        }
       />
     </>
   );

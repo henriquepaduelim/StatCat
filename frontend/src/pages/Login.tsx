@@ -198,7 +198,7 @@ const Login = () => {
               break;
             case "APPROVED":
               // Only approved athletes can navigate away
-              navigate("/reports", { replace: true });
+              navigate("/player-profile", { replace: true });
               break;
             default:
               setOnboardingStep(1);
@@ -287,7 +287,7 @@ const Login = () => {
     // Athletes should only leave if APPROVED
     if (user.role === "athlete") {
       if (user.athlete_status === "APPROVED") {
-        return <Navigate to="/reports" replace />;
+        return <Navigate to="/player-profile" replace />;
       }
       // If not approved, do nothing (stay on login page, modal will open via handleSubmit)
     } else {

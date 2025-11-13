@@ -47,7 +47,7 @@ const AthleteReport = () => {
     return (
       <div className="space-y-3">
         <p className="text-sm text-red-500">{t.athletes.error}</p>
-        <Link to="/reports" className="text-sm font-semibold text-accent hover:underline">
+        <Link to="/player-profile" className="text-sm font-semibold text-accent hover:underline">
           {t.athleteDetail.backToList}
         </Link>
       </div>
@@ -62,7 +62,7 @@ const AthleteReport = () => {
     return (
       <div className="space-y-3">
         <p className="text-sm text-red-500">{t.athletes.error}</p>
-        <Link to="/reports" className="text-sm font-semibold text-accent hover:underline">
+        <Link to="/player-profile" className="text-sm font-semibold text-accent hover:underline">
           {t.athleteDetail.backToList}
         </Link>
       </div>
@@ -71,7 +71,7 @@ const AthleteReport = () => {
 
   // Redirect if user doesn't have permission to view this specific report
   if (!canAccessReport) {
-    return <Navigate to="/reports" replace />;
+    return <Navigate to="/player-profile" replace />;
   }
 
   return (
@@ -85,7 +85,7 @@ const AthleteReport = () => {
           <p className="text-sm text-muted">{t.dashboard.athleteReport.subtitle}</p>
         </div>
         <Link
-          to="/reports"
+          to="/player-profile"
           className="inline-flex items-center rounded-md border border-action-primary/40 bg-action-primary px-3 py-2 text-xs font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
         >
           {t.athleteDetail.backToList}
@@ -233,12 +233,12 @@ const AthleteReport = () => {
                     <div>
                       <h3 className="text-base font-semibold text-container-foreground">{session.session_name}</h3>
                       <p className="text-xs text-muted">
-                        {t.reports.sessionDate(session.scheduled_at ?? null)}
+                        {t.playerProfile.sessionDate(session.scheduled_at ?? null)}
                         {session.location ? ` • ${session.location}` : ""}
                       </p>
                     </div>
                     <span className="rounded-full bg-action-primary/10 px-3 py-1 text-xs font-semibold uppercase text-accent">
-                      {t.reports.metricsBadge(session.results.length)}
+                      {t.playerProfile.metricsBadge(session.results.length)}
                     </span>
                   </div>
 
@@ -280,7 +280,7 @@ const AthleteReport = () => {
                       .map((metric) => (
                         <div key={`${session.session_id}-${metric.test_id}-${metric.recorded_at}`} className="rounded-lg border border-black/10 bg-container px-4 py-3 text-sm">
                           <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                            {metric.category ?? t.reports.metricFallback}
+                            {metric.category ?? t.playerProfile.metricFallback}
                           </p>
                           <p className="mt-1 text-lg font-semibold text-container-foreground">
                             {metric.value}

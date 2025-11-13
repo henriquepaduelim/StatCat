@@ -35,3 +35,16 @@ export type CoachFormState = {
   phone: string;
   password: string;
 };
+
+export type GameReportFormState = {
+  teamId: number | null;
+  opponent: string;
+  date: string;
+  location: string;
+  goalsFor: string;
+  goalsAgainst: string;
+  goalScorers: Array<{ athleteId: number; goals: number; shootoutGoals: number }>;
+  goalkeepersPlayed: number[];
+  goalkeeperConceded: Array<{ athleteId: number; conceded: number }>;
+  notes: string;
+};

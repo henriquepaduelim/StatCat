@@ -15,7 +15,7 @@ const Athletes = lazy(() => import("./pages/Athletes"));
 const AthleteEdit = lazy(() => import("./pages/AthleteEdit"));
 const AthleteReport = lazy(() => import("./pages/AthleteReport"));
 const NewAthlete = lazy(() => import("./pages/NewAthlete"));
-const Reports = lazy(() => import("./pages/Reports"));
+const PlayerProfile = lazy(() => import("./pages/PlayerProfile"));
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -32,7 +32,7 @@ const ProtectedLayout = () => (
   </ProtectedRoute>
 );
 
-const RedirectToDashboardOrReports = () => {
+const RedirectToDashboardOrPlayerProfile = () => {
   const user = useAuthStore((state) => state.user);
   const isInitialized = useAuthStore((state) => state.isInitialized);
   
@@ -51,7 +51,7 @@ const RedirectToDashboardOrReports = () => {
     const status = user.athlete_status || "INCOMPLETE";
     
     if (status === "APPROVED") {
-      return <Navigate to="/reports" replace />;
+      return <Navigate to="/player-profile" replace />;
     }
     // Unapproved athletes stay on login page
     return <Navigate to="/login" replace />;
@@ -72,7 +72,7 @@ const App = () => {
   return (
     <Suspense fallback={<LoadingFallback />}>
       <Routes>
-        <Route path="/" element={<RedirectToDashboardOrReports />} />
+        <Route path="/" element={<RedirectToDashboardOrPlayerProfile />} />
         <Route path="/login" element={<Login />} />
       <Route element={<ProtectedLayout />}>
       <Route 
@@ -124,14 +124,14 @@ const App = () => {
         } 
       />
       <Route 
-        path="/reports" 
+        path="/player-profile" 
         element={
           <ProtectedRoute requiredPermission="canViewReports">
-            <Reports />
+            <PlayerProfile />
           </ProtectedRoute>
         } 
       />
-      <Route path="*" element={<RedirectToDashboardOrReports />} />
+      <Route path="*" element={<RedirectToDashboardOrPlayerProfile />} />
     </Route>
   </Routes>
   <OfflineBanner />

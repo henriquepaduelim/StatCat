@@ -11,6 +11,7 @@ class MatchStat(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     athlete_id: int = Field(foreign_key="athlete.id", index=True)
     team_id: int | None = Field(default=None, foreign_key="team.id", index=True)
+    report_submission_id: int | None = Field(default=None, foreign_key="report_submission.id", index=True)
     match_date: datetime = Field(default_factory=datetime.utcnow, index=True)
     competition: str | None = None
     opponent: str | None = None
@@ -20,4 +21,4 @@ class MatchStat(SQLModel, table=True):
     minutes_played: int | None = Field(default=None)
     shootout_attempts: int = Field(default=0)
     shootout_goals: int = Field(default=0)
-
+    goals_conceded: int = Field(default=0)
