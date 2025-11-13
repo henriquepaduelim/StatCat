@@ -176,9 +176,13 @@ def signup_user(
 
         # Create a basic athlete record for the user
         from datetime import date
+        name_parts = (payload.full_name or "Unknown").split()
+        first_name = name_parts[0] if name_parts else "Unknown"
+        last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
+
         athlete = Athlete(
-            first_name=payload.full_name.split()[0] if payload.full_name else "Unknown",
-            last_name=" ".join(payload.full_name.split()[1:]) if len(payload.full_name.split()) > 1 else "User",
+            first_name=first_name,
+            last_name=last_name,
             email=payload.email,
             phone=payload.phone or "",
             birth_date=date(2000, 1, 1),  # Default date, will be updated during onboarding

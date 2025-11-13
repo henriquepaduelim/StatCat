@@ -21,7 +21,7 @@ import { usePermissions } from "../hooks/usePermissions";
 import { useTranslation } from "../i18n/useTranslation";
 import type { Athlete } from "../types/athlete";
 import { useAuthStore } from "../stores/useAuthStore";
-import { useMyEvents, useCreateEvent, useConfirmEventAttendance, useDeleteEvent } from "../hooks/useEvents";
+import { useMyEvents, useCreateEvent, useConfirmEventAttendance, useDeleteEvent, useEvents } from "../hooks/useEvents";
 import type { Event, ParticipantStatus } from "../types/event";
 import TeamListCard from "../components/dashboard/TeamListCard";
 import LeaderboardCard from "../components/dashboard/LeaderboardCard";
@@ -109,6 +109,10 @@ const Dashboard = () => {
   const teams = useMemo(() => teamsQuery.data ?? [], [teamsQuery.data]);
   const token = useAuthStore((state) => state.token);
   const user = useAuthStore((state) => state.user);
+  const currentUserId = user?.id ?? null;
+  const currentUserRole = user?.role ?? null;
+  const currentUserAthleteId = user?.athlete_id ?? null;
+  const isAthleteView = currentUserRole === "athlete";
   const teamNameById = useMemo(() => {
     return teams.reduce<Record<number, string>>((acc, team) => {
       acc[team.id] = team.name;
@@ -209,15 +213,14 @@ const Dashboard = () => {
     const coaches = allCoachesQuery.data ?? [];
     return [...coaches].sort((a, b) => (a?.full_name || "").localeCompare(b?.full_name || ""));
   }, [allCoachesQuery.data]);
-
   const teamCoachMetaById = useMemo(() => {
     const map = new Map<number, { coachName: string | null; coachUserId: number | null }>();
     teams.forEach((team) => {
-      const normalizedCoach = team.coach_name?.trim().toLowerCase() || "";
+      const normalizedCoachName = (team.coach_name || "").trim().toLowerCase();
       const matchedCoach =
-        normalizedCoach && availableCoaches.length
+        normalizedCoachName && availableCoaches.length
           ? availableCoaches.find(
-              (coach) => (coach.full_name || "").trim().toLowerCase() === normalizedCoach
+              (coach) => (coach.full_name || "").trim().toLowerCase() === normalizedCoachName
             )
           : null;
       map.set(team.id, {
@@ -227,14 +230,21 @@ const Dashboard = () => {
     });
     return map;
   }, [teams, availableCoaches]);
+
   const [calendarCursor, setCalendarCursor] = useState(() => {
     const today = new Date();
     return new Date(today.getFullYear(), today.getMonth(), 1);
   });
   
   // Fetch events from backend
-  const myEventsQuery = useMyEvents();
-  const events = useMemo(() => myEventsQuery.data ?? [], [myEventsQuery.data]);
+  const canManageCoaches = permissions.canCreateCoaches || permissions.canManageUsers;
+  const shouldUseGlobalEvents = permissions.canManageUsers;
+  const allEventsQuery = useEvents(undefined, { enabled: shouldUseGlobalEvents });
+  const myEventsQuery = useMyEvents({ enabled: !shouldUseGlobalEvents });
+  const events = useMemo(
+    () => (shouldUseGlobalEvents ? allEventsQuery.data ?? [] : myEventsQuery.data ?? []),
+    [shouldUseGlobalEvents, allEventsQuery.data, myEventsQuery.data]
+  );
 
   const getEventTeamIds = useCallback(
     (event: Event): number[] => {
@@ -317,7 +327,7 @@ const Dashboard = () => {
       const participantStatusByUserId = new Map<number, ParticipantStatus>();
 
       participants.forEach((participant) => {
-        if (participant.user_id) {
+        if (participant.user_id != null) {
           participantStatusByUserId.set(participant.user_id, participant.status);
         }
         const athleteId = participant.athlete_id;
@@ -536,12 +546,15 @@ const Dashboard = () => {
     return { cells, year, month };
   }, [calendarCursor]);
 
-  const getAthleteEventStatus = (athleteId: number): ParticipantStatus | null => {
+  const getAthleteEventStatus = (athleteId: number, eventId?: number): ParticipantStatus | null => {
     if (!selectedEventDate || !eventsOnSelectedDate.length) {
       return null;
     }
     
     for (const event of eventsOnSelectedDate) {
+      if (eventId && event.id !== eventId) {
+        continue;
+      }
       const participant = event.participants?.find(p => p.athlete_id === athleteId);
       if (participant) {
         return participant.status;
@@ -551,8 +564,8 @@ const Dashboard = () => {
     return null;
   };
 
-  const getAvailabilityDisplay = (athlete: Athlete) => {
-    const eventStatus = getAthleteEventStatus(athlete.id);
+  const getAvailabilityDisplay = (athlete: Athlete, eventId: number) => {
+    const eventStatus = getAthleteEventStatus(athlete.id, eventId);
     
     if (eventStatus) {
       switch (eventStatus) {
@@ -560,26 +573,30 @@ const Dashboard = () => {
           return {
             className: "flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700",
             icon: faCheck,
-            label: "Confirmed"
+            label: "Confirmed",
+            status: "confirmed" as ParticipantStatus,
           };
         case 'declined':
           return {
             className: "flex h-6 w-6 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700",
             icon: faTimes,
-            label: "Declined"
+            label: "Declined",
+            status: "declined" as ParticipantStatus,
           };
         case 'maybe':
           return {
             className: "flex h-6 w-6 items-center justify-center rounded-full border border-amber-200 bg-amber-50 text-amber-700",
             icon: faQuestion,
-            label: "Maybe"
+            label: "Maybe",
+            status: "maybe" as ParticipantStatus,
           };
         case 'invited':
         default:
           return {
             className: "flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 bg-gray-50 text-gray-600",
             icon: faQuestion,
-            label: "Pending"
+            label: "Pending",
+            status: "invited" as ParticipantStatus,
           };
       }
     }
@@ -589,7 +606,8 @@ const Dashboard = () => {
         ? "flex h-6 w-6 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700"
         : "flex h-6 w-6 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-rose-700",
       icon: athlete.status === "active" ? faCheck : faTimes,
-      label: athlete.status === "active" ? "Active" : "Inactive"
+      label: athlete.status === "active" ? "Active" : "Inactive",
+      status: athlete.status,
     };
   };
 
@@ -624,7 +642,7 @@ const Dashboard = () => {
     const canCreateOnDay = !isDateInPast(target);
 
     if (selectedEventDate === dateKey) {
-      if (canCreateOnDay) {
+      if (canCreateOnDay && canManageEvents) {
         openEventFormPanel(dateKey);
       }
     } else {
@@ -671,6 +689,9 @@ const Dashboard = () => {
 
   const handleEventSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (createEventMutation.isPending) {
+      return;
+    }
     if (!eventForm.name.trim() || !eventForm.date) {
       setEventFormError(summaryLabels.calendar.errorIncomplete);
       return;
@@ -1004,7 +1025,7 @@ const Dashboard = () => {
   };
 
   const handleCoachDelete = (coachId: number, coachName: string) => {
-    if (!permissions.canManageUsers && !permissions.canCreateCoaches) {
+    if (!canManageCoaches) {
       return;
     }
     const confirmed = window.confirm(
@@ -1126,34 +1147,36 @@ const Dashboard = () => {
         <LeaderboardCard />
       </section>
 
-      <section className="print-hidden grid gap-6 lg:grid-cols-2">
-        <TeamListCard
-          teams={teams}
-          athletesByTeamId={athletesByTeamId}
-          notice={teamNotice}
-          isLoading={teamsQuery.isLoading}
-          isError={teamsQuery.isError}
-          canManageUsers={permissions.canManageUsers}
-          isCreatePending={createTeamMutation.isPending}
-          isDeletePending={deleteTeamMutation.isPending}
-          onAddTeam={handleTeamCreateClick}
-          onEditTeam={handleTeamEdit}
-          onDeleteTeam={handleTeamDelete}
-          addButtonLabel={createTeamLabels.button}
-          statusCopy={{
-            loading: `${t.common.loading}...`,
-            error: "Unable to load teams.",
-            empty: "No teams created yet.",
-          }}
-        />
-        <TeamInsightsCard
-          teams={teams}
-          athletes={athletes}
-          athletesByTeamId={athletesByTeamId}
-          onNewReportCard={handleNewReportCard}
-          onGameReport={handleGameReport}
-        />
-      </section>
+      {!isAthleteView ? (
+        <section className="print-hidden grid gap-6 lg:grid-cols-2">
+          <TeamListCard
+            teams={teams}
+            athletesByTeamId={athletesByTeamId}
+            notice={teamNotice}
+            isLoading={teamsQuery.isLoading}
+            isError={teamsQuery.isError}
+            canManageUsers={permissions.canManageUsers}
+            isCreatePending={createTeamMutation.isPending}
+            isDeletePending={deleteTeamMutation.isPending}
+            onAddTeam={handleTeamCreateClick}
+            onEditTeam={handleTeamEdit}
+            onDeleteTeam={handleTeamDelete}
+            addButtonLabel={createTeamLabels.button}
+            statusCopy={{
+              loading: `${t.common.loading}...`,
+              error: "Unable to load teams.",
+              empty: "No teams created yet.",
+            }}
+          />
+          <TeamInsightsCard
+            teams={teams}
+            athletes={athletes}
+            athletesByTeamId={athletesByTeamId}
+            onNewReportCard={handleNewReportCard}
+            onGameReport={handleGameReport}
+          />
+        </section>
+      ) : null}
 
       <section className="print-hidden flex flex-col gap-6 xl:flex-row">
         <EventCalendarPanel
@@ -1191,21 +1214,27 @@ const Dashboard = () => {
           rosterHasError={rosterHasError}
           onClearSelectedDate={() => setSelectedEventDate(null)}
           getAvailabilityDisplay={getAvailabilityDisplay}
+          currentUserRole={currentUserRole}
+          currentUserId={currentUserId}
+          currentUserAthleteId={currentUserAthleteId}
+          onConfirmAttendance={handleConfirmAttendance}
+          confirmAttendancePending={confirmAttendanceMutation.isPending}
         />
       </section>
 
-      {/* Coaches Container - Full Width at Bottom */}
-      <CoachDirectoryCard
-        canCreateCoaches={permissions.canCreateCoaches}
-        isCreatePending={createCoachMutation.isPending}
-        notice={coachNotice}
-        coaches={availableCoaches}
-        isLoading={allCoachesQuery.isLoading}
-        isError={allCoachesQuery.isError}
-        onAddCoach={handleAddCoach}
-        onEditCoach={handleEditCoach}
-        onDeleteCoach={handleCoachDelete}
-      />
+      {canManageCoaches ? (
+        <CoachDirectoryCard
+          canCreateCoaches={permissions.canCreateCoaches}
+          isCreatePending={createCoachMutation.isPending}
+          notice={coachNotice}
+          coaches={availableCoaches}
+          isLoading={allCoachesQuery.isLoading}
+          isError={allCoachesQuery.isError}
+          onAddCoach={handleAddCoach}
+          onEditCoach={handleEditCoach}
+          onDeleteCoach={handleCoachDelete}
+        />
+      ) : null}
     </div>
 
       <TeamFormModal
@@ -1275,6 +1304,7 @@ const Dashboard = () => {
       eventFormError={eventFormError}
       onInputChange={handleEventInputChange}
       onSubmit={handleEventSubmit}
+      createEventPending={createEventMutation.isPending}
       onCancel={handleEventCancel}
       getEventTeamIds={getEventTeamIds}
       />

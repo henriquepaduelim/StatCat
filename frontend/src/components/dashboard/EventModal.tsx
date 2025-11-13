@@ -26,6 +26,7 @@ type EventModalProps = {
   canManageEvents: boolean;
   onDeleteEvent: (eventId: number) => void;
   deleteEventPending: boolean;
+  createEventPending: boolean;
   currentUserId: number | null;
   onConfirmAttendance: (eventId: number, status: ParticipantStatus) => void;
   confirmAttendancePending: boolean;
@@ -60,6 +61,7 @@ const EventModal = ({
   canManageEvents,
   onDeleteEvent,
   deleteEventPending,
+  createEventPending,
   currentUserId,
   onConfirmAttendance,
   confirmAttendancePending,
@@ -542,9 +544,10 @@ const EventModal = ({
               </button>
               <button
                 type="submit"
-                className="w-full rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground hover:bg-action-primary/90 sm:w-auto"
+                disabled={createEventPending}
+                className="w-full rounded-md bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
               >
-                {summaryLabels.calendar.createButton}
+                {createEventPending ? "Creating..." : summaryLabels.calendar.createButton}
               </button>
             </div>
           </form>

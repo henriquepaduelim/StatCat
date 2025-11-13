@@ -12,6 +12,7 @@ type AvailabilityDisplay = {
   className: string;
   icon: IconDefinition;
   label: string;
+  status?: ParticipantStatus | "active" | "inactive";
 };
 
 type EventAvailabilityEntry = {
@@ -44,7 +45,12 @@ type EventAvailabilityPanelProps = {
   isRosterLoading: boolean;
   rosterHasError: boolean;
   onClearSelectedDate: () => void;
-  getAvailabilityDisplay: (athlete: Athlete) => AvailabilityDisplay;
+  getAvailabilityDisplay: (athlete: Athlete, eventId: number) => AvailabilityDisplay;
+  currentUserRole: string | null;
+  currentUserId: number | null;
+  currentUserAthleteId: number | null;
+  onConfirmAttendance: (eventId: number, status: ParticipantStatus) => void;
+  confirmAttendancePending: boolean;
 };
 
 const EventAvailabilityPanel = ({
@@ -60,7 +66,40 @@ const EventAvailabilityPanel = ({
   rosterHasError,
   onClearSelectedDate,
   getAvailabilityDisplay,
+  currentUserRole,
+  currentUserId,
+  currentUserAthleteId,
+  onConfirmAttendance,
+  confirmAttendancePending,
 }: EventAvailabilityPanelProps) => {
+  const rsvpOptions: ParticipantStatus[] = ["confirmed", "maybe", "declined"];
+  const rsvpLabels: Record<ParticipantStatus, string> = {
+    confirmed: "Confirm",
+    maybe: "Maybe",
+    declined: "Decline",
+    invited: "Pending",
+  };
+
+  const renderRSVPButtons = (currentStatus: ParticipantStatus | null, eventId: number, disabled?: boolean) => (
+    <div className="flex flex-wrap items-center gap-1">
+      {rsvpOptions.map((option) => (
+        <button
+          key={`rsvp-${eventId}-${option}`}
+          type="button"
+          onClick={() => onConfirmAttendance(eventId, option)}
+          disabled={disabled || confirmAttendancePending}
+          className={`rounded-full border px-2 py-1 text-[0.65rem] font-semibold transition ${
+            currentStatus === option
+              ? "border-action-primary bg-action-primary text-white"
+              : "border-black/20 text-muted hover:text-container-foreground"
+          } disabled:opacity-50`}
+        >
+          {rsvpLabels[option]}
+        </button>
+      ))}
+    </div>
+  );
+
   const getCoachStatusBadge = (status: ParticipantStatus | null) => {
     switch (status) {
       case "confirmed":
@@ -104,8 +143,17 @@ const EventAvailabilityPanel = ({
       : null;
   const showGuests = currentMeta && currentEntry ? (currentMeta.includeGuests ? currentEntry.guests.length > 0 : false) : false;
 
-  const renderAthleteRow = (athlete: Athlete) => {
-    const availability = getAvailabilityDisplay(athlete);
+  const renderAthleteRow = (athlete: Athlete, eventId: number) => {
+    const availability = getAvailabilityDisplay(athlete, eventId);
+    const normalizedStatus =
+      availability.status === "confirmed" ||
+      availability.status === "declined" ||
+      availability.status === "maybe" ||
+      availability.status === "invited"
+        ? (availability.status as ParticipantStatus)
+        : null;
+    const isCurrentAthlete =
+      currentUserRole === "athlete" && currentUserAthleteId === athlete.id && currentUserAthleteId !== null;
     return (
       <li
         key={`availability-athlete-${athlete.id}`}
@@ -121,10 +169,11 @@ const EventAvailabilityPanel = ({
             {athlete.email ?? summaryLabels.contactFallback}
           </span>
         </div>
-        <div className="flex w-auto items-center justify-center sm:w-[100px]">
+        <div className="flex w-auto flex-col items-center justify-center gap-2 sm:w-[100px]">
           <span className={availability.className} title={availability.label}>
             <FontAwesomeIcon icon={availability.icon} className="h-3 w-3" />
           </span>
+          {isCurrentAthlete ? renderRSVPButtons(normalizedStatus, eventId) : null}
         </div>
       </li>
     );
@@ -159,6 +208,11 @@ const EventAvailabilityPanel = ({
     const teamAthletes = currentTeam.athletes;
     const coachStatusBadge = getCoachStatusBadge(currentTeam.coachStatus);
     const coachName = currentTeam.coachName ?? summaryLabels.coachLine.unknownCoach;
+    const coachParticipant = currentEntry.event.participants?.find(
+      (participant) => participant.user_id === currentUserId
+    );
+    const showCoachActions =
+      currentUserRole === "coach" && currentUserId != null && Boolean(coachParticipant);
 
     return (
       <div className="flex h-[500px] flex-col overflow-hidden rounded-lg border border-white/10 bg-white/70">
@@ -204,7 +258,7 @@ const EventAvailabilityPanel = ({
         <div className="flex-1 overflow-y-auto">
           <ul className="divide-y divide-black/5">
             {teamAthletes.length ? (
-              teamAthletes.map(renderAthleteRow)
+              teamAthletes.map((athlete) => renderAthleteRow(athlete, event.id))
             ) : (
               <li className="px-3 py-4 text-xs text-muted sm:px-4">No athletes invited for this team.</li>
             )}
@@ -213,7 +267,7 @@ const EventAvailabilityPanel = ({
                 <li className="border-t border-black/5 bg-gray-50/60 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted sm:px-4">
                   Guest Athletes ({currentEntry.guests.length})
                 </li>
-                {currentEntry.guests.map(renderAthleteRow)}
+                {currentEntry.guests.map((athlete) => renderAthleteRow(athlete, event.id))}
               </>
             ) : null}
           </ul>
@@ -232,6 +286,7 @@ const EventAvailabilityPanel = ({
                 </span>
                 <span className="text-sm font-semibold text-container-foreground">{coachStatusBadge.label}</span>
               </div>
+              {showCoachActions ? renderRSVPButtons(coachParticipant?.status ?? null, event.id) : null}
             </div>
           </div>
         </div>

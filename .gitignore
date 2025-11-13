@@ -38,46 +38,12 @@ backend/app/combine_backend.egg-info/
 client_secret_*.json
 *.env
 .vercel
+AGENTS.md
 
 # Temporary files
 tmp_*
 testDay.*
 =*
-
-# Refactoring documentation (internal only)
-REFACTORING_SUMMARY.md
-IMPORTANT_TASKS_COMPLETED.md
-IMPROVEMENTS_COMPLETED.md
-ALEMBIC_GUIDE.md
-ATHLETE_*.md
-CHECKLIST_*.md
-CLEANUP_*.md
-COMO_*.md
-CORS_*.md
-DEBUG_*.md
-DEPLOY_*.md
-EVENT_*.md
-EVENTS_*.md
-FINAL_*.md
-FRONTEND_*.md
-MY_*.md
-PENDING_*.md
-PERFORMANCE_*.md
-PROXIMOS_*.md
-PWA_*.md
-QUICK_START.md
-README.md
-RENDER_*.md
-RESTART_*.md
-SHOW_*.md
-TEAM_*.md
-TESTE_*.md
-*_FIX.md
-*_SUMMARY.md
-*_STATUS.md
-*_GUIDE.md
-*_CHECKLIST.md
-*_COMPLETED.md
 
 # Backend logs
 backend/*.log

@@ -132,14 +132,16 @@ const EventCalendarPanel = ({
               <p className="text-sm font-semibold text-container-foreground">{summaryLabels.calendar.title}</p>
               <p className="text-xs text-muted">{summaryLabels.calendar.subtitle}</p>
             </div>
-            <button
-              type="button"
-              onClick={() => onOpenEventForm()}
-              className="rounded-md border border-action-primary/40 bg-action-primary px-3 py-1 text-xs font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
-            >
-              <FontAwesomeIcon icon={faPlus} className="text-xs mr-1" />
-              {summaryLabels.calendar.createButton}
-            </button>
+            {canManageEvents ? (
+              <button
+                type="button"
+                onClick={() => onOpenEventForm()}
+                className="rounded-md border border-action-primary/40 bg-action-primary px-3 py-1 text-xs font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
+              >
+                <FontAwesomeIcon icon={faPlus} className="text-xs mr-1" />
+                {summaryLabels.calendar.createButton}
+              </button>
+            ) : null}
           </div>
           {upcomingEvents.length ? (
             <ul className="mt-3 space-y-3 text-sm">

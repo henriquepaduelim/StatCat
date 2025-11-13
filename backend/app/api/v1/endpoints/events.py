@@ -1,6 +1,6 @@
 """API endpoints for events management."""
 from datetime import datetime
-from typing import List, Optional
+from typing import Iterable, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import delete, or_
@@ -9,6 +9,7 @@ from sqlmodel import Session, select
 from app.api.deps import SessionDep, get_current_active_user
 from app.models.event import Event, EventParticipant, Notification, ParticipantStatus
 from app.models.event_team_link import EventTeamLink
+from app.models.team import CoachTeamLink
 from app.models.user import User
 from app.schemas.event import (
     EventConfirmation,
@@ -28,6 +29,54 @@ from app.services.event_team_service import (
 )
 
 router = APIRouter()
+
+
+def _get_team_coach_user_ids(db: Session, team_ids: Iterable[int]) -> set[int]:
+    unique_ids = {team_id for team_id in team_ids or [] if team_id is not None}
+    if not unique_ids:
+        return set()
+    rows = db.exec(select(CoachTeamLink.user_id).where(CoachTeamLink.team_id.in_(unique_ids))).all()
+    normalized: set[int] = set()
+    for row in rows:
+        value = row[0] if isinstance(row, tuple) else row
+        if value is not None:
+            normalized.add(value)
+    return normalized
+
+
+def _collect_invitee_user_ids(
+    db: Session,
+    team_ids: Iterable[int],
+    requested_user_ids: Iterable[int] | None,
+    coach_id: Optional[int],
+) -> set[int]:
+    invitees = set(requested_user_ids or [])
+    invitees.update(_get_team_coach_user_ids(db, team_ids))
+    if coach_id:
+        invitees.add(coach_id)
+    return invitees
+
+
+def _ensure_user_participants(db: Session, event: Event, user_ids: Iterable[int]) -> None:
+    normalized = {user_id for user_id in user_ids if user_id is not None}
+    if not normalized or not event.id:
+        return
+    existing_rows = db.exec(
+        select(EventParticipant.user_id).where(
+            EventParticipant.event_id == event.id,
+            EventParticipant.user_id != None,
+        )
+    ).all()
+    existing = {row[0] for row in existing_rows if row and row[0] is not None}
+    missing = normalized - existing
+    for user_id in missing:
+        db.add(
+            EventParticipant(
+                event_id=event.id,
+                user_id=user_id,
+                status=ParticipantStatus.INVITED,
+            )
+        )
 
 
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
@@ -59,15 +108,13 @@ async def create_event(
         invited_athlete_ids=event_in.athlete_ids,
     )
     persist_event_team_links(db, event, team_ids)
-    
-    # Create participants for users (coaches, etc.)
-    for user_id in event_in.invitee_ids:
-        participant = EventParticipant(
-            event_id=event.id,
-            user_id=user_id,
-            status=ParticipantStatus.INVITED,
-        )
-        db.add(participant)
+    invitee_user_ids = _collect_invitee_user_ids(
+        db=db,
+        team_ids=team_ids,
+        requested_user_ids=event_in.invitee_ids,
+        coach_id=event.coach_id,
+    )
+    _ensure_user_participants(db, event, invitee_user_ids)
     
     team_roster_ids = get_team_roster_athlete_ids(db, team_ids)
     explicit_athlete_ids = set(event_in.athlete_ids)
@@ -89,12 +136,13 @@ async def create_event(
     attach_team_ids(db, [event])
     
     # Send notifications
-    all_invitee_ids = event_in.invitee_ids + event_in.athlete_ids
+    user_invitees_list = sorted(invitee_user_ids)
+    all_invitee_ids = user_invitees_list + event_in.athlete_ids
     if all_invitee_ids:
         await notification_service.notify_event_created(
             db=db,
             event=event,
-            invitee_ids=event_in.invitee_ids,
+            invitee_ids=user_invitees_list,
             send_email=event_in.send_email,
             send_push=event_in.send_push,
         )
@@ -155,10 +203,22 @@ def list_my_events(
         )
     )
     invited_events = db.exec(stmt_invited).all()
+
+    athlete_events: list[Event] = []
+    if current_user.athlete_id is not None:
+        stmt_athlete = (
+            select(Event)
+            .join(EventParticipant)
+            .where(EventParticipant.athlete_id == current_user.athlete_id)
+        )
+        athlete_events = db.exec(stmt_athlete).all()
     
     # Combine and deduplicate
     all_events = {e.id: e for e in created_events}
     for e in invited_events:
+        if e.id not in all_events:
+            all_events[e.id] = e
+    for e in athlete_events:
         if e.id not in all_events:
             all_events[e.id] = e
     
@@ -234,6 +294,7 @@ async def update_event(
     event.updated_at = datetime.utcnow()
 
     should_sync_team_links = event_in.team_ids is not None or event_in.team_id is not None
+    resolved_team_ids: list[int] = []
     
     db.add(event)
 
@@ -248,6 +309,17 @@ async def update_event(
         persist_event_team_links(db, event, resolved_team_ids)
         roster_ids = get_team_roster_athlete_ids(db, resolved_team_ids)
         ensure_roster_participants(db, event, roster_ids)
+
+    team_ids_for_coaches = (
+        resolved_team_ids if resolved_team_ids else resolve_event_team_ids(db=db, event=event)
+    )
+    auto_invitees = _collect_invitee_user_ids(
+        db=db,
+        team_ids=team_ids_for_coaches,
+        requested_user_ids=None,
+        coach_id=event.coach_id,
+    )
+    _ensure_user_participants(db, event, auto_invitees)
     
     db.commit()
     db.refresh(event)
@@ -309,7 +381,16 @@ async def confirm_event_attendance(
         EventParticipant.user_id == current_user.id,
     )
     participant = db.exec(stmt).first()
-    
+
+    if not participant and current_user.athlete_id is not None:
+        stmt = select(EventParticipant).where(
+            EventParticipant.event_id == event_id,
+            EventParticipant.athlete_id == current_user.athlete_id,
+        )
+        participant = db.exec(stmt).first()
+        if participant:
+            participant.user_id = current_user.id
+
     if not participant:
         # User wasn't invited, but allow them to respond
         participant = EventParticipant(

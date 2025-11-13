@@ -32,20 +32,27 @@ export const eventKeys = {
 /**
  * Hook to fetch all events with optional filters
  */
-export const useEvents = (filters?: EventFilters): UseQueryResult<Event[], Error> => {
+export const useEvents = (
+  filters?: EventFilters,
+  options?: { enabled?: boolean }
+): UseQueryResult<Event[], Error> => {
   return useQuery({
     queryKey: eventKeys.list(filters),
     queryFn: () => eventsApi.listEvents(filters),
+    enabled: options?.enabled ?? true,
   });
 };
 
 /**
  * Hook to fetch current user's events (invited or organized)
  */
-export const useMyEvents = (): UseQueryResult<Event[], Error> => {
+export const useMyEvents = (
+  options?: { enabled?: boolean }
+): UseQueryResult<Event[], Error> => {
   return useQuery({
     queryKey: eventKeys.myEvents(),
     queryFn: eventsApi.listMyEvents,
+    enabled: options?.enabled ?? true,
   });
 };
 

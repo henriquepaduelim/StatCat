@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from typing import Iterable
+from typing import Iterable, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import delete, func, select
+from sqlalchemy.exc import OperationalError
 from sqlmodel import Session
 
 from app.api.deps import ensure_roles, get_current_active_user
@@ -12,12 +13,29 @@ from app.db.session import get_session
 from app.models.athlete import Athlete
 from app.models.event import Event
 from app.models.event_team_link import EventTeamLink
+from sqlalchemy import text
+
 from app.models.team import CoachTeamLink, Team
 from app.models.user import User, UserRole
 from app.schemas.team import TeamCoachCreate, TeamCreate, TeamRead
 from app.schemas.user import UserRead
 
 router = APIRouter()
+
+
+def _extract_team_ids(rows: Sequence[object]) -> list[int]:
+    team_ids: list[int] = []
+    for row in rows:
+        if row is None:
+            continue
+        value = None
+        if isinstance(row, (tuple, list)):
+            value = row[0]
+        else:
+            value = getattr(row, "team_id", row)
+        if value is not None:
+            team_ids.append(int(value))
+    return team_ids
 
 
 def _load_roster_counts(session: Session, team_ids: Iterable[int]) -> dict[int, int]:
@@ -310,26 +328,27 @@ def delete_coach(
     if not coach or coach.role != UserRole.COACH:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Coach not found")
 
-    linked_team_ids = [
-        row.team_id
-        for row in session.exec(
-            select(CoachTeamLink).where(CoachTeamLink.user_id == coach_id)
-        ).all()
-    ]
+    linked_team_ids = _extract_team_ids(
+        session.exec(select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == coach_id)).all()
+    )
 
-    session.exec(delete(CoachTeamLink).where(CoachTeamLink.user_id == coach_id))
+    session.exec(
+        text("DELETE FROM coachteamlink WHERE user_id = :user_id").bindparams(user_id=coach_id)
+    )
 
-    # Remove coach references from events
-    events_as_coach = session.exec(select(Event).where(Event.coach_id == coach_id)).all()
-    for event in events_as_coach:
-        event.coach_id = None
-        session.add(event)
+    try:
+        events_as_coach = session.exec(select(Event).where(Event.coach_id == coach_id)).all()
+        for event in events_as_coach:
+            event.coach_id = None
+            session.add(event)
 
-    # Reassign created_by to current admin/staff to preserve FK integrity
-    events_created = session.exec(select(Event).where(Event.created_by_id == coach_id)).all()
-    for event in events_created:
-        event.created_by_id = current_user.id
-        session.add(event)
+        events_created = session.exec(select(Event).where(Event.created_by_id == coach_id)).all()
+        for event in events_created:
+            event.created_by_id = current_user.id
+            session.add(event)
+    except OperationalError:
+        # Event tables may not exist in legacy deployments; skip cleanup if so.
+        pass
 
     # Clear coach_name if no other coaches remain for affected teams
     for team_id in linked_team_ids:
@@ -360,17 +379,14 @@ def get_coach_teams(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Coach not found")
     
     # Get all team IDs for this coach
-    team_links = session.exec(
-        select(CoachTeamLink).where(CoachTeamLink.user_id == coach_id)
-    ).all()
-    
-    if not team_links:
+    team_ids = _extract_team_ids(
+        session.exec(select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == coach_id)).all()
+    )
+    if not team_ids:
         return []
-    
-    team_ids = [link.team_id for link in team_links]
-    teams = list(session.exec(
+    teams = session.exec(
         select(Team).where(Team.id.in_(tuple(team_ids))).order_by(Team.name)
-    ).all())
+    ).scalars().all()
     
     roster_counts = _load_roster_counts(session, team_ids)
     
@@ -410,7 +426,7 @@ def remove_team_coach(
     ).first()
     if not link_row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Coach assignment not found")
-    link = link_row[0]
+    link = link_row[0] if isinstance(link_row, tuple) else link_row
     session.delete(link)
     session.commit()
 

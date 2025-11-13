@@ -31,7 +31,7 @@ export const usePermissions = (): Permissions => {
     };
   }
 
-  const role = user.role as UserRole;
+  const role = (user.role || "").toLowerCase() as UserRole;
 
   switch (role) {
     case "admin":
@@ -47,7 +47,6 @@ export const usePermissions = (): Permissions => {
         canManageUsers: true,
       };
 
-    case "coach":
     case "staff":
       return {
         canViewDashboard: true,
@@ -57,7 +56,20 @@ export const usePermissions = (): Permissions => {
         canDeleteAthletes: true,
         canViewReports: true,
         canViewAllReports: true,
-        canCreateCoaches: false, // Only admin can create coaches
+        canCreateCoaches: true,
+        canManageUsers: true,
+      };
+
+    case "coach":
+      return {
+        canViewDashboard: true,
+        canViewAthletes: true,
+        canCreateAthletes: true,
+        canEditAthletes: true,
+        canDeleteAthletes: true,
+        canViewReports: true,
+        canViewAllReports: true,
+        canCreateCoaches: false,
         canManageUsers: false,
       };
 
@@ -97,10 +109,11 @@ export const usePermissions = (): Permissions => {
 
 export const useIsRole = (role: UserRole): boolean => {
   const user = useAuthStore((state) => state.user);
-  return user?.role === role;
+  return (user?.role || "").toLowerCase() === role;
 };
 
 export const useIsAnyRole = (roles: UserRole[]): boolean => {
   const user = useAuthStore((state) => state.user);
-  return roles.includes(user?.role as UserRole);
+  const currentRole = (user?.role || "").toLowerCase() as UserRole;
+  return roles.includes(currentRole);
 };
