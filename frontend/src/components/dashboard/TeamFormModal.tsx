@@ -1,6 +1,6 @@
 import { FormEvent, Dispatch, SetStateAction } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
 
 import type { TeamCoach } from "../../api/teams";
 import type { Athlete } from "../../types/athlete";
@@ -10,6 +10,8 @@ import { createTeamLabels } from "../../constants/dashboard";
 
 type EditingTeam = { id: number; name: string } | null;
 type TeamFormLabels = typeof createTeamLabels;
+
+const MAX_TEAM_COACHES = 2;
 
 type TeamFormModalProps = {
   isOpen: boolean;
@@ -59,6 +61,14 @@ const TeamFormModal = ({
   if (!isOpen) {
     return null;
   }
+
+  const selectedCoaches = teamForm.coachIds
+    .map((coachId) => availableCoaches.find((coach) => coach.id === coachId))
+    .filter((coach): coach is TeamCoach => Boolean(coach));
+  const remainingCoaches = availableCoaches.filter(
+    (coach) => !teamForm.coachIds.includes(coach.id)
+  );
+  const canAddMoreCoaches = teamForm.coachIds.length < MAX_TEAM_COACHES;
 
   return (
     <div
@@ -150,65 +160,93 @@ const TeamFormModal = ({
             </label>
           </div>
 
-          <div className="space-y-2">
-            <p className="text-sm font-semibold text-container-foreground">{labels.coachesSection}</p>
-            <p className="text-xs text-muted">{labels.coachesHelper}</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="text-xs font-medium text-muted">
-                Head Coach
-                <select
-                  value={teamForm.coachIds[0] ?? ""}
-                  onChange={(event) => {
-                    const value = event.target.value ? Number(event.target.value) : null;
-                    const next = [...teamForm.coachIds];
-                    if (value) {
-                      next[0] = value;
-                      if (next.length > 1 && next[0] === next[1]) {
-                        next.splice(1, 1);
-                      }
-                    } else {
-                      next.splice(0, 1);
-                    }
-                    setTeamForm((prev) => ({ ...prev, coachIds: next.filter((id) => id > 0) }));
-                  }}
-                  disabled={isSubmitting}
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
-                >
-                  <option value="">Select a coach</option>
-                  {availableCoaches.map((coach) => (
-                    <option key={`head-coach-${coach.id}`} value={coach.id}>
-                      {coach.full_name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="text-xs font-medium text-muted">
-                Assistant Coach
-                <select
-                  value={teamForm.coachIds[1] ?? ""}
-                  onChange={(event) => {
-                    const value = event.target.value ? Number(event.target.value) : null;
-                    const next = [...teamForm.coachIds];
-                    if (value && next[0] && value !== next[0]) {
-                      next[1] = value;
-                    } else if (!value && next.length > 1) {
-                      next.splice(1, 1);
-                    }
-                    setTeamForm((prev) => ({ ...prev, coachIds: next.filter((id) => id > 0) }));
-                  }}
-                  disabled={isSubmitting || !teamForm.coachIds[0]}
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
-                >
-                  <option value="">Select an assistant coach</option>
-                  {availableCoaches
-                    .filter((coach) => coach.id !== teamForm.coachIds[0])
-                    .map((coach) => (
-                      <option key={`assistant-coach-${coach.id}`} value={coach.id}>
-                        {coach.full_name}
-                      </option>
-                    ))}
-                </select>
-              </label>
+          <div className="space-y-3">
+            <div>
+              <p className="text-sm font-semibold text-container-foreground">{labels.coachesSection}</p>
+              <p className="text-xs text-muted">{labels.coachesHelper}</p>
+              <p className="text-xs text-muted">{labels.coachesLimitHelper}</p>
+            </div>
+            <div className="grid items-start gap-4 lg:grid-cols-2">
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase text-muted">{labels.coachesAssignedLabel}</p>
+                <div className="min-h-[120px] rounded-lg border border-black/10 bg-white/80 p-2">
+                  {selectedCoaches.length ? (
+                    <div className="space-y-1">
+                      {selectedCoaches.map((coach) => (
+                        <div
+                          key={`selected-coach-${coach.id}`}
+                          className="flex items-center justify-between gap-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-semibold text-container-foreground">{coach.full_name}</p>
+                            <p className="truncate text-xs text-muted">{coach.email}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setTeamForm((prev) => ({
+                                ...prev,
+                                coachIds: prev.coachIds.filter((id) => id !== coach.id),
+                              }))
+                            }
+                            disabled={isSubmitting}
+                            aria-label={`Remove ${coach.full_name}`}
+                            className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-50 text-rose-600 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <FontAwesomeIcon icon={faMinus} className="text-xs" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex h-24 items-center justify-center text-xs text-muted">
+                      {labels.coachesAssignedEmpty}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase text-muted">{labels.coachesAvailableLabel}</p>
+                <div className="min-h-[120px] max-h-[220px] overflow-y-auto rounded-lg border border-black/10 bg-white/80 p-2">
+                  {remainingCoaches.length ? (
+                    <div className="space-y-1">
+                      {remainingCoaches.map((coach) => (
+                        <div
+                          key={`available-coach-${coach.id}`}
+                          className="flex items-center justify-between gap-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-semibold text-container-foreground">{coach.full_name}</p>
+                            <p className="truncate text-xs text-muted">{coach.email}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setTeamForm((prev) => {
+                                if (prev.coachIds.includes(coach.id) || prev.coachIds.length >= MAX_TEAM_COACHES) {
+                                  return prev;
+                                }
+                                return { ...prev, coachIds: [...prev.coachIds, coach.id] };
+                              })
+                            }
+                            disabled={isSubmitting || !canAddMoreCoaches}
+                            aria-label={`Add ${coach.full_name}`}
+                            className="flex h-6 w-6 items-center justify-center rounded-full bg-action-primary/10 text-action-primary transition hover:bg-action-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <FontAwesomeIcon icon={faPlus} className="text-xs" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex h-24 items-center justify-center text-xs text-muted">
+                      {availableCoaches.length
+                        ? labels.coachesAvailableEmpty
+                        : labels.noCoaches}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -270,9 +308,10 @@ const TeamFormModal = ({
                                 athleteIds: prev.athleteIds.filter((id) => id !== athlete.id),
                               }))
                             }
-                            className="px-2 py-1 text-xs text-red-500 hover:text-red-700"
+                            aria-label={`Remove ${athlete.first_name} ${athlete.last_name}`}
+                            className="flex h-6 w-6 items-center justify-center rounded-full bg-rose-50 text-rose-600 transition hover:bg-rose-100"
                           >
-                            Remove
+                            <FontAwesomeIcon icon={faMinus} className="text-xs" />
                           </button>
                         </div>
                       );
