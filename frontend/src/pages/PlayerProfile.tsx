@@ -113,20 +113,14 @@ const PlayerProfile = () => {
 
           <div className="space-y-4">
             {reportQuery.data.sessions.map((session) => (
-              <div key={session.session_id} className="rounded-lg border border-black/10 bg-container/60 p-4">
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-container-foreground">{session.session_name}</h3>
-                    <p className="text-xs text-muted">
-                      {t.playerProfile.sessionDate(session.scheduled_at ?? null)}
-                      {session.location ? ` • ${session.location}` : ""}
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-action-primary/10 px-3 py-1 text-xs font-semibold uppercase text-accent">
-                    {t.playerProfile.metricsBadge(session.results.length)}
-                  </span>
-                </div>
-
+              <CollapsibleSection
+                key={session.session_id}
+                title={session.session_name}
+                subtitle={`${t.playerProfile.sessionDate(session.scheduled_at ?? null)}${
+                  session.location ? ` • ${session.location}` : ""
+                }`}
+                defaultOpen={false}
+              >
                 <div className="mt-4 flex flex-col gap-3">
                   {session.results.map((metric) => (
                     <div
@@ -144,7 +138,7 @@ const PlayerProfile = () => {
                     </div>
                   ))}
                 </div>
-              </div>
+              </CollapsibleSection>
             ))}
           </div>
         </CollapsibleSection>
