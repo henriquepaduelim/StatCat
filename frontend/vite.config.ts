@@ -14,7 +14,7 @@ export default defineConfig({
       includeAssets: ['/media/Asset 1ELITE0LOGO.svg', '/media/ELITE1-LOGO-transparent.png'],
       manifest: {
         name: 'ELITE 1 ACADEMY',
-        short_name: 'ELITE 1',
+        short_name: 'ELITE 1 ACADEMY',
         description: 'ELITE 1 ACADEMY sports analytics platform',
         theme_color: '#121212',
         background_color: '#000000',
