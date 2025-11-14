@@ -32,8 +32,10 @@ import EventsSection from "../components/dashboard/EventsSection";
 import CoachDirectorySection from "../components/dashboard/CoachDirectorySection";
 import ReportSubmissionReviewModal from "../components/dashboard/ReportSubmissionReviewModal";
 import { submitGameReport } from "../api/matchReports";
-import { submitReportCardRequest, type ReportSubmissionSummary } from "../api/reportSubmissions";
+import { submitReportCardRequest } from "../api/reportSubmissions";
 import { useReportSubmissionWorkflow } from "../hooks/useReportSubmissionWorkflow";
+import { useDashboardEventData } from "../hooks/useDashboardEventData";
+import { useTeamBuilderData } from "../hooks/useTeamBuilderData";
 import TeamFormModal from "../components/dashboard/TeamFormModal";
 import CoachFormModal from "../components/dashboard/CoachFormModal";
 import EventModal from "../components/dashboard/EventModal";
@@ -189,37 +191,11 @@ const Dashboard = () => {
   const [teamFormError, setTeamFormError] = useState<string | null>(null);
   const [teamNotice, setTeamNotice] = useState<NoticeState>(null);
   const [coachNotice, setCoachNotice] = useState<NoticeState>(null);
-  const teamBuilderCandidates = useMemo(() => {
-    return athletes
-      .filter((athlete) => !teamForm.athleteIds.includes(athlete.id))
-      .filter((athlete) => {
-        if (filterGender && athlete.gender !== filterGender) {
-          return false;
-        }
-        if (filterTeamStatus === "assigned" && !athlete.team_id) {
-          return false;
-        }
-        if (filterTeamStatus === "unassigned" && athlete.team_id) {
-          return false;
-        }
-        if (filterAge) {
-          if (!athlete.birth_date) {
-            return false;
-          }
-          const ageLimit = parseInt(filterAge.replace(/\D/g, ""), 10);
-          if (Number.isFinite(ageLimit)) {
-            const currentAge = calculateAge(athlete.birth_date);
-            if (currentAge >= ageLimit) {
-              return false;
-            }
-          }
-        }
-        return true;
-      });
-  }, [athletes, filterAge, filterGender, filterTeamStatus, teamForm.athleteIds]);
-  const remainingAthleteCount = useMemo(() => {
-    return athletes.filter((athlete) => !teamForm.athleteIds.includes(athlete.id)).length;
-  }, [athletes, teamForm.athleteIds]);
+  const { candidates: teamBuilderCandidates, remainingAthleteCount } = useTeamBuilderData({
+    athletes,
+    teamForm,
+    athleteFilter,
+  });
   const t = useTranslation();
   const queryClient = useQueryClient();
   const {
@@ -388,12 +364,21 @@ const Dashboard = () => {
   
   const selectAllInviteesRef = useRef<HTMLInputElement | null>(null);
 
-  const eventsOnSelectedDate = useMemo(() => {
-    if (!selectedEventDate) {
-      return [];
-    }
-    return events.filter((event) => event.date === selectedEventDate);
-  }, [events, selectedEventDate]);
+  const {
+    eventsByDate,
+    upcomingEvents,
+    eventsOnSelectedDate,
+    eventAvailabilityData,
+    availabilityPages,
+  } = useDashboardEventData({
+    events,
+    selectedEventDate,
+    athleteById,
+    teamNameById,
+    summaryLabels,
+    teamCoachMetaById,
+    getEventTeamIds,
+  });
 
   const eventTeamIdsForSelectedDate = useMemo(() => {
     if (!selectedEventDate) {
@@ -406,76 +391,6 @@ const Dashboard = () => {
     return Array.from(ids);
   }, [eventsOnSelectedDate, selectedEventDate, getEventTeamIds]);
 
-  const eventAvailabilityData = useMemo(() => {
-    if (!selectedEventDate) {
-      return [];
-    }
-
-    return eventsOnSelectedDate.map((event) => {
-      const teamIds = getEventTeamIds(event);
-      const participants = event.participants ?? [];
-      const teamMap = teamIds.reduce<Record<number, Athlete[]>>((acc, id) => {
-        acc[id] = [];
-        return acc;
-      }, {});
-      const guests: Athlete[] = [];
-      const participantStatusByUserId = new Map<number, ParticipantStatus>();
-
-      participants.forEach((participant) => {
-        if (participant.user_id != null) {
-          participantStatusByUserId.set(participant.user_id, participant.status);
-        }
-        const athleteId = participant.athlete_id;
-        if (!athleteId) {
-          return;
-        }
-        const athlete = athleteById.get(athleteId);
-        if (!athlete) {
-          return;
-        }
-        if (typeof athlete.team_id === "number" && teamMap[athlete.team_id]) {
-          teamMap[athlete.team_id].push(athlete);
-        } else {
-          guests.push(athlete);
-        }
-      });
-
-      return {
-        event,
-        teams: teamIds.map((teamId) => {
-          const meta = teamCoachMetaById.get(teamId);
-          const coachStatus =
-            meta?.coachUserId != null ? participantStatusByUserId.get(meta.coachUserId) ?? null : null;
-          return {
-            teamId,
-            teamName: teamNameById[teamId] ?? summaryLabels.teamPlaceholder,
-            athletes: teamMap[teamId] ?? [],
-            coachName: meta?.coachName ?? null,
-            coachStatus,
-          };
-        }),
-        guests,
-      };
-    });
-  }, [
-    selectedEventDate,
-    eventsOnSelectedDate,
-    getEventTeamIds,
-    athleteById,
-    teamNameById,
-    summaryLabels.teamPlaceholder,
-    teamCoachMetaById,
-  ]);
-
-  const availabilityPages = useMemo(() => {
-    const pages: Array<{ eventIndex: number; teamIndex: number; includeGuests: boolean }> = [];
-    eventAvailabilityData.forEach((entry, eventIndex) => {
-      entry.teams.forEach((_team, teamIndex) => {
-        pages.push({ eventIndex, teamIndex, includeGuests: teamIndex === entry.teams.length - 1 });
-      });
-    });
-    return pages;
-  }, [eventAvailabilityData]);
   const teamsForSelectedDate = useMemo(() => {
     if (!events.length) {
       return [];
@@ -582,7 +497,7 @@ const Dashboard = () => {
     return filtered;
   }, [athletes, athleteFilterTeam, athleteFilterAge, athleteFilterGender]);
 
-  const allInviteeIds = useMemo(() => filteredEventAthletes.map((athlete) => athlete.id), [filteredEventAthletes]);
+  const allInviteeIds = useMemo(() => athletes.map((athlete) => athlete.id), [athletes]);
   const areAllInviteesSelected = useMemo(
     () => allInviteeIds.length > 0 && allInviteeIds.every((id) => eventForm.inviteeIds.includes(id)),
     [allInviteeIds, eventForm.inviteeIds]
@@ -595,33 +510,6 @@ const Dashboard = () => {
     const isIndeterminate = eventForm.inviteeIds.length > 0 && !areAllInviteesSelected;
     selectAllInviteesRef.current.indeterminate = isIndeterminate;
   }, [eventForm.inviteeIds, areAllInviteesSelected]);
-
-  const eventsByDate = useMemo(() => {
-    const map = new Map<string, Event[]>();
-    events.forEach((event) => {
-      if (!event.date) {
-        return;
-      }
-      const dayEvents = map.get(event.date);
-      if (dayEvents) {
-        dayEvents.push(event);
-      } else {
-        map.set(event.date, [event]);
-      }
-    });
-    return map;
-  }, [events]);
-
-  const upcomingEvents = useMemo(() => {
-    const toLocalTs = (dateStr: string, timeStr?: string | null) => {
-      const [y, m, d] = (dateStr || "").split("-").map(Number);
-      const [hh = 0, mm = 0] = (timeStr || "00:00").split(":" ).map(Number);
-      return new Date((y || 0), (m || 1) - 1, (d || 1), hh, mm).getTime();
-    };
-    return [...events]
-      .sort((a, b) => toLocalTs(a.date, a.time) - toLocalTs(b.date, b.time))
-      .slice(0, 4);
-  }, [events]);
 
   const calendarGrid = useMemo(() => {
     const year = calendarCursor.getFullYear();

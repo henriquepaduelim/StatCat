@@ -60,7 +60,7 @@ const TeamInsightsCard = ({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-container-foreground">Report Cards</h2>
-            <p className="text-sm text-muted">Report cards to be approved</p>
+            
           </div>
           <div className="flex w-full flex-row flex-wrap gap-2 sm:w-auto sm:justify-end">
             <button
@@ -85,55 +85,10 @@ const TeamInsightsCard = ({
           </div>
         </div>
 
-        <dl className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-lg border border-black/5 bg-white/80 px-4 py-3">
-            <dt className="text-xs uppercase tracking-wide text-muted">Total Teams</dt>
-            <dd className="text-2xl font-semibold text-container-foreground">{formatNumber(totalTeams)}</dd>
-          </div>
-          <div className="rounded-lg border border-black/5 bg-white/80 px-4 py-3">
-            <dt className="text-xs uppercase tracking-wide text-muted">Athletes Assigned</dt>
-            <dd className="text-2xl font-semibold text-container-foreground">
-              {formatNumber(assignedAthletes)} <span className="text-sm font-normal text-muted">({assignmentRate}%)</span>
-            </dd>
-          </div>
-          <div className="rounded-lg border border-black/5 bg-white/80 px-4 py-3">
-            <dt className="text-xs uppercase tracking-wide text-muted">Awaiting Team</dt>
-            <dd className="text-2xl font-semibold text-container-foreground">{formatNumber(unassignedAthletes)}</dd>
-          </div>
-          <div className="rounded-lg border border-black/5 bg-white/80 px-4 py-3">
-            <dt className="text-xs uppercase tracking-wide text-muted">Avg. Roster Size</dt>
-            <dd className="text-2xl font-semibold text-container-foreground">{averageRosterSize}</dd>
-          </div>
-        </dl>
-
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-muted">
-            <span>Most Active Teams</span>
-            <span>Roster</span>
-          </div>
-          {topTeams.length ? (
-            <ul className="divide-y divide-black/5 rounded-lg border border-black/5 bg-white/70">
-              {topTeams.map((team) => (
-                <li key={team.id} className="flex items-center justify-between px-4 py-3 text-sm">
-                  <div>
-                    <p className="font-semibold text-container-foreground">{team.name}</p>
-                    <p className="text-xs text-muted">{team.category}</p>
-                  </div>
-                  <span className="text-base font-semibold text-action-primary">{team.athleteCount}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-muted">No team activity to highlight yet.</p>
-          )}
-        </div>
-
+        
         {canApproveReports ? (
           <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-muted">
-              <span>Pending approvals</span>
-              <span>{pendingReports.length}</span>
-            </div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-muted">Pending approvals</div>
             {pendingReports.length ? (
               <ul className="space-y-2">
                 {pendingReports.slice(0, 5).map((report) => (
@@ -185,10 +140,7 @@ const TeamInsightsCard = ({
         ) : null}
 
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-muted">
-            <span>My submissions</span>
-            <span>{mySubmissions.length}</span>
-          </div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-muted">My submissions</div>
           {mySubmissions.length ? (
             <ul className="space-y-2">
               {mySubmissions.slice(0, 5).map((submission) => (
@@ -226,7 +178,7 @@ const TeamInsightsCard = ({
                   <button
                     type="button"
                     onClick={() => onViewMySubmission(submission)}
-                    className="mt-3 inline-flex w-full items-center justify-center rounded-full border border-black/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-container-foreground transition hover:bg-container/70 sm:w-auto"
+                    className="mt-3 inline-flex w-full items-center justify-center rounded-full border border-black/50 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-container-foreground transition hover:bg-container/70 sm:w-auto"
                   >
                     View details
                   </button>
