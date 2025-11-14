@@ -24,19 +24,19 @@ const AppShell = ({ children }: PropsWithChildren) => {
 
   return (
     <div className="relative min-h-screen bg-page text-page-foreground">
-      <div className="hidden md:flex fixed left-0 top-0 z-20 w-72 flex-col items-center pt-8 pointer-events-none">
+      <div className="hidden md:flex fixed left-0 top-0 z-20 w-72 flex-col items-center pt-0 pointer-events-none">
         <a
           href="/dashboard"
           className="pointer-events-auto inline-flex items-center justify-center"
-          aria-label="Go to Home"
+          aria-label="Go to dashboard"
         >
-          <img src="/media/logo.png" alt="Logo" className="h-20 w-auto" />
+          <img src="/media/1ELITE0LOGO.svg" alt="Logo" className="h-48 w-auto filter brightness-0" />
         </a>
       </div>
       <SideNav />
       <div className="md:pl-72 flex flex-col flex-1">
         <header className="print-hidden md:hidden flex items-center justify-between px-2 pt-6 pb-4">
-          <img src="/media/logo.png" alt="Logo" className="h-16 w-auto" />
+          <img src="/media/1ELITE0LOGO.svg" alt="Logo" className="h-16 w-auto" />
           <span className="text-sm font-medium text-muted">{greeting}</span>
         </header>
         <header className="print-hidden hidden md:flex items-center justify-start px-6 py-4">

@@ -107,7 +107,7 @@ const SideNav = () => {
       {/* Desktop Navigation - Side Bar */}
       <div className="hidden md:flex md:flex-col md:fixed md:inset-y-0 md:w-72 text-sidebar-foreground">
         <div className="flex-1 flex flex-col min-h-0 bg-sidebar">
-          <div className="flex-1 flex flex-col pt-28 pb-4 overflow-y-auto">
+          <div className="flex-1 flex flex-col pt-36 pb-4 overflow-y-auto">
             <nav className="mt-8 flex-1 space-y-0.5 px-0">
               {allowedNavItems.map((item) => (
                 <NavLink

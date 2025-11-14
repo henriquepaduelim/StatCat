@@ -11,11 +11,11 @@ export default defineConfig({
       mode: 'development',
       minify: false,
       registerType: 'autoUpdate',
-      includeAssets: ['media/favicon.ico', 'media/logo.png'],
+      includeAssets: ['/media/Asset 1ELITE0LOGO.svg', '/media/ELITE1-LOGO-transparent.png'],
       manifest: {
-        name: 'StatCat Sports Analytics',
-        short_name: 'StatCat',
-        description: 'Complete sports analytics platform for football combines',
+        name: 'ELITE 1 ACADEMY',
+        short_name: 'ELITE 1',
+        description: 'ELITE 1 ACADEMY sports analytics platform',
         theme_color: '#1e40af',
         background_color: '#ffffff',
         display: 'standalone',
@@ -24,31 +24,31 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/pwa-192x192.png',
+            src: '/media/ELITE1-LOGO-transparent.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/pwa-512x512.png',
+            src: '/media/ELITE1-LOGO-transparent.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/pwa-192x192.png',
+            src: '/media/ELITE1-LOGO-transparent.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'maskable'
           },
           {
-            src: '/pwa-512x512.png',
+            src: '/media/ELITE1-LOGO-transparent.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
           },
           {
-            src: '/apple-touch-icon.png',
+            src: '/media/ELITE1-LOGO-transparent.png',
             sizes: '180x180',
             type: 'image/png',
             purpose: 'any'
