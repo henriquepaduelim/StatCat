@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { CSSProperties } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMedal, faArrowRotateRight } from "@fortawesome/free-solid-svg-icons";
 
@@ -32,14 +33,22 @@ const LeaderboardRow = ({
       ? "bg-orange-50 text-orange-900 border-orange-200"
       : "bg-white text-muted border-black/5";
 
+  const medalCircleStyles: Record<number, CSSProperties> = {
+    1: { backgroundColor: "#D4AF37", color: "#1f2937" },
+    2: { backgroundColor: "#C0C0C0", color: "#1f2937" },
+    3: { backgroundColor: "#CD7F32", color: "#fff" },
+  };
+
   const primaryValue = leaderboardType === "scorers" ? entry.goals : entry.shootout_goals;
-  const primaryLabel = leaderboardType === "scorers" ? "Goals" : "SO Goals";
 
   return (
     <li
       className={`grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-lg border px-3 py-2 text-sm ${accentClass}`}
     >
-      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/70 text-xs font-semibold text-container-foreground shadow-sm">
+      <span
+        className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold shadow-sm"
+        style={medalCircleStyles[position] ?? undefined}
+      >
         {position}
       </span>
       <div>
@@ -49,15 +58,7 @@ const LeaderboardRow = ({
         </p>
       </div>
       <div className="text-right">
-        <p className="text-lg font-bold text-action-primary">
-          {primaryValue}
-          <span className="ml-1 text-xs font-medium uppercase text-muted">
-            {primaryLabel === "Goals" ? "G" : "SO"}
-          </span>
-        </p>
-        <p className="text-[0.65rem] uppercase text-muted">
-          Total goals: {entry.goals} • Shootouts: {entry.shootout_goals}
-        </p>
+        <p className="text-lg font-bold text-action-primary">{primaryValue}</p>
       </div>
     </li>
   );
