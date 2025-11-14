@@ -31,6 +31,7 @@ import TeamManagementSection from "../components/dashboard/TeamManagementSection
 import EventsSection from "../components/dashboard/EventsSection";
 import CoachDirectorySection from "../components/dashboard/CoachDirectorySection";
 import ReportSubmissionReviewModal from "../components/dashboard/ReportSubmissionReviewModal";
+import ReportSubmissionListModal from "../components/dashboard/ReportSubmissionListModal";
 import { submitGameReport } from "../api/matchReports";
 import { submitReportCardRequest } from "../api/reportSubmissions";
 import { useReportSubmissionWorkflow } from "../hooks/useReportSubmissionWorkflow";
@@ -348,6 +349,7 @@ const Dashboard = () => {
     match: 3,
   });
   const [reportCardError, setReportCardError] = useState<string | null>(null);
+  const [isSubmissionListModalOpen, setSubmissionListModalOpen] = useState(false);
   
   // Athlete filters for event invitation
   const [athleteFilterTeam, setAthleteFilterTeam] = useState<number | "unassigned" | null>(null);
@@ -1353,6 +1355,7 @@ const Dashboard = () => {
     onApproveReport: handleApproveSubmission,
     onReviewSubmission: openSubmissionModal,
     onViewMySubmission: openSubmissionModal,
+    onOpenSubmissionsModal: () => setSubmissionListModalOpen(true),
     approvingSubmissionId,
     canApproveReports,
   };
@@ -1538,6 +1541,16 @@ const Dashboard = () => {
         onRatingChange={handleReportCardRatingChange}
         onSubmit={handleReportCardSubmit}
         onCancel={handleReportCardCancel}
+      />
+      <ReportSubmissionListModal
+        isOpen={isSubmissionListModalOpen}
+        pendingReports={canApproveReports ? pendingReports : []}
+        mySubmissions={myReports}
+        canApproveReports={canApproveReports}
+        onClose={() => setSubmissionListModalOpen(false)}
+        onReviewSubmission={openSubmissionModal}
+        onViewMySubmission={openSubmissionModal}
+        onApproveReport={handleApproveSubmission}
       />
       <ReportSubmissionReviewModal
         submission={selectedSubmission}
