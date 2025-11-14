@@ -1,4 +1,4 @@
-import { FormEvent, useState, useEffect } from "react";
+import { FormEvent, Suspense, lazy, useEffect, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import type { Location } from "react-router-dom";
 import { Divider } from "@tremor/react";
@@ -14,8 +14,9 @@ import { useTranslation } from "../i18n/useTranslation";
 import { submitForApproval } from "../api/athletes";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import api from "../api/client";
-import PasswordRecoveryDialog from "../components/PasswordRecoveryDialog";
-import AthleteOnboardingModal, { OnboardingStep } from "../components/AthleteOnboardingModal";
+const PasswordRecoveryDialog = lazy(() => import("../components/PasswordRecoveryDialog"));
+const AthleteOnboardingModal = lazy(() => import("../components/AthleteOnboardingModal"));
+import type { OnboardingStep } from "../components/AthleteOnboardingModal";
 import AuthCredentialsForm from "../components/AuthCredentialsForm";
 import type { Athlete } from "../types/athlete";
 
@@ -398,24 +399,28 @@ const Login = () => {
         </div>
       </div>
 
-      <PasswordRecoveryDialog
-        isOpen={isRecoveryModalOpen}
-        initialStep={recoveryStep}
-        onClose={closeRecoveryModal}
-      />
+      <Suspense fallback={null}>
+        <PasswordRecoveryDialog
+          isOpen={isRecoveryModalOpen}
+          initialStep={recoveryStep}
+          onClose={closeRecoveryModal}
+        />
+      </Suspense>
 
-      <AthleteOnboardingModal
-        step={onboardingStep}
-        createdAthlete={createdAthlete}
-        error={error}
-        isSubmitPending={submitApprovalMutation.isPending}
-        onStepOneSuccess={handleStepOneSuccess}
-        onStepTwoSuccess={handleStepTwoSuccess}
-        onSkipStepTwo={handleSkipStepTwo}
-        onSubmitForApproval={handleSubmitForApproval}
-        onBackToStepTwo={handleBackToStepTwo}
-        onClosePendingReview={handlePendingReviewClose}
-      />
+      <Suspense fallback={null}>
+        <AthleteOnboardingModal
+          step={onboardingStep}
+          createdAthlete={createdAthlete}
+          error={error}
+          isSubmitPending={submitApprovalMutation.isPending}
+          onStepOneSuccess={handleStepOneSuccess}
+          onStepTwoSuccess={handleStepTwoSuccess}
+          onSkipStepTwo={handleSkipStepTwo}
+          onSubmitForApproval={handleSubmitForApproval}
+          onBackToStepTwo={handleBackToStepTwo}
+          onClosePendingReview={handlePendingReviewClose}
+        />
+      </Suspense>
     </div>
   );
 };

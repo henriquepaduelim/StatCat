@@ -32,14 +32,8 @@ import EventsSection from "../components/dashboard/EventsSection";
 import CoachDirectorySection from "../components/dashboard/CoachDirectorySection";
 import ReportSubmissionReviewModal from "../components/dashboard/ReportSubmissionReviewModal";
 import { submitGameReport } from "../api/matchReports";
-import {
-  approveReportSubmission,
-  rejectReportSubmission,
-  submitReportCardRequest,
-  type ReportSubmissionSummary,
-} from "../api/reportSubmissions";
-import { usePendingReportSubmissions } from "../hooks/usePendingReportSubmissions";
-import { useMyReportSubmissions } from "../hooks/useMyReportSubmissions";
+import { submitReportCardRequest, type ReportSubmissionSummary } from "../api/reportSubmissions";
+import { useReportSubmissionWorkflow } from "../hooks/useReportSubmissionWorkflow";
 import TeamFormModal from "../components/dashboard/TeamFormModal";
 import CoachFormModal from "../components/dashboard/CoachFormModal";
 import EventModal from "../components/dashboard/EventModal";
@@ -228,14 +222,22 @@ const Dashboard = () => {
   }, [athletes, teamForm.athleteIds]);
   const t = useTranslation();
   const queryClient = useQueryClient();
-  const pendingReportsQuery = usePendingReportSubmissions({ enabled: canApproveReports });
-  const pendingReports = pendingReportsQuery.data ?? [];
-  const myReportsQuery = useMyReportSubmissions();
-  const myReports = myReportsQuery.data ?? [];
-  const closeSubmissionModal = () => {
-    setSubmissionModalOpen(false);
-    setSelectedSubmission(null);
-  };
+  const {
+    pendingReports,
+    myReports,
+    selectedSubmission,
+    isSubmissionModalOpen,
+    openSubmissionModal,
+    closeSubmissionModal,
+    handleApproveSubmission,
+    handleRejectSubmission,
+    approvingSubmissionId,
+    rejectingSubmissionId,
+    refetchSubmissions: refetchReportSubmissions,
+  } = useReportSubmissionWorkflow({
+    canApproveReports,
+    onError: (message) => setTeamNotice({ variant: "error", message }),
+  });
   const createGameReportMutation = useMutation({
     mutationFn: submitGameReport,
     onSuccess: () => {
@@ -244,8 +246,7 @@ const Dashboard = () => {
       setGameReportForm(createEmptyGameReportForm());
       setGameReportAthleteFilterTeam(null);
       queryClient.invalidateQueries({ queryKey: ["scoring-leaderboard"] });
-      pendingReportsQuery.refetch();
-      myReportsQuery.refetch();
+      refetchReportSubmissions();
     },
     onError: (error: unknown) => {
       const errorDetail = (error as ApiErrorResponse)?.response?.data?.detail;
@@ -264,8 +265,7 @@ const Dashboard = () => {
       setReportCardAthleteId(null);
       setReportCardTeamId(null);
       setReportCardNotes("");
-      pendingReportsQuery.refetch();
-      myReportsQuery.refetch();
+      refetchReportSubmissions();
     },
     onError: (error: unknown) => {
       const errorDetail = (error as ApiErrorResponse)?.response?.data?.detail;
@@ -274,53 +274,6 @@ const Dashboard = () => {
           ? errorDetail
           : "Unable to submit report card request.";
       setReportCardError(message);
-    },
-  });
-  const approveReportSubmissionMutation = useMutation({
-    mutationFn: approveReportSubmission,
-    onMutate: (submissionId: number) => {
-      setApprovingSubmissionId(submissionId);
-    },
-    onSuccess: (_data, submissionId) => {
-      pendingReportsQuery.refetch();
-      myReportsQuery.refetch();
-      if (selectedSubmission?.id === submissionId) {
-        closeSubmissionModal();
-      }
-    },
-    onError: (error: unknown) => {
-      const errorDetail = (error as ApiErrorResponse)?.response?.data?.detail;
-      const message =
-        typeof errorDetail === "string"
-          ? errorDetail
-          : "Unable to approve submission.";
-      setTeamNotice({ variant: "error", message });
-    },
-    onSettled: () => {
-      setApprovingSubmissionId(null);
-    },
-  });
-  const rejectReportSubmissionMutation = useMutation({
-    mutationFn: ({ submissionId, notes }: { submissionId: number; notes: string }) =>
-      rejectReportSubmission(submissionId, notes),
-    onMutate: ({ submissionId }) => {
-      setRejectingSubmissionId(submissionId);
-    },
-    onSuccess: (_data, variables) => {
-      pendingReportsQuery.refetch();
-      myReportsQuery.refetch();
-      if (selectedSubmission?.id === variables.submissionId) {
-        closeSubmissionModal();
-      }
-    },
-    onError: (error: unknown) => {
-      const errorDetail = (error as ApiErrorResponse)?.response?.data?.detail;
-      const message =
-        typeof errorDetail === "string" ? errorDetail : "Unable to return submission.";
-      setTeamNotice({ variant: "error", message });
-    },
-    onSettled: () => {
-      setRejectingSubmissionId(null);
     },
   });
   const fetchTeamCoaches = (teamId: number) =>
@@ -419,10 +372,6 @@ const Dashboard = () => {
     match: 3,
   });
   const [reportCardError, setReportCardError] = useState<string | null>(null);
-  const [approvingSubmissionId, setApprovingSubmissionId] = useState<number | null>(null);
-  const [rejectingSubmissionId, setRejectingSubmissionId] = useState<number | null>(null);
-  const [selectedSubmission, setSelectedSubmission] = useState<ReportSubmissionSummary | null>(null);
-  const [isSubmissionModalOpen, setSubmissionModalOpen] = useState(false);
   
   // Athlete filters for event invitation
   const [athleteFilterTeam, setAthleteFilterTeam] = useState<number | "unassigned" | null>(null);
@@ -1010,19 +959,6 @@ const Dashboard = () => {
     setReportCardError(null);
   };
 
-  const handleApproveSubmission = (submissionId: number) => {
-    if (approvingSubmissionId) {
-      return;
-    }
-    approveReportSubmissionMutation.mutate(submissionId);
-  };
-
-  const handleRejectSubmission = (submissionId: number, notes: string) => {
-    if (rejectingSubmissionId) {
-      return;
-    }
-    rejectReportSubmissionMutation.mutate({ submissionId, notes });
-  };
 
   const handleEventInputChange = <T extends keyof EventFormState>(field: T, value: EventFormState[T]) => {
     setEventForm((prev) => ({
@@ -1497,10 +1433,6 @@ const Dashboard = () => {
     openGameReportModal();
   };
 
-  const handleSubmissionReviewOpen = (submission: ReportSubmissionSummary) => {
-    setSelectedSubmission(submission);
-    setSubmissionModalOpen(true);
-  };
 
   const teamListCardProps = {
     teams,
@@ -1531,8 +1463,8 @@ const Dashboard = () => {
     pendingReports: canApproveReports ? pendingReports : [],
     mySubmissions: myReports,
     onApproveReport: handleApproveSubmission,
-    onReviewSubmission: handleSubmissionReviewOpen,
-    onViewMySubmission: handleSubmissionReviewOpen,
+    onReviewSubmission: openSubmissionModal,
+    onViewMySubmission: openSubmissionModal,
     approvingSubmissionId,
     canApproveReports,
   };
@@ -1727,11 +1659,11 @@ const Dashboard = () => {
         onApprove={handleApproveSubmission}
         onReject={handleRejectSubmission}
         isApprovePending={
-          approveReportSubmissionMutation.isPending &&
+          Boolean(approvingSubmissionId) &&
           approvingSubmissionId === (selectedSubmission?.id ?? null)
         }
         isRejectPending={
-          rejectReportSubmissionMutation.isPending &&
+          Boolean(rejectingSubmissionId) &&
           rejectingSubmissionId === (selectedSubmission?.id ?? null)
         }
       />
