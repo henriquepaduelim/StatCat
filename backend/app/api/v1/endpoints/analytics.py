@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func
+from sqlalchemy import case, func
 from sqlmodel import Session, select
 
 from app.analytics.metric_engine import MetricEngine, filter_athletes
@@ -71,89 +71,153 @@ def metric_ranking(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
-def _resolve_value(row: tuple, leaderboard_type: str) -> tuple[int, int]:
-    goals = int(row[-2] or 0)
-    shootout_goals = int(row[-1] or 0)
-    if leaderboard_type == "shootouts":
-        return goals, shootout_goals
-    return goals, shootout_goals
-
 @router.get("/leaderboards/scoring", response_model=LeaderboardResponse)
 def scoring_leaderboard(
-    leaderboard_type: Literal["scorers", "shootouts"] = Query(default="scorers"),
+    leaderboard_type: Literal["scorers", "clean_sheets"] = Query(default="scorers"),
     limit: int = Query(default=10, ge=1, le=50),
     gender: str | None = Query(default=None),
     age_category: str | None = Query(default=None),
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_active_user),
 ) -> LeaderboardResponse:
-    statement = (
-        select(
+    if leaderboard_type == "clean_sheets":
+        clean_sheet_case = case((MatchStat.goals_conceded == 0, 1), else_=0)
+        statement = (
+            select(
+                Athlete.id,
+                Athlete.first_name,
+                Athlete.last_name,
+                Athlete.primary_position,
+                Team.name,
+                Team.age_category,
+                func.count(MatchStat.id).label("games_played"),
+                func.sum(clean_sheet_case).label("clean_sheets"),
+                func.sum(MatchStat.goals_conceded).label("goals_conceded"),
+            )
+            .join(MatchStat, MatchStat.athlete_id == Athlete.id)
+            .outerjoin(Team, Team.id == MatchStat.team_id)
+            .where(Athlete.status == AthleteStatus.active)
+            .where(MatchStat.goals == 0, MatchStat.shootout_goals == 0)
+        )
+
+        if gender:
+            statement = statement.where(Athlete.gender == gender.lower())
+        if age_category:
+            statement = statement.where(Team.age_category == age_category)
+
+        grouped = statement.group_by(
             Athlete.id,
             Athlete.first_name,
             Athlete.last_name,
             Athlete.primary_position,
             Team.name,
             Team.age_category,
-            func.sum(MatchStat.goals).label("goals"),
-            func.sum(MatchStat.shootout_goals).label("shootout_goals"),
         )
-        .join(MatchStat, MatchStat.athlete_id == Athlete.id)
-        .outerjoin(Team, Team.id == MatchStat.team_id)
-        .where(Athlete.status == AthleteStatus.active)
-    )
 
-    if gender:
-        statement = statement.where(Athlete.gender == gender.lower())
-    if age_category:
-        statement = statement.where(Team.age_category == age_category)
+        rows = session.exec(grouped).all()
+        entries: list[LeaderboardEntry] = []
 
-    grouped = statement.group_by(
-        Athlete.id,
-        Athlete.first_name,
-        Athlete.last_name,
-        Athlete.primary_position,
-        Team.name,
-        Team.age_category,
-    )
+        for row in rows:
+            (
+                athlete_id,
+                first_name,
+                last_name,
+                primary_position,
+                team_name,
+                team_age_category,
+                games_played,
+                clean_sheets,
+                goals_conceded,
+            ) = row
 
-    rows = session.exec(grouped).all()
-    entries: list[LeaderboardEntry] = []
+            games_played = int(games_played or 0)
+            if games_played <= 0:
+                continue
 
-    for row in rows:
-        (
-            athlete_id,
-            first_name,
-            last_name,
-            primary_position,
-            team_name,
-            team_age_category,
-            goals,
-            shootout_goals,
-        ) = row
+            clean_sheets = int(clean_sheets or 0)
+            goals_conceded = int(goals_conceded or 0)
 
-        goals = int(goals or 0)
-        shootout_goals = int(shootout_goals or 0)
-        value = goals if leaderboard_type == "scorers" else shootout_goals
-        if value <= 0:
-            continue
-
-        entries.append(
-            LeaderboardEntry(
-                athlete_id=athlete_id,
-                full_name=f"{first_name} {last_name}",
-                team=team_name,
-                age_category=team_age_category,
-                position=primary_position,
-                goals=goals,
-                shootout_goals=shootout_goals,
+            entries.append(
+                LeaderboardEntry(
+                    athlete_id=athlete_id,
+                    full_name=f"{first_name} {last_name}",
+                    team=team_name,
+                    age_category=team_age_category,
+                    position=primary_position,
+                    goals=0,
+                    clean_sheets=clean_sheets,
+                    games_played=games_played,
+                    goals_conceded=goals_conceded,
+                )
             )
+
+        entries.sort(
+            key=lambda entry: (
+                -entry.clean_sheets,
+                entry.goals_conceded / entry.games_played if entry.games_played else float("inf"),
+            ),
+        )
+    else:
+        statement = (
+            select(
+                Athlete.id,
+                Athlete.first_name,
+                Athlete.last_name,
+                Athlete.primary_position,
+                Team.name,
+                Team.age_category,
+                func.sum(MatchStat.goals).label("goals"),
+            )
+            .join(MatchStat, MatchStat.athlete_id == Athlete.id)
+            .outerjoin(Team, Team.id == MatchStat.team_id)
+            .where(Athlete.status == AthleteStatus.active)
         )
 
-    entries.sort(
-        key=lambda entry: entry.goals if leaderboard_type == "scorers" else entry.shootout_goals,
-        reverse=True,
-    )
+        if gender:
+            statement = statement.where(Athlete.gender == gender.lower())
+        if age_category:
+            statement = statement.where(Team.age_category == age_category)
+
+        grouped = statement.group_by(
+            Athlete.id,
+            Athlete.first_name,
+            Athlete.last_name,
+            Athlete.primary_position,
+            Team.name,
+            Team.age_category,
+        )
+
+        rows = session.exec(grouped).all()
+        entries = []
+
+        for row in rows:
+            (
+                athlete_id,
+                first_name,
+                last_name,
+                primary_position,
+                team_name,
+                team_age_category,
+                goals,
+            ) = row
+
+            goals = int(goals or 0)
+            if goals <= 0:
+                continue
+
+            entries.append(
+                LeaderboardEntry(
+                    athlete_id=athlete_id,
+                    full_name=f"{first_name} {last_name}",
+                    team=team_name,
+                    age_category=team_age_category,
+                    position=primary_position,
+                    goals=goals,
+                    clean_sheets=0,
+                )
+            )
+
+        entries.sort(key=lambda entry: entry.goals, reverse=True)
 
     if len(entries) > limit:
         entries = entries[:limit]

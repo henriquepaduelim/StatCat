@@ -12,7 +12,7 @@ type LeaderboardCardProps = {
 
 const tabOptions: Array<{ id: LeaderboardType; label: string }> = [
   { id: "scorers", label: "Goals" },
-  { id: "shootouts", label: "Shootouts" },
+  { id: "clean_sheets", label: "Clean sheets" },
 ];
 
 const LeaderboardRow = ({
@@ -39,7 +39,7 @@ const LeaderboardRow = ({
     3: { backgroundColor: "#CD7F32", color: "#fff" },
   };
 
-  const primaryValue = leaderboardType === "scorers" ? entry.goals : entry.shootout_goals;
+  const primaryValue = leaderboardType === "scorers" ? entry.goals : entry.clean_sheets;
 
   return (
     <li
@@ -58,7 +58,17 @@ const LeaderboardRow = ({
         </p>
       </div>
       <div className="text-right">
-        <p className="text-lg font-bold text-action-primary">{primaryValue}</p>
+        <p className="text-lg font-bold text-action-primary">
+          {leaderboardType === "clean_sheets"
+            ? entry.goals_conceded
+            : primaryValue}
+        </p>
+        {leaderboardType === "clean_sheets" ? (
+          <p className="text-[0.65rem] text-muted">
+            Games: {entry.games_played} • Avg:{" "}
+            {entry.games_played ? (entry.goals_conceded / entry.games_played).toFixed(2) : "0.00"}
+          </p>
+        ) : null}
       </div>
     </li>
   );

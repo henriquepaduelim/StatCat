@@ -64,9 +64,11 @@ class LeaderboardEntry(BaseModel):
     age_category: str | None = None
     position: str | None = None
     goals: int = 0
-    shootout_goals: int = 0
+    clean_sheets: int = 0
+    games_played: int = 0
+    goals_conceded: int = 0
 
 
 class LeaderboardResponse(BaseModel):
-    leaderboard_type: Literal["scorers", "shootouts"]
+    leaderboard_type: Literal["scorers", "clean_sheets"]
     entries: list[LeaderboardEntry]

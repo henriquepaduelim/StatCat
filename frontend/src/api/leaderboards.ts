@@ -1,6 +1,6 @@
 import api from "./client";
 
-export type LeaderboardType = "scorers" | "shootouts";
+export type LeaderboardType = "scorers" | "clean_sheets";
 
 export interface LeaderboardEntry {
   athlete_id: number;
@@ -9,7 +9,9 @@ export interface LeaderboardEntry {
   age_category?: string | null;
   position?: string | null;
   goals: number;
-  shootout_goals: number;
+  clean_sheets: number;
+  games_played: number;
+  goals_conceded: number;
 }
 
 export interface LeaderboardResponse {
