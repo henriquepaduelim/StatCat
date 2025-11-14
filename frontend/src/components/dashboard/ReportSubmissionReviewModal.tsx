@@ -104,9 +104,9 @@ const ReportSubmissionReviewModal = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" role="dialog" aria-modal="true">
-      <div className="flex min-h-full items-center justify-center px-4 py-8" onClick={onClose}>
+      <div className="flex min-h-full items-start justify-center px-3 py-4 sm:items-center sm:px-6 sm:py-8" onClick={onClose}>
         <div
-          className="relative w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+          className="relative w-full max-w-3xl max-h-[95vh] overflow-y-auto rounded-2xl bg-white p-0 sm:p-0"
           onClick={(event) => event.stopPropagation()}
         >
           <div className="flex items-center justify-between border-b border-black/10 px-6 py-4">
@@ -261,4 +261,3 @@ const ReportSubmissionReviewModal = ({
 };
 
 export default ReportSubmissionReviewModal;
-

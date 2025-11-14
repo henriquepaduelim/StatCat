@@ -44,7 +44,7 @@ const CoachFormModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-2 py-4 sm:px-4 sm:py-8"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-3 py-4 sm:px-4 sm:py-8"
       onClick={onClose}
       role="presentation"
     >

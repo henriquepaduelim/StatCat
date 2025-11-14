@@ -72,7 +72,7 @@ const TeamFormModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-2 py-4 sm:px-4 sm:py-8"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 px-2 py-4 sm:items-center sm:px-4 sm:py-8"
       onClick={() => {
         if (!isSubmitting) {
           onClose();
@@ -81,7 +81,7 @@ const TeamFormModal = ({
       role="presentation"
     >
       <div
-        className="w-full max-w-lg space-y-4 overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:max-w-7xl sm:max-h-[98vh] sm:p-6 md:px-10"
+        className="w-full max-w-lg max-h-[90vh] space-y-4 overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:max-w-7xl sm:max-h-[98vh] sm:p-6 md:px-10"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="relative">

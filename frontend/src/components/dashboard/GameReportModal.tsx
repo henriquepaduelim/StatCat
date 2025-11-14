@@ -73,15 +73,8 @@ const GameReportModal = ({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-    >
-      <div
-        className="flex min-h-full items-center justify-center px-2 py-4 sm:px-6 sm:py-10"
-        onClick={onCancel}
-      >
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" role="dialog" aria-modal="true">
+      <div className="flex min-h-full items-center justify-center px-3 py-4 sm:px-6 sm:py-10" onClick={onCancel}>
         <div
           className="max-h-[95vh] w-full max-w-screen-xl space-y-5 overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6 lg:p-8"
           onClick={(event) => event.stopPropagation()}

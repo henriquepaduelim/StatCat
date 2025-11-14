@@ -18,6 +18,9 @@ const tabs: Array<{ id: "report_card" | "game_report"; label: string }> = [
   { id: "game_report", label: "Game reports" },
 ];
 
+const ITEMS_PER_PAGE = 6;
+const MAX_PAGES = 3;
+
 const ReportSubmissionListModal = ({
   isOpen,
   pendingReports,
@@ -29,6 +32,8 @@ const ReportSubmissionListModal = ({
   onApproveReport,
 }: ReportSubmissionListModalProps) => {
   const [activeTab, setActiveTab] = useState<"report_card" | "game_report">("report_card");
+  const [pendingPage, setPendingPage] = useState(0);
+  const [approvedPage, setApprovedPage] = useState(0);
 
   if (!isOpen) {
     return null;
@@ -38,11 +43,26 @@ const ReportSubmissionListModal = ({
   const approvedSubmissions = mySubmissions.filter(
     (submission) => submission.report_type === activeTab && submission.status === "approved",
   );
+  const totalPendingPages = Math.max(1, Math.min(MAX_PAGES, Math.ceil(filteredPending.length / ITEMS_PER_PAGE) || 1));
+  const totalApprovedPages = Math.max(1, Math.min(MAX_PAGES, Math.ceil(approvedSubmissions.length / ITEMS_PER_PAGE) || 1));
+  const pendingSlice = filteredPending.slice(
+    pendingPage * ITEMS_PER_PAGE,
+    pendingPage * ITEMS_PER_PAGE + ITEMS_PER_PAGE,
+  );
+  const approvedSlice = approvedSubmissions.slice(
+    approvedPage * ITEMS_PER_PAGE,
+    approvedPage * ITEMS_PER_PAGE + ITEMS_PER_PAGE,
+  );
+
+  const resetPagination = () => {
+    setPendingPage(0);
+    setApprovedPage(0);
+  };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4 py-8" onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex items-start justify-center bg-black/60 px-3 py-4 sm:items-center sm:px-6 sm:py-8" onClick={onClose}>
       <div
-        className="w-full max-w-4xl rounded-2xl bg-white p-6 shadow-2xl"
+        className="w-full max-w-screen-xl max-h-screen overflow-y-auto rounded-2xl bg-white p-4 pb-32 shadow-2xl sm:p-6 sm:pb-6"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -64,7 +84,10 @@ const ReportSubmissionListModal = ({
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                resetPagination();
+              }}
               className={`flex-1 rounded-full border px-3 py-2 transition ${
                 activeTab === tab.id
                   ? "border-action-primary bg-action-primary/10 text-action-primary"
@@ -88,8 +111,8 @@ const ReportSubmissionListModal = ({
               </span>
             </div>
             <div className="mt-3 space-y-2">
-              {filteredPending.length ? (
-                filteredPending.map((submission) => (
+              {pendingSlice.length ? (
+                pendingSlice.map((submission) => (
                   <article
                     key={`pending-submission-${submission.id}`}
                     className="rounded-lg border border-black/10 bg-container/50 p-3 text-sm"
@@ -127,6 +150,28 @@ const ReportSubmissionListModal = ({
                 <p className="text-sm text-muted">Nothing pending for this category.</p>
               )}
             </div>
+            {filteredPending.length > ITEMS_PER_PAGE && (
+              <div className="mt-3 flex items-center justify-end gap-2 text-xs text-muted">
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={pendingPage === 0}
+                    onClick={() => setPendingPage((prev) => Math.max(prev - 1, 0))}
+                    className="rounded-full border border-black/10 px-2 py-1 disabled:opacity-50"
+                  >
+                    &laquo;
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pendingPage + 1 >= totalPendingPages}
+                    onClick={() => setPendingPage((prev) => Math.min(prev + 1, totalPendingPages - 1))}
+                    className="rounded-full border border-black/10 px-2 py-1 disabled:opacity-50"
+                  >
+                    &raquo;
+                  </button>
+                </div>
+              </div>
+            )}
           </section>
 
           <section>
@@ -140,8 +185,8 @@ const ReportSubmissionListModal = ({
               </span>
             </div>
             <div className="mt-3 space-y-2">
-              {approvedSubmissions.length ? (
-                approvedSubmissions.map((submission) => (
+              {approvedSlice.length ? (
+                approvedSlice.map((submission) => (
                   <article
                     key={`approved-submission-${submission.id}`}
                     className="rounded-lg border border-black/10 bg-white/70 p-3 text-sm"
@@ -168,6 +213,28 @@ const ReportSubmissionListModal = ({
                 <p className="text-sm text-muted">No approved submissions for this category.</p>
               )}
             </div>
+            {approvedSubmissions.length > ITEMS_PER_PAGE && (
+              <div className="mt-3 flex items-center justify-end gap-2 text-xs text-muted">
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    disabled={approvedPage === 0}
+                    onClick={() => setApprovedPage((prev) => Math.max(prev - 1, 0))}
+                    className="rounded-full border border-black/10 px-2 py-1 disabled:opacity-50"
+                  >
+                    &laquo;
+                  </button>
+                  <button
+                    type="button"
+                    disabled={approvedPage + 1 >= totalApprovedPages}
+                    onClick={() => setApprovedPage((prev) => Math.min(prev + 1, totalApprovedPages - 1))}
+                    className="rounded-full border border-black/10 px-2 py-1 disabled:opacity-50"
+                  >
+                    &raquo;
+                  </button>
+                </div>
+              </div>
+            )}
           </section>
         </div>
       </div>

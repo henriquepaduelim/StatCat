@@ -8,6 +8,9 @@ import type { LeaderboardEntry, LeaderboardType } from "../../api/leaderboards";
 
 type LeaderboardCardProps = {
   limit?: number;
+  presetType?: LeaderboardType | null;
+  title?: string;
+  description?: string;
 };
 
 const tabOptions: Array<{ id: LeaderboardType; label: string }> = [
@@ -74,8 +77,8 @@ const LeaderboardRow = ({
   );
 };
 
-const LeaderboardCard = ({ limit = 5 }: LeaderboardCardProps) => {
-  const [activeTab, setActiveTab] = useState<LeaderboardType>("scorers");
+const LeaderboardCard = ({ limit = 5, presetType = null, title, description }: LeaderboardCardProps) => {
+  const [activeTab, setActiveTab] = useState<LeaderboardType>(presetType ?? "scorers");
   const leaderboardQuery = useScoringLeaderboard({
     leaderboard_type: activeTab,
     limit,
@@ -87,36 +90,15 @@ const LeaderboardCard = ({ limit = 5 }: LeaderboardCardProps) => {
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-container-foreground">Leaderboard</h2>
-            <p className="text-sm text-muted">Live ranking across recorded sessions.</p>
+            <h2 className="text-lg font-semibold text-container-foreground">
+              {title ?? (presetType === "clean_sheets" ? "Clean sheets" : "Goals leaderboard")}
+            </h2>
+            <p className="text-sm text-muted">
+              {description ?? "Live ranking across recorded sessions."}
+            </p>
           </div>
-          <button
-            type="button"
-            onClick={() => leaderboardQuery.refetch()}
-            className="inline-flex items-center gap-2 rounded-full border border-action-primary/40 px-3 py-1 text-xs font-semibold text-action-primary transition hover:bg-action-primary/10"
-            disabled={leaderboardQuery.isFetching}
-          >
-            <FontAwesomeIcon icon={faArrowRotateRight} className="text-sm" />
-            Refresh
-          </button>
         </div>
 
-        <div className="flex gap-2 text-xs font-semibold text-muted">
-          {tabOptions.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => setActiveTab(option.id)}
-              className={`flex-1 rounded-full border px-3 py-1 transition ${
-                activeTab === option.id
-                  ? "border-action-primary bg-action-primary/10 text-action-primary"
-                  : "border-black/10 hover:border-action-primary/40"
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
 
         <div className="rounded-2xl border border-white/10 bg-white/90 p-4 shadow-inner">
           {leaderboardQuery.isLoading ? (
