@@ -44,14 +44,28 @@ FIRST_NAMES = [
 
 LAST_NAMES = [
     "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Martinez", "Taylor", "Clark", "Walker",
-    "Young", "Allen", "King", "Wright", "Scott", "Green", "Baker", "Adams", "Nelson", "Hill", "Ramirez", "Campbell",
-    "Mitchell", "Perez", "Roberts", "Turner", "Phillips", "Howard", "Parker", "Evans", "Edwards", "Collins", "Stewart",
+    "Young", "Allen", "King", "Wright", "Scott", "Green", "Baker", "AdAMS", "Nelson", "Hill", "Ramirez", "Campbell",
+    "Mitchell", "Perez", "Roberts", "Turner", "Phillips", "Howard", "Parker", "EvANS", "Edwards", "Collins", "Stewart",
     "Sanchez", "Morris", "Rogers", "Reed", "Cook", "Morgan", "Bell", "Murphy", "Bailey", "Rivera", "Cooper", "Richardson", "Cox"
 ]
 
 
 def _random_birth_date(min_age: int = 16, max_age: int = 28) -> date:
     today = date.today()
+    age = randint(min_age, max_age)
+    return date(today.year - age, randint(1, 12), randint(1, 28))
+
+
+def _random_birth_date_for_team(age_category: str) -> date:
+    today = date.today()
+    # Map team age category to age range
+    age_map = {
+        "U14": (12, 13),
+        "U15": (13, 14),
+        "U16": (14, 15),
+       
+    }
+    min_age, max_age = age_map.get(age_category, (14, 19))
     age = randint(min_age, max_age)
     return date(today.year - age, randint(1, 12), randint(1, 28))
 
@@ -118,19 +132,21 @@ def seed_database(session: Session) -> None:
 
     athletes: list[Athlete] = []
     for index in range(len(FIRST_NAMES)):
+        team = teams[index % len(teams)]
+        birth_date = _random_birth_date_for_team(team.age_category)
         athlete = Athlete(
             first_name=FIRST_NAMES[index],
             last_name=LAST_NAMES[index],
             email=f"{FIRST_NAMES[index].lower()}.{LAST_NAMES[index].lower()}@combine.local",
             phone=f"+1-555-01{index:02d}",
-            birth_date=_random_birth_date(),
+            birth_date=birth_date,
             gender=AthleteGender.male if index % 2 == 0 else AthleteGender.female,
             height_cm=round(uniform(160, 195), 1),
             weight_kg=round(uniform(55, 92), 1),
-            primary_position=choice(
-                ["Goalkeeper", "Center Back", "Full Back", "Midfielder", "Winger", "Striker"]
-            ),
-            team_id=teams[index % len(teams)].id,
+            primary_position=choice([
+                "Goalkeeper", "Center Back", "Full Back", "Midfielder", "Winger", "Striker"
+            ]),
+            team_id=team.id,
             status=AthleteStatus.active,
         )
         session.add(athlete)
