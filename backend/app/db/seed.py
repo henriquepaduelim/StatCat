@@ -19,39 +19,32 @@ TEST_DEFINITIONS = [
 ]
 
 TEAM_BLUEPRINTS = [
-    {"name": "First Team", "age_category": "Senior", "description": "Senior squad"},
-    {"name": "U19 Academy", "age_category": "U19", "description": "Development squad"},
-    {"name": "U16 Academy", "age_category": "U16", "description": "Prospects"},
+    {"name": "U16 A Boys", "age_category": "U16", "description": "U16 Boys 1st Team"},
+    {"name": "U16 B Boys", "age_category": "U16", "description": "U16 Boys 2nd Team"},
+    {"name": "U16 A Girls", "age_category": "U16", "description": "U16 Girls 1st Team"},
+    {"name": "U16 B Girls", "age_category": "U16", "description": "U16 Girls 2nd Team"},
+    {"name": "U15 A Boys", "age_category": "U15", "description": "U15 Boys 1st Team"},
+    {"name": "U15 B Boys", "age_category": "U15", "description": "U15 Boys 2nd Team"},
+    {"name": "U15 A Girls", "age_category": "U15", "description": "U15 Girls 1st Team"},
+    {"name": "U15 B Girls", "age_category": "U15", "description": "U15 Girls 2nd Team"},
+    {"name": "U14 A Boys", "age_category": "U14", "description": "U14 1st Team Boys"},
+    {"name": "U14 B Boys", "age_category": "U14", "description": "U14 2nd Team Boys"},
+    {"name": "U14 A Girls", "age_category": "U14", "description": "U14 1st Team Girls"},
+    {"name": "U14 B Girls", "age_category": "U14", "description": "U14 2nd Team Girls"}
 ]
 
 FIRST_NAMES = [
-    "Alex",
-    "Daniela",
-    "Mateus",
-    "Joana",
-    "Lucas",
-    "Camila",
-    "Bruno",
-    "Rafaela",
-    "Tiago",
-    "Fernanda",
-    "Igor",
-    "Larissa",
+    # Boys
+    "Alex", "Daniel", "Matthew", "John", "Luke", "James", "Brian", "Ryan", "David", "Michael", "Chris", "Kevin",
+    "Ethan", "Joshua", "Andrew", "Justin", "Samuel", "Benjamin", "Adam", "Nathan", "Tyler", "Jason", "Eric", "Aaron",
+    # Girls
+    "Emily", "Sophia", "Olivia", "Emma", "Ava", "Isabella", "Mia", "Charlotte", "Amelia", "Grace", "Ella", "Hannah",
+    "Abigail", "Madison", "Chloe", "Lily", "Samantha", "Natalie", "Victoria", "Brooklyn", "Zoe", "Layla", "Savannah", "Avery",
 ]
 
 LAST_NAMES = [
-    "Silva",
-    "Souza",
-    "Oliveira",
-    "Ferraz",
-    "Costa",
-    "Melo",
-    "Lima",
-    "Martins",
-    "Gomes",
-    "Almeida",
-    "Ramos",
-    "Castro",
+    "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Martinez", "Taylor", "Clark", "Walker",
+    "Young", "Allen", "King", "Wright", "Scott", "Green", "Baker", "Adams", "Nelson", "Hill", "Ramirez", "Campbell",
 ]
 
 

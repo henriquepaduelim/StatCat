@@ -76,7 +76,7 @@ const AuthCredentialsForm = ({
           autoComplete="email"
           value={email}
           onChange={(event) => onEmailChange(event.target.value)}
-          placeholder="marvin@statcat.com"
+          placeholder="exemple@statcat.com"
           className="mt-2 placeholder:text-gray-500"
           required
         />

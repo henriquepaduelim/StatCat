@@ -149,10 +149,20 @@ def register_user(
         if not athlete:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Athlete not found")
 
+    full_name = payload.full_name
+    if payload.role == UserRole.COACH:
+        name_parts = payload.full_name.split()
+        if len(name_parts) > 1:
+            first_initial = name_parts[0][0].upper()
+            last_name = " ".join(name_parts[1:])
+            full_name = f"Coach {first_initial}. {last_name}"
+        else:
+            full_name = f"Coach {payload.full_name}"
+
     user = User(
         email=payload.email,
         hashed_password=get_password_hash(payload.password),
-        full_name=payload.full_name,
+        full_name=full_name,
         phone=payload.phone,
         role=payload.role,
         athlete_id=payload.athlete_id,

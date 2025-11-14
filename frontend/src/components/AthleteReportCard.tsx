@@ -244,16 +244,14 @@ const AthleteReportCard = ({
         safeParseDate(session.scheduled_at) ??
         safeParseDate(metric.recorded_at) ??
         null;
-      const dateValue = referenceDate ? referenceDate.getTime() : Date.now();
-      const label = referenceDate ? dateFormatter.format(referenceDate) : session.session_name;
 
       rows.push({
         sessionId: session.session_id,
-        label,
+        label: referenceDate ? dateFormatter.format(referenceDate) : session.session_name,
         value: metric.value,
         peerAverage:
           typeof metric.peer_average === "number" ? Number(metric.peer_average) : null,
-        dateValue,
+        dateValue: referenceDate ? referenceDate.getTime() : Date.now(),
       });
     });
     return rows.sort((a, b) => a.dateValue - b.dateValue);
@@ -331,17 +329,10 @@ const AthleteReportCard = ({
 
   const athletePhoto = detailedAthlete?.photo_url ?? athlete?.photo_url ?? null;
 
-  const sectionClassName = [
-    "mx-auto w-full overflow-hidden rounded-2xl border border-white/10 bg-container/80 p-8 shadow-xl backdrop-blur print:bg-white",
-    className,
-  ]
-    .filter(Boolean)
-    .join(" ");
-
   return (
-    <section className={sectionClassName} id="athlete-report-card">
-      <div className="flex flex-col gap-8 lg:flex-row lg:items-start">
-        <div className="flex flex-col items-center gap-4 lg:w-72">
+    <>
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-start">
+        <div className="flex flex-col items-center gap-4 lg:w-84">
           <div className="relative h-64 w-56 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-primary/15 to-accent/10 shadow-lg">
             {athletePhoto ? (
               <img
@@ -369,9 +360,10 @@ const AthleteReportCard = ({
           ) : null}
         </div>
 
-        <div className="flex-1 space-y-8 min-w-0 w-full">
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div>
+          <div className="grid gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
             {metricsSummary.map((item) => (
+              
               <div
                 key={item.label}
                 className="min-w-0 rounded-xl border border-white/10 bg-container/60 px-5 py-4 text-base"
@@ -433,7 +425,7 @@ const AthleteReportCard = ({
             <div className="h-64">
               {performanceSeries.length ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={performanceSeries} margin={{ top: 10, right: 16, bottom: 0, left: 0 }}>
+                  <LineChart data={performanceSeries} margin={{ top: 10, right: 5, bottom: 0, left: -15 }}>
                     <CartesianGrid stroke="rgba(0,0,0,0.1)" strokeDasharray="3 3" />
                     <XAxis
                       dataKey="dateValue"
@@ -582,7 +574,7 @@ const AthleteReportCard = ({
           )}
         </div>
       </div>
-    </section>
+    </>
   );
 };
 
