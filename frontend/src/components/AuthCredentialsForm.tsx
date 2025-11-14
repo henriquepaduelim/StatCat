@@ -59,7 +59,7 @@ const AuthCredentialsForm = ({
             value={fullName}
             onChange={(event) => onFullNameChange(event.target.value)}
             placeholder="Marvin Fergusson"
-            className="mt-2"
+            className="mt-2 placeholder:text-gray-500"
             required
           />
         </div>
@@ -77,7 +77,7 @@ const AuthCredentialsForm = ({
           value={email}
           onChange={(event) => onEmailChange(event.target.value)}
           placeholder="marvin@statcat.com"
-          className="mt-2 bg-blue-300 text-black"
+          className="mt-2 placeholder:text-gray-500"
           required
         />
       </div>
@@ -106,7 +106,7 @@ const AuthCredentialsForm = ({
             value={password}
             onChange={(event) => onPasswordChange(event.target.value)}
             placeholder="••••••••"
-            className="w-full rounded-md border border-black/10 bg-blue-300 px-3 py-2 pr-10 text-sm text-black placeholder:text-black/60 focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+            className="w-full rounded-md border border-black/10 px-3 py-2 pr-10 text-sm placeholder:text-gray-500 focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             required
           />
           <button
