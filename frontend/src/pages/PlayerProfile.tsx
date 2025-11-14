@@ -121,20 +121,19 @@ const PlayerProfile = () => {
                 }`}
                 defaultOpen={false}
               >
-                <div className="mt-4 flex flex-col gap-3">
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1">
                   {session.results.map((metric) => (
                     <div
                       key={`${session.session_id}-${metric.test_id}-${metric.recorded_at}`}
-                      className="rounded-lg bg-container px-4 py-3 text-sm"
+                      className="rounded-lg bg-container px-4 py-3 text-sm flex items-center justify-between"
                     >
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                        {metric.category ?? t.playerProfile.metricFallback}
-                      </p>
-                      <p className="mt-1 text-lg font-semibold text-container-foreground">
+                      <div>
+                        <p className="text-sm font-semibold text-container-foreground">{metric.test_name}</p>
+                      </div>
+                      <p className="text-lg font-semibold text-container-foreground">
                         {metric.value}
                         {metric.unit ? <span className="text-sm text-muted"> {metric.unit}</span> : null}
                       </p>
-                      <p className="text-xs text-muted">{metric.test_name}</p>
                     </div>
                   ))}
                 </div>
@@ -155,7 +154,7 @@ const PlayerProfile = () => {
         )}
 
         {currentAthlete && reportCardsQuery.isError && (
-          <p className="mt-4 text-sm text-red-500">{t.playerProfile.reportCardsError}</p>
+          <p className="mt-4 text-sm text-red-500">{t.playerProfile.error}</p>
         )}
 
         {currentAthlete &&
