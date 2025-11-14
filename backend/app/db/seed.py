@@ -45,6 +45,8 @@ FIRST_NAMES = [
 LAST_NAMES = [
     "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Martinez", "Taylor", "Clark", "Walker",
     "Young", "Allen", "King", "Wright", "Scott", "Green", "Baker", "Adams", "Nelson", "Hill", "Ramirez", "Campbell",
+    "Mitchell", "Perez", "Roberts", "Turner", "Phillips", "Howard", "Parker", "Evans", "Edwards", "Collins", "Stewart",
+    "Sanchez", "Morris", "Rogers", "Reed", "Cook", "Morgan", "Bell", "Murphy", "Bailey", "Rivera", "Cooper", "Richardson", "Cox"
 ]
 
 
