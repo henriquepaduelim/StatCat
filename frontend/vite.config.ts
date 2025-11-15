@@ -11,7 +11,7 @@ export default defineConfig({
       mode: 'development',
       minify: false,
       registerType: 'autoUpdate',
-      includeAssets: ['/media/Asset 1ELITE0LOGO.svg', '/media/ELITE1-LOGO-transparent.png'],
+      includeAssets: ['/media/1ELITE0LOGO.svg', '/media/ELITE1-LOGO-transparent.png'],
       manifest: {
         name: 'ELITE 1 ACADEMY',
         short_name: 'ELITE 1 ACADEMY',
@@ -24,31 +24,31 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/media/ELITE1-LOGO-transparent.png',
+            src: '/media/ELITE1-LOGO-black.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/media/ELITE1-LOGO-transparent.png',
+            src: '/media/ELITE1-LOGO-black.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any'
           },
           {
-            src: '/media/ELITE1-LOGO-transparent.png',
+            src: '/media/ELITE1-LOGO-black.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'maskable'
           },
           {
-            src: '/media/ELITE1-LOGO-transparent.png',
+            src: '/media/ELITE1-LOGO-black.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable'
           },
           {
-            src: '/media/ELITE1-LOGO-transparent.png',
+            src: '/media/ELITE1-LOGO-black.png',
             sizes: '180x180',
             type: 'image/png',
             purpose: 'any'
@@ -56,7 +56,7 @@ export default defineConfig({
         ]
       },
       workbox: {
-        // Disable precache manifest generation while we rely on runtime caching only.
+        // Disable precache manifest generation while relying on runtime caching only.
         globPatterns: [],
         runtimeCaching: [
           {
