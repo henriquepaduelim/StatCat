@@ -11,7 +11,7 @@ export default defineConfig({
       mode: 'development',
       minify: false,
       registerType: 'autoUpdate',
-      includeAssets: ['/media/1ELITE0LOGO.svg', '/media/ELITE1-LOGO-transparent.png'],
+      includeAssets: ['/media/1ELITE0LOGO.svg', '/media/ELITE1-LOGO-transparent.png', '/media/ELITE1-LOGO-black.png'],
       manifest: {
         name: 'ELITE 1 ACADEMY',
         short_name: 'ELITE 1 ACADEMY',
