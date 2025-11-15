@@ -7,7 +7,7 @@ import App from "./App";
 import "./styles/index.css";
 import LocaleProvider from "./i18n/LocaleProvider";
 
-const MIN_SPLASH_DURATION = 1500;
+const MIN_SPLASH_DURATION = 300;
 const splashMountedAt = performance.now();
 
 const removeSplashBackground = () => {
