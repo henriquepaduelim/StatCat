@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 
 import SideNav from "./SideNav";
 import { useAuthStore } from "../stores/useAuthStore";
+import branding from "../theme/branding.generated";
 
 const AppShell = ({ children }: PropsWithChildren) => {
   const location = useLocation();
@@ -30,13 +31,13 @@ const AppShell = ({ children }: PropsWithChildren) => {
           className="pointer-events-auto inline-flex items-center justify-center"
           aria-label="Go to dashboard"
         >
-          <img src="/media/1ELITE0LOGO.svg" alt="Logo" className="h-48 w-auto filter brightness-0" />
+          <img src={branding.assets.logo} alt={`${branding.name} logo`} className="h-48 w-auto filter brightness-0" />
         </a>
       </div>
       <SideNav />
       <div className="md:pl-72 flex flex-col flex-1">
         <header className="print-hidden md:hidden flex items-center justify-between px-2 pt-6 pb-4">
-          <img src="/media/1ELITE0LOGO.svg" alt="Logo" className="h-16 w-auto" />
+          <img src={branding.assets.logo} alt={`${branding.name} logo`} className="h-16 w-auto" />
           <span className="text-sm font-medium text-muted">{greeting}</span>
         </header>
         <header className="print-hidden hidden md:flex items-center justify-start px-6 py-4">

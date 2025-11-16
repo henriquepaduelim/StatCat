@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import "./styles/index.css";
 import LocaleProvider from "./i18n/LocaleProvider";
+import ThemeProvider from "./theme/ThemeProvider";
 
 const MIN_SPLASH_DURATION = 300;
 const splashMountedAt = performance.now();
@@ -47,9 +48,11 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <LocaleProvider>
-        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <App />
-        </BrowserRouter>
+        <ThemeProvider>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <App />
+          </BrowserRouter>
+        </ThemeProvider>
       </LocaleProvider>
     </QueryClientProvider>
   </React.StrictMode>

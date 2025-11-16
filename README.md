@@ -169,6 +169,40 @@ DATABASE_URL=sqlite:///./combine.db
 
 Uses Vite environment variables. API proxy configured in `vite.config.ts`.
 
+## Per-Club Packages
+
+Each club lives off a dedicated branding configuration under `branding/clubs/<club-id>.json`. The file contains theme colors, frontend env values, and backend overrides. Generate a deployable package (env files + themed frontend build) with:
+
+```bash
+python scripts/build_club_package.py <club-id>
+```
+
+Artifacts will be created under `packages/<club-id>/`:
+
+- `frontend-dist/`: static assets compiled with the club theme (serve via nginx or upload to object storage/CDN).
+- `backend.env`: values consumed by `docker compose` (copy to `.env` before `docker compose up -d`).
+- `frontend.env`: build-time Vite variables for reference or additional builds.
+- `compose.env`: backend + frontend values merged together. Copy this one to `.env` when running Docker Compose locally or on the client's server.
+- `branding.json`: snapshot of the source config used during this run.
+
+Repeat the command with a new JSON file (logo/colors updated) whenever onboarding another club. Use `--skip-build` if you only need fresh `.env` files.
+
+### Local Preview / Brand Assets
+
+- Logos/favicons live inside `branding/assets/<club-id>/`. Reference them from the club JSON via the `assets` block.
+- During a build the helper copies those files into `frontend/public/branding/<club-id>/` and generates `frontend/src/theme/branding.generated.ts` so React components pick up the correct paths.
+- When testing locally and you want to keep the generated files in place (so `docker compose up` shows the club colors/logo), run:
+
+  ```bash
+  python scripts/build_club_package.py <club-id> --persist-theme --persist-branding --persist-assets
+  docker compose up -d --build frontend
+  ```
+
+  The `--persist-*` flags keep the temporary files so the next `npm run dev` / Docker build reuses them. Omit the flags in CI or when you just want to produce a clean package.
+
+- `python scripts/build_club_package.py` automatically appends `http://localhost:3000` and `http://localhost:5173` to `BACKEND_CORS_ORIGINS` so the package works locally. Provide `--no-localhost-cors` if you need a production-only `.env`.
+- The dev server (`npm run dev`) now reads default branding values from `frontend/.env.development` (Elite 1). Override them per machine using `frontend/.env.local` so you can keep the base experience intact while preparing custom packages.
+
 ## Project Status
 
 - Complete authentication and approval workflow

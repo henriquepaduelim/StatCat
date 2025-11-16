@@ -8,9 +8,10 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=sqlite:///./combine.db
-      - SECRET_KEY=your-secret-key-here
-      - BACKEND_CORS_ORIGINS=["http://localhost:3000","http://localhost:5173"]
+      DATABASE_URL: ${DATABASE_URL:-sqlite:///./combine.db}
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-here}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-["http://localhost:3000","http://localhost:5173"]}
+      MEDIA_ROOT: ${MEDIA_ROOT:-media}
     volumes:
       - backend_media:/app/media
     networks:
@@ -20,10 +21,18 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+        VITE_APP_BRAND_NAME: ${VITE_APP_BRAND_NAME:-StatCat}
+        VITE_BRAND_ID: ${VITE_BRAND_ID:-default}
+        VITE_BRAND_FAVICON: ${VITE_BRAND_FAVICON:-/media/Asset 1ELITE0LOGO.svg}
     ports:
       - "3000:80"
     environment:
-      - VITE_API_BASE_URL=http://localhost:8000
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+      VITE_APP_BRAND_NAME: ${VITE_APP_BRAND_NAME:-StatCat}
+      VITE_BRAND_ID: ${VITE_BRAND_ID:-default}
+      VITE_BRAND_FAVICON: ${VITE_BRAND_FAVICON:-/media/Asset 1ELITE0LOGO.svg}
     depends_on:
       - backend
     networks:

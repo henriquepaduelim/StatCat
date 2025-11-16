@@ -1,19 +1,32 @@
 FROM node:18-alpine as build
 
+ARG VITE_API_BASE_URL=http://localhost:8000
+ARG VITE_APP_BRAND_NAME=StatCat
+ARG VITE_BRAND_ID=default
+ARG VITE_BRAND_FAVICON="/media/Asset 1ELITE0LOGO.svg"
+
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_APP_BRAND_NAME=$VITE_APP_BRAND_NAME
+ENV VITE_BRAND_ID=$VITE_BRAND_ID
+ENV VITE_BRAND_FAVICON=$VITE_BRAND_FAVICON
+
 # Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies (dev deps needed for build)
+RUN npm ci
 
 # Copy source code
 COPY . .
 
 # Build the application
 RUN npm run build
+
+# Remove dev dependencies to keep the final image lean
+RUN npm prune --production
 
 # Production stage
 FROM nginx:alpine

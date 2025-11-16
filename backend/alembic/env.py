@@ -1,11 +1,15 @@
 from logging.config import fileConfig
 import sys
 from pathlib import Path
+from dotenv import load_dotenv # Import load_dotenv
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Add the parent directory to the path to import app modules
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))

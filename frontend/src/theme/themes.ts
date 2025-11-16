@@ -32,45 +32,8 @@ export type ThemeDefinition = {
   logo: ThemeLogo;
 };
 
-// The single, final theme for the application
-export const activeTheme: ThemeDefinition = {
-  id: "players-to-pro",
-  name: "Players To Pro Football",
-  description: "Standard Colors",
-  colors: {
-    page: {
-      background: "#F3F9FF",
-      foreground: "#141414",
-    },
-    container: {
-      background: "#FFFFFF",
-      foreground: "#1F2933",
-    },
-    header: {
-      background: "#264D1E",
-      foreground: "#F0F8EB",
-    },
-    sidebar: {
-      background: "#264D1E",
-      foreground: "#F0F8EB",
-    },
-    footer: {
-      background: "#C3E1FE",
-      foreground: "#0B0B0B",
-    },
-    action: {
-      primary: {
-        background: "#14213D",
-        foreground: "#E1E1E1",
-      },
-    },
-    accent: "#2191FB",
-    border: "#9CC6F8",
-    muted: "#6B7280",
-  },
-  logo: {
-    label: "Players To Pro",
-    background: "#2191FB",
-    color: "#FFFFFF",
-  },
-};
+import generatedTheme from "./activeTheme.generated";
+
+export const activeTheme: ThemeDefinition = generatedTheme;
+
+export default activeTheme;

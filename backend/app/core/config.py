@@ -26,15 +26,13 @@ class Settings(BaseSettings):
         "https://stats-cat.vercel.app",
         "https://statscat.vercel.app",
         "https://stat-cat.vercel.app",
-        # Adicionar variações do Vercel preview URLs
+        # Add Vercel preview URLs variations
         "https://stat-cat-git-*.vercel.app",
         "https://stats-cat-git-*.vercel.app",
     ])
     MEDIA_ROOT: str = "media"
     
-    # Production settings
-    ENVIRONMENT: str = "production"
-    DATABASE_URL_POSTGRES: str | None = None  # Para usar PostgreSQL em produção
+    # Google OAuth settings
     GOOGLE_CLIENT_ID: str | None = None
     GOOGLE_CLIENT_SECRET: str | None = None
     GOOGLE_REDIRECT_URI: str | None = None
