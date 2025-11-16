@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     DATABASE_URL: str = "sqlite:///./combine.db"
     DATABASE_FORCE_IPV4: bool = False
+    DATABASE_HOSTADDR: str | None = None
     AWS_S3_BUCKET: str | None = None
     AWS_REGION: str | None = None
     SECRET_KEY: str = "change-me"

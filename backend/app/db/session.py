@@ -18,9 +18,14 @@ logger = logging.getLogger(__name__)
 def _build_connect_args() -> dict[str, Any]:
     """Optionally force PostgreSQL connections to use IPv4."""
 
-    if not settings.DATABASE_FORCE_IPV4:
-        return {}
     if settings.DATABASE_URL.startswith("sqlite"):
+        return {}
+
+    if settings.DATABASE_HOSTADDR:
+        logger.info("Using DATABASE_HOSTADDR override for DB connection")
+        return {"hostaddr": settings.DATABASE_HOSTADDR}
+
+    if not settings.DATABASE_FORCE_IPV4:
         return {}
 
     parsed = make_url(settings.DATABASE_URL)
