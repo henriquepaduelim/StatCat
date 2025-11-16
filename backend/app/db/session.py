@@ -74,6 +74,8 @@ if settings.DATABASE_URL.startswith("sqlite"):
 
 def _ensure_report_submission_columns(connection) -> None:
     """Ensure legacy SQLite databases have the latest report_submission columns."""
+    if not settings.DATABASE_URL.startswith("sqlite"):
+        return
     rows = connection.exec_driver_sql("PRAGMA table_info(report_submission)").fetchall()
     if not rows:
         return
@@ -95,6 +97,8 @@ def _ensure_report_submission_columns(connection) -> None:
 
 def _ensure_match_stat_columns(connection) -> None:
     """Ensure legacy SQLite databases have the latest match_stat columns."""
+    if not settings.DATABASE_URL.startswith("sqlite"):
+        return
     rows = connection.exec_driver_sql("PRAGMA table_info(match_stat)").fetchall()
     if not rows:
         return
