@@ -2,10 +2,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from 'vite-plugin-pwa';
 
-const brandName = process.env.VITE_APP_BRAND_NAME ?? "StatCat";
-const brandDescription =
-  process.env.VITE_APP_DESCRIPTION ?? `${brandName} sports analytics platform`;
-const brandFavicon = process.env.VITE_BRAND_FAVICON ?? "/media/Asset 1ELITE0LOGO.svg";
+
 
 export default defineConfig({
   plugins: [
@@ -17,15 +14,14 @@ export default defineConfig({
       minify: false,
       registerType: 'autoUpdate',
       includeAssets: [
-        brandFavicon,
         '/media/1ELITE0LOGO.svg',
         '/media/ELITE1-LOGO-transparent.png',
         '/media/ELITE1-LOGO-black.png'
       ],
       manifest: {
-        name: brandName,
-        short_name: brandName,
-        description: brandDescription,
+        name: "ELITE 1 ACADEMY",
+        short_name: "ELITE 1",
+        description: "ELITE 1 ACADEMY sports analytics platform",
         theme_color: '#121212',
         background_color: '#000000',
         display: 'standalone',
