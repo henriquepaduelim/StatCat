@@ -16,7 +16,7 @@ const AppShell = ({ children }: PropsWithChildren) => {
 
   const isAthletesListPage =
     location.pathname === "/athletes" || location.pathname === "/athletes/";
-  const isPlayerProfilePage = location.pathname === "/player-profile";
+  const isPlayerProfilePage = location.pathname.startsWith("/player-profile");
   const baseMainClasses =
     "flex flex-1 min-h-0 w-full flex-col px-6 pb-24 md:pb-10 pt-4 md:pt-6 md:[&>*:nth-child(n+3)]:mt-16";
   const mainClassName = `${baseMainClasses} ${

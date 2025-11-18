@@ -15,6 +15,7 @@ venv/
 # Node
 frontend/node_modules/
 frontend/dist/
+frontend/dev-dist/
 node_modules/
 packages/
 frontend/public/branding/*
@@ -42,6 +43,7 @@ client_secret_*.json
 *.env
 .vercel
 AGENTS.md
+plan.md
 
 # Temporary files
 tmp_*

@@ -213,30 +213,33 @@ StatCat Team
     
     async def _send_email(self, to_email: str, subject: str, body: str) -> bool:
         """Internal method to send email using SMTP."""
-        try:
-            # Import here to avoid dependency issues if not needed
-            import smtplib
-            from email.mime.text import MIMEText
-            from email.mime.multipart import MIMEMultipart
-            
-            msg = MIMEMultipart()
-            msg['From'] = f"{self.from_name} <{self.from_email}>"
-            msg['To'] = to_email
-            msg['Subject'] = subject
-            
-            msg.attach(MIMEText(body, 'plain'))
-            
-            with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
-                server.starttls()
-                server.login(self.smtp_user, self.smtp_password)
-                server.send_message(msg)
-            
-            logger.info(f"Email sent successfully to {to_email}")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Failed to send email to {to_email}: {str(e)}")
-            return False
+        import anyio
+
+        def _send_sync() -> bool:
+            try:
+                import smtplib
+                from email.mime.text import MIMEText
+                from email.mime.multipart import MIMEMultipart
+
+                msg = MIMEMultipart()
+                msg["From"] = f"{self.from_name} <{self.from_email}>"
+                msg["To"] = to_email
+                msg["Subject"] = subject
+
+                msg.attach(MIMEText(body, "plain"))
+
+                with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
+                    server.starttls()
+                    server.login(self.smtp_user, self.smtp_password)
+                    server.send_message(msg)
+
+                logger.info("Email sent successfully to %s", to_email)
+                return True
+            except Exception as exc:
+                logger.error("Failed to send email to %s: %s", to_email, exc)
+                return False
+
+        return await anyio.to_thread.run_sync(_send_sync)
 
 
 # Singleton instance

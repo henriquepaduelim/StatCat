@@ -1,6 +1,8 @@
 """
 Tests for athlete CRUD operations.
 """
+from datetime import date
+
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
@@ -236,3 +238,61 @@ def test_delete_athlete_forbidden(client: TestClient, session: Session, athlete_
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 403
+
+
+def test_approve_all_pending_athletes(client: TestClient, session: Session, admin_user: User):
+    """Bulk approval should approve every pending or incomplete athlete user."""
+    pending_athlete = Athlete(
+        first_name="Pending",
+        last_name="Athlete",
+        email="pending@example.com",
+        gender=AthleteGender.male,
+        birth_date=date(2005, 1, 1),
+    )
+    incomplete_athlete = Athlete(
+        first_name="Incomplete",
+        last_name="Athlete",
+        email="incomplete@example.com",
+        gender=AthleteGender.female,
+        birth_date=date(2006, 2, 2),
+    )
+    session.add(pending_athlete)
+    session.add(incomplete_athlete)
+    session.commit()
+    session.refresh(pending_athlete)
+    session.refresh(incomplete_athlete)
+
+    pending_user = User(
+        email="pending_user@example.com",
+        hashed_password=get_password_hash("testpass123"),
+        full_name="Pending User",
+        role=UserRole.ATHLETE,
+        athlete_id=pending_athlete.id,
+        athlete_status=UserAthleteApprovalStatus.PENDING,
+        is_active=True,
+    )
+    incomplete_user = User(
+        email="incomplete_user@example.com",
+        hashed_password=get_password_hash("testpass123"),
+        full_name="Incomplete User",
+        role=UserRole.ATHLETE,
+        athlete_id=incomplete_athlete.id,
+        athlete_status=UserAthleteApprovalStatus.INCOMPLETE,
+        is_active=True,
+    )
+    session.add(pending_user)
+    session.add(incomplete_user)
+    session.commit()
+
+    token = get_auth_token(client, admin_user.email, "adminpass123")
+    response = client.post(
+        "/api/v1/athletes/approve-all",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    assert response.json() == {"approved": 2, "skipped": 0}
+
+    session.refresh(pending_user)
+    session.refresh(incomplete_user)
+    assert pending_user.athlete_status == UserAthleteApprovalStatus.APPROVED
+    assert incomplete_user.athlete_status == UserAthleteApprovalStatus.APPROVED

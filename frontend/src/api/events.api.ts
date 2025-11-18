@@ -28,6 +28,9 @@ export const listEvents = async (filters?: EventFilters): Promise<Event[]> => {
   if (filters?.team_id !== undefined) {
     params.append('team_id', filters.team_id.toString());
   }
+  if (filters?.athlete_id !== undefined) {
+    params.append('athlete_id', filters.athlete_id.toString());
+  }
   if (filters?.date_from) {
     params.append('date_from', filters.date_from);
   }

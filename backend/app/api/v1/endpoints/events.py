@@ -6,14 +6,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import delete, or_
 from sqlmodel import Session, select
 
-from app.api.deps import SessionDep, get_current_active_user
+from app.api.deps import SessionDep, ensure_roles, get_current_active_user
 from app.models.event import Event, EventParticipant, Notification, ParticipantStatus
 from app.models.event_team_link import EventTeamLink
 from app.models.team import CoachTeamLink
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.event import (
     EventConfirmation,
     EventCreate,
+    EventParticipantsAdd,
     EventParticipantResponse,
     EventResponse,
     EventUpdate,
@@ -25,10 +26,11 @@ from app.services.event_team_service import (
     get_event_athlete_ids,
     get_team_roster_athlete_ids,
     persist_event_team_links,
-    resolve_event_team_ids,
+resolve_event_team_ids,
 )
 
 router = APIRouter()
+MANAGE_EVENT_ROLES = {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH}
 
 
 def _get_team_coach_user_ids(db: Session, team_ids: Iterable[int]) -> set[int]:
@@ -87,6 +89,7 @@ async def create_event(
     event_in: EventCreate,
 ) -> Event:
     """Create a new event and notify invitees."""
+    ensure_roles(current_user, MANAGE_EVENT_ROLES)
     # Create event
     event = Event(
         name=event_in.name,
@@ -160,6 +163,7 @@ def list_events(
     team_id: Optional[int] = None,
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
+    athlete_id: Optional[int] = None,
 ) -> List[Event]:
     """List all events, optionally filtered."""
     stmt = select(Event)
@@ -174,6 +178,9 @@ def list_events(
         stmt = stmt.where(Event.date >= date_from)
     if date_to:
         stmt = stmt.where(Event.date <= date_to)
+    
+    if athlete_id is not None:
+        stmt = stmt.join(EventParticipant).where(EventParticipant.athlete_id == athlete_id)
     
     stmt = stmt.order_by(Event.date.desc(), Event.time.desc())
     
@@ -252,6 +259,7 @@ async def update_event(
     event_in: EventUpdate,
 ) -> Event:
     """Update an event and notify participants if requested."""
+    ensure_roles(current_user, MANAGE_EVENT_ROLES)
     event = db.get(Event, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -345,6 +353,7 @@ def delete_event(
     event_id: int,
 ) -> None:
     """Delete an event."""
+    ensure_roles(current_user, MANAGE_EVENT_ROLES)
     event = db.get(Event, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -359,6 +368,78 @@ def delete_event(
     db.exec(delete(EventTeamLink).where(EventTeamLink.event_id == event_id))
 
     db.delete(event)
+    db.commit()
+
+
+@router.post("/{event_id}/participants", response_model=EventResponse)
+async def add_event_participants(
+    *,
+    db: SessionDep,
+    current_user: User = Depends(get_current_active_user),
+    event_id: int,
+    payload: EventParticipantsAdd,
+) -> Event:
+    """Add manual participants to an existing event."""
+    ensure_roles(current_user, MANAGE_EVENT_ROLES)
+    event = db.get(Event, event_id)
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    requested_user_ids = {user_id for user_id in payload.user_ids if user_id is not None}
+    existing_rows = db.exec(
+        select(EventParticipant.user_id).where(
+            EventParticipant.event_id == event.id,
+            EventParticipant.user_id != None,
+        )
+    ).all()
+    existing_user_ids = {row[0] for row in existing_rows if row and row[0] is not None}
+    new_user_ids = sorted(requested_user_ids - existing_user_ids)
+
+    _ensure_user_participants(db, event, requested_user_ids)
+    if payload.athlete_ids:
+        ensure_roster_participants(db, event, payload.athlete_ids)
+
+    db.commit()
+    db.refresh(event)
+    attach_team_ids(db, [event])
+
+    if new_user_ids and payload.send_notification:
+        await notification_service.notify_event_created(
+            db=db,
+            event=event,
+            invitee_ids=new_user_ids,
+            send_email=True,
+            send_push=False,
+        )
+        db.refresh(event)
+
+    return event
+
+
+@router.delete("/{event_id}/participants/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_event_participant(
+    *,
+    db: SessionDep,
+    current_user: User = Depends(get_current_active_user),
+    event_id: int,
+    user_id: int,
+) -> None:
+    """Remove a participant from an event."""
+    ensure_roles(current_user, MANAGE_EVENT_ROLES)
+    event = db.get(Event, event_id)
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+    participant = db.exec(
+        select(EventParticipant).where(
+            EventParticipant.event_id == event_id,
+            EventParticipant.user_id == user_id,
+        )
+    ).first()
+    if not participant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Participant not found")
+
+    db.delete(participant)
     db.commit()
 
 
@@ -427,6 +508,7 @@ def get_event_participants(
     event_id: int,
 ) -> List[EventParticipant]:
     """Get all participants for an event."""
+    ensure_roles(current_user, MANAGE_EVENT_ROLES)
     event = db.get(Event, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")

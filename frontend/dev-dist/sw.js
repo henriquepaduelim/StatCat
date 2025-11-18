@@ -82,13 +82,13 @@ define(['./workbox-a959eb95'], (function (workbox) { 'use strict';
     "revision": "d41d8cd98f00b204e9800998ecf8427e"
   }, {
     "url": "index.html",
-    "revision": "0.u4qvnst6gig"
+    "revision": "0.ij3v82bf8g"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
     allowlist: [/^\/$/]
   }));
-  workbox.registerRoute(/^https:\/\/statscat\.onrender\.com\/api\/.*/i, new workbox.NetworkFirst({
+  workbox.registerRoute(/^http:\/\/localhost:8000\/api\/.*/i, new workbox.NetworkFirst({
     "cacheName": "api-cache",
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 100,
@@ -97,7 +97,7 @@ define(['./workbox-a959eb95'], (function (workbox) { 'use strict';
       statuses: [0, 200]
     })]
   }), 'GET');
-  workbox.registerRoute(/^https:\/\/statscat\.onrender\.com\/media\/.*/i, new workbox.CacheFirst({
+  workbox.registerRoute(/^http:\/\/localhost:8000\/media\/.*/i, new workbox.CacheFirst({
     "cacheName": "image-cache",
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 50,

@@ -1,14 +1,15 @@
-import { useMemo } from "react";
-import { NavLink } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
+import { faRightFromBracket, faAngleUp } from "@fortawesome/free-solid-svg-icons";
+import type { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 
 import { useAuthStore } from "../stores/useAuthStore";
 import { useTranslation } from "../i18n/useTranslation";
-import { usePermissions } from "../hooks/usePermissions";
+import { useIsRole, usePermissions } from "../hooks/usePermissions";
 import { usePendingAthletesCount } from "../hooks/usePendingAthletesCount";
 import NotificationBadge from "./NotificationBadge";
-import { NAV_ITEMS } from "./navigationItems";
+import { NAV_ITEMS, type NavItem, type NavChild } from "./navigationItems";
 
 const LOGOUT_ICON = faRightFromBracket;
 
@@ -17,23 +18,109 @@ const linkClasses = ({ isActive }: { isActive: boolean }) =>
     isActive ? "" : "hover:bg-action-primary/85"
   }`;
 
+type AllowedNavItem = NavItem & {
+  children?: NavChild[];
+  isStandaloneChild?: boolean;
+  parentTo?: string;
+};
+type MobileNavEntry = {
+  to: string;
+  icon: IconDefinition;
+  label: NavItem["label"];
+};
+
+const PLAYER_PROFILE_ROUTE = "/player-profile";
+
 const SideNav = () => {
   const t = useTranslation();
   const clearAuth = useAuthStore((state) => state.clear);
   const permissions = usePermissions();
+  const isAthlete = useIsRole("athlete");
+  const location = useLocation();
+  const [expandedItem, setExpandedItem] = useState<string | null>(null);
   const { data: pendingCount } = usePendingAthletesCount();
 
   // Filter navigation items based on user permissions
-  const allowedNavItems = useMemo(() => {
-    return NAV_ITEMS.filter((item) => permissions[item.requiredPermission]);
+  const allowedNavItems = useMemo<AllowedNavItem[]>(() => {
+    return NAV_ITEMS.reduce<AllowedNavItem[]>((acc, item) => {
+      if (!permissions[item.requiredPermission]) {
+        return acc;
+      }
+      const allowedChildren = item.children?.filter((child) => permissions[child.requiredPermission]);
+      acc.push({
+        ...item,
+        children: allowedChildren && allowedChildren.length ? allowedChildren : undefined,
+      });
+      return acc;
+    }, []);
   }, [permissions]);
+
+  const playerProfileItem = useMemo(
+    () => allowedNavItems.find((item) => item.to === PLAYER_PROFILE_ROUTE),
+    [allowedNavItems],
+  );
+  const playerProfileChildren = playerProfileItem?.children ?? [];
+
+  const desktopNavItems = useMemo<AllowedNavItem[]>(() => {
+    if (!isAthlete || !playerProfileChildren.length) {
+      return allowedNavItems;
+    }
+
+    return allowedNavItems.flatMap<AllowedNavItem>((item) => {
+      if (item.to !== PLAYER_PROFILE_ROUTE || !item.children?.length) {
+        return [item];
+      }
+
+      return item.children.map((child) => ({
+        ...item,
+        to: child.to,
+        label: child.label,
+        icon: child.icon ?? item.icon,
+        children: undefined,
+        isStandaloneChild: true,
+        parentTo: item.to,
+      }));
+    });
+  }, [allowedNavItems, isAthlete, playerProfileItem]);
+
+  const mobileNavItems = useMemo<MobileNavEntry[]>(() => {
+    const baseEntries = allowedNavItems.map<MobileNavEntry>((item) => ({
+      to: item.to,
+      icon: item.icon,
+      label: item.label,
+    }));
+
+    if (isAthlete && playerProfileItem?.children?.length) {
+      const childEntries = playerProfileItem.children.map<MobileNavEntry>((child) => ({
+        to: child.to,
+        icon: child.icon ?? playerProfileItem.icon,
+        label: child.label,
+      }));
+      return [
+        ...baseEntries.filter((entry) => entry.to !== PLAYER_PROFILE_ROUTE),
+        ...childEntries,
+      ];
+    }
+
+    return baseEntries;
+  }, [allowedNavItems, isAthlete, playerProfileItem]);
+
+  useEffect(() => {
+    if (isAthlete) {
+      setExpandedItem(null);
+    }
+  }, [isAthlete]);
+
+  const handleParentClick = (itemTo: string) => {
+    setExpandedItem((prev) => (prev === itemTo ? null : itemTo));
+  };
 
   return (
     <>
       {/* Mobile Navigation - Fixed Bottom Bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t-2 border-yellow-600/50 shadow-2xl">
         <nav className="flex items-stretch justify-around h-20">
-          {allowedNavItems.slice(0, 3).map((item) => (
+          {mobileNavItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -73,8 +160,8 @@ const SideNav = () => {
                   </div>
                   <span className={`text-[9px] font-semibold uppercase tracking-wider transition-all duration-200 ${
                     isActive 
-                      ? "text-sidebar-foreground" 
-                      : "text-sidebar-foreground/70"
+                    ? "text-sidebar-foreground" 
+                    : "text-sidebar-foreground/70"
                   }`}>
                     {item.label(t)}
                   </span>
@@ -109,29 +196,83 @@ const SideNav = () => {
         <div className="flex-1 flex flex-col min-h-0 bg-sidebar">
           <div className="flex-1 flex flex-col pt-36 pb-4 overflow-y-auto">
             <nav className="mt-8 flex-1 space-y-0.5 px-0">
-              {allowedNavItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={(props) =>
-                    `${linkClasses(props)} ${item.isUppercase ? "uppercase" : ""}`
-                  }
-                >
-                  <span
-                    className={`flex items-center justify-between gap-3 ${
-                      item.isUppercase ? "tracking-wider" : ""
-                    }`}
+              {desktopNavItems.map((item) => {
+                const childLinks = item.children ?? [];
+                const hasChildren = !isAthlete && childLinks.length > 0;
+                const hasActiveChild =
+                  hasChildren && childLinks.some((child) => location.pathname.startsWith(child.to));
+                const shouldExpand = hasChildren && (hasActiveChild || expandedItem === item.to);
+
+                return (
+                <div key={item.to} className="space-y-0.5">
+                  <NavLink
+                    to={item.to}
+                    className={(props) =>
+                      `${linkClasses(props)} ${item.isUppercase ? "uppercase" : ""}`
+                    }
+                    onClick={(event) => {
+                      if (hasChildren) {
+                        event.preventDefault();
+                        handleParentClick(item.to);
+                      }
+                    }}
                   >
-                    <span className="flex items-center gap-3">
-                      <FontAwesomeIcon icon={item.icon} className="text-base leading-none" />
-                      {item.label(t)}
+                    <span
+                      className={`flex items-center justify-between gap-3 ${
+                        item.isUppercase ? "tracking-wider" : ""
+                      }`}
+                    >
+                      <span className="flex items-center gap-3">
+                        <FontAwesomeIcon
+                          icon={item.icon}
+                          className="text-base leading-none w-4 text-center"
+                        />
+                        {item.label(t)}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        {item.children && item.children.length > 0 && !isAthlete && (
+                          <FontAwesomeIcon
+                            icon={faAngleUp}
+                            className={`text-xs text-current transition-transform ${
+                              expandedItem === item.to ? "rotate-0" : "rotate-180"
+                            }`}
+                          />
+                        )}
+                        {item.to === "/athletes" && pendingCount && pendingCount.count > 0 && (
+                          <NotificationBadge count={pendingCount.count} />
+                        )}
+                      </span>
                     </span>
-                    {item.to === "/athletes" && pendingCount && pendingCount.count > 0 && (
-                      <NotificationBadge count={pendingCount.count} />
-                    )}
-                  </span>
-                </NavLink>
-              ))}
+                  </NavLink>
+                  {hasChildren && (
+                    <div
+                      className={`space-y-0.5 transition-all duration-200 ${
+                        shouldExpand ? "max-h-80 opacity-100" : "max-h-0 overflow-hidden opacity-0"
+                      }`}
+                    >
+                      {childLinks.map((child) => (
+                        <NavLink
+                          key={`${item.to}-${child.to}`}
+                          to={child.to}
+                          className={(props) =>
+                            `${linkClasses(props)} text-xs uppercase tracking-wider pl-6 border-l border-white/5`
+                          }
+                        >
+                          <span className="flex items-center gap-2">
+                            {child.icon && (
+                              <FontAwesomeIcon
+                                icon={child.icon}
+                                className="text-xs leading-none text-current w-4 text-center"
+                              />
+                            )}
+                            {child.label(t)}
+                          </span>
+                        </NavLink>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )})}
             </nav>
           </div>
           <div className="flex-shrink-0 flex border-t border-yellow-600 px-2 py-4">

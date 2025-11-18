@@ -72,6 +72,14 @@ class EventConfirmation(BaseModel):
     status: str = Field(..., pattern=r'^(confirmed|declined|maybe)$')
 
 
+class EventParticipantsAdd(BaseModel):
+    """Schema used when adding manual participants to an event."""
+
+    user_ids: List[int] = Field(default_factory=list)
+    athlete_ids: List[int] = Field(default_factory=list)
+    send_notification: bool = True
+
+
 class PushSubscriptionCreate(BaseModel):
     """Schema for creating a push subscription."""
     endpoint: str

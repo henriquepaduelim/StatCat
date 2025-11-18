@@ -162,7 +162,12 @@ ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=10080
 BACKEND_CORS_ORIGINS=["http://localhost:5173"]
 MEDIA_ROOT=media
-DATABASE_URL=sqlite:///./combine.db
+DATABASE_URL=sqlite:///./data/combine.db
+```
+
+The SQLite file lives under `backend/data/` (gitignored). Create the directory if it does not exist:
+```bash
+mkdir -p backend/data
 ```
 
 ### Frontend
@@ -174,6 +179,8 @@ Uses Vite environment variables. API proxy configured in `vite.config.ts`.
 Each club lives off a dedicated branding configuration under `branding/clubs/<club-id>.json`. The file contains theme colors, frontend env values, and backend overrides. Generate a deployable package (env files + themed frontend build) with:
 
 ```bash
+# Install frontend dependencies once
+cd frontend && npm ci && cd ..
 python scripts/build_club_package.py <club-id>
 ```
 
@@ -186,6 +193,8 @@ Artifacts will be created under `packages/<club-id>/`:
 - `branding.json`: snapshot of the source config used during this run.
 
 Repeat the command with a new JSON file (logo/colors updated) whenever onboarding another club. Use `--skip-build` if you only need fresh `.env` files.
+
+> The build script temporarily overwrites `frontend/src/theme/branding.generated.ts` and `frontend/src/theme/activeTheme.generated.ts`; the originals are automatically restored unless you pass `--persist-theme` or `--persist-branding`.
 
 ### Local Preview / Brand Assets
 

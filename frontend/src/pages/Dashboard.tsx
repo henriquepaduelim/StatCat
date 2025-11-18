@@ -1415,7 +1415,6 @@ const Dashboard = () => {
     <>
       <div className="space-y-8">
         <DashboardHero title={t.dashboard.title} description={t.dashboard.description} />
-      <section className="print-hidden rounded-xl border border-action-primary/20 bg-container-gradient p-4 sm:p-6 shadow-xl">
         <div className="grid gap-4 lg:grid-cols-2">
           <LeaderboardCard title="Top scorers" description="Total goals recorded across reports." />
           <LeaderboardCard
@@ -1424,7 +1423,6 @@ const Dashboard = () => {
             presetType="clean_sheets"
           />
         </div>
-      </section>
 
         {!isAthleteView ? (
           <TeamManagementSection

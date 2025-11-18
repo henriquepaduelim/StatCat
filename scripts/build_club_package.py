@@ -222,7 +222,7 @@ def build_backend_env(config: Dict[str, Any], include_localhost: bool = True) ->
         "ENVIRONMENT": "production",
         "PROJECT_NAME": f"{config.get('name', 'StatCat')} API",
         "VERSION": "0.1.0",
-        "DATABASE_URL": "sqlite:///./combine.db",
+        "DATABASE_URL": "sqlite:///./data/combine.db",
         "SECRET_KEY": secrets.token_urlsafe(48),
         "ACCESS_TOKEN_EXPIRE_MINUTES": "10080",
         "SECURITY_ALGORITHM": "HS256",

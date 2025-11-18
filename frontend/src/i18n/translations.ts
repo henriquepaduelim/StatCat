@@ -435,11 +435,35 @@ export type TranslationDictionary = {
       description: string;
       selectAthlete: string;
       selectPlaceholder: string;
+      profileSection: string;
+      tabs: {
+        profile: string;
+        combine: string;
+        reportCards: string;
+        scheduling: string;
+      };
       export: string;
       soon: string;
       loading: string;
       error: string;
       noAthlete: string;
+      schedulingNoAthlete: string;
+      schedulingEmpty: string;
+      schedulingLoadError: string;
+      schedulingUpdateError: string;
+      schedulingRsvpTitle: string;
+      schedulingButtons: {
+        confirm: string;
+        maybe: string;
+        decline: string;
+      };
+      schedulingStatus: {
+        invited: string;
+        confirmed: string;
+        maybe: string;
+        declined: string;
+      };
+      noReportData: string;
       assessmentSelectAthlete: string;
       summary: string;
       summarySessions: (count: number) => string;
@@ -1038,11 +1062,35 @@ export const translations: Record<Locale, TranslationDictionary> = {
       description: "Analyse individual results and export branded deliverables.",
       selectAthlete: "Select athlete",
       selectPlaceholder: "Choose an athlete",
+      profileSection: "Athlete Profile",
+      tabs: {
+        profile: "Profile",
+        combine: "Combine Results",
+        reportCards: "Report Cards",
+        scheduling: "Scheduling",
+      },
       export: "Export",
       soon: "coming soon",
       loading: "Loading report...",
       error: "Unable to load the report.",
       noAthlete: "Select an athlete to display the report.",
+      schedulingNoAthlete: "Select an athlete above to view scheduled events.",
+      schedulingEmpty: "No scheduled events for this athlete yet.",
+      schedulingLoadError: "Unable to load upcoming events. Please try again later.",
+      schedulingUpdateError: "Unable to update attendance. Please try again.",
+      schedulingRsvpTitle: "Attendance",
+      schedulingButtons: {
+        confirm: "Confirm",
+        maybe: "Maybe",
+        decline: "Decline",
+      },
+      schedulingStatus: {
+        invited: "Awaiting response",
+        confirmed: "Confirmed",
+        maybe: "Maybe",
+        declined: "Declined",
+      },
+      noReportData: "No combine results recorded yet.",
       assessmentSelectAthlete: "Select an athlete before adding a new assessment session.",
       summary: "Automatic summary registered after each session.",
       summarySessions: (count: number) =>

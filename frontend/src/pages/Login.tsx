@@ -33,7 +33,6 @@ const Login = () => {
   const navigate = useNavigate();
   const setCredentials = useAuthStore((state) => state.setCredentials);
   const setInitialized = useAuthStore((state) => state.setInitialized);
-  const clearAuth = useAuthStore((state) => state.clear);
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
   const t = useTranslation();
@@ -52,6 +51,7 @@ const Login = () => {
   // Onboarding states
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>(null);
   const [createdAthlete, setCreatedAthlete] = useState<OnboardingAthlete>(null);
+  const [hasDismissedPendingModal, setHasDismissedPendingModal] = useState(false);
 
   const from = (location.state as { from?: Location })?.from?.pathname ?? "/dashboard";
   const isRegister = mode === "register";
@@ -129,12 +129,20 @@ const Login = () => {
         const status = user.athlete_status || "INCOMPLETE";
         if (status === "INCOMPLETE" || status === "REJECTED") {
           setOnboardingStep(2);
-        } else if (status === "PENDING") {
+        } else if (status === "PENDING" && !hasDismissedPendingModal) {
           setOnboardingStep(4);
         }
       }
     }
-  }, [user, token, onboardingStep]);
+  }, [user, token, onboardingStep, hasDismissedPendingModal]);
+
+  useEffect(() => {
+    if (!user) {
+      setHasDismissedPendingModal(false);
+      return;
+    }
+    setHasDismissedPendingModal(false);
+  }, [user?.id, user?.athlete_status]);
   
   const submitApprovalMutation = useMutation({
     mutationFn: (athleteId: number) => submitForApproval(athleteId),
@@ -279,8 +287,8 @@ const Login = () => {
   };
 
   const handlePendingReviewClose = () => {
+    setHasDismissedPendingModal(true);
     setOnboardingStep(null);
-    clearAuth();
   };
 
   // Redirect logic for authenticated users

@@ -9,10 +9,11 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
+    ENVIRONMENT: str = "production"
     PROJECT_NAME: str = "Combine Backend"
     VERSION: str = "0.1.0"
     API_V1_PREFIX: str = "/api/v1"
-    DATABASE_URL: str = "sqlite:///./combine.db"
+    DATABASE_URL: str = "sqlite:///./data/combine.db"
     DATABASE_FORCE_IPV4: bool = False
     DATABASE_HOSTADDR: str | None = None
     AWS_S3_BUCKET: str | None = None
@@ -33,6 +34,7 @@ class Settings(BaseSettings):
         "https://stats-cat-git-*.vercel.app",
     ])
     MEDIA_ROOT: str = "media"
+    AUTO_SEED_DATABASE: bool = True
     
     # Google OAuth settings
     GOOGLE_CLIENT_ID: str | None = None

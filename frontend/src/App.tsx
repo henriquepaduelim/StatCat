@@ -15,7 +15,15 @@ const Athletes = lazy(() => import("./pages/Athletes"));
 const AthleteEdit = lazy(() => import("./pages/AthleteEdit"));
 const AthleteReport = lazy(() => import("./pages/AthleteReport"));
 const NewAthlete = lazy(() => import("./pages/NewAthlete"));
-const PlayerProfile = lazy(() => import("./pages/PlayerProfile"));
+const PlayerProfileLayout = lazy(() => import("./pages/player-profile/PlayerProfileLayout"));
+const PlayerProfileOverview = lazy(
+  () => import("./pages/player-profile/ProfileOverviewPage"),
+);
+const PlayerCombineResults = lazy(
+  () => import("./pages/player-profile/CombineResultsPage"),
+);
+const PlayerReportCards = lazy(() => import("./pages/player-profile/ReportCardsPage"));
+const PlayerScheduling = lazy(() => import("./pages/player-profile/SchedulingPage"));
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -32,7 +40,7 @@ const ProtectedLayout = () => (
   </ProtectedRoute>
 );
 
-const RedirectToDashboardOrPlayerProfile = () => {
+export const RedirectToDashboardOrPlayerProfile = () => {
   const user = useAuthStore((state) => state.user);
   const isInitialized = useAuthStore((state) => state.isInitialized);
   
@@ -123,14 +131,19 @@ const App = () => {
           </ProtectedRoute>
         } 
       />
-      <Route 
-        path="/player-profile" 
+      <Route
+        path="/player-profile"
         element={
           <ProtectedRoute requiredPermission="canViewReports">
-            <PlayerProfile />
+            <PlayerProfileLayout />
           </ProtectedRoute>
-        } 
-      />
+        }
+      >
+        <Route index element={<PlayerProfileOverview />} />
+        <Route path="combine" element={<PlayerCombineResults />} />
+        <Route path="report-cards" element={<PlayerReportCards />} />
+        <Route path="scheduling" element={<PlayerScheduling />} />
+      </Route>
       <Route path="*" element={<RedirectToDashboardOrPlayerProfile />} />
     </Route>
   </Routes>

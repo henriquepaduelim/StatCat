@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session
 
 from app.models.user import User
+from tests.conftest import get_auth_token
 
 
 def test_login_success(client: TestClient, test_user: User):
@@ -38,10 +39,12 @@ def test_login_nonexistent_user(client: TestClient):
     assert response.status_code == 401
 
 
-def test_register_new_user(client: TestClient, session: Session):
-    """Test user registration."""
+def test_register_new_user(client: TestClient, admin_user: User, session: Session):
+    """Test user registration (admin-only endpoint)."""
+    token = get_auth_token(client, admin_user.email, "adminpass123")
     response = client.post(
         "/api/v1/auth/register",
+        headers={"Authorization": f"Bearer {token}"},
         json={
             "email": "newuser@example.com",
             "password": "newpass123",
@@ -56,10 +59,12 @@ def test_register_new_user(client: TestClient, session: Session):
     assert "id" in data
 
 
-def test_register_duplicate_email(client: TestClient, test_user: User):
-    """Test registration with existing email."""
+def test_register_duplicate_email(client: TestClient, admin_user: User, test_user: User):
+    """Test registration with existing email (admin-only endpoint)."""
+    token = get_auth_token(client, admin_user.email, "adminpass123")
     response = client.post(
         "/api/v1/auth/register",
+        headers={"Authorization": f"Bearer {token}"},
         json={
             "email": test_user.email,
             "password": "anypass123",

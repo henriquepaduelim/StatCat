@@ -692,6 +692,45 @@ def approve_athlete(
     return user
 
 
+@router.post("/approve-all")
+def approve_all_pending_athletes(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> dict[str, int]:
+    """Approve every pending or incomplete athlete user in one batch."""
+    ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
+
+    pending_statuses = [
+        UserAthleteApprovalStatus.PENDING,
+        UserAthleteApprovalStatus.INCOMPLETE,
+    ]
+    pending_users = session.exec(
+        select(User).where(
+            User.role == UserRole.ATHLETE,
+            User.athlete_status.in_(pending_statuses),
+        )
+    ).all()
+
+    approved = 0
+    skipped = 0
+
+    for user in pending_users:
+        if not user.athlete_id:
+            skipped += 1
+            continue
+        athlete = session.get(Athlete, user.athlete_id)
+        if not athlete:
+            skipped += 1
+            continue
+        user.athlete_status = UserAthleteApprovalStatus.APPROVED
+        user.rejection_reason = None
+        session.add(user)
+        approved += 1
+
+    session.commit()
+    return {"approved": approved, "skipped": skipped}
+
+
 @router.post("/{athlete_id}/reject", response_model=UserRead)
 def reject_athlete(
     athlete_id: int,
