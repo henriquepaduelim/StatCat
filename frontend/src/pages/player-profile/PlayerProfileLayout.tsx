@@ -1,4 +1,4 @@
-import { Outlet, NavLink } from "react-router-dom";
+import { Outlet, NavLink, useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 
 import { useAuthStore } from "../../stores/useAuthStore";
@@ -48,6 +48,8 @@ const PlayerProfileLayout = () => {
   const { data: allAthletes } = useAthletes();
   const [currentAthleteId, setCurrentAthleteId] = useState<number | undefined>(undefined);
   const t = useTranslation();
+  const isAthleteUser = (user?.role || "").toLowerCase() === "athlete";
+  const location = useLocation();
 
   const athletes = useMemo(() => {
     if (!allAthletes) return undefined;
@@ -92,6 +94,9 @@ const PlayerProfileLayout = () => {
     reportCards: reportCardsQuery.data,
     reportCardsQueryReturn: reportCardsQuery,
   });
+  const isProfileRoot = location.pathname === "/player-profile";
+  const initials =
+    currentAthlete && `${currentAthlete.first_name?.[0] ?? ""}${currentAthlete.last_name?.[0] ?? ""}`.toUpperCase();
 
   return (
     <div className="space-y-4">
@@ -102,23 +107,49 @@ const PlayerProfileLayout = () => {
         <p className="text-sm text-muted">{t.playerProfile.description}</p>
       </header>
 
-      <div className="print-hidden flex flex-col gap-4 rounded-xl bg-container p-3 shadow-sm md:flex-row md:items-end md:justify-between">
-        <label className="flex-1 text-sm font-medium text-muted">
-          {t.playerProfile.selectAthlete}
-          <select
-            value={currentAthleteId ?? ""}
-            onChange={(event) => setCurrentAthleteId(Number(event.target.value))}
-            className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-          >
-            <option value="">{t.playerProfile.selectPlaceholder}</option>
-            {athletes?.map((athlete) => (
-              <option key={athlete.id} value={athlete.id}>
-                {athlete.first_name} {athlete.last_name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+      {!isAthleteUser && (
+        <div className="print-hidden flex flex-col gap-4 rounded-xl bg-container p-3 shadow-sm md:flex-row md:items-end md:justify-between">
+          <label className="flex-1 text-sm font-medium text-muted">
+            {t.playerProfile.selectAthlete}
+            <select
+              value={currentAthleteId ?? ""}
+              onChange={(event) => setCurrentAthleteId(Number(event.target.value))}
+              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+            >
+              <option value="">{t.playerProfile.selectPlaceholder}</option>
+              {athletes?.map((athlete) => (
+                <option key={athlete.id} value={athlete.id}>
+                  {athlete.first_name} {athlete.last_name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
+
+      {currentAthlete && !isProfileRoot && (
+        <div className="flex items-center gap-4 rounded-xl border border-black/5 bg-container p-3 shadow-sm">
+          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-action-primary/30 to-action-primary/70 text-action-primary-foreground flex items-center justify-center overflow-hidden text-lg font-semibold uppercase">
+            {currentAthlete.photo_url ? (
+              <img
+                src={currentAthlete.photo_url}
+                alt={`${currentAthlete.first_name} ${currentAthlete.last_name}`}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              initials || currentAthlete.first_name?.[0] || "?"
+            )}
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-container-foreground">
+              {currentAthlete.first_name} {currentAthlete.last_name}
+            </p>
+            {currentAthlete.email && (
+              <p className="text-xs text-muted">{currentAthlete.email}</p>
+            )}
+          </div>
+        </div>
+      )}
 
       <nav className="flex flex-wrap gap-1 md:gap-2 text-muted">
         <NavLink

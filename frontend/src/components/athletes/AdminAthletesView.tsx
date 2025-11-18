@@ -62,6 +62,7 @@ const AdminAthletesView = () => {
   const [activePopover, setActivePopover] = useState<
     null | "name" | "age" | "category" | "email" | "team" | "coach"
   >(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const tableContainerRef = useRef<HTMLElement | null>(null);
   const tableWrapperRef = useRef<HTMLDivElement | null>(null);
   const tableHeadRef = useRef<HTMLTableSectionElement | null>(null);
@@ -152,6 +153,14 @@ const AdminAthletesView = () => {
     },
   });
 
+  const teamsById = useMemo(() => {
+    const map = new Map<number, { name: string; coach: string | null }>();
+    (teamsQuery.data ?? []).forEach((team) => {
+      map.set(team.id, { name: team.name, coach: team.coach_name ?? null });
+    });
+    return map;
+  }, [teamsQuery.data]);
+
   const tableRows = useMemo(() => {
     if (!data) {
       return [];
@@ -159,6 +168,7 @@ const AdminAthletesView = () => {
 
     const normalizedName = nameFilter ? normalizeText(nameFilter.trim()) : "";
     const normalizedEmail = emailFilter ? normalizeText(emailFilter.trim()) : "";
+    const normalizedSearch = searchQuery ? normalizeText(searchQuery.trim()) : "";
     const rawMinAge = ageFilter.min.trim();
     const rawMaxAge = ageFilter.max.trim();
     const parsedMinAge = rawMinAge !== "" ? Number.parseInt(rawMinAge, 10) : null;
@@ -186,6 +196,7 @@ const AdminAthletesView = () => {
         }
       }
       
+      const teamInfo = athlete.team_id ? teamsById.get(athlete.team_id) : undefined;
       if (normalizedName) {
         const haystack = normalizeText(`${athlete.first_name} ${athlete.last_name}`);
         if (!haystack.includes(normalizedName)) {
@@ -195,6 +206,31 @@ const AdminAthletesView = () => {
       if (normalizedEmail) {
         const haystack = normalizeText(athlete.email ?? "");
         if (!haystack.includes(normalizedEmail)) {
+          return false;
+        }
+      }
+      if (normalizedSearch) {
+        const ageValue = getAge(athlete);
+        const ageLabel =
+          ageValue != null ? `u${Math.max(ageValue + 1, 0)}` : "";
+        const genderValue =
+          athlete.gender?.toLowerCase() === "female"
+            ? t.athletes.filters.genderFemale
+            : t.athletes.filters.genderMale;
+        const searchableFields = [
+          normalizeText(`${athlete.first_name} ${athlete.last_name}`),
+          ageValue != null ? `${ageValue}` : "",
+          normalizeText(ageLabel),
+          normalizeText(athlete.gender ?? ""),
+          normalizeText(genderValue ?? ""),
+          normalizeText(athlete.email ?? ""),
+          normalizeText(teamInfo?.name ?? ""),
+          normalizeText(teamInfo?.coach ?? ""),
+        ];
+        const matchesSearch = searchableFields.some(
+          (field) => field && field.includes(normalizedSearch),
+        );
+        if (!matchesSearch) {
           return false;
         }
       }
@@ -289,6 +325,7 @@ const AdminAthletesView = () => {
     return sorted;
   }, [
     data,
+    teamsById,
     nameFilter,
     emailFilter,
     statusFilter,
@@ -297,15 +334,10 @@ const AdminAthletesView = () => {
     ageFilter.max,
     sortConfig.column,
     sortConfig.direction,
+    searchQuery,
+    t.athletes.filters.genderFemale,
+    t.athletes.filters.genderMale,
   ]);
-
-  const teamsById = useMemo(() => {
-    const map = new Map<number, { name: string; coach: string | null }>();
-    (teamsQuery.data ?? []).forEach((team) => {
-      map.set(team.id, { name: team.name, coach: team.coach_name ?? null });
-    });
-    return map;
-  }, [teamsQuery.data]);
 
   const hasNameFilter = nameFilter.trim().length > 0;
   const hasEmailFilter = emailFilter.trim().length > 0;
@@ -371,6 +403,33 @@ const AdminAthletesView = () => {
           canCreateAthletes={permissions.canCreateAthletes}
           onAddAthlete={() => setIsNewAthleteOpen(true)}
         />
+        <div className="md:mx-2">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div className="w-full md:max-w-sm">
+              <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+                {t.athletes.filters.search}
+                <div className="relative mt-1">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder={t.athletes.filters.searchPlaceholder}
+                    className="w-full rounded-md border border-black/10 bg-container px-3 py-2 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/5 px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted transition hover:bg-black/10"
+                    >
+                      {t.athletes.filters.clear}
+                    </button>
+                  )}
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
 
       {alert ? (
         <div

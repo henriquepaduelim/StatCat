@@ -378,7 +378,7 @@ const AthleteReportCard = ({
 
 
 
-          <div className="space-y-4 overflow-hidden rounded-xl border border-white/10 bg-container/60 px-0 py-3 sm:px-2 md:px-6 md:py-6">
+          <div className="mt-6 space-y-4 overflow-hidden rounded-xl border border-white/10 bg-container/60 px-0 py-3 sm:px-2 md:px-6 md:py-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h4 className="text-xl font-semibold text-container-foreground">
