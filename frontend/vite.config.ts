@@ -145,7 +145,7 @@ export default defineConfig(({ mode }) => {
       outDir: "dist",
       sourcemap: false,
       target: "es2015",
-      minify: "esbuild",
+      minify: "terser",
       chunkSizeWarningLimit: 1000,
       rollupOptions: {
         output: {

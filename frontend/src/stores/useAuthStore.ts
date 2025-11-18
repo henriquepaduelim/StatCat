@@ -10,6 +10,7 @@ export type AuthUser = {
   phone?: string | null;
   role: "admin" | "staff" | "coach" | "athlete" | string;
   athlete_id?: number | null;
+  team_id?: number | null;
   athlete_status?: AthleteStatus;
   rejection_reason?: string | null;
   is_active: boolean;

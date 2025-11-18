@@ -57,6 +57,7 @@ class UserSignup(SQLModel):
 
 class UserRead(UserBase):
     id: int
+    team_id: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

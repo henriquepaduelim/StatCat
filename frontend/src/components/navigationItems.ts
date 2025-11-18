@@ -42,6 +42,12 @@ export const NAV_ITEMS: NavItem[] = [
     requiredPermission: "canViewAthletes",
   },
   {
+    to: "/team-feed",
+    icon: faAddressCard,
+    label: () => "COMMUNITY",
+    requiredPermission: "canViewReports",
+  },
+  {
     to: "/player-profile",
     icon: faUserAstronaut,
     label: (t) => t.common.playerProfile,

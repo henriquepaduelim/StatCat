@@ -24,6 +24,7 @@ const PlayerCombineResults = lazy(
 );
 const PlayerReportCards = lazy(() => import("./pages/player-profile/ReportCardsPage"));
 const PlayerScheduling = lazy(() => import("./pages/player-profile/SchedulingPage"));
+const TeamFeed = lazy(() => import("./pages/TeamFeed"));
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -82,75 +83,83 @@ const App = () => {
       <Routes>
         <Route path="/" element={<RedirectToDashboardOrPlayerProfile />} />
         <Route path="/login" element={<Login />} />
-      <Route element={<ProtectedLayout />}>
-      <Route 
-        path="/dashboard" 
-        element={
-          <ProtectedRoute requiredPermission="canViewDashboard">
-            <Dashboard />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/athletes" 
-        element={
-          <ProtectedRoute requiredPermission="canViewAthletes">
-            <Athletes />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/athletes/register/:id/details" 
-        element={
-          <ProtectedRoute requiredPermission="canCreateAthletes">
-            <NewAthlete />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/athletes/new" 
-        element={
-          <ProtectedRoute requiredPermission="canCreateAthletes">
-            <Navigate to="/athletes" replace />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/athletes/:id" 
-        element={
-          <ProtectedRoute requiredPermission="canViewReports">
-            <AthleteReport />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/athletes/:id/edit" 
-        element={
-          <ProtectedRoute requiredPermission="canEditAthletes">
-            <AthleteEdit />
-          </ProtectedRoute>
-        } 
-      />
-      <Route
-        path="/player-profile"
-        element={
-          <ProtectedRoute requiredPermission="canViewReports">
-            <PlayerProfileLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<PlayerProfileOverview />} />
-        <Route path="combine" element={<PlayerCombineResults />} />
-        <Route path="report-cards" element={<PlayerReportCards />} />
-        <Route path="scheduling" element={<PlayerScheduling />} />
-      </Route>
-      <Route path="*" element={<RedirectToDashboardOrPlayerProfile />} />
-    </Route>
-  </Routes>
-  <OfflineBanner />
-  <InstallPrompt />
-  <PWAUpdatePrompt />
-  </Suspense>
+        <Route element={<ProtectedLayout />}>
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute requiredPermission="canViewDashboard">
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/athletes"
+            element={
+              <ProtectedRoute requiredPermission="canViewAthletes">
+                <Athletes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/athletes/register/:id/details"
+            element={
+              <ProtectedRoute requiredPermission="canCreateAthletes">
+                <NewAthlete />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/athletes/new"
+            element={
+              <ProtectedRoute requiredPermission="canCreateAthletes">
+                <Navigate to="/athletes" replace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/athletes/:id"
+            element={
+              <ProtectedRoute requiredPermission="canViewReports">
+                <AthleteReport />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/athletes/:id/edit"
+            element={
+              <ProtectedRoute requiredPermission="canEditAthletes">
+                <AthleteEdit />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/player-profile"
+            element={
+              <ProtectedRoute requiredPermission="canViewReports">
+                <PlayerProfileLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<PlayerProfileOverview />} />
+            <Route path="combine" element={<PlayerCombineResults />} />
+            <Route path="report-cards" element={<PlayerReportCards />} />
+            <Route path="scheduling" element={<PlayerScheduling />} />
+          </Route>
+          <Route
+            path="/team-feed"
+            element={
+              <ProtectedRoute requiredPermission="canViewReports">
+                <TeamFeed />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<RedirectToDashboardOrPlayerProfile />} />
+        </Route>
+      </Routes>
+      <OfflineBanner />
+      <InstallPrompt />
+      <PWAUpdatePrompt />
+    </Suspense>
   );
 };
 

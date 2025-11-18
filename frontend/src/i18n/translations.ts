@@ -299,6 +299,19 @@ export type TranslationDictionary = {
     deleteSuccess: string;
     deleteError: string;
   };
+  teamFeed?: {
+    title: string;
+    description: string;
+    teamSelect: string;
+    placeholder: string;
+    post: string;
+    posting: string;
+    clear: string;
+    loading: string;
+    error: string;
+    empty: string;
+    noTeams: string;
+  };
   newAthlete: {
     title: string;
     subtitle: string;
@@ -920,6 +933,19 @@ export const translations: Record<Locale, TranslationDictionary> = {
         "This action is permanent and removes all associated data for the athlete.",
       deleteSuccess: "Athlete removed successfully.",
       deleteError: "We couldn't remove this athlete. Try again in a moment.",
+    },
+    teamFeed: {
+      title: "Team Feed",
+      description: "Share updates and media with teammates.",
+      teamSelect: "Team",
+      placeholder: "Type a message...",
+      post: "Post",
+      posting: "Posting...",
+      clear: "Clear",
+      loading: "Loading posts...",
+      error: "Unable to load posts right now.",
+      empty: "No posts yet.",
+      noTeams: "No teams available",
     },
     newAthlete: {
       title: "New athlete",

@@ -79,11 +79,20 @@ def login_access_token(
 
 
 @router.get("/me", response_model=UserRead)
-def read_users_me(current_user: User = Depends(get_current_active_user)) -> dict:
+def read_users_me(
+    current_user: User = Depends(get_current_active_user),
+    session: Session = Depends(get_session),
+) -> dict:
     """Get current user information with properly serialized athlete status."""
     print(f"GET /auth/me called for user: {current_user.email}")
     print(f"User athlete_status: {current_user.athlete_status}")
     
+    team_id = None
+    if current_user.athlete_id:
+        athlete_entity = session.get(Athlete, current_user.athlete_id)
+        if athlete_entity:
+            team_id = athlete_entity.team_id
+
     user_dict = {
         "id": current_user.id,
         "email": current_user.email,
@@ -91,6 +100,7 @@ def read_users_me(current_user: User = Depends(get_current_active_user)) -> dict
         "phone": current_user.phone,
         "role": current_user.role,
         "athlete_id": current_user.athlete_id,
+        "team_id": team_id,
         "is_active": current_user.is_active,
         "rejection_reason": current_user.rejection_reason,
     }

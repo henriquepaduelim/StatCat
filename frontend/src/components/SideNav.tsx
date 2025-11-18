@@ -225,7 +225,7 @@ const SideNav = () => {
                       <span className="flex items-center gap-3">
                         <FontAwesomeIcon
                           icon={item.icon}
-                          className="text-base leading-none w-4 text-center"
+                          className="text-base leading-none w-4 flex-shrink-0 text-center"
                         />
                         {item.label(t)}
                       </span>

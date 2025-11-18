@@ -10,6 +10,7 @@ from app.api.v1.endpoints import (
     match_stats,
     report_submissions,
     teams,
+    team_posts,
     # dev,
     reports,
     sessions,
@@ -25,6 +26,7 @@ api_router.include_router(groups.router, prefix="/groups", tags=["Groups"])
 api_router.include_router(match_stats.router, prefix="/match-stats", tags=["Match Stats"])
 api_router.include_router(report_submissions.router, prefix="/report-submissions", tags=["Report Submissions"])
 api_router.include_router(teams.router, prefix="/teams", tags=["Teams"])
+api_router.include_router(team_posts.router, prefix="", tags=["Team Posts"])
 api_router.include_router(tests.router, prefix="/tests", tags=["Tests"])
 api_router.include_router(sessions.router, prefix="/sessions", tags=["Sessions"])
 api_router.include_router(reports.router, prefix="/reports", tags=["Reports"])
