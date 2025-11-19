@@ -3,6 +3,7 @@ import {
   faAddressCard,
   faArrowTrendUp,
   faCalendarDays,
+  faEnvelope,
   faHouse,
   faIdBadge,
   faRankingStar,
@@ -50,7 +51,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     to: "/team-feed",
-    icon: faAddressCard,
+    icon: faEnvelope,
     label: () => "COMMUNITY",
     requiredPermission: "canViewReports",
   },

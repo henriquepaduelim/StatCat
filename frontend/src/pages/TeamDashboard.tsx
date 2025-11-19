@@ -4,12 +4,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTeams } from "../hooks/useTeams";
 import { useAuthStore } from "../stores/useAuthStore";
 import { getCoachTeams, type Team } from "../api/teams";
-import { useScoringLeaderboard } from "../hooks/useScoringLeaderboard";
 import { useEvents } from "../hooks/useEvents";
 import { useAthletes } from "../hooks/useAthletes";
 import { listTeamCombineMetrics } from "../api/teamMetrics";
 import { getTeamPosts, exportTeamPostsArchive } from "../api/teamPosts";
-import TeamLeaderboardCard from "../components/team-dashboard/TeamLeaderboardCard";
+import LeaderboardCard from "../components/dashboard/LeaderboardCard";
 import TeamFeedPreview from "../components/team-dashboard/TeamFeedPreview";
 import TeamEventsWidget from "../components/team-dashboard/TeamEventsWidget";
 import TeamCombineMetricsPanel from "../components/team-dashboard/TeamCombineMetricsPanel";
@@ -83,17 +82,6 @@ const TeamDashboard = () => {
       cleanSheetsTitle: "Clean Sheet Leaders",
       cleanSheetsDescription: "Goalkeepers with the lowest concessions.",
     };
-
-  const scorersQuery = useScoringLeaderboard({
-    leaderboard_type: "scorers",
-    limit: 25,
-    team_id: selectedTeamId ?? undefined,
-  });
-  const cleanSheetsQuery = useScoringLeaderboard({
-    leaderboard_type: "clean_sheets",
-    limit: 25,
-    team_id: selectedTeamId ?? undefined,
-  });
 
   const eventsQuery = useEvents(
     selectedTeamId ? { team_id: selectedTeamId } : undefined,
@@ -208,34 +196,30 @@ const TeamDashboard = () => {
       </header>
 
       {selectedTeam ? (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <div className="space-y-6 lg:col-span-2">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <TeamLeaderboardCard
-                type="scorers"
-                title={leaderboardLabels.scorersTitle}
-                description={leaderboardLabels.scorersDescription}
-                entries={(scorersQuery.data?.entries ?? []).slice(0, 5)}
-                isLoading={scorersQuery.isLoading}
-                isError={Boolean(scorersQuery.isError)}
-              />
-              <TeamLeaderboardCard
-                type="clean_sheets"
-                title={leaderboardLabels.cleanSheetsTitle}
-                description={leaderboardLabels.cleanSheetsDescription}
-                entries={(cleanSheetsQuery.data?.entries ?? []).slice(0, 5)}
-                isLoading={cleanSheetsQuery.isLoading}
-                isError={Boolean(cleanSheetsQuery.isError)}
-              />
-            </div>
-            <TeamCombineMetricsPanel
-              metrics={combineMetricsQuery.data ?? []}
-              athleteNameById={athleteNameById}
-              onAdd={() => setMetricModalOpen(true)}
-              canAdd={canRecordMetrics}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <LeaderboardCard
+              presetType="scorers"
+              title={leaderboardLabels.scorersTitle}
+              description={leaderboardLabels.scorersDescription}
+              limit={5}
+              teamId={selectedTeamId ?? null}
+            />
+            <LeaderboardCard
+              presetType="clean_sheets"
+              title={leaderboardLabels.cleanSheetsTitle}
+              description={leaderboardLabels.cleanSheetsDescription}
+              limit={5}
+              teamId={selectedTeamId ?? null}
             />
           </div>
-          <div className="space-y-6">
+          <TeamCombineMetricsPanel
+            metrics={combineMetricsQuery.data ?? []}
+            athleteNameById={athleteNameById}
+            onAdd={() => setMetricModalOpen(true)}
+            canAdd={canRecordMetrics}
+          />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <TeamEventsWidget
               events={upcomingEvents}
               isLoading={eventsQuery.isLoading}
@@ -246,33 +230,14 @@ const TeamDashboard = () => {
               isLoading={postsQuery.isLoading}
               isError={Boolean(postsQuery.isError)}
               teamName={selectedTeam.name}
+              showMaintenance={canExportArchive}
+              maintenanceTitle={teamDashboardTexts.maintenanceTitle}
+              maintenanceDescription={teamDashboardTexts.maintenanceDescription}
+              maintenancePrimaryLabel={teamDashboardTexts.exportButton}
+              maintenanceSecondaryLabel={teamDashboardTexts.cleanButton}
+              onMaintenanceAction={handleArchiveDownload}
+              maintenancePending={downloadArchiveMutation.isPending}
             />
-            {canExportArchive ? (
-              <div className="rounded-xl border border-black/10 bg-white/90 p-3 text-xs text-muted shadow">
-                <p className="text-[0.6rem] uppercase tracking-[0.25em] text-muted">
-                  {teamDashboardTexts.maintenanceTitle}
-                </p>
-                <p className="mt-1 text-[0.85rem] leading-relaxed">{teamDashboardTexts.maintenanceDescription}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleArchiveDownload(false)}
-                    disabled={downloadArchiveMutation.isPending}
-                    className="rounded-md border border-black/20 px-2.5 py-1 text-[0.7rem] font-semibold text-muted transition hover:text-container-foreground disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {downloadArchiveMutation.isPending ? "Preparing..." : teamDashboardTexts.exportButton}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleArchiveDownload(true)}
-                    disabled={downloadArchiveMutation.isPending}
-                    className="rounded-md border border-black/20 px-2.5 py-1 text-[0.7rem] font-semibold text-muted transition hover:text-container-foreground disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {teamDashboardTexts.cleanButton}
-                  </button>
-                </div>
-              </div>
-            ) : null}
           </div>
         </div>
       ) : null}

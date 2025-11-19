@@ -11,6 +11,7 @@ type LeaderboardCardProps = {
   presetType?: LeaderboardType | null;
   title?: string;
   description?: string;
+  teamId?: number | null;
 };
 
 const tabOptions: Array<{ id: LeaderboardType; label: string }> = [
@@ -77,11 +78,18 @@ const LeaderboardRow = ({
   );
 };
 
-const LeaderboardCard = ({ limit = 5, presetType = null, title, description }: LeaderboardCardProps) => {
+const LeaderboardCard = ({
+  limit = 5,
+  presetType = null,
+  title,
+  description,
+  teamId = null,
+}: LeaderboardCardProps) => {
   const [activeTab, setActiveTab] = useState<LeaderboardType>(presetType ?? "scorers");
   const leaderboardQuery = useScoringLeaderboard({
     leaderboard_type: activeTab,
     limit,
+    team_id: teamId ?? undefined,
   });
   const entries = leaderboardQuery.data?.entries ?? [];
 

@@ -127,32 +127,21 @@ const SideNav = () => {
               to={item.to}
               className={({ isActive }) =>
                 `flex-1 flex flex-col items-center justify-center gap-1.5 relative transition-all duration-200 ${
-                  isActive 
-                    ? "bg-gradient-to-t from-action-primary/10 to-transparent" 
-                    : "hover:bg-action-primary/5"
+                  isActive ? "bg-action-primary/90 text-action-primary-foreground" : "hover:bg-action-primary/5"
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <div className={`relative ${
-                    isActive 
-                      ? "transform -translate-y-0.5" 
-                      : "transform translate-y-0"
-                  } transition-transform duration-200`}>
-                    <div className={`
-                      w-12 h-12 flex items-center justify-center rounded-xl
-                      ${isActive 
-                        ? "bg-gradient-to-br from-action-primary/30 via-action-primary/20 to-action-primary/10 shadow-[inset_0_2px_8px_rgba(0,0,0,0.15),0_4px_12px_rgba(0,0,0,0.25)] border border-white/10" 
-                        : "bg-gradient-to-br from-sidebar-accent/20 via-sidebar-accent/10 to-transparent shadow-[inset_0_1px_2px_rgba(255,255,255,0.1),0_2px_6px_rgba(0,0,0,0.15)] border border-white/5"
-                      }
-                      transition-all duration-200 hover:shadow-[inset_0_2px_8px_rgba(0,0,0,0.1),0_6px_16px_rgba(0,0,0,0.2)]
-                    `}>
-                      <FontAwesomeIcon 
-                        icon={item.icon} 
-                        className={`${isActive ? "text-2xl" : "text-xl"} text-sidebar-foreground transition-all duration-200 drop-shadow-sm`}
-                      />
-                    </div>
+                  <div
+                    className={`relative flex items-center justify-center ${
+                      isActive ? "transform -translate-y-0.5" : "transform translate-y-0"
+                    } transition-transform duration-200`}
+                  >
+                    <FontAwesomeIcon
+                      icon={item.icon}
+                      className={`${isActive ? "text-2xl text-action-primary-foreground" : "text-xl text-sidebar-foreground"} transition-all duration-200 drop-shadow-sm`}
+                    />
                     {item.to === "/athletes" && pendingCount && pendingCount.count > 0 && (
                       <div className="absolute -top-1 -right-1">
                         <NotificationBadge count={pendingCount.count} />
@@ -161,7 +150,7 @@ const SideNav = () => {
                   </div>
                   <span className={`text-[9px] font-semibold uppercase tracking-wider transition-all duration-200 ${
                     isActive 
-                    ? "text-sidebar-foreground" 
+                    ? "text-action-primary-foreground" 
                     : "text-sidebar-foreground/70"
                   }`}>
                     {item.label(t)}
