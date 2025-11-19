@@ -178,7 +178,6 @@ const TeamDashboard = () => {
     <div className="space-y-6">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-muted">Team Dashboard</p>
           <h1 className="text-3xl font-semibold text-container-foreground">
             {teamDashboardTexts.title}
           </h1>

@@ -1,4 +1,6 @@
 import type { TeamCombineMetric } from "../../api/teamMetrics";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 
 type TeamCombineMetricsPanelProps = {
   metrics: TeamCombineMetric[];
@@ -31,9 +33,10 @@ const TeamCombineMetricsPanel = ({
           <button
             type="button"
             onClick={onAdd}
-            className="rounded-full bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
+            className="flex items-center justify-center gap-1 rounded-md bg-action-primary px-3 py-2 text-sm font-semibold tracking-wide text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 focus-visible:ring-2"
           >
-            Record Metrics
+            <FontAwesomeIcon icon={faPlus} className="text-xs" /> 
+            New Session
           </button>
         ) : null}
       </div>

@@ -79,9 +79,8 @@ const TeamInsightsCard = ({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1">
             <h2 className="text-lg font-semibold text-container-foreground">Report Workflow</h2>
-            <p className="text-sm text-muted">Create new entries and monitor approvals.</p>
           </div>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
+          <div className="flex w-full flex-row gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
             <button
               type="button"
               onClick={onGameReport}
@@ -105,7 +104,7 @@ const TeamInsightsCard = ({
               <button
                 type="button"
                 onClick={onRecordCombineMetrics}
-                className="flex items-center justify-center gap-1 rounded-md border border-action-primary px-3 py-2 text-sm font-semibold tracking-wide text-action-primary transition hover:bg-action-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary focus-visible:ring-offset-2 sm:px-4"
+                className="flex items-center justify-center gap-1 rounded-md bg-action-primary px-3 py-2 text-sm font-semibold tracking-wide text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 focus-visible:ring-2"
               >
                 <FontAwesomeIcon icon={faPlus} className="text-xs" />
                 <span className="whitespace-nowrap">Combine Metrics</span>
