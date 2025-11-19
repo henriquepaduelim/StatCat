@@ -30,6 +30,7 @@ import DashboardHero from "../components/dashboard/DashboardHero";
 import TeamManagementSection from "../components/dashboard/TeamManagementSection";
 import EventsSection from "../components/dashboard/EventsSection";
 import CoachDirectorySection from "../components/dashboard/CoachDirectorySection";
+import TeamInsightsCard from "../components/dashboard/TeamInsightsCard";
 import ReportSubmissionReviewModal from "../components/dashboard/ReportSubmissionReviewModal";
 import ReportSubmissionListModal from "../components/dashboard/ReportSubmissionListModal";
 import { submitGameReport } from "../api/matchReports";
@@ -1450,11 +1451,15 @@ const Dashboard = () => {
     onEditCoach: handleEditCoach,
     onDeleteCoach: handleCoachDelete,
   };
+
+  const shouldShowInsights = !isAthleteView;
+  const shouldShowCoaches = canManageCoaches;
+
   return (
     <>
-      <div className="w-full space-y-8">
+      <div className="space-y-8">
         <DashboardHero title={t.dashboard.title} description={t.dashboard.description} />
-        <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <LeaderboardCard title="Top Scorers" description="Total goals recorded across reports." />
           <LeaderboardCard
             title="Clean Sheet Leaders"
@@ -1463,19 +1468,27 @@ const Dashboard = () => {
           />
         </div>
 
-        {!isAthleteView ? (
-          <TeamManagementSection
-            teamListProps={teamListCardProps}
-            insightsProps={teamInsightsCardProps}
-          />
-        ) : null}
+        {!isAthleteView ? <TeamManagementSection teamListProps={teamListCardProps} /> : null}
 
         <EventsSection
           calendarProps={calendarPanelProps}
           availabilityProps={availabilityPanelProps}
         />
 
-        {canManageCoaches ? <CoachDirectorySection {...coachDirectorySectionProps} /> : null}
+        {shouldShowInsights || shouldShowCoaches ? (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {shouldShowInsights ? (
+              <div className="h-[34rem]">
+                <TeamInsightsCard {...teamInsightsCardProps} />
+              </div>
+            ) : null}
+            {shouldShowCoaches ? (
+              <div className="h-[34rem]">
+                <CoachDirectorySection {...coachDirectorySectionProps} />
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <TeamFormModal

@@ -1,17 +1,16 @@
 import type { ComponentProps } from "react";
 
 import TeamListCard from "./TeamListCard";
-import TeamInsightsCard from "./TeamInsightsCard";
 
 type TeamManagementSectionProps = {
   teamListProps: ComponentProps<typeof TeamListCard>;
-  insightsProps: ComponentProps<typeof TeamInsightsCard>;
 };
 
-const TeamManagementSection = ({ teamListProps, insightsProps }: TeamManagementSectionProps) => (
-  <section className="print-hidden grid w-full grid-cols-1 gap-6 lg:grid-cols-2">
-    <TeamListCard {...teamListProps} />
-    <TeamInsightsCard {...insightsProps} />
+const TeamManagementSection = ({ teamListProps }: TeamManagementSectionProps) => (
+  <section className="print-hidden">
+    <div className="h-[34rem]">
+      <TeamListCard {...teamListProps} />
+    </div>
   </section>
 );
 
