@@ -1,82 +1,90 @@
-
 ---
 
 # StatCat Football Platform
 
-StatCat is a centralized platform for managing football combine operations, including athlete registration, assessment tracking, performance reporting, and team management. The system is designed for clubs, coaches, and administrators to streamline the evaluation and development of athletes.
+StatCat centralizes combine data, athlete onboarding, and team collaboration for grassroots and academy programs. The stack pairs a FastAPI/SQLModel backend with a Vite React frontend so clubs, staff, coaches, and athletes can share metrics, content, and schedules through one channel.
 
-## Project Structure
+## Project Layout
 
 ```
 .
-├── backend/        # FastAPI + SQLModel API with SQLite database
-├── frontend/       # React + Vite application with Tailwind CSS
-├── scripts/        # Database utilities and data import tools
-├── tests/          # Backend test suite
+├── backend/        # FastAPI + SQLModel API, Alembic migrations, scripts
+├── frontend/       # React (TypeScript) + Vite app, Tailwind/Tremor UI
+├── scripts/        # Branding builder, DB tooling
+├── tests/          # Backend pytest suite
+├── branding/       # Club-specific presets (logos, colors, env)
+└── packages/       # Generated deliverables per club
 ```
 
-## Features
+## Current Highlights
 
-### Authentication & Authorization
-- Secure JWT-based authentication
-- Role-based access control (admin, staff, coach, athlete)
-- Protected routes and API endpoints
-- Athlete approval workflow
+### Authentication & Access Control
+- JWT authentication with refresh handling
+- Role-based permissions (admin, staff, coach, athlete)
+- Athlete onboarding + approval workflow
+- Protected routes on the frontend and backend
 
-### Athlete Management
-- Athlete registration with personal details and document uploads
-- Status tracking: incomplete, pending, approved, rejected
-- Administrator approval and batch operations
-- Profile editing
+### Athlete Operations
+- Self-serve registration, profile editing, and document capture
+- Status tracking (Incomplete → Pending → Approved/Rejected)
+- Admin view with bulk operations and filters
+- Player Profile portal (overview, combines, report cards, scheduling)
 
-### Team & Coach Management
-- Team creation and roster management
-- Coach assignment and management
-- Filtering by age category
-- Athlete assignment to teams
+### Team & Staff Management
+- Team builder with roster drag-and-drop
+- Coach directory with assignments and invites
+- Team feed (community posts with photo uploads)
+- Per-team dashboards with leaderboards, schedules, combine metrics, and a maintenance utility for end-of-season exports
 
-### Assessment & Reporting
-- Session-based assessment tracking and scheduling
-- Standardized test definitions and result entry
-- Performance metrics, peer comparison, and age-band analysis
-- Individual athlete report cards and historical data
+### Reporting & Analytics
+- Combine result entry (splits, YoYo, jump, max power) via API or UI
+- Leaderboards for scorers and clean sheets (global, team-filtered)
+- Report cards, match reports, approval queue, and insights tracker
+- Calendar + availability panel for events, training, and combines
 
-### Dashboard & Analytics
-- Real-time statistics and summaries
-- Performance leaderboards and rankings
-- Event calendar and scheduling
-- Team and group management interface
+### Branding & Packaging
+- Theme definitions (`branding/*.json`) drive colors, logos, and env files
+- `scripts/build_club_package.py` produces env bundles + themed builds per club
+- Assets placed under `packages/<club-id>/` for deployment
 
-## Technical Stack
+## Technology Stack
 
-- **Backend:** FastAPI, SQLModel, SQLite, Alembic, JWT, Pydantic
-- **Frontend:** React (TypeScript), Vite, React Query, Zustand, Tailwind CSS, Tremor
-- **Testing:** Pytest, in-memory SQLite, reusable fixtures
+- **Backend:** FastAPI, SQLModel, PostgreSQL/SQLite, Alembic, Pydantic, JWT
+- **Frontend:** React 18, TypeScript, Vite, React Query, Zustand, Tailwind CSS, Tremor, FontAwesome
+- **Tooling:** Pytest, Ruff, MyPy, ESLint, Vitest
+- **DevOps hooks:** Docker Compose, branding builder script
 
-## Getting Started
+## Setup
 
 ### Prerequisites
 - Python 3.11+
-- Node.js 18+
-- npm or yarn
+- Node.js 18+ (with npm)
+- (Optional) PostgreSQL for production/testing
 
-### Backend Setup
+### Backend
 
 ```bash
 cd backend
 python3 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install --upgrade pip
 pip install -e ".[dev]"
 cp .env.example .env
-# Edit .env and set SECRET_KEY, BACKEND_CORS_ORIGINS, MEDIA_ROOT
+# Edit .env and set SECRET_KEY, DATABASE_URL, BACKEND_CORS_ORIGINS, MEDIA_ROOT
 uvicorn app.main:app --reload
 ```
 
-API available at: http://localhost:8000  
+API: http://localhost:8000  
 Docs: http://localhost:8000/docs
 
-### Frontend Setup
+For migrations:
+```bash
+cd backend
+alembic upgrade head          # apply latest schema
+alembic revision --autogenerate -m "Describe change"
+```
+
+### Frontend
 
 ```bash
 cd frontend
@@ -84,120 +92,91 @@ npm install
 npm run dev
 ```
 
-App available at: http://localhost:5173
+App: http://localhost:5173
 
-For production:
+Production build:
 ```bash
 npm run build
 npm run preview
 ```
-
-### Database Migrations
-
-Alembic is used for schema migrations.
-
-```bash
-cd backend
-alembic upgrade head
-alembic revision --autogenerate -m "Description of changes"
-```
-
-See `ALEMBIC_GUIDE.md` for details.
-
-### Database Initialization
-
-The database is created on first startup with seed data. To reset, delete combine.db and restart the backend.
-
-### Test Accounts
-
-| Email                  | Password   | Role   |
-|------------------------|------------|--------|
-| admin@combine.local    | admin123   | admin  |
-| staff@combine.local    | staff123   | staff  |
-| coach@combine.local    | coach123   | coach  |
-
-Athletes self-register and require admin approval.
-
-## API Endpoints
-
-- Authentication: `/api/v1/auth/*`
-- Athletes: `/api/v1/athletes/*`
-- Teams & Coaches: `/api/v1/teams/*`, `/api/v1/teams/coaches/*`
-- Groups: `/api/v1/groups/*`
-- Assessment Sessions: `/api/v1/sessions/*`
-- Test Definitions: `/api/v1/tests/*`
-- Reporting & Analytics: `/api/v1/reports/*`, `/api/v1/dashboard/*`, `/api/v1/analytics/*`
-
-See the OpenAPI docs for full details.
-
-## Development Tools
-
-### Backend
-
-- Run server: `uvicorn app.main:app --reload`
-- Run tests: `pytest`
-- Lint: `ruff check app`
-- Type check: `mypy app`
-
-### Frontend
-
-- Dev server: `npm run dev`
-- Build: `npm run build`
-- Lint: `npm run lint`
-- Type check: `npm run type-check`
-
-### Scripts
-
-Located in scripts and `backend/scripts/`:
-- Data import, demo athlete generation, migration utilities
+Set `VITE_API_BASE_URL` and `VITE_MEDIA_BASE_URL` for non-local deployments. When `VITE_ENABLE_PWA_BUILD=true`, the Service Worker/PWA bundle is included.
 
 ## Configuration
 
-### Backend
-
-Create `.env` in backend with:
+### Backend `.env`
 ```
-SECRET_KEY=your-secret-key
+SECRET_KEY=change-me
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=10080
 BACKEND_CORS_ORIGINS=["http://localhost:5173"]
 MEDIA_ROOT=media
-DATABASE_URL=sqlite:///./data/combine.db
+DATABASE_URL=sqlite:///./data/combine.db  # or PostgreSQL DSN
 ```
 
-The SQLite file lives under `backend/data/` (gitignored). Create the directory if it does not exist:
-```bash
-mkdir -p backend/data
+For PostgreSQL testing, create a second `.env` (for example `env.test`) pointing to `postgresql://.../statcat_test`.
+
+### Frontend env (`.env.local`)
 ```
+VITE_API_BASE_URL=http://localhost:8000
+VITE_MEDIA_BASE_URL=http://localhost:8000/media
+VITE_ENABLE_PWA_BUILD=false
+```
+
+## Useful Commands
+
+### Backend
+- Run dev server: `uvicorn app.main:app --reload`
+- Tests: `PYTHONPATH=backend .venv/bin/python -m pytest`
+- Lint: `ruff check app`
+- Types: `mypy app`
+- Seed/reset DB: use scripts in `backend/scripts/`
 
 ### Frontend
+- Dev server: `npm run dev`
+- Build: `npm run build`
+- Lint: `npm run lint`
+- Tests (if configured): `npm run test`
 
-Uses Vite environment variables. API proxy configured in `vite.config.ts`.
+## API Overview
+- Auth: `/api/v1/auth/*`
+- Athletes: `/api/v1/athletes/*`
+- Teams / Coaches: `/api/v1/teams/*`
+- Team feed + posts: `/api/v1/teams/{team_id}/posts`
+- Team combine metrics: `/api/v1/teams/{team_id}/combine-metrics`
+- Reports/analytics: `/api/v1/reports/*`, `/api/v1/analytics/*`
+- Events: `/api/v1/events/*`
 
-## Per-Club Packages
+Refer to the OpenAPI schema for parameter details and response models.
 
-Each club lives off a dedicated branding configuration under `branding/clubs/<club-id>.json`. The file contains theme colors, frontend env values, and backend overrides. Generate a deployable package (env files + themed frontend build) with:
+## Branding Packages
 
-```bash
-# Install frontend dependencies once
-cd frontend && npm ci && cd ..
+```
 python scripts/build_club_package.py <club-id>
 ```
 
-Artifacts will be created under `packages/<club-id>/`:
+Outputs (`packages/<club-id>/`):
+- `frontend-dist/`: themed static build
+- `backend.env`, `frontend.env`, `compose.env`: environment files
+- `branding.json`: snapshot of the source branding config
 
-- `frontend-dist/`: static assets compiled with the club theme (serve via nginx or upload to object storage/CDN).
-- `backend.env`: values consumed by `docker compose` (copy to `.env` before `docker compose up -d`).
-- `frontend.env`: build-time Vite variables for reference or additional builds.
-- `compose.env`: backend + frontend values merged together. Copy this one to `.env` when running Docker Compose locally or on the client's server.
-- `branding.json`: snapshot of the source config used during this run.
+Use `--skip-build` to regenerate envs only, or `--persist-theme` to keep the generated Tailwind theme checked in. By default the script restores the previous theme files after building.
 
-Repeat the command with a new JSON file (logo/colors updated) whenever onboarding another club. Use `--skip-build` if you only need fresh `.env` files.
+## Test Accounts (Demo)
 
-> The build script temporarily overwrites `frontend/src/theme/branding.generated.ts` and `frontend/src/theme/activeTheme.generated.ts`; the originals are automatically restored unless you pass `--persist-theme` or `--persist-branding`.
+| Email               | Password  | Role   |
+|---------------------|-----------|--------|
+| admin@combine.local | admin123  | admin  |
+| staff@combine.local | staff123  | staff  |
+| coach@combine.local | coach123  | coach  |
 
-### Local Preview / Brand Assets
+Athletes self-register and need approval before accessing their profile.
 
+## Notes
+- Media uploads are served from `/media`. Ensure `MEDIA_ROOT` exists and is writable (`backend/media/` by default).
+- When running the frontend in development, set `VITE_MEDIA_BASE_URL` so images from Team Feed render correctly.
+- The SQLite DB is stored under `backend/data/` (gitignored). Use PostgreSQL for staging/production.
+
+StatCat is under active development. Larger backlog items include comment reactions, team feed filters, global search, and additional automated QA coverage.
 - Logos/favicons live inside `branding/assets/<club-id>/`. Reference them from the club JSON via the `assets` block.
 - During a build the helper copies those files into `frontend/public/branding/<club-id>/` and generates `frontend/src/theme/branding.generated.ts` so React components pick up the correct paths.
 - When testing locally and you want to keep the generated files in place (so `docker compose up` shows the club colors/logo), run:

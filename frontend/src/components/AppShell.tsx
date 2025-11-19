@@ -20,9 +20,9 @@ const AppShell = ({ children }: PropsWithChildren) => {
     location.pathname === "/athletes" || location.pathname === "/athletes/";
   const isPlayerProfilePage = location.pathname.startsWith("/player-profile");
   const baseMainClasses =
-    "flex flex-1 min-h-0 w-full flex-col px-6 pb-24 md:pb-10 pt-4 md:pt-6 md:[&>*:nth-child(n+3)]:mt-16";
+    "flex flex-1 min-h-0 w-full flex-col px-3 sm:px-6 pb-24 md:pb-10 pt-3 md:pt-6 md:[&>*:nth-child(n+3)]:mt-16";
   const mainClassName = `${baseMainClasses} ${
-    isAthletesListPage || isPlayerProfilePage ? "max-w-none" : "mx-auto max-w-6xl"
+    isAthletesListPage || isPlayerProfilePage ? "max-w-none" : "mx-auto w-full md:max-w-6xl"
   }`;
 
   return (

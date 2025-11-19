@@ -1452,9 +1452,9 @@ const Dashboard = () => {
   };
   return (
     <>
-      <div className="space-y-8">
+      <div className="w-full space-y-8">
         <DashboardHero title={t.dashboard.title} description={t.dashboard.description} />
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid w-full grid-cols-1 gap-4 lg:grid-cols-2">
           <LeaderboardCard title="Top Scorers" description="Total goals recorded across reports." />
           <LeaderboardCard
             title="Clean Sheet Leaders"

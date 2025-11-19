@@ -26,6 +26,50 @@ type TeamListCardProps = {
   };
 };
 
+type TeamActionButtonsProps = {
+  team: Team;
+  canManageUsers: boolean;
+  isDeletePending: boolean;
+  onEditTeam: (team: Team) => void;
+  onDeleteTeam: (teamId: number, teamName: string) => void;
+  className?: string;
+};
+
+const TeamActionButtons = ({
+  team,
+  canManageUsers,
+  isDeletePending,
+  onEditTeam,
+  onDeleteTeam,
+  className = "",
+}: TeamActionButtonsProps) => {
+  const containerClassName = ["flex items-center gap-2", className].filter(Boolean).join(" ").trim();
+
+  return (
+    <div className={containerClassName}>
+      <button
+        type="button"
+        onClick={() => onEditTeam(team)}
+        className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition hover:bg-action-primary/10 hover:text-action-primary"
+        aria-label={`Edit ${team.name}`}
+      >
+        <FontAwesomeIcon icon={faPenToSquare} className="text-lg" />
+      </button>
+      {canManageUsers ? (
+        <button
+          type="button"
+          onClick={() => onDeleteTeam(team.id, team.name)}
+          disabled={isDeletePending}
+          className="flex h-8 w-8 items-center justify-center rounded-full text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
+          aria-label={`Delete ${team.name}`}
+        >
+          <FontAwesomeIcon icon={faTrash} className="text-sm" />
+        </button>
+      ) : null}
+    </div>
+  );
+};
+
 const TeamListCard = ({
   teams,
   athletesByTeamId,
@@ -42,7 +86,7 @@ const TeamListCard = ({
   statusCopy,
 }: TeamListCardProps) => {
   return (
-    <div className="rounded-xl border border-action-primary/25 bg-container-gradient p-4 sm:p-6 shadow-xl backdrop-blur">
+    <div className="w-full rounded-xl border border-action-primary/25 bg-container-gradient p-4 sm:p-6 shadow-xl backdrop-blur">
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -99,42 +143,39 @@ const TeamListCard = ({
                     key={team.id}
                     className="grid grid-cols-1 items-start gap-3 border-b border-black/5 px-3 py-3 text-sm hover:bg-white/50 last:border-b-0 sm:grid-cols-[auto_1fr_80px_60px_minmax(60px,110px)] sm:items-center sm:px-4"
                   >
-                    <div className="flex items-center gap-3 sm:contents">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-action-primary/10">
-                        <FontAwesomeIcon icon={faUsers} className="text-xs text-action-primary" />
+                    <div className="flex flex-wrap items-center gap-3 sm:contents">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-action-primary/10">
+                          <FontAwesomeIcon icon={faUsers} className="text-xs text-action-primary" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-container-foreground">{team.name}</p>
+                          <p className="text-xs text-muted sm:hidden">
+                            {team.age_category || "—"} • {teamAthleteCount} players
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-container-foreground">{team.name}</p>
-                        <p className="text-xs text-muted sm:hidden">
-                          {team.age_category || "—"} • {teamAthleteCount} players
-                        </p>
-                      </div>
+                      <TeamActionButtons
+                        team={team}
+                        canManageUsers={canManageUsers}
+                        isDeletePending={isDeletePending}
+                        onEditTeam={onEditTeam}
+                        onDeleteTeam={onDeleteTeam}
+                        className="ml-auto sm:hidden"
+                      />
                     </div>
                     <div className="hidden text-center text-muted sm:block">
                       {team.age_category || "—"}
                     </div>
                     <div className="hidden text-center text-muted sm:block">{teamAthleteCount}</div>
-                    <div className="flex gap-2 sm:justify-center">
-                      <button
-                        type="button"
-                        onClick={() => onEditTeam(team)}
-                        className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition hover:bg-action-primary/10 hover:text-action-primary"
-                        aria-label={`Edit ${team.name}`}
-                      >
-                        <FontAwesomeIcon icon={faPenToSquare} className="text-lg" />
-                      </button>
-                      {canManageUsers ? (
-                        <button
-                          type="button"
-                          onClick={() => onDeleteTeam(team.id, team.name)}
-                          disabled={isDeletePending}
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
-                          aria-label={`Delete ${team.name}`}
-                        >
-                          <FontAwesomeIcon icon={faTrash} className="text-sm" />
-                        </button>
-                      ) : null}
-                    </div>
+                    <TeamActionButtons
+                      team={team}
+                      canManageUsers={canManageUsers}
+                      isDeletePending={isDeletePending}
+                      onEditTeam={onEditTeam}
+                      onDeleteTeam={onDeleteTeam}
+                      className="hidden sm:flex sm:justify-center"
+                    />
                   </div>
                 );
               })}

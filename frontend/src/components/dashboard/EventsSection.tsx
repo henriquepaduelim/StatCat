@@ -9,11 +9,10 @@ type EventsSectionProps = {
 };
 
 const EventsSection = ({ calendarProps, availabilityProps }: EventsSectionProps) => (
-  <section className="print-hidden flex flex-col gap-6 xl:flex-row">
+  <section className="print-hidden flex w-full flex-col gap-6 xl:flex-row">
     <EventCalendarPanel {...calendarProps} />
     <EventAvailabilityPanel {...availabilityProps} />
   </section>
 );
 
 export default EventsSection;
-

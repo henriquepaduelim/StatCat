@@ -9,11 +9,10 @@ type TeamManagementSectionProps = {
 };
 
 const TeamManagementSection = ({ teamListProps, insightsProps }: TeamManagementSectionProps) => (
-  <section className="print-hidden grid gap-6 lg:grid-cols-2">
+  <section className="print-hidden grid w-full grid-cols-1 gap-6 lg:grid-cols-2">
     <TeamListCard {...teamListProps} />
     <TeamInsightsCard {...insightsProps} />
   </section>
 );
 
 export default TeamManagementSection;
-

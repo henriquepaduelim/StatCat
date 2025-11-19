@@ -74,13 +74,13 @@ const TeamInsightsCard = ({
   }, [pendingReports, mySubmissions]);
 
   return (
-    <div className="rounded-xl border border-action-primary/20 bg-white/80 p-4 sm:p-6 shadow-xl backdrop-blur">
+    <div className="w-full rounded-xl border border-action-primary/20 bg-white/80 p-4 sm:p-6 shadow-xl backdrop-blur">
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1">
             <h2 className="text-lg font-semibold text-container-foreground">Report Workflow</h2>
           </div>
-          <div className="flex w-full flex-row gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
+          <div className="flex w-svw flex-row gap-0.5 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
             <button
               type="button"
               onClick={onGameReport}
@@ -98,7 +98,7 @@ const TeamInsightsCard = ({
               className="flex items-center justify-center gap-1 rounded-md bg-action-primary px-3 py-2 text-sm font-semibold tracking-wide text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary focus-visible:ring-offset-2 sm:px-4"
             >
               <FontAwesomeIcon icon={faPlus} className="text-xs" />
-              <span className="whitespace-nowrap">New Report Card</span>
+              <span className="whitespace-nowrap">Report Card</span>
             </button>
             {canRecordCombineMetrics ? (
               <button
@@ -107,7 +107,7 @@ const TeamInsightsCard = ({
                 className="flex items-center justify-center gap-1 rounded-md bg-action-primary px-3 py-2 text-sm font-semibold tracking-wide text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 focus-visible:ring-2"
               >
                 <FontAwesomeIcon icon={faPlus} className="text-xs" />
-                <span className="whitespace-nowrap">Combine Metrics</span>
+                <span className="whitespace-nowrap">Testing</span>
               </button>
             ) : null}
           </div>

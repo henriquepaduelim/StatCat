@@ -86,7 +86,7 @@ const LeaderboardCard = ({ limit = 5, presetType = null, title, description }: L
   const entries = leaderboardQuery.data?.entries ?? [];
 
   return (
-    <div className="rounded-xl border border-action-primary/25 bg-container-gradient p-4 sm:p-6 shadow-xl backdrop-blur">
+    <div className="w-full rounded-xl border border-action-primary/25 bg-container-gradient p-4 sm:p-6 shadow-xl backdrop-blur">
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
