@@ -7,6 +7,7 @@ import {
   faIdBadge,
   faRankingStar,
   faUserAstronaut,
+  faUsers,
 } from "@fortawesome/free-solid-svg-icons";
 
 import type { TranslationDictionary } from "../i18n/translations";
@@ -40,6 +41,12 @@ export const NAV_ITEMS: NavItem[] = [
     icon: faRankingStar,
     label: (t) => t.common.athletes,
     requiredPermission: "canViewAthletes",
+  },
+  {
+    to: "/team-dashboard",
+    icon: faUsers,
+    label: () => "TEAM HUB",
+    requiredPermission: "canViewReports",
   },
   {
     to: "/team-feed",

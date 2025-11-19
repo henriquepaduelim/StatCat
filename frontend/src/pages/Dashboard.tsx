@@ -40,6 +40,7 @@ import { useTeamBuilderData } from "../hooks/useTeamBuilderData";
 import TeamFormModal from "../components/dashboard/TeamFormModal";
 import CoachFormModal from "../components/dashboard/CoachFormModal";
 import EventModal from "../components/dashboard/EventModal";
+import TeamCombineMetricModal from "../components/team-dashboard/TeamCombineMetricModal";
 import { calculateAge } from "../utils/athletes";
 import type {
   AthleteFilter,
@@ -142,6 +143,9 @@ const Dashboard = () => {
   const currentUserRole = user?.role ?? null;
   const currentUserAthleteId = user?.athlete_id ?? null;
   const isAthleteView = currentUserRole === "athlete";
+  const canRecordCombineMetrics = ["admin", "staff", "coach"].includes(
+    (currentUserRole || "").toLowerCase(),
+  );
   const teamNameById = useMemo(() => {
     return teams.reduce<Record<number, string>>((acc, team) => {
       acc[team.id] = team.name;
@@ -192,6 +196,20 @@ const Dashboard = () => {
   const [teamFormError, setTeamFormError] = useState<string | null>(null);
   const [teamNotice, setTeamNotice] = useState<NoticeState>(null);
   const [coachNotice, setCoachNotice] = useState<NoticeState>(null);
+  const [isCombineMetricModalOpen, setCombineMetricModalOpen] = useState(false);
+  const [combineMetricTeamId, setCombineMetricTeamId] = useState<number | null>(null);
+  const combineMetricTeam = useMemo(() => {
+    if (!combineMetricTeamId) {
+      return null;
+    }
+    return teams.find((team) => team.id === combineMetricTeamId) ?? null;
+  }, [combineMetricTeamId, teams]);
+  const combineMetricAthletes = useMemo(() => {
+    if (!combineMetricTeamId) {
+      return [];
+    }
+    return athletesByTeamId[combineMetricTeamId] ?? [];
+  }, [combineMetricTeamId, athletesByTeamId]);
   const { candidates: teamBuilderCandidates, remainingAthleteCount } = useTeamBuilderData({
     athletes,
     teamForm,
@@ -1323,6 +1341,25 @@ const Dashboard = () => {
     openGameReportModal();
   };
 
+  const closeCombineMetricModal = () => {
+    setCombineMetricModalOpen(false);
+    setCombineMetricTeamId(null);
+  };
+
+  const handleOpenCombineMetricModal = () => {
+    const fallbackTeamId = selectedTeamId ?? teams[0]?.id ?? null;
+    if (!fallbackTeamId) {
+      setTeamNotice({ variant: "error", message: "Create or select a team before recording metrics." });
+      return;
+    }
+    setCombineMetricTeamId(fallbackTeamId);
+    setCombineMetricModalOpen(true);
+  };
+
+  const handleCombineMetricSaved = () => {
+    setTeamNotice({ variant: "success", message: "Combine metrics saved successfully." });
+  };
+
 
   const teamListCardProps = {
     teams,
@@ -1358,6 +1395,8 @@ const Dashboard = () => {
     onOpenSubmissionsModal: () => setSubmissionListModalOpen(true),
     approvingSubmissionId,
     canApproveReports,
+    onRecordCombineMetrics: handleOpenCombineMetricModal,
+    canRecordCombineMetrics,
   };
   const calendarPanelProps = {
     summaryLabels,
@@ -1416,9 +1455,9 @@ const Dashboard = () => {
       <div className="space-y-8">
         <DashboardHero title={t.dashboard.title} description={t.dashboard.description} />
         <div className="grid gap-4 lg:grid-cols-2">
-          <LeaderboardCard title="Top scorers" description="Total goals recorded across reports." />
+          <LeaderboardCard title="Top Scorers" description="Total goals recorded across reports." />
           <LeaderboardCard
-            title="Clean sheet leaders"
+            title="Clean Sheet Leaders"
             description="Goalkeepers ranked by matches without conceding."
             presetType="clean_sheets"
           />
@@ -1546,6 +1585,14 @@ const Dashboard = () => {
         onRatingChange={handleReportCardRatingChange}
         onSubmit={handleReportCardSubmit}
         onCancel={handleReportCardCancel}
+      />
+      <TeamCombineMetricModal
+        isOpen={isCombineMetricModalOpen}
+        onClose={closeCombineMetricModal}
+        teamId={combineMetricTeamId}
+        teamName={combineMetricTeam?.name}
+        athletes={combineMetricAthletes}
+        onCreated={handleCombineMetricSaved}
       />
       <ReportSubmissionListModal
         isOpen={isSubmissionListModalOpen}

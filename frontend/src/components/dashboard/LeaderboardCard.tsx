@@ -91,7 +91,7 @@ const LeaderboardCard = ({ limit = 5, presetType = null, title, description }: L
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-container-foreground">
-              {title ?? (presetType === "clean_sheets" ? "Clean sheets" : "Goals leaderboard")}
+              {title ?? (presetType === "clean_sheets" ? "Clean Sheets" : "Goals Leaderboard")}
             </h2>
             <p className="text-sm text-muted">
               {description ?? "Live ranking across recorded sessions."}

@@ -312,6 +312,22 @@ export type TranslationDictionary = {
     empty: string;
     noTeams: string;
   };
+  teamDashboard?: {
+    title: string;
+    description: string;
+    selectLabel: string;
+    noTeams: string;
+    leaderboard: {
+      scorersTitle: string;
+      scorersDescription: string;
+      cleanSheetsTitle: string;
+      cleanSheetsDescription: string;
+    };
+    maintenanceTitle: string;
+    maintenanceDescription: string;
+    exportButton: string;
+    cleanButton: string;
+  };
   newAthlete: {
     title: string;
     subtitle: string;
@@ -757,7 +773,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       },
     },
     summary: {
-      title: "Team availability",
+      title: "Team Availability",
       subtitle: "View roster readiness one team at a time for matches, training or events.",
       teamLabel: "Team",
       teamPlaceholder: "Select a team",
@@ -828,7 +844,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
         closeButton: "Close",
       },
       calendar: {
-        title: "Upcoming events",
+        title: "Upcoming Events",
         subtitle: "",
         prevMonth: "Prev",
         nextMonth: "Next",
@@ -946,6 +962,23 @@ export const translations: Record<Locale, TranslationDictionary> = {
       error: "Unable to load posts right now.",
       empty: "No posts yet.",
       noTeams: "No teams available",
+    },
+    teamDashboard: {
+      title: "Team Hub",
+      description: "Live insights, combined metrics, and collaboration for your roster.",
+      selectLabel: "Team",
+      noTeams: "No teams available for this account.",
+      leaderboard: {
+        scorersTitle: "Top Scorers",
+        scorersDescription: "Goals recorded across official sessions.",
+        cleanSheetsTitle: "Clean Sheet Leaders",
+        cleanSheetsDescription: "Goalkeepers with the lowest concessions.",
+      },
+      maintenanceTitle: "Season Maintenance",
+      maintenanceDescription:
+        "Export the community feed and clean the media folder at the end of the season.",
+      exportButton: "Download Archive",
+      cleanButton: "Download & Clean",
     },
     newAthlete: {
       title: "New athlete",

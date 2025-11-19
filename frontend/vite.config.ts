@@ -1,11 +1,15 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from 'vite-plugin-pwa';
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 
 
 const escapeRegex = (value: string) =>
   value.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+
+const projectRoot = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -21,10 +25,11 @@ export default defineConfig(({ mode }) => {
     "i",
   );
 
-  return {
-    plugins: [
-      react(),
-      VitePWA({
+  const enablePwaInBuild = env.VITE_ENABLE_PWA_BUILD === "true";
+  const shouldEnablePwa = mode !== "production" || enablePwaInBuild;
+
+  const pwaPlugin = shouldEnablePwa
+    ? VitePWA({
         registerType: "autoUpdate",
         includeAssets: [
           "/media/1ELITE0LOGO.svg",
@@ -130,8 +135,18 @@ export default defineConfig(({ mode }) => {
           type: "module",
           suppressWarnings: true,
         },
-      }),
-    ],
+      })
+    : null;
+
+  return {
+    plugins: [react(), ...(pwaPlugin ? [pwaPlugin] : [])],
+    resolve: {
+      alias: shouldEnablePwa
+        ? {}
+        : {
+            "virtual:pwa-register/react": resolve(projectRoot, "src/lib/pwa-register-stub.ts"),
+          },
+    },
     server: {
       port: 5173,
       proxy: {

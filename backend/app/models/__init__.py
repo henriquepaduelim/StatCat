@@ -6,6 +6,7 @@ from app.models.session_result import SessionResult
 from app.models.match_stat import MatchStat
 from app.models.team import Team
 from app.models.team_post import TeamPost
+from app.models.team_combine_metric import TeamCombineMetric
 from app.models.test_definition import TestDefinition
 from app.models.user import User
 from app.models.report_submission import (
@@ -27,6 +28,7 @@ __all__ = [
     "GroupMembership",
     "Team",
     "TeamPost",
+    "TeamCombineMetric",
     "ReportSubmission",
     "ReportSubmissionStatus",
     "ReportSubmissionType",

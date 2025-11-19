@@ -25,6 +25,7 @@ const PlayerCombineResults = lazy(
 const PlayerReportCards = lazy(() => import("./pages/player-profile/ReportCardsPage"));
 const PlayerScheduling = lazy(() => import("./pages/player-profile/SchedulingPage"));
 const TeamFeed = lazy(() => import("./pages/TeamFeed"));
+const TeamDashboard = lazy(() => import("./pages/TeamDashboard"));
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -150,6 +151,14 @@ const App = () => {
             element={
               <ProtectedRoute requiredPermission="canViewReports">
                 <TeamFeed />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/team-dashboard"
+            element={
+              <ProtectedRoute requiredPermission="canViewReports">
+                <TeamDashboard />
               </ProtectedRoute>
             }
           />

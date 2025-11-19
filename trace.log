@@ -1,0 +1,42 @@
+18:22:36.540042 git.c:502               trace: built-in: git push
+18:22:36.541940 run-command.c:673       trace: run_command: GIT_DIR=.git git remote-https origin https://github.com/henriquepaduelim/StatCat.git
+18:22:36.542026 run-command.c:765       trace: start_command: /usr/local/opt/git/libexec/git-core/git remote-https origin https://github.com/henriquepaduelim/StatCat.git
+18:22:36.558684 git.c:806               trace: exec: git-remote-https origin https://github.com/henriquepaduelim/StatCat.git
+18:22:36.559844 run-command.c:673       trace: run_command: git-remote-https origin https://github.com/henriquepaduelim/StatCat.git
+18:22:36.559919 run-command.c:765       trace: start_command: /usr/local/opt/git/libexec/git-core/git-remote-https origin https://github.com/henriquepaduelim/StatCat.git
+18:22:36.593185 http.c:890              == Info: Couldn't find host github.com in the .netrc file; using defaults
+18:22:36.598126 http.c:890              == Info: Host github.com:443 was resolved.
+18:22:36.598180 http.c:890              == Info: IPv6: (none)
+18:22:36.598203 http.c:890              == Info: IPv4: 4.228.31.150
+18:22:36.598270 http.c:890              == Info:   Trying 4.228.31.150:443...
+18:22:36.609359 http.c:890              == Info: Connected to github.com (4.228.31.150) port 443
+18:22:36.609482 http.c:890              == Info: ALPN: curl offers http/1.1
+18:22:36.609926 http.c:890              == Info: (304) (OUT), TLS handshake, Client hello (1):
+18:22:36.620113 http.c:890              == Info:  CAfile: /etc/ssl/cert.pem
+18:22:36.620201 http.c:890              == Info:  CApath: none
+18:22:36.620340 http.c:890              == Info: (304) (IN), TLS handshake, Server hello (2):
+18:22:36.620664 http.c:890              == Info: (304) (IN), TLS handshake, Unknown (8):
+18:22:36.620719 http.c:890              == Info: (304) (IN), TLS handshake, Certificate (11):
+18:22:36.623334 http.c:890              == Info: (304) (IN), TLS handshake, CERT verify (15):
+18:22:36.623671 http.c:890              == Info: (304) (IN), TLS handshake, Finished (20):
+18:22:36.623896 http.c:890              == Info: (304) (OUT), TLS handshake, Finished (20):
+18:22:36.623929 http.c:890              == Info: SSL connection using TLSv1.3 / AEAD-AES128-GCM-SHA256 / [blank] / UNDEF
+18:22:36.623943 http.c:890              == Info: ALPN: server accepted http/1.1
+18:22:36.623958 http.c:890              == Info: Server certificate:
+18:22:36.623975 http.c:890              == Info:  subject: CN=github.com
+18:22:36.623990 http.c:890              == Info:  start date: Feb  5 00:00:00 2025 GMT
+18:22:36.624003 http.c:890              == Info:  expire date: Feb  5 23:59:59 2026 GMT
+18:22:36.624025 http.c:890              == Info:  subjectAltName: host "github.com" matched cert's "github.com"
+18:22:36.624050 http.c:890              == Info:  issuer: C=GB; ST=Greater Manchester; L=Salford; O=Sectigo Limited; CN=Sectigo ECC Domain Validation Secure Server CA
+18:22:36.624063 http.c:890              == Info:  SSL certificate verify ok.
+18:22:36.624076 http.c:890              == Info: using HTTP/1.x
+18:22:36.624635 http.c:837              => Send header, 0000000219 bytes (0x000000db)
+18:22:36.624690 http.c:849              => Send header: GET /henriquepaduelim/StatCat.git/info/refs?service=git-receive-pack HTTP/1.1
+18:22:36.624713 http.c:849              => Send header: Host: github.com
+18:22:36.624733 http.c:849              => Send header: User-Agent: git/2.51.1
+18:22:36.624752 http.c:849              => Send header: Accept: */*
+18:22:36.624773 http.c:849              => Send header: Accept-Encoding: deflate, gzip
+18:22:36.624792 http.c:849              => Send header: Accept-Language: pt-BR, *;q=0.9
+18:22:36.624811 http.c:849              => Send header: Pragma: no-cache
+18:22:36.624829 http.c:849              => Send header:
+18:22:36.624866 http.c:890              == Info: Request completely sent off

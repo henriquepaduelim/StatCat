@@ -196,3 +196,85 @@ def test_pending_submission_approval_flow(
         headers={"Authorization": f"Bearer {token}"},
     )
     assert all(item["id"] != submission_id for item in pending_after.json())
+
+
+def test_leaderboard_filter_by_team(
+    client: TestClient,
+    session: Session,
+    admin_user,
+) -> None:
+    token = get_auth_token(client, admin_user.email, "adminpass123")
+    team_one = _create_team(session, admin_user.id)
+    team_two = _create_team(session, admin_user.id)
+    scorer_one = _create_athlete(session, team_one.id, 11)
+    scorer_two = _create_athlete(session, team_two.id, 12)
+
+    payload_one = {
+        "team_id": team_one.id,
+        "opponent": "Opponent A",
+        "date": "2024-10-10",
+        "goals_for": 3,
+        "goals_against": 0,
+        "goal_scorers": [{"athlete_id": scorer_one.id, "goals": 3}],
+        "goalkeepers": [],
+    }
+    payload_two = {
+        "team_id": team_two.id,
+        "opponent": "Opponent B",
+        "date": "2024-10-11",
+        "goals_for": 1,
+        "goals_against": 0,
+        "goal_scorers": [{"athlete_id": scorer_two.id, "goals": 1}],
+        "goalkeepers": [],
+    }
+
+    client.post(
+        "/api/v1/match-stats/reports",
+        json=payload_one,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    client.post(
+        "/api/v1/match-stats/reports",
+        json=payload_two,
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    leaderboard_team_one = client.get(
+        f"/api/v1/analytics/leaderboards/scoring?team_id={team_one.id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert leaderboard_team_one.status_code == 200
+    entries_one = leaderboard_team_one.json()["entries"]
+    assert entries_one == [
+        {
+            "athlete_id": scorer_one.id,
+            "full_name": f"{scorer_one.first_name} {scorer_one.last_name}",
+            "team": team_one.name,
+            "age_category": team_one.age_category,
+            "position": scorer_one.primary_position,
+            "goals": 3,
+            "clean_sheets": 0,
+            "games_played": 0,
+            "goals_conceded": 0,
+        }
+    ]
+
+    leaderboard_team_two = client.get(
+        f"/api/v1/analytics/leaderboards/scoring?team_id={team_two.id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert leaderboard_team_two.status_code == 200
+    entries_two = leaderboard_team_two.json()["entries"]
+    assert entries_two == [
+        {
+            "athlete_id": scorer_two.id,
+            "full_name": f"{scorer_two.first_name} {scorer_two.last_name}",
+            "team": team_two.name,
+            "age_category": team_two.age_category,
+            "position": scorer_two.primary_position,
+            "goals": 1,
+            "clean_sheets": 0,
+            "games_played": 0,
+            "goals_conceded": 0,
+        }
+    ]

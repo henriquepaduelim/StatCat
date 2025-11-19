@@ -77,6 +77,7 @@ def scoring_leaderboard(
     limit: int = Query(default=10, ge=1, le=50),
     gender: str | None = Query(default=None),
     age_category: str | None = Query(default=None),
+    team_id: int | None = Query(default=None),
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_active_user),
 ) -> LeaderboardResponse:
@@ -104,6 +105,8 @@ def scoring_leaderboard(
             statement = statement.where(Athlete.gender == gender.lower())
         if age_category:
             statement = statement.where(Team.age_category == age_category)
+        if team_id is not None:
+            statement = statement.where(MatchStat.team_id == team_id)
 
         grouped = statement.group_by(
             Athlete.id,
@@ -177,6 +180,8 @@ def scoring_leaderboard(
             statement = statement.where(Athlete.gender == gender.lower())
         if age_category:
             statement = statement.where(Team.age_category == age_category)
+        if team_id is not None:
+            statement = statement.where(MatchStat.team_id == team_id)
 
         grouped = statement.group_by(
             Athlete.id,

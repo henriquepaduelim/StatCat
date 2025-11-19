@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 import json
 import zipfile
 import io
@@ -8,6 +8,7 @@ from sqlmodel import Session
 
 from app.models.athlete import Athlete, AthleteGender
 from app.models.team import Team
+from app.models.user import UserRole
 from app.models.user import User
 from tests.conftest import get_auth_token
 

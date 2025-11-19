@@ -21,6 +21,8 @@ type TeamInsightsCardProps = {
   onOpenSubmissionsModal?: () => void;
   approvingSubmissionId?: number | null;
   canApproveReports?: boolean;
+  onRecordCombineMetrics?: () => void;
+  canRecordCombineMetrics?: boolean;
 };
 
 const formatNumber = (value: number) => new Intl.NumberFormat().format(value);
@@ -40,6 +42,8 @@ const TeamInsightsCard = ({
   onOpenSubmissionsModal = () => undefined,
   approvingSubmissionId = null,
   canApproveReports = false,
+  onRecordCombineMetrics,
+  canRecordCombineMetrics = false,
 }: TeamInsightsCardProps) => {
   const totalTeams = teams.length;
   const assignedAthletes = athletes.filter((athlete) => typeof athlete.team_id === "number").length;
@@ -74,7 +78,7 @@ const TeamInsightsCard = ({
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1">
-            <h2 className="text-lg font-semibold text-container-foreground">Report workflow</h2>
+            <h2 className="text-lg font-semibold text-container-foreground">Report Workflow</h2>
             <p className="text-sm text-muted">Create new entries and monitor approvals.</p>
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
@@ -97,13 +101,23 @@ const TeamInsightsCard = ({
               <FontAwesomeIcon icon={faPlus} className="text-xs" />
               <span className="whitespace-nowrap">New Report Card</span>
             </button>
+            {canRecordCombineMetrics ? (
+              <button
+                type="button"
+                onClick={onRecordCombineMetrics}
+                className="flex items-center justify-center gap-1 rounded-md border border-action-primary px-3 py-2 text-sm font-semibold tracking-wide text-action-primary transition hover:bg-action-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary focus-visible:ring-offset-2 sm:px-4"
+              >
+                <FontAwesomeIcon icon={faPlus} className="text-xs" />
+                <span className="whitespace-nowrap">Combine Metrics</span>
+              </button>
+            ) : null}
           </div>
         </div>
 
         <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-black/10 bg-white/80 p-3">
-              <p className="text-xs uppercase tracking-wide text-muted">Report cards</p>
+              <p className="text-xs uppercase tracking-wide text-muted">Report Cards</p>
               <div className="mt-2 flex items-center gap-4">
                 <div>
                   <p className="text-2xl font-semibold text-container-foreground">
@@ -120,7 +134,7 @@ const TeamInsightsCard = ({
               </div>
             </div>
             <div className="rounded-xl border border-black/10 bg-white/80 p-3">
-              <p className="text-xs uppercase tracking-wide text-muted">Game reports</p>
+              <p className="text-xs uppercase tracking-wide text-muted">Game Reports</p>
               <div className="mt-2 flex items-center gap-4">
                 <div>
                   <p className="text-2xl font-semibold text-container-foreground">
