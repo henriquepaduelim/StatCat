@@ -175,45 +175,43 @@ const TeamDashboard = () => {
 
   return (
     <>
-    <div className="space-y-6 pb-32">
-      <header className="rounded-3xl border border-black/5 bg-white/90 p-6 shadow-lg">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-muted">Team Dashboard</p>
-            <h1 className="text-3xl font-semibold text-container-foreground">
-              {teamDashboardTexts.title}
-            </h1>
-            <p className="text-base text-muted">{teamDashboardTexts.description}</p>
-          </div>
-          <div className="w-full max-w-xs">
-            <label className="text-xs font-semibold uppercase tracking-wide text-muted">
-              {teamDashboardTexts.selectLabel}
-              <select
-                value={selectedTeamId ?? ""}
-                onChange={(event) => setSelectedTeamId(Number(event.target.value))}
-                disabled={role === "athlete" || availableTeams.length === 0}
-                className="mt-2 w-full rounded-xl border border-black/10 bg-white px-4 py-2 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {availableTeams.map((team) => (
-                  <option key={team.id} value={team.id}>
-                    {team.name} ({team.age_category})
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+    <div className="space-y-6">
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.3em] text-muted">Team Dashboard</p>
+          <h1 className="text-3xl font-semibold text-container-foreground">
+            {teamDashboardTexts.title}
+          </h1>
+          <p className="text-base text-muted">{teamDashboardTexts.description}</p>
+        </div>
+        <div className="w-full max-w-xs">
+          <label className="text-xs font-semibold uppercase tracking-wide text-muted">
+            {teamDashboardTexts.selectLabel}
+            <select
+              value={selectedTeamId ?? ""}
+              onChange={(event) => setSelectedTeamId(Number(event.target.value))}
+              disabled={role === "athlete" || availableTeams.length === 0}
+              className="mt-2 w-full rounded-xl border border-black/10 bg-white px-4 py-2 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {availableTeams.map((team) => (
+                <option key={team.id} value={team.id}>
+                  {team.name} ({team.age_category})
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
         {noTeamAvailable ? (
-          <div className="mt-4 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-900">
+          <div className="rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-900">
             {teamDashboardTexts.noTeams}
           </div>
         ) : null}
       </header>
 
       {selectedTeam ? (
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <TeamLeaderboardCard
                 type="scorers"
                 title={leaderboardLabels.scorersTitle}
@@ -250,6 +248,32 @@ const TeamDashboard = () => {
               isError={Boolean(postsQuery.isError)}
               teamName={selectedTeam.name}
             />
+            {canExportArchive ? (
+              <div className="rounded-xl border border-black/10 bg-white/90 p-3 text-xs text-muted shadow">
+                <p className="text-[0.6rem] uppercase tracking-[0.25em] text-muted">
+                  {teamDashboardTexts.maintenanceTitle}
+                </p>
+                <p className="mt-1 text-[0.85rem] leading-relaxed">{teamDashboardTexts.maintenanceDescription}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleArchiveDownload(false)}
+                    disabled={downloadArchiveMutation.isPending}
+                    className="rounded-md border border-black/20 px-2.5 py-1 text-[0.7rem] font-semibold text-muted transition hover:text-container-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {downloadArchiveMutation.isPending ? "Preparing..." : teamDashboardTexts.exportButton}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleArchiveDownload(true)}
+                    disabled={downloadArchiveMutation.isPending}
+                    className="rounded-md border border-black/20 px-2.5 py-1 text-[0.7rem] font-semibold text-muted transition hover:text-container-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {teamDashboardTexts.cleanButton}
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -263,32 +287,6 @@ const TeamDashboard = () => {
         onCreated={() => queryClient.invalidateQueries({ queryKey: ["team-combine-metrics", selectedTeamId] })}
       />
     </div>
-      {canExportArchive ? (
-        <div className="fixed bottom-6 right-6 z-40 w-[min(260px,40vw)] rounded-xl border border-black/10 bg-white/90 p-3 text-xs text-muted shadow-2xl">
-          <p className="text-[0.6rem] uppercase tracking-[0.25em] text-muted">
-            {teamDashboardTexts.maintenanceTitle}
-          </p>
-          <p className="mt-1 text-[0.85rem] leading-relaxed">{teamDashboardTexts.maintenanceDescription}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => handleArchiveDownload(false)}
-              disabled={downloadArchiveMutation.isPending}
-              className="rounded-md border border-black/20 px-2.5 py-1 text-[0.7rem] font-semibold text-muted transition hover:text-container-foreground disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {downloadArchiveMutation.isPending ? "Preparing..." : teamDashboardTexts.exportButton}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleArchiveDownload(true)}
-              disabled={downloadArchiveMutation.isPending}
-              className="rounded-md border border-black/20 px-2.5 py-1 text-[0.7rem] font-semibold text-muted transition hover:text-container-foreground disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {teamDashboardTexts.cleanButton}
-            </button>
-          </div>
-        </div>
-      ) : null}
     </>
   );
 };

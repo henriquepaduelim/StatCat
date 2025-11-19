@@ -18,8 +18,8 @@ const truncate = (value: string, max = 140) => {
 
 const TeamFeedPreview = ({ posts, isLoading, isError, teamName }: TeamFeedPreviewProps) => {
   return (
-    <div className="rounded-2xl border border-black/5 bg-white/90 p-5 shadow-lg">
-      <div className="flex items-start justify-between gap-3">
+    <div className="rounded-2xl border border-black/5 bg-white/90 p-4 shadow-lg sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h3 className="text-lg font-semibold text-container-foreground">
             {teamName ? `${teamName} Feed` : "Team Feed"}

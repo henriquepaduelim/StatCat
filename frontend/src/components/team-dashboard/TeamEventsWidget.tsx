@@ -18,7 +18,7 @@ const formatDate = (dateStr: string, timeStr: string | null) => {
 
 const TeamEventsWidget = ({ events, isLoading, isError }: TeamEventsWidgetProps) => {
   return (
-    <div className="rounded-2xl border border-black/5 bg-white/90 p-5 shadow-lg">
+    <div className="rounded-2xl border border-black/5 bg-white/90 p-4 shadow-lg sm:p-5">
       <h3 className="text-lg font-semibold text-container-foreground">Upcoming Events</h3>
       <p className="text-sm text-muted">
         Training, combines, and matches synced to this team&apos;s calendar.
