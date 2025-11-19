@@ -175,7 +175,7 @@ const TeamDashboard = () => {
 
   return (
     <>
-    <div className="space-y-6">
+    <div className="space-y-6 pb-32">
       <header className="rounded-3xl border border-black/5 bg-white/90 p-6 shadow-lg">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
