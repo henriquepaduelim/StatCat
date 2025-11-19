@@ -54,17 +54,23 @@ const TeamFeedPreview = ({ posts, isLoading, isError, teamName }: TeamFeedPrevie
                 <span className="font-semibold text-container-foreground">{post.author_name}</span>
                 <time>{new Date(post.created_at).toLocaleString()}</time>
               </div>
-              {post.content ? (
-                <p className="mt-2 text-sm text-container-foreground">{truncate(post.content)}</p>
-              ) : null}
-              {post.media_url ? (
-                <div className="mt-2 overflow-hidden rounded-lg border border-black/5">
-                  <img
-                    src={post.media_url}
-                    alt="Team upload"
-                    className="h-40 w-full object-cover"
-                    loading="lazy"
-                  />
+              {(post.content || post.media_url) ? (
+                <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-start">
+                  {post.content ? (
+                    <p className="flex-1 text-sm text-container-foreground">
+                      {truncate(post.content)}
+                    </p>
+                  ) : null}
+                  {post.media_url ? (
+                    <div className="overflow-hidden rounded-lg border border-black/5 sm:w-32 sm:flex-shrink-0">
+                      <img
+                        src={post.media_url}
+                        alt="Team upload"
+                        className="h-32 w-full object-cover sm:h-32"
+                        loading="lazy"
+                      />
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </article>
