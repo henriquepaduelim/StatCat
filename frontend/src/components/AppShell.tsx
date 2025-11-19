@@ -1,4 +1,6 @@
 import { PropsWithChildren, useMemo } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
 import { useLocation } from "react-router-dom";
 
 import SideNav from "./SideNav";
@@ -38,7 +40,17 @@ const AppShell = ({ children }: PropsWithChildren) => {
       <div className="md:pl-72 flex flex-col flex-1">
         <header className="print-hidden md:hidden flex items-center justify-between px-2 pt-6 pb-4">
           <img src={branding.assets.logo} alt={`${branding.name} logo`} className="h-16 w-auto" />
-          <span className="text-sm font-medium text-muted">{greeting}</span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-muted">{greeting}</span>
+            <button
+              type="button"
+              onClick={() => useAuthStore.getState().clear()}
+              className="rounded-full border border-white/20 bg-sidebar/90 p-2 text-sidebar-foreground shadow-lg backdrop-blur"
+              aria-label="Log out"
+            >
+              <FontAwesomeIcon icon={faRightFromBracket} className="text-base" />
+            </button>
+          </div>
         </header>
         <header className="print-hidden hidden md:flex items-center justify-start px-6 py-4">
           <span className="text-sm font-medium text-muted">{greeting}</span>

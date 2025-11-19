@@ -3,7 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRightFromBracket, faAngleUp } from "@fortawesome/free-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/free-solid-svg-icons";
-
+          
 import { useAuthStore } from "../stores/useAuthStore";
 import { useTranslation } from "../i18n/useTranslation";
 import { useIsRole, usePermissions } from "../hooks/usePermissions";
@@ -117,6 +117,7 @@ const SideNav = () => {
 
   return (
     <>
+      {/* Mobile Logout Icon */}
       {/* Mobile Navigation - Fixed Bottom Bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t-2 border-yellow-600/50 shadow-2xl">
         <nav className="flex items-stretch justify-around h-20">
@@ -169,25 +170,6 @@ const SideNav = () => {
               )}
             </NavLink>
           ))}
-          
-          {/* Logout Button */}
-          <button
-            type="button"
-            onClick={() => clearAuth()}
-            className="flex-1 flex flex-col items-center justify-center gap-1.5 relative transition-all duration-200 hover:bg-action-primary/5"
-          >
-            <div className="relative transform translate-y-0 transition-transform duration-200">
-              <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-gradient-to-br from-sidebar-accent/20 via-sidebar-accent/10 to-transparent shadow-[inset_0_1px_2px_rgba(255,255,255,0.1),0_2px_6px_rgba(0,0,0,0.15)] border border-white/5 transition-all duration-200 hover:shadow-[inset_0_2px_8px_rgba(0,0,0,0.1),0_6px_16px_rgba(0,0,0,0.2)]">
-                <FontAwesomeIcon 
-                  icon={LOGOUT_ICON} 
-                  className="text-xl text-sidebar-foreground transition-all duration-200 drop-shadow-sm"
-                />
-              </div>
-            </div>
-            <span className="text-[9px] font-semibold uppercase tracking-wider transition-all duration-200 text-sidebar-foreground/70">
-              {t.common.logout}
-            </span>
-          </button>
         </nav>
       </div>
 
