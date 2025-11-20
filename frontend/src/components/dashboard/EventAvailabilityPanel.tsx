@@ -182,23 +182,31 @@ const EventAvailabilityPanel = ({
   const renderBody = () => {
     if (!selectedEventDate) {
       return (
-        <div className="rounded-lg border border-black/10 bg-white/70 px-3 py-6 text-center text-xs text-muted">
+        <div className="rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] px-3 py-6 text-center text-xs text-muted">
           Select a date to view RSVP availability.
         </div>
       );
     }
 
     if (isRosterLoading) {
-      return <div className="rounded-lg border border-black/10 bg-white/70 px-3 py-6 text-center text-xs text-muted">{summaryLabels.loading}</div>;
+      return (
+        <div className="rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] px-3 py-6 text-center text-xs text-muted">
+          {summaryLabels.loading}
+        </div>
+      );
     }
 
     if (rosterHasError) {
-      return <div className="rounded-lg border border-black/10 bg-white/70 px-3 py-6 text-center text-xs text-red-500">{summaryLabels.error}</div>;
+      return (
+        <div className="rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] px-3 py-6 text-center text-xs text-red-500">
+          {summaryLabels.error}
+        </div>
+      );
     }
 
     if (!totalPages || !currentEntry || !currentTeam) {
       return (
-        <div className="rounded-lg border border-black/10 bg-white/70 px-3 py-6 text-center text-xs text-muted">
+        <div className="rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] px-3 py-6 text-center text-xs text-muted">
           {summaryLabels.empty}
         </div>
       );
@@ -215,8 +223,14 @@ const EventAvailabilityPanel = ({
       currentUserRole === "coach" && currentUserId != null && Boolean(coachParticipant);
 
     return (
-      <div className="flex h-[500px] flex-col overflow-hidden rounded-lg border border-white/10 bg-white/70">
-        <div className="border-b border-black/5 bg-gray-50/80 px-4 py-3 text-sm font-semibold text-container-foreground">
+      <div
+        className="flex h-[500px] flex-col overflow-hidden rounded-lg border"
+        style={{
+          backgroundColor: "rgb(var(--color-container-background))",
+          borderColor: "rgb(var(--color-border))",
+        }}
+      >
+        <div className="border-b border-black/5 px-4 py-3 text-sm font-semibold text-container-foreground">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p>{event.name}</p>
@@ -264,7 +278,7 @@ const EventAvailabilityPanel = ({
             )}
             {showGuests ? (
               <>
-                <li className="border-t border-black/5 bg-gray-50/60 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted sm:px-4">
+                <li className="border-t border-black/5 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted sm:px-4" style={{ backgroundColor: "rgb(var(--color-container-background))" }}>
                   Guest Athletes ({currentEntry.guests.length})
                 </li>
                 {currentEntry.guests.map((athlete) => renderAthleteRow(athlete, event.id))}
@@ -272,7 +286,7 @@ const EventAvailabilityPanel = ({
             ) : null}
           </ul>
         </div>
-        <div className="border-t border-dashed border-black/10 bg-white/80 px-4 py-3 text-sm">
+        <div className="border-t border-dashed border-black/10 px-4 py-3 text-sm" style={{ backgroundColor: "rgb(var(--color-container-background))" }}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs uppercase tracking-wide text-muted">{summaryLabels.coachLine.label}</p>

@@ -7,18 +7,18 @@ export const activeTheme: ThemeDefinition = {
   colors: {
     page: {
       background: "#F5F5F5",
-      foreground: "#141414",
+      foreground: "#000000",
     },
     container: {
       background: "#FFFFFF",
-      foreground: "#1F2933",
+      foreground: "#dee2e6",
     },
     header: {
       background: "#039903",
       foreground: "#F0F8EB",
     },
     sidebar: {
-      background: "#FCA311",
+      background: "#212529",
       foreground: "#F0F8EB",
     },
     footer: {
@@ -27,8 +27,8 @@ export const activeTheme: ThemeDefinition = {
     },
     action: {
       primary: {
-        background: "#14213D",
-        foreground: "#E1E1E1",
+        background: "#dee2e6",
+        foreground: "#212529",
       },
     },
     accent: "#2191FB",

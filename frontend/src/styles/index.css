@@ -158,6 +158,11 @@ textarea::placeholder {
       rgb(var(--color-container-background) / 0.75)
     );
   }
+
+  .theme-dark .bg-container-gradient {
+    background-image: none;
+    background-color: rgb(var(--color-container-background));
+  }
 }
 
 
@@ -187,4 +192,11 @@ textarea::placeholder {
   #athlete-report-card * {
     color: #000000 !important;
   }
+}
+.placeholder-muted::placeholder {
+  color: #d1d5db !important;
+}
+.placeholder-muted::placeholder {
+  color: #d6ebfc !important;
+  font-weight: 200;
 }

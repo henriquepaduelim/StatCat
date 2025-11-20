@@ -121,8 +121,9 @@ const TeamListCard = ({
                 type="text"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Team or athlete name"
-                className="mt-1 w-full rounded-lg border border-black/10 bg-white/80 px-3 py-2 text-sm text-container-foreground shadow-sm transition focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                placeholder="Search by team or athlete name"
+                className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2 text-sm text-container-foreground shadow-sm transition focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary placeholder-muted"
+                style={{ backgroundColor: "rgb(var(--color-container-background))" }}
               />
             </label>
           </div>
@@ -161,7 +162,13 @@ const TeamListCard = ({
             ) : showNoMatches ? (
               <p className="text-sm text-muted">No teams match your search.</p>
             ) : (
-              <div className="flex h-full flex-col overflow-hidden rounded-lg border border-white/10 bg-white/90">
+              <div
+                className="flex h-full flex-col overflow-hidden rounded-lg border"
+                style={{
+                  backgroundColor: "rgb(var(--color-container-background))",
+                  borderColor: "rgb(var(--color-border))",
+                }}
+              >
                 <div className="hidden grid-cols-[minmax(60px,0.6fr)_minmax(140px,0.9fr)_90px_90px_minmax(100px,0.8fr)] gap-3 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted sm:grid">
                   <span className="text-left">Team Name</span>
                   <span className="text-center">Coach</span>
@@ -178,7 +185,8 @@ const TeamListCard = ({
                     return (
                       <div
                         key={team.id}
-                        className="grid grid-cols-1 items-center gap-2 border-b border-black/5 px-3 py-3 text-sm hover:bg-white/50 last:border-b-0 sm:grid-cols-[minmax(60px,0.6fr)_minmax(140px,0.9fr)_90px_90px_minmax(100px,0.8fr)] sm:px-4"
+                        className="grid grid-cols-1 items-center gap-2 border-b border-black/5 px-3 py-3 text-sm last:border-b-0 sm:grid-cols-[minmax(60px,0.6fr)_minmax(140px,0.9fr)_90px_90px_minmax(100px,0.8fr)] sm:px-4"
+                        style={{ backgroundColor: "rgb(var(--color-container-background))" }}
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-action-primary/10 text-action-primary">

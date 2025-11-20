@@ -67,7 +67,13 @@ const CoachDirectoryCard = ({
             ) : !coaches.length ? (
               <p className="text-sm text-muted">No coaches registered yet.</p>
             ) : (
-              <div className="overflow-hidden rounded-lg border border-white/10 bg-white/90">
+              <div
+                className="overflow-hidden rounded-lg border"
+                style={{
+                  backgroundColor: "rgb(var(--color-container-background))",
+                  borderColor: "rgb(var(--color-border))",
+                }}
+              >
                 <div className="hidden grid-cols-[auto_1fr_120px_minmax(60px,110px)] gap-3 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted sm:grid">
                   <FontAwesomeIcon icon={faUserTie} className="self-center text-action-primary" />
                   <span>Coach Name</span>
@@ -77,7 +83,8 @@ const CoachDirectoryCard = ({
                 {coaches.map((coach) => (
                   <div
                     key={coach.id}
-                    className="grid grid-cols-1 items-start gap-3 border-b border-black/5 px-3 py-3 text-sm hover:bg-white/50 last:border-b-0 sm:grid-cols-[auto_1fr_120px_minmax(60px,110px)] sm:items-center sm:px-4"
+                    className="grid grid-cols-1 items-start gap-3 border-b border-black/5 px-3 py-3 text-sm last:border-b-0 sm:grid-cols-[auto_1fr_120px_minmax(60px,110px)] sm:items-center sm:px-4"
+                    style={{ backgroundColor: "rgb(var(--color-container-background))" }}
                   >
                     <div className="flex items-center gap-3 sm:contents">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-action-primary/10">

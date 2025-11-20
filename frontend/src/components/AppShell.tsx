@@ -6,10 +6,12 @@ import { useLocation } from "react-router-dom";
 import SideNav from "./SideNav";
 import { useAuthStore } from "../stores/useAuthStore";
 import branding from "../theme/branding.generated";
+import { useTheme } from "../theme/ThemeProvider";
 
 const AppShell = ({ children }: PropsWithChildren) => {
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
+  const { toggleTheme } = useTheme();
 
   const greeting = useMemo(() => {
     if (!user || !user.full_name) return "";
@@ -42,6 +44,13 @@ const AppShell = ({ children }: PropsWithChildren) => {
           <img src={branding.assets.logo} alt={`${branding.name} logo`} className="h-16 w-auto" />
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-muted">{greeting}</span>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="rounded-full border border-white/20 bg-sidebar/80 px-3 py-1 text-xs font-semibold text-sidebar-foreground shadow-lg backdrop-blur"
+            >
+              Test Mode
+            </button>
             <button
               type="button"
               onClick={() => useAuthStore.getState().clear()}

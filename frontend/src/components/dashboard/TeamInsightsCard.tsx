@@ -74,7 +74,13 @@ const TeamInsightsCard = ({
   }, [pendingReports, mySubmissions]);
 
   return (
-    <div className="flex h-full w-full flex-col rounded-xl border border-action-primary/20 bg-white/80 p-4 sm:p-6 shadow-xl backdrop-blur">
+    <div
+      className="flex h-full w-full flex-col rounded-xl border border-action-primary/20 p-4 sm:p-6 shadow-xl backdrop-blur"
+      style={{
+        backgroundColor: "rgb(var(--color-container-background))",
+        borderColor: "rgb(var(--color-border))",
+      }}
+    >
       <div className="flex h-full flex-col gap-4">
         <div className="flex flex-shrink-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1">
@@ -116,7 +122,13 @@ const TeamInsightsCard = ({
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
           <div className="flex-1 overflow-y-auto space-y-4 pr-1">
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-xl border border-black/10 bg-white/80 p-3">
+              <div
+                className="rounded-xl border p-3"
+                style={{
+                  backgroundColor: "rgb(var(--color-container-background))",
+                  borderColor: "rgb(var(--color-border))",
+                }}
+              >
                 <p className="text-xs uppercase tracking-wide text-muted">Report Cards</p>
                 <div className="mt-2 flex items-center gap-4">
                   <div>
@@ -133,7 +145,13 @@ const TeamInsightsCard = ({
                   </div>
                 </div>
               </div>
-              <div className="rounded-xl border border-black/10 bg-white/80 p-3">
+              <div
+                className="rounded-xl border p-3"
+                style={{
+                  backgroundColor: "rgb(var(--color-container-background))",
+                  borderColor: "rgb(var(--color-border))",
+                }}
+              >
                 <p className="text-xs uppercase tracking-wide text-muted">Game Reports</p>
                 <div className="mt-2 flex items-center gap-4">
                   <div>

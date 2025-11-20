@@ -112,8 +112,8 @@ const EventCalendarPanel = ({
                       ? isSelected
                         ? "border-action-primary bg-action-primary/10 text-action-primary"
                         : isToday
-                          ? "border-action-primary/40 bg-white text-action-primary"
-                          : "border-black/10 bg-white/80 text-container-foreground hover:border-action-primary/40"
+                          ? "border-action-primary/40 bg-[rgb(var(--color-container-background))] text-action-primary"
+                          : "border-black/20 bg-[rgb(var(--color-container-background))] text-container-foreground hover:border-action-primary/40"
                       : "border-transparent bg-transparent text-transparent"
                   }`}
                 >
@@ -147,7 +147,7 @@ const EventCalendarPanel = ({
             <ul className="mt-3 space-y-3 text-sm">
               {upcomingEvents.map((event) => (
                 <li key={event.id}>
-                  <div className="rounded-lg border border-black/10 bg-white/70 px-3 py-2 shadow-sm">
+                  <div className="rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] px-3 py-2 shadow-sm">
                     <div className="flex items-start gap-3">
                       <button
                         type="button"

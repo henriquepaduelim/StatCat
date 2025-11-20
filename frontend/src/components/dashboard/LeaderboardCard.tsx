@@ -28,26 +28,20 @@ const LeaderboardRow = ({
   entry: LeaderboardEntry;
   leaderboardType: LeaderboardType;
 }) => {
-  const accentClass =
-    position === 1
-      ? "bg-amber-50 text-amber-900 border-amber-200"
-      : position === 2
-      ? "bg-slate-50 text-slate-900 border-slate-200"
-      : position === 3
-      ? "bg-orange-50 text-orange-900 border-orange-200"
-      : "bg-white text-muted border-black/5";
-
   const medalCircleStyles: Record<number, CSSProperties> = {
     1: { backgroundColor: "#D4AF37", color: "#1f2937" },
     2: { backgroundColor: "#C0C0C0", color: "#1f2937" },
     3: { backgroundColor: "#CD7F32", color: "#fff" },
   };
-
   const primaryValue = leaderboardType === "scorers" ? entry.goals : entry.clean_sheets;
 
   return (
     <li
-      className={`grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-lg border px-3 py-2 text-sm ${accentClass}`}
+      className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-lg border px-3 py-2 text-sm"
+      style={{
+        backgroundColor: "rgb(var(--color-container-background))",
+        borderColor: "rgb(var(--color-border))",
+      }}
     >
       <span
         className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold shadow-sm"
@@ -108,7 +102,13 @@ const LeaderboardCard = ({
         </div>
 
 
-        <div className="rounded-2xl border border-white/10 bg-white/90 p-4 shadow-inner">
+        <div
+          className="rounded-2xl border p-4 shadow-inner"
+          style={{
+            backgroundColor: "rgb(var(--color-container-background))",
+            borderColor: "rgb(var(--color-border) / 0.4)",
+          }}
+        >
           {leaderboardQuery.isLoading ? (
             <p className="text-sm text-muted">Loading leaderboard...</p>
           ) : leaderboardQuery.isError ? (

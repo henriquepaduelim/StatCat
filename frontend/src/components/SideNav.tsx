@@ -10,6 +10,7 @@ import { useIsRole, usePermissions } from "../hooks/usePermissions";
 import { usePendingAthletesCount } from "../hooks/usePendingAthletesCount";
 import NotificationBadge from "./NotificationBadge";
 import { NAV_ITEMS, type NavItem, type NavChild } from "./navigationItems";
+import { useTheme } from "../theme/ThemeProvider";
 
 const LOGOUT_ICON = faRightFromBracket;
 
@@ -39,6 +40,7 @@ const SideNav = () => {
   const location = useLocation();
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
   const { data: pendingCount } = usePendingAthletesCount();
+  const { toggleTheme } = useTheme();
 
   // Filter navigation items based on user permissions
   const allowedNavItems = useMemo<AllowedNavItem[]>(() => {
@@ -119,7 +121,7 @@ const SideNav = () => {
     <>
       {/* Mobile Logout Icon */}
       {/* Mobile Navigation - Fixed Bottom Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-sidebar border-t-2 border-yellow-600/50 shadow-2xl">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#14203c] border-t-2 border-yellow-600/50 shadow-2xl">
         <nav className="flex items-stretch justify-around h-20">
           {mobileNavItems.map((item) => (
             <NavLink
@@ -127,7 +129,7 @@ const SideNav = () => {
               to={item.to}
               className={({ isActive }) =>
                 `flex-1 flex flex-col items-center justify-center gap-1.5 relative transition-all duration-200 ${
-                  isActive ? "bg-action-primary/90 text-action-primary-foreground" : "hover:bg-action-primary/5"
+                  isActive ? "bg-white/5" : "hover:bg-white/5"
                 }`
               }
             >
@@ -140,7 +142,7 @@ const SideNav = () => {
                   >
                     <FontAwesomeIcon
                       icon={item.icon}
-                      className={`${isActive ? "text-2xl text-action-primary-foreground" : "text-xl text-sidebar-foreground"} transition-all duration-200 drop-shadow-sm`}
+                      className={`${isActive ? "text-2xl" : "text-xl"} text-[#f4a240] transition-all duration-200 drop-shadow-sm`}
                     />
                     {item.to === "/athletes" && pendingCount && pendingCount.count > 0 && (
                       <div className="absolute -top-1 -right-1">
@@ -148,11 +150,11 @@ const SideNav = () => {
                       </div>
                     )}
                   </div>
-                  <span className={`text-[9px] font-semibold uppercase tracking-wider transition-all duration-200 ${
-                    isActive 
-                    ? "text-action-primary-foreground" 
-                    : "text-sidebar-foreground/70"
-                  }`}>
+                  <span
+                    className={`text-[9px] font-semibold uppercase tracking-wider transition-all duration-200 ${
+                      isActive ? "text-white" : "text-white/70"
+                    }`}
+                  >
                     {item.label(t)}
                   </span>
                 </>
@@ -246,7 +248,14 @@ const SideNav = () => {
               )})}
             </nav>
           </div>
-          <div className="flex-shrink-0 flex border-t border-yellow-600 px-2 py-4">
+          <div className="flex-shrink-0 flex items-center gap-3 border-t border-yellow-600 px-2 py-4">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex-1 rounded-full border border-white/20 bg-sidebar/80 px-3 py-2 text-xs font-semibold text-sidebar-foreground shadow-md transition hover:bg-sidebar/60"
+            >
+              Test Mode
+            </button>
             <button
               type="button"
               onClick={() => {
