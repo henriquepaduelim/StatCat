@@ -85,7 +85,7 @@ const ReportSubmissionReviewModal = ({
     } else {
       setNotes("");
     }
-  }, [submission?.id, submission?.review_notes, isOpen]);
+  }, [submission, isOpen]);
 
   const isReportCard = submission?.report_type === "report_card";
   const canTakeAction = Boolean(canResolve && submission?.status === "pending");
@@ -103,10 +103,10 @@ const ReportSubmissionReviewModal = ({
   const statusMeta = statusStyles[submission.status];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 modal-overlay backdrop-blur-sm" role="dialog" aria-modal="true">
       <div className="flex min-h-full items-start justify-center px-3 py-4 sm:items-center sm:px-6 sm:py-8" onClick={onClose}>
         <div
-          className="relative w-full max-w-3xl max-h-[95vh] overflow-y-auto rounded-2xl bg-white p-0 sm:p-0"
+          className="modal-surface relative w-full max-w-3xl max-h-[95vh] overflow-y-auto rounded-2xl p-0 sm:p-0"
           onClick={(event) => event.stopPropagation()}
         >
           <div className="flex items-center justify-between border-b border-black/10 px-6 py-4">
@@ -121,7 +121,7 @@ const ReportSubmissionReviewModal = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-black/10 text-muted hover:text-accent"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-container text-muted hover:text-accent"
                 aria-label="Close"
               >
                 ✕

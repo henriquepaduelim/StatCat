@@ -26,6 +26,7 @@ const PlayerReportCards = lazy(() => import("./pages/player-profile/ReportCardsP
 const PlayerScheduling = lazy(() => import("./pages/player-profile/SchedulingPage"));
 const TeamFeed = lazy(() => import("./pages/TeamFeed"));
 const TeamDashboard = lazy(() => import("./pages/TeamDashboard"));
+const Settings = lazy(() => import("./pages/Settings"));
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -159,6 +160,14 @@ const App = () => {
             element={
               <ProtectedRoute requiredPermission="canViewReports">
                 <TeamDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
               </ProtectedRoute>
             }
           />

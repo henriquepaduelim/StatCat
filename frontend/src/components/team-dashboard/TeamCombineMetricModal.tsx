@@ -120,8 +120,8 @@ const TeamCombineMetricModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
-      <div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center modal-overlay px-4 py-6">
+      <div className="modal-surface w-full max-w-3xl rounded-2xl p-6 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold text-container-foreground">Record combine entry</h2>

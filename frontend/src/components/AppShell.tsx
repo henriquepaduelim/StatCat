@@ -1,17 +1,17 @@
 import { PropsWithChildren, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
-import { useLocation } from "react-router-dom";
+import { faRightFromBracket, faGear } from "@fortawesome/free-solid-svg-icons";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import SideNav from "./SideNav";
 import { useAuthStore } from "../stores/useAuthStore";
 import branding from "../theme/branding.generated";
-import { useTheme } from "../theme/ThemeProvider";
+import ThemeToggleSwitch from "./ThemeToggleSwitch";
 
 const AppShell = ({ children }: PropsWithChildren) => {
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
-  const { toggleTheme } = useTheme();
+  const navigate = useNavigate();
 
   const greeting = useMemo(() => {
     if (!user || !user.full_name) return "";
@@ -29,6 +29,7 @@ const AppShell = ({ children }: PropsWithChildren) => {
 
   return (
     <div className="relative min-h-screen bg-page text-page-foreground">
+      <ThemeToggleSwitch />
       <div className="hidden md:flex fixed left-0 top-0 z-20 w-72 flex-col items-center pt-0 pointer-events-none">
         <a
           href="/dashboard"
@@ -46,15 +47,16 @@ const AppShell = ({ children }: PropsWithChildren) => {
             <span className="text-sm font-medium text-muted">{greeting}</span>
             <button
               type="button"
-              onClick={toggleTheme}
-              className="rounded-full border border-white/20 bg-sidebar/80 px-3 py-1 text-xs font-semibold text-sidebar-foreground shadow-lg backdrop-blur"
+              onClick={() => navigate("/settings")}
+              className="rounded-full bg-action-primary p-2 text-action-primary-foreground shadow-lg"
+              aria-label="Open settings"
             >
-              Test Mode
+              <FontAwesomeIcon icon={faGear} className="text-base" />
             </button>
             <button
               type="button"
               onClick={() => useAuthStore.getState().clear()}
-              className="rounded-full border border-white/20 bg-sidebar/90 p-2 text-sidebar-foreground shadow-lg backdrop-blur"
+              className="rounded-full bg-action-primary p-2 text-action-primary-foreground shadow-lg"
               aria-label="Log out"
             >
               <FontAwesomeIcon icon={faRightFromBracket} className="text-base" />

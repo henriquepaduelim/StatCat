@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faRightFromBracket, faAngleUp } from "@fortawesome/free-solid-svg-icons";
+import { faRightFromBracket, faAngleUp, faGear } from "@fortawesome/free-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/free-solid-svg-icons";
           
 import { useAuthStore } from "../stores/useAuthStore";
@@ -10,9 +10,9 @@ import { useIsRole, usePermissions } from "../hooks/usePermissions";
 import { usePendingAthletesCount } from "../hooks/usePendingAthletesCount";
 import NotificationBadge from "./NotificationBadge";
 import { NAV_ITEMS, type NavItem, type NavChild } from "./navigationItems";
-import { useTheme } from "../theme/ThemeProvider";
 
 const LOGOUT_ICON = faRightFromBracket;
+const SETTINGS_ICON = faGear;
 
 const linkClasses = ({ isActive }: { isActive: boolean }) =>
   `interactive-hover block w-full px-3 py-2 text-left text-sm font-medium shadow-lg transition-colors duration-100 ease-in-out ${
@@ -39,8 +39,8 @@ const SideNav = () => {
   const isAthlete = useIsRole("athlete");
   const location = useLocation();
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
+  const navigate = useNavigate();
   const { data: pendingCount } = usePendingAthletesCount();
-  const { toggleTheme } = useTheme();
 
   // Filter navigation items based on user permissions
   const allowedNavItems = useMemo<AllowedNavItem[]>(() => {
@@ -251,10 +251,15 @@ const SideNav = () => {
           <div className="flex-shrink-0 flex items-center gap-3 border-t border-yellow-600 px-2 py-4">
             <button
               type="button"
-              onClick={toggleTheme}
-              className="flex-1 rounded-full border border-white/20 bg-sidebar/80 px-3 py-2 text-xs font-semibold text-sidebar-foreground shadow-md transition hover:bg-sidebar/60"
+              onClick={() => navigate("/settings")}
+              className="group relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-action-primary text-action-primary-foreground shadow-sm transition-all duration-100 ease-in-out hover:w-full"
             >
-              Test Mode
+              <span className="absolute inset-y-0 left-0 flex w-10 items-center justify-center text-base">
+                <FontAwesomeIcon icon={SETTINGS_ICON} className="leading-none" />
+              </span>
+              <span className="pl-12 pr-6 text-left text-sm font-medium opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                Settings
+              </span>
             </button>
             <button
               type="button"

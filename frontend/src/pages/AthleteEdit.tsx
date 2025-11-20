@@ -178,7 +178,7 @@ const AthleteEdit = () => {
           <NewAthleteStepTwoForm
             athlete={athlete}
             onSuccess={handleAdditionalInfoSuccess}
-            onClose={() => {}} // Não precisamos do onClose aqui pois não é um modal
+            onClose={() => {}} // onClose is unused here because the content is inline, not a modal
             isEditMode={true}
           />
         </div>

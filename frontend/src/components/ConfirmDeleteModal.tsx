@@ -56,7 +56,7 @@ const ConfirmDeleteModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" aria-hidden="true" onClick={onCancel} />
+      <div className="absolute inset-0 modal-overlay" aria-hidden="true" onClick={onCancel} />
       <div
         ref={dialogRef}
         role="dialog"
@@ -64,12 +64,12 @@ const ConfirmDeleteModal = ({
         aria-labelledby="confirm-delete-title"
         aria-describedby="confirm-delete-description"
         tabIndex={-1}
-        className="relative z-10 w-full max-w-sm rounded-xl bg-container p-6 shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
+        className="modal-surface relative z-10 w-full max-w-sm rounded-xl p-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
       >
         <button
           type="button"
           onClick={onCancel}
-          className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/70 text-muted shadow-sm transition hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
+          className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-container text-muted shadow-sm transition hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
           aria-label="Close"
         >
           <svg
@@ -89,7 +89,14 @@ const ConfirmDeleteModal = ({
         <p id="confirm-delete-description" className="mt-2 text-sm text-muted">
           {description}
         </p>
-        <div className="mt-6 flex justify-end">
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="inline-flex items-center rounded-md border border-white/20 px-4 py-2 text-sm font-semibold text-container-foreground transition hover:bg-container"
+          >
+            {cancelLabel}
+          </button>
           <button
             type="button"
             onClick={onConfirm}

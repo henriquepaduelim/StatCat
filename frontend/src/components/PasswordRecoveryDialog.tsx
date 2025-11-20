@@ -224,7 +224,7 @@ const PasswordRecoveryDialog = ({
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 px-4 py-10"
+      className="fixed inset-0 z-40 flex items-center justify-center modal-overlay px-4 py-10"
       role="presentation"
       onClick={onClose}
     >
@@ -234,7 +234,7 @@ const PasswordRecoveryDialog = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="password-recovery-title"
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl outline-none"
+        className="modal-surface w-full max-w-md rounded-2xl p-6 shadow-xl outline-none"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4">

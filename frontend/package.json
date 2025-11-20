@@ -26,6 +26,7 @@
     "react-router-dom": "^6.22.3",
     "recharts": "^3.2.1",
     "serve": "^14.2.1",
+    "styled-components": "^5.3.11",
     "tailwind-merge": "^3.3.1",
     "zustand": "^4.5.0"
   },
@@ -36,6 +37,7 @@
     "@testing-library/user-event": "^14.5.2",
     "@types/react": "^18.2.21",
     "@types/react-dom": "^18.2.7",
+    "@types/styled-components": "^5.1.36",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "@vitejs/plugin-react": "^4.2.1",
@@ -45,6 +47,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "globals": "^16.4.0",
     "jiti": "^2.6.1",
+    "jsdom": "^24.1.0",
     "postcss": "^8.4.35",
     "sharp": "^0.34.4",
     "tailwindcss": "^3.4.1",
@@ -52,7 +55,6 @@
     "vite": "^5.1.0",
     "vite-plugin-pwa": "^0.20.0",
     "vitest": "^1.5.0",
-    "workbox-window": "^7.3.0",
-    "jsdom": "^24.1.0"
+    "workbox-window": "^7.3.0"
   }
 }

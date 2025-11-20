@@ -73,10 +73,10 @@ const GameReportModal = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 modal-overlay backdrop-blur-sm" role="dialog" aria-modal="true">
       <div className="flex min-h-full items-center justify-center px-3 py-4 sm:px-6 sm:py-10" onClick={onCancel}>
         <div
-          className="max-h-[95vh] w-full max-w-screen-xl space-y-5 overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6 lg:p-8"
+          className="modal-surface max-h-[95vh] w-full max-w-screen-xl space-y-5 overflow-y-auto rounded-2xl p-4 shadow-2xl sm:p-6 lg:p-8"
           onClick={(event) => event.stopPropagation()}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -89,7 +89,7 @@ const GameReportModal = ({
             <button
               type="button"
               onClick={onCancel}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white text-muted transition hover:text-accent"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-container text-muted transition hover:text-accent"
             aria-label="Close"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">

@@ -41,9 +41,9 @@ const AthleteOnboardingModal = ({
       : "max-w-8xl max-h-[95vh] overflow-y-auto p-6 sm:p-8";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-10">
+    <div className="fixed inset-0 z-50 flex items-center justify-center modal-overlay px-4 py-10">
       <div
-        className={`w-full rounded-2xl bg-container-gradient shadow-xl ${containerSizeClass}`}
+        className={`modal-surface w-full rounded-2xl bg-container-gradient shadow-xl ${containerSizeClass}`}
         onClick={(event) => event.stopPropagation()}
       >
         {step === 1 ? (

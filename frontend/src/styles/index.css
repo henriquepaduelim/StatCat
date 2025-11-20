@@ -3,9 +3,29 @@
 @tailwind utilities;
 
 @layer base {
-  input, select, textarea {
-    @apply w-full rounded-md border-black/10 bg-container px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary;
-  }
+input, select, textarea {
+  @apply w-full rounded-md border-black/10 bg-container px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary;
+}
+
+.settings-page input,
+.settings-page select,
+.settings-page textarea {
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  box-shadow: 0 5px 15px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(4px);
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.theme-dark .settings-page input,
+.theme-dark .settings-page select,
+.theme-dark .settings-page textarea {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.45);
+  color: rgb(var(--color-page-foreground));
+}
+
 }
 
 @layer components {
@@ -77,6 +97,55 @@
   .glass-panel > * {
     position: relative;
     z-index: 5;
+  }
+
+  .modal-overlay {
+    background-color: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(6px);
+  }
+
+  .theme-dark .modal-overlay {
+    background-color: rgba(2, 6, 23, 0.8);
+  }
+
+  .modal-surface {
+    background-color: rgb(var(--color-container-background));
+    color: rgb(var(--color-container-foreground));
+    border: 1px solid rgb(var(--color-border) / 0.4);
+    box-shadow: 0 25px 50px rgba(15, 23, 42, 0.25);
+  }
+
+  .theme-dark .modal-surface {
+    background-color: rgba(15, 23, 42, 0.95);
+    color: rgb(var(--color-container-foreground));
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.65);
+  }
+
+  .modal-surface input,
+  .modal-surface select,
+  .modal-surface textarea {
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    color: rgb(var(--color-container-foreground));
+  }
+
+  .theme-dark .modal-surface input,
+  .theme-dark .modal-surface select,
+  .theme-dark .modal-surface textarea {
+    background-color: rgba(15, 23, 42, 0.75);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: rgb(var(--color-container-foreground));
+  }
+
+  .modal-surface [class*="bg-white"] {
+    background-color: rgb(var(--color-container-background)) !important;
+    color: inherit;
+  }
+
+  .theme-dark .modal-surface [class*="bg-white"] {
+    background-color: rgba(15, 23, 42, 0.8) !important;
+    color: rgb(var(--color-container-foreground));
   }
 }
 

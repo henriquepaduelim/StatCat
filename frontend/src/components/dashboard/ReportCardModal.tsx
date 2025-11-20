@@ -48,10 +48,10 @@ const ReportCardModal = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 modal-overlay backdrop-blur-sm" role="dialog" aria-modal="true">
       <div className="flex min-h-full items-start justify-center px-3 py-4 sm:items-center sm:px-6 sm:py-8" onClick={onCancel}>
         <div
-          className="w-full max-w-lg max-h-[90vh] space-y-4 overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6"
+          className="modal-surface w-full max-w-lg max-h-[90vh] space-y-4 overflow-y-auto rounded-2xl p-4 shadow-2xl sm:p-6"
           onClick={(event) => event.stopPropagation()}
         >
           <div className="flex items-start justify-between gap-3">
@@ -62,7 +62,7 @@ const ReportCardModal = ({
             <button
               type="button"
               onClick={onCancel}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white text-muted hover:text-accent"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-container text-muted hover:text-accent"
               aria-label="Close"
             >
               ✕

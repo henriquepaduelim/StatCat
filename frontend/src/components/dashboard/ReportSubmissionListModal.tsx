@@ -60,9 +60,9 @@ const ReportSubmissionListModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-start justify-center bg-black/60 px-3 py-4 sm:items-center sm:px-6 sm:py-8" onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex items-start justify-center modal-overlay px-3 py-4 sm:items-center sm:px-6 sm:py-8" onClick={onClose}>
       <div
-        className="w-full max-w-screen-xl max-h-screen overflow-y-auto rounded-2xl bg-white p-4 pb-32 shadow-2xl sm:p-6 sm:pb-6"
+        className="modal-surface w-full max-w-screen-xl max-h-screen overflow-y-auto rounded-2xl p-4 pb-32 shadow-2xl sm:p-6 sm:pb-6"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -73,7 +73,7 @@ const ReportSubmissionListModal = ({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 text-muted transition hover:bg-container/60"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-container text-muted transition hover:bg-container/60"
           >
             ✕
           </button>

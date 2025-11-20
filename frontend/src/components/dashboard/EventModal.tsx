@@ -109,19 +109,19 @@ const EventModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-8 py-4 sm:px-2 sm:py-2"
+      className="fixed inset-0 z-50 flex items-center justify-center modal-overlay px-8 py-4 sm:px-2 sm:py-2"
       onClick={onCancel}
       role="presentation"
     >
       <div
-        className="h-[96vh] w-full max-w-none overflow-y-auto rounded-lg bg-white p-3 shadow-2xl sm:h-[94vh] sm:rounded-none sm:p-6"
+        className="modal-surface h-[96vh] w-full max-w-none overflow-y-auto rounded-lg p-3 shadow-2xl sm:h-[94vh] sm:rounded-none sm:p-6"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="relative">
           <button
             type="button"
             onClick={onCancel}
-            className="absolute right-0 top-0 inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/70 text-muted shadow-sm transition hover:text-accent focus-visible:ring-2 focus-visible:ring-action-primary"
+            className="absolute right-0 top-0 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-container text-muted shadow-sm transition hover:text-accent focus-visible:ring-2 focus-visible:ring-action-primary"
             aria-label="Close"
           >
             <svg

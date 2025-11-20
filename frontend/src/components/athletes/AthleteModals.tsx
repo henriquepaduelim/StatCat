@@ -40,7 +40,7 @@ const AthleteModals = ({
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black/50" />
+            <div className="fixed inset-0 modal-overlay" />
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto">
@@ -54,13 +54,13 @@ const AthleteModals = ({
                 leaveFrom="opacity-100 translate-y-0 scale-100"
                 leaveTo="opacity-0 translate-y-4 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-8xl sm:max-w-[92vw] transform overflow-hidden rounded-3xl bg-container-gradient shadow-2xl transition-all">
+                <Dialog.Panel className="modal-surface w-full max-w-8xl sm:max-w-[92vw] transform overflow-hidden rounded-3xl bg-container-gradient shadow-2xl transition-all">
                   <Dialog.Title className="sr-only">{t.newAthlete.title}</Dialog.Title>
                   <div className="relative h-[95vh] overflow-y-invisible p-1 sm:p-6">
                     <button
                       type="button"
                       onClick={() => setIsNewAthleteOpen(false)}
-                      className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/70 text-muted shadow-sm transition hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
+                      className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-container text-muted shadow-sm transition hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
                       aria-label={t.common.cancel}
                     >
                       <svg
@@ -95,6 +95,7 @@ const AthleteModals = ({
             setRegisteredAthlete(null);
           }}
         >
+          <div className="fixed inset-0 modal-overlay" aria-hidden="true" />
           <div className="fixed inset-0 overflow-y-auto">
             <div className="flex min-h-full items-start justify-center p-4 sm:p-6">
               <Transition.Child
@@ -106,7 +107,7 @@ const AthleteModals = ({
                 leaveFrom="opacity-100 translate-y-0 scale-100"
                 leaveTo="opacity-0 translate-y-4 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-8xl sm:max-w-[92vw] transform overflow-hidden rounded-3xl bg-container-gradient shadow-2xl transition-all">
+                <Dialog.Panel className="modal-surface w-full max-w-8xl sm:max-w-[92vw] transform overflow-hidden rounded-3xl bg-container-gradient shadow-2xl transition-all">
                   <Dialog.Title className="sr-only">{t.newAthlete.stepTwoTitle}</Dialog.Title>
 
                   <div className="relative h-[95vh] overflow-y-auto p-1 sm:p-6">
@@ -116,7 +117,7 @@ const AthleteModals = ({
                         setIsAthleteDetailsOpen(false);
                         setRegisteredAthlete(null);
                       }}
-                      className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/70 text-muted shadow-sm transition hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
+                      className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-container text-muted shadow-sm transition hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary"
                       aria-label={t.common.cancel}
                     >
                       <svg

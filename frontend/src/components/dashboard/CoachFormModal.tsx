@@ -44,12 +44,12 @@ const CoachFormModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-3 py-4 sm:px-4 sm:py-8"
+      className="fixed inset-0 z-50 flex items-center justify-center modal-overlay px-3 py-4 sm:px-4 sm:py-8"
       onClick={onClose}
       role="presentation"
     >
       <div
-        className="relative w-full max-w-lg max-h-[90vh] space-y-5 overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:p-6 md:px-10"
+        className="modal-surface relative w-full max-w-lg max-h-[90vh] space-y-5 overflow-y-auto rounded-2xl p-4 shadow-2xl sm:p-6 md:px-10"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
@@ -66,7 +66,7 @@ const CoachFormModal = ({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-black/10 bg-white/70 text-muted shadow-sm transition hover:text-accent focus-visible:ring-2 focus-visible:ring-action-primary"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-container text-muted shadow-sm transition hover:text-accent focus-visible:ring-2 focus-visible:ring-action-primary"
             aria-label="Close"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
