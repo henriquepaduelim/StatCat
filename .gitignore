@@ -20,6 +20,9 @@ node_modules/
 packages/
 frontend/public/branding/*
 !frontend/public/branding/.gitkeep
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
 
 # Database files
 *.db
