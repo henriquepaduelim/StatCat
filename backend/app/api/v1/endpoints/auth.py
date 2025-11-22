@@ -74,7 +74,6 @@ def login_access_token(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
 
     token = create_access_token(user.email)
-    print(f"Token created for user {user.email}: {token[:20]}...")
     return Token(access_token=token)
 
 
@@ -84,9 +83,6 @@ def read_users_me(
     session: Session = Depends(get_session),
 ) -> dict:
     """Get current user information with properly serialized athlete status."""
-    print(f"GET /auth/me called for user: {current_user.email}")
-    print(f"User athlete_status: {current_user.athlete_status}")
-    
     team_id = None
     if current_user.athlete_id:
         athlete_entity = session.get(Athlete, current_user.athlete_id)
@@ -190,6 +186,11 @@ def signup_user(
     session: Session = Depends(get_session),
 ) -> User:
     try:
+        if payload.role != UserRole.ATHLETE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Signup is only available for athletes. Contact an admin for staff access.",
+            )
         exists = session.exec(select(User).where(User.email == payload.email)).first()
         if exists:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
@@ -217,7 +218,7 @@ def signup_user(
             hashed_password=get_password_hash(payload.password),
             full_name=payload.full_name,
             phone=payload.phone,
-            role=payload.role,
+            role=UserRole.ATHLETE,
             athlete_id=athlete.id,
             athlete_status=UserAthleteApprovalStatus.INCOMPLETE,  # Explicitly set status
             is_active=True,
@@ -317,25 +318,3 @@ def confirm_password_reset(
     session.add(user)
     session.commit()
     return PasswordResetResponse(detail="Your password has been updated. You can sign in with your new credentials.")
-
-
-@router.get("/debug/token")
-def debug_token(
-    current_user: User = Depends(get_current_active_user),
-) -> dict:
-    """Debug endpoint to check token validation."""
-    return {
-        "user_id": current_user.id,
-        "email": current_user.email,
-        "role": current_user.role,
-        "athlete_id": current_user.athlete_id,
-        "athlete_status": current_user.athlete_status.value if current_user.athlete_status else None,
-        "is_active": current_user.is_active,
-    }
-
-
-@router.get("/test-debug")
-def test_debug_endpoint():
-    """Test debug endpoint in auth."""
-    print("AUTH DEBUG ENDPOINT CALLED")
-    return {"test": "working", "location": "auth"}

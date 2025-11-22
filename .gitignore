@@ -44,6 +44,7 @@ client_secret_*.json
 .vercel
 AGENTS.md
 plan.md
+DEPLOY_CHECKLIST_LOCAL.md
 
 # Temporary files
 tmp_*

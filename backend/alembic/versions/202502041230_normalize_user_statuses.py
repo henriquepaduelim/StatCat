@@ -18,19 +18,20 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    # Table name is reserved; quote it for Postgres.
     op.execute(
-        "UPDATE user SET athlete_status = 'APPROVED' "
+        'UPDATE "user" SET athlete_status = \'APPROVED\' '
         "WHERE athlete_status NOT IN ('APPROVED', 'PENDING', 'REJECTED', 'INCOMPLETE') "
-        "AND role != 'athlete'"
+        "AND role != 'ATHLETE'"
     )
     op.execute(
-        "UPDATE user SET athlete_status = 'INCOMPLETE' "
+        'UPDATE "user" SET athlete_status = \'INCOMPLETE\' '
         "WHERE athlete_status NOT IN ('APPROVED', 'PENDING', 'REJECTED', 'INCOMPLETE') "
-        "AND role = 'athlete'"
+        "AND role = 'ATHLETE'"
     )
     op.execute(
-        "UPDATE user SET athlete_status = UPPER(athlete_status) "
-        "WHERE athlete_status IN ('approved', 'pending', 'rejected', 'incomplete')"
+        'UPDATE "user" SET athlete_status = UPPER(athlete_status::text)::userathleteapprovalstatus '
+        "WHERE athlete_status::text IN ('approved', 'pending', 'rejected', 'incomplete')"
     )
 
 

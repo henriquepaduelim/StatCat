@@ -27,6 +27,13 @@ team_posts_root = media_root / "team_posts"
 team_posts_root.mkdir(parents=True, exist_ok=True)
 
 MAX_MEDIA_SIZE = 8 * 1024 * 1024  # 8 MB
+ALLOWED_MEDIA_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".mp4"}
+ALLOWED_MEDIA_MIME_TYPES = {
+    "image/png",
+    "image/jpeg",
+    "image/webp",
+    "video/mp4",
+}
 
 
 def _safe_filename(filename: str | None) -> str:
@@ -35,6 +42,12 @@ def _safe_filename(filename: str | None) -> str:
 
 
 def _store_media(team_id: int, file: UploadFile) -> str:
+    suffix = Path(file.filename or "").suffix.lower()
+    if suffix not in ALLOWED_MEDIA_EXTENSIONS or (file.content_type and file.content_type.lower() not in ALLOWED_MEDIA_MIME_TYPES):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported media type.",
+        )
     file.file.seek(0)
     data = file.file.read()
     if len(data) > MAX_MEDIA_SIZE:

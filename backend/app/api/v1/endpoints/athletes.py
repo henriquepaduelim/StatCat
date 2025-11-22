@@ -37,16 +37,35 @@ documents_root = athlete_media_root / "documents"
 documents_root.mkdir(parents=True, exist_ok=True)
 
 MAX_DOCUMENT_SIZE = 10 * 1024 * 1024  # 10 MB
-
 MAX_PHOTO_SIZE = 5 * 1024 * 1024  # 5 MB
+
+ALLOWED_DOCUMENT_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg"}
+ALLOWED_DOCUMENT_MIME_TYPES = {
+    "application/pdf",
+    "image/png",
+    "image/jpeg",
+}
+ALLOWED_PHOTO_EXTENSIONS = {".png", ".jpg", ".jpeg"}
+ALLOWED_PHOTO_MIME_TYPES = {"image/png", "image/jpeg"}
 
 def _safe_filename(filename: str | None) -> str:
     stem = (filename or "upload").replace("/", "_").replace("\\", "_")
     stem = stem.strip() or "upload"
     return stem
 
+def _validate_upload(file: UploadFile, allowed_exts: set[str], allowed_mimes: set[str]) -> None:
+    suffix = Path(file.filename or "").suffix.lower()
+    if suffix not in allowed_exts or (file.content_type and file.content_type.lower() not in allowed_mimes):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported file type.",
+        )
 
 def _store_file(athlete_id: int, file: UploadFile, base_dir: Path, max_size: int) -> str:
+    if base_dir is documents_root:
+        _validate_upload(file, ALLOWED_DOCUMENT_EXTENSIONS, ALLOWED_DOCUMENT_MIME_TYPES)
+    else:
+        _validate_upload(file, ALLOWED_PHOTO_EXTENSIONS, ALLOWED_PHOTO_MIME_TYPES)
     file.file.seek(0)
     data = file.file.read()
     if len(data) > max_size:

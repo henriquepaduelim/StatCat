@@ -189,7 +189,6 @@ StatCat Team
                 to_email,
                 expires_minutes,
             )
-            logger.info("Password reset token for %s: %s", to_email, reset_token)
             return False
         
         subject = "Reset your StatCat password"

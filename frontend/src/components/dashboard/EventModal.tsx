@@ -89,6 +89,10 @@ const EventModal = ({
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
 
+  if (!isOpen) {
+    return null;
+  }
+
   const eventsDayTitle = readableDate(eventForm.date || selectedEventDate || formatDateKey(new Date()));
   const teamFilterOptions = eventForm.teamIds.length
     ? teams.filter((team) => eventForm.teamIds.includes(team.id))
@@ -103,7 +107,7 @@ const EventModal = ({
   };
 
   useEffect(() => {
-    const loadGoogleMaps = (): Promise<any | null> => {
+    const loadGoogleMaps = (): Promise<typeof google | null> => {
       if (typeof window !== "undefined" && (window as any).google?.maps?.places) {
         return Promise.resolve((window as any).google);
       }
@@ -127,7 +131,6 @@ const EventModal = ({
         script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
         script.async = true;
         script.defer = true;
-        script.setAttribute("loading", "async");
         script.onload = () => resolve((window as any).google);
         script.onerror = () => {
           console.error("Failed to load Google Maps");
@@ -142,9 +145,7 @@ const EventModal = ({
       if (!googleLib || !locationInputRef.current) return;
 
       const autocomplete = new googleLib.maps.places.Autocomplete(locationInputRef.current, {
-        fields: ["formatted_address", "geometry", "address_component", "place_id"],
-        types: ["geocode"],
-        componentRestrictions: { country: "ca" },
+        fields: ["formatted_address", "geometry"],
       });
       autocomplete.addListener("place_changed", () => {
         const place = autocomplete.getPlace();
@@ -185,7 +186,6 @@ const EventModal = ({
       setMapsReady(true);
     };
 
-    if (!isOpen) return;
     initAutocomplete();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -205,10 +205,6 @@ const EventModal = ({
       : [...eventForm.coachIds, coachId];
     onInputChange("coachIds", updated);
   };
-
-  if (!isOpen) {
-    return null;
-  }
 
   return (
     <div
@@ -290,15 +286,6 @@ const EventModal = ({
                     />
                   </label>
                 </div>
-                <label className="text-xs font-medium text-muted">
-                  {summaryLabels.calendar.notesLabel}
-                  <textarea
-                    value={eventForm.notes}
-                    onChange={(event) => onInputChange("notes", event.target.value)}
-                    className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                    rows={4}
-                  />
-                </label>
               </div>
               <div>
                 <label className="text-xs font-medium text-muted">
@@ -313,15 +300,24 @@ const EventModal = ({
                 </label>
                 <div className="mt-3 hidden border-t border-black/10 opacity-60 md:block" />
                 {mapsReady ? (
-                  <div className="mt-3 h-40 rounded-lg border border-black/10 md:h-72" ref={mapContainerRef} />
+                  <div className="mt-3 hidden h-40 rounded-lg border border-black/10 md:block" ref={mapContainerRef} />
                 ) : null}
               </div>
             </div>
+            <label className="text-xs font-medium text-muted">
+              {summaryLabels.calendar.notesLabel}
+              <textarea
+                value={eventForm.notes}
+                onChange={(event) => onInputChange("notes", event.target.value)}
+                className="mt-1 w-1/2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                rows={3}
+              />
+            </label>
 
             <div className="grid gap-4 lg:grid-cols-3">
               <div className="text-xs font-medium text-muted">
                 <p className="mb-1">{summaryLabels.calendar.teamLabel}</p>
-                <div className="modal-card grid grid-cols-2 gap-2 rounded-lg bg-white/90 p-2 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="modal-card space-y-1 rounded-lg bg-white/90 p-2">
                   {teams.map((team) => {
                     const isSelected = eventForm.teamIds.includes(team.id);
                     return (
@@ -329,17 +325,12 @@ const EventModal = ({
                         key={`team-toggle-${team.id}`}
                         type="button"
                         onClick={() => handleTeamToggle(team.id)}
-                        className={`flex w-full items-center justify-between rounded-md border px-3 py-1.5 text-left text-sm ${
-                          isSelected
-                            ? "border-action-primary/60 bg-action-primary/15 text-action-primary"
-                            : "border-white/80 bg-white text-container-foreground"
+                        className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm transition ${
+                          isSelected ? "bg-action-primary/15 text-action-primary" : "text-container-foreground hover:bg-black/5"
                         }`}
                       >
                         <span>{team.name}</span>
-                        <FontAwesomeIcon
-                          icon={isSelected ? faMinus : faPlus}
-                          className={`h-3 w-3 transition ${isSelected ? "text-action-primary" : "text-muted"}`}
-                        />
+                        <FontAwesomeIcon icon={isSelected ? faMinus : faPlus} className="h-3 w-3" />
                       </button>
                     );
                   })}
@@ -356,15 +347,12 @@ const EventModal = ({
                         key={`coach-toggle-${coach.id}`}
                         type="button"
                         onClick={() => handleCoachToggle(coach.id)}
-                        className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm ${
-                          isSelected ? "bg-action-primary/15 text-action-primary" : "text-container-foreground"
+                        className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm transition ${
+                          isSelected ? "bg-action-primary/15 text-action-primary" : "text-container-foreground hover:bg-black/5"
                         }`}
                       >
                         <span>{coach.full_name}</span>
-                        <FontAwesomeIcon
-                          icon={isSelected ? faMinus : faPlus}
-                          className={`h-3 w-3 transition ${isSelected ? "text-action-primary" : "text-muted"}`}
-                        />
+                        <FontAwesomeIcon icon={isSelected ? faMinus : faPlus} className="h-3 w-3" />
                       </button>
                     );
                   })}
@@ -469,13 +457,13 @@ const EventModal = ({
                 </label>
               </div>
 
-              <div className="modal-card min-h-[200px] max-h-[300px] overflow-y-auto overflow-x-auto rounded-lg bg-container-gradient p-2">
+              <div className="modal-card min-h-[200px] max-h-[300px] overflow-y-auto overflow-x-auto rounded-lg bg-container-gradient">
                 {filteredEventAthletes.length ? (
                   <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                     {filteredEventAthletes.map((athlete) => (
                       <div
                         key={`invitee-${athlete.id}`}
-                        className="modal-card flex items-start justify-between gap-2 rounded-lg bg-white/80 px-3 py-2 text-sm"
+                        className="modal-card flex items-start justify-between gap-2 rounded-lg bg-white/80 px-3 py-2 text-sm transition hover:bg-container/70"
                       >
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-semibold text-container-foreground">
@@ -491,7 +479,7 @@ const EventModal = ({
                           className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-sm transition ${
                             eventForm.inviteeIds.includes(athlete.id)
                               ? "border-action-primary text-action-primary"
-                              : "border-black/20 text-muted"
+                              : "border-black/20 text-muted hover:text-container-foreground"
                           }`}
                           aria-label={eventForm.inviteeIds.includes(athlete.id) ? "Remove invitee" : "Add invitee"}
                         >

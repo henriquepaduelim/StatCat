@@ -4,6 +4,23 @@
 
 StatCat centralizes combine data, athlete onboarding, and team collaboration for grassroots and academy programs. The stack pairs a FastAPI/SQLModel backend with a Vite React frontend so clubs, staff, coaches, and athletes can share metrics, content, and schedules through one channel.
 
+## Deployment (Render backend + Vercel frontend + Neon DB)
+
+- Backend (Render)
+  - Env vars: `ENVIRONMENT=production`, `AUTO_SEED_DATABASE=false`, strong `SECRET_KEY`, `DATABASE_URL` (Neon), `BACKEND_CORS_ORIGINS=["https://<frontend-domain>"]`, SMTP creds (rotated), `MEDIA_ROOT=/app/media`.
+  - Storage: attach a persistent disk/volume and mount to `/app/media` for uploads. If you move to S3 later, point MEDIA_ROOT accordingly and set bucket/region/creds.
+  - Health check: `/health`. Run with Render’s native Python environment or the provided Dockerfile.
+
+- Frontend (Vercel)
+  - Env vars: `VITE_API_BASE_URL=https://<render-backend-url>` plus `VITE_APP_BRAND_NAME`, `VITE_BRAND_ID`, `VITE_BRAND_FAVICON`.
+  - Build command: `npm run build`.
+
+- Database (Neon)
+  - Migrations applied (`alembic upgrade head`). Keep the Neon URL only in platform secrets.
+
+- Smoke tests post-deploy
+  - `/health`, login/signup, password reset email, upload/download media, dashboard pages.
+
 ## Project Layout
 
 ```
