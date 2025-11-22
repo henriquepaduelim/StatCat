@@ -157,7 +157,7 @@ const EventAvailabilityPanel = ({
     return (
       <li
         key={`availability-athlete-${athlete.id}`}
-        className="grid grid-cols-[1fr_auto] items-center gap-x-3 px-3 py-2 text-sm sm:grid-cols-[minmax(140px,180px)_1fr_100px] sm:gap-x-2 sm:px-4"
+        className="list-row grid grid-cols-[1fr_auto] items-center gap-x-3 px-3 py-2 text-sm sm:grid-cols-[minmax(140px,180px)_1fr_100px] sm:gap-x-2 sm:px-4"
       >
         <div className="w-full sm:w-auto sm:max-w-[180px]">
           <p className="overflow-hidden text-left font-semibold text-container-foreground whitespace-nowrap text-ellipsis">
@@ -270,7 +270,7 @@ const EventAvailabilityPanel = ({
           <span className="text-center">{summaryLabels.columns.availability}</span>
         </div>
         <div className="flex-1 overflow-y-auto">
-          <ul className="divide-y divide-black/5">
+          <ul className="athlete-table divide-y divide-black/5 dark:divide-transparent">
             {teamAthletes.length ? (
               teamAthletes.map((athlete) => renderAthleteRow(athlete, event.id))
             ) : (

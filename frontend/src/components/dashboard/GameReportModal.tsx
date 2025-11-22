@@ -207,7 +207,7 @@ const GameReportModal = ({
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2 rounded-lg border border-black/10 bg-white/70 p-3">
+              <div className="modal-card space-y-2 rounded-lg bg-white/70 p-3">
                 <p className="text-xs font-semibold uppercase text-muted">Selected scorers</p>
                 {form.goalScorers.length ? (
                   <ul className="space-y-2">
@@ -217,7 +217,7 @@ const GameReportModal = ({
                       return (
                         <li
                           key={`goal-scorer-${entry.athleteId}`}
-                          className="flex items-center justify-between gap-3 rounded-md border border-black/10 bg-white px-3 py-2 text-sm"
+                          className="modal-card flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 text-sm"
                         >
                           <div className="flex-1">
                             <p className="font-semibold text-container-foreground">
@@ -270,7 +270,7 @@ const GameReportModal = ({
                 )}
               </div>
 
-              <div className="space-y-2 rounded-lg border border-black/10 bg-white/70 p-3">
+              <div className="modal-card space-y-2 rounded-lg bg-white/70 p-3">
                 <p className="text-xs font-semibold uppercase text-muted">Available athletes</p>
                 <div className="max-h-64 overflow-y-auto space-y-1">
                   {filteredAthletes.length ? (
@@ -279,7 +279,7 @@ const GameReportModal = ({
                       return (
                         <div
                           key={`available-scorer-${athlete.id}`}
-                          className="flex items-center justify-between gap-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm"
+                          className="modal-card flex items-center justify-between gap-2 rounded-md bg-white px-3 py-2 text-sm"
                         >
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium text-container-foreground">
@@ -315,7 +315,7 @@ const GameReportModal = ({
               Add the goalkeepers who played. Use the badge to mark who conceded goals.
             </p>
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2 rounded-lg border border-black/10 bg-white/70 p-3">
+              <div className="modal-card space-y-2 rounded-lg bg-white/70 p-3">
                 <p className="text-xs font-semibold uppercase text-muted">Goalkeepers who played</p>
                 {form.goalkeepersPlayed.length ? (
                   <ul className="space-y-2">
@@ -327,7 +327,7 @@ const GameReportModal = ({
                       return (
                         <li
                           key={`keeper-${athleteId}`}
-                          className="rounded-md border border-black/10 bg-white px-3 py-2 text-sm"
+                          className="modal-card rounded-md bg-white px-3 py-2 text-sm"
                         >
                           <div className="flex items-center justify-between gap-2">
                             <div>
@@ -380,7 +380,7 @@ const GameReportModal = ({
                   <p className="text-xs text-muted">No goalkeepers selected yet.</p>
                 )}
               </div>
-              <div className="space-y-2 rounded-lg border border-black/10 bg-white/70 p-3">
+              <div className="modal-card space-y-2 rounded-lg bg-white/70 p-3">
                 <p className="text-xs font-semibold uppercase text-muted">Available athletes</p>
                 <div className="max-h-64 overflow-y-auto space-y-1">
                   {filteredAthletes.length ? (
@@ -389,7 +389,7 @@ const GameReportModal = ({
                       return (
                         <div
                           key={`available-keeper-${athlete.id}`}
-                          className="flex items-center justify-between gap-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm"
+                          className="modal-card flex items-center justify-between gap-2 rounded-md bg-white px-3 py-2 text-sm"
                         >
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium text-container-foreground">

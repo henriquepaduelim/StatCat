@@ -24,6 +24,7 @@ export type EventFormState = {
 export type AthleteFilter = {
   age: string;
   gender: string;
+  query: string;
   teamStatus: "all" | "assigned" | "unassigned";
 };
 

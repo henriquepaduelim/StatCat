@@ -19,7 +19,7 @@ export const createTeamPost = async (teamId: number, formData: FormData): Promis
 };
 
 export const exportTeamPostsArchive = async (
-  options: { teamId?: number; deleteAfter?: boolean } = {},
+  options: { teamId?: number; deleteAfter?: boolean; includePosts?: boolean } = {},
 ): Promise<Blob> => {
   const params: Record<string, string | number | boolean> = {};
   if (typeof options.teamId === "number") {
@@ -27,6 +27,9 @@ export const exportTeamPostsArchive = async (
   }
   if (typeof options.deleteAfter === "boolean") {
     params.delete_after = options.deleteAfter;
+  }
+  if (typeof options.includePosts === "boolean") {
+    params.include_posts = options.includePosts;
   }
   const response = await api.post<Blob>("/team-posts/export", null, {
     params,

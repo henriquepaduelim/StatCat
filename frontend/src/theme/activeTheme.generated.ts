@@ -11,29 +11,29 @@ export const activeTheme: ThemeDefinition = {
     },
     container: {
       background: "#FFFFFF",
-      foreground: "#dee2e6",
+      foreground: "#000000",
     },
     header: {
       background: "#039903",
-      foreground: "#F0F8EB",
+      foreground: "#000000",
     },
     sidebar: {
       background: "#212529",
-      foreground: "#F0F8EB",
+      foreground: "#000000",
     },
     footer: {
-      background: "#C3E1FE",
-      foreground: "#0B0B0B",
+      background: "#000000",
+      foreground: "#000000",
     },
     action: {
       primary: {
-        background: "#dee2e6",
-        foreground: "#212529",
-      },
+        background: "#040404",
+        foreground: "#FFFFFF",
+      },  
     },
     accent: "#2191FB",
-    border: "#9CC6F8",
-    muted: "#6B7280",
+    border: "#000000",
+    muted: "#000000",
   },
   logo: {
     label: "ELITE 1",

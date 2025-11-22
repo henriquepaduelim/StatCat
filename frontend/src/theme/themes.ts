@@ -67,7 +67,7 @@ const darkTheme: ThemeDefinition = {
     },
     accent: "#F4A240",
     border: "#F4A240",
-    muted: "#9CA7C7",
+    muted: "#E5E5E5",
   },
   logo: {
     label: "ELITE 1",

@@ -110,7 +110,7 @@ const TeamListCard = ({
   const showNoMatches = Boolean(teams.length && normalizedSearch && !filteredTeams.length);
 
   return (
-    <div className="flex h-full w-full flex-col rounded-xl border border-action-primary/25 bg-container-gradient p-4 sm:p-3 shadow-xl backdrop-blur">
+    <div className="flex h-full w-full flex-col rounded-xl border border-black/10 bg-container-gradient p-4 sm:p-3 shadow-xl backdrop-blur dark:border-[#f4a240]/70">
       <div className="flex h-full flex-col gap-4">
         <div className="flex flex-shrink-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="w-full sm:max-w-sm">
@@ -163,20 +163,16 @@ const TeamListCard = ({
               <p className="text-sm text-muted">No teams match your search.</p>
             ) : (
               <div
-                className="flex h-full flex-col overflow-hidden rounded-lg border"
-                style={{
-                  backgroundColor: "rgb(var(--color-container-background))",
-                  borderColor: "rgb(var(--color-border))",
-                }}
+                className="flex h-full flex-col overflow-hidden rounded-lg border border-black/10 bg-container-gradient dark:border-[#f4a240]/50"
               >
-                <div className="hidden grid-cols-[minmax(60px,0.6fr)_minmax(140px,0.9fr)_90px_90px_minmax(100px,0.8fr)] gap-3 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted sm:grid">
+                <div className="hidden grid-cols-[minmax(60px,0.6fr)_minmax(140px,0.9fr)_90px_90px_minmax(100px,0.8fr)] gap-3 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted dark:border-[#e7e8e9] sm:grid">
                   <span className="text-left">Team Name</span>
                   <span className="text-center">Coach</span>
                   <span className="text-center">Age Group</span>
                   <span className="text-center">Roster Size</span>
                   <span className="text-right">Actions</span>
                 </div>
-                <div className="flex-1 overflow-y-auto">
+                <div className="athlete-table flex-1 overflow-y-auto">
                   {filteredTeams.map((team) => {
                     const teamAthletes = athletesByTeamId[team.id] ?? [];
                     const teamAthleteCount = teamAthletes.length;
@@ -185,8 +181,7 @@ const TeamListCard = ({
                     return (
                       <div
                         key={team.id}
-                        className="grid grid-cols-1 items-center gap-2 border-b border-black/5 px-3 py-3 text-sm last:border-b-0 sm:grid-cols-[minmax(60px,0.6fr)_minmax(140px,0.9fr)_90px_90px_minmax(100px,0.8fr)] sm:px-4"
-                        style={{ backgroundColor: "rgb(var(--color-container-background))" }}
+                        className="team-row list-row grid grid-cols-1 items-center gap-2 border-b border-black/10 px-3 py-2 text-sm last:border-b-0 sm:grid-cols-[minmax(60px,0.6fr)_minmax(140px,0.9fr)_90px_90px_minmax(100px,0.8fr)] sm:px-4 dark:border-[#e7e8e9]"
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-action-primary/10 text-action-primary">

@@ -6,7 +6,7 @@ import type { TeamCoach } from "../../api/teams";
 import type { Athlete } from "../../types/athlete";
 import type { AthleteFilter, NewTeamFormState } from "../../types/dashboard";
 import { calculateAge } from "../../utils/athletes";
-import { createTeamLabels } from "../../constants/dashboard";
+import { createTeamLabels, genderOptions } from "../../constants/dashboard";
 
 type EditingTeam = { id: number; name: string } | null;
 type TeamFormLabels = typeof createTeamLabels;
@@ -112,8 +112,8 @@ const TeamFormModal = ({
                 type="text"
                 value={teamForm.name}
                 onChange={(event) => onFieldChange("name", event.target.value)}
-                disabled={isSubmitting}
-                className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
+                disabled={isSubmitting} 
+                className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70 dark:bg-container"
                 placeholder="U14 National"
                 required
               />
@@ -124,7 +124,7 @@ const TeamFormModal = ({
                 value={teamForm.ageCategory}
                 onChange={(event) => onFieldChange("ageCategory", event.target.value)}
                 disabled={isSubmitting}
-                className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
+                className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70 dark:bg-container"
               >
                 {teamAgeOptions.map((option) => (
                   <option key={`team-age-${option}`} value={option}>
@@ -134,18 +134,20 @@ const TeamFormModal = ({
               </select>
             </label>
             <label className="text-xs font-medium text-muted">
-              Gender Category
+              {labels.genderLabel}
               <select
                 value={teamForm.gender}
                 onChange={(event) =>
-                  onFieldChange("gender", event.target.value as "boys" | "girls" | "coed")
+                  onFieldChange("gender", event.target.value as NewTeamFormState["gender"])
                 }
                 disabled={isSubmitting}
-                className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
+                className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70 dark:bg-container"
               >
-                <option value="boys">Boys</option>
-                <option value="girls">Girls</option>
-                <option value="coed">Coed</option>
+                {genderOptions.map((option) => (
+                  <option key={`team-gender-${option.value}`} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </label>
             <label className="text-xs font-medium text-muted md:col-span-3">
@@ -154,7 +156,7 @@ const TeamFormModal = ({
                 value={teamForm.description}
                 onChange={(event) => onFieldChange("description", event.target.value)}
                 disabled={isSubmitting}
-                className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
+                className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70 dark:bg-container"
                 rows={2}
               />
             </label>
@@ -169,13 +171,13 @@ const TeamFormModal = ({
             <div className="grid items-start gap-4 lg:grid-cols-2">
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase text-muted">{labels.coachesAssignedLabel}</p>
-                <div className="min-h-[120px] rounded-lg border border-black/10 bg-white/80 p-2">
+                <div className="modal-card min-h-[120px] rounded-lg bg-white/80 p-2 dark:bg-container">
                   {selectedCoaches.length ? (
                     <div className="space-y-1">
                       {selectedCoaches.map((coach) => (
                         <div
                           key={`selected-coach-${coach.id}`}
-                          className="flex items-center justify-between gap-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm"
+                          className="modal-card flex items-center justify-between gap-2 rounded-md bg-white px-3 py-2 text-sm dark:bg-container"
                         >
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-semibold text-container-foreground">{coach.full_name}</p>
@@ -207,13 +209,13 @@ const TeamFormModal = ({
               </div>
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase text-muted">{labels.coachesAvailableLabel}</p>
-                <div className="min-h-[120px] max-h-[220px] overflow-y-auto rounded-lg border border-black/10 bg-white/80 p-2">
+                <div className="modal-card min-h-[120px] max-h-[220px] overflow-y-auto rounded-lg bg-white/80 p-2 dark:bg-container">
                   {remainingCoaches.length ? (
                     <div className="space-y-1">
                       {remainingCoaches.map((coach) => (
                         <div
                           key={`available-coach-${coach.id}`}
-                          className="flex items-center justify-between gap-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm"
+                          className="modal-card flex items-center justify-between gap-2 rounded-md bg-white px-3 py-2 text-sm dark:bg-container"
                         >
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-semibold text-container-foreground">{coach.full_name}</p>
@@ -255,7 +257,7 @@ const TeamFormModal = ({
               <p className="text-sm font-semibold text-container-foreground">Team Roster</p>
               <p className="text-xs text-muted">Athletes currently on this team</p>
               <div
-                className="min-h-[300px] max-h-[400px] overflow-y-auto rounded-lg border-2 border-dashed border-action-primary/30 bg-blue-50/30 p-2"
+                className="min-h-[300px] max-h-[400px] overflow-y-auto rounded-lg border-2 border-dashed border-action-primary/30 bg-blue-50/30 p-2 dark:border-[#e5e5e5]/60 dark:bg-container"
                 onDragOver={(event) => {
                   event.preventDefault();
                   event.currentTarget.classList.add("border-action-primary", "bg-blue-100/50");
@@ -289,7 +291,7 @@ const TeamFormModal = ({
                           key={`roster-athlete-${athlete.id}`}
                           draggable
                           onDragStart={() => setDraggedAthleteId(athlete.id)}
-                          className="flex items-center justify-between gap-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm transition hover:bg-gray-50"
+                          className="modal-card flex items-center justify-between gap-2 rounded-md bg-white px-3 py-2 text-sm transition hover:bg-gray-50 dark:bg-container"
                         >
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium text-container-foreground">
@@ -327,9 +329,21 @@ const TeamFormModal = ({
 
             <div className="space-y-2">
               <p className="text-sm font-semibold text-container-foreground">Available Athletes</p>
-              <p className="text-xs text-muted">Drag athletes to add them to the roster</p>
-              <div className="rounded-lg border border-black/10 bg-white/90 p-2 text-xs text-muted">
+              <p className="text-xs text-muted">Filter by age or group to find athletes faster.</p>
+              <div className="modal-card rounded-lg bg-white/90 p-2 text-xs text-muted dark:bg-container">
                 <div className="flex flex-wrap items-center gap-2">
+                  <label className="flex items-center gap-2">
+                    <span className="text-[0.65rem] uppercase">Search</span>
+                    <input
+                      type="text"
+                      value={athleteFilter.query}
+                      onChange={(event) =>
+                        setAthleteFilter((prev) => ({ ...prev, query: event.target.value }))
+                      }
+                      placeholder="e.g., 16, U18, Alice, female"
+                      className="w-32 rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none dark:border-[#e5e5e5]/30 dark:bg-container"
+                    />
+                  </label>
                   <label className="flex items-center gap-1">
                     <span className="text-[0.65rem] uppercase">Age</span>
                     <select
@@ -337,7 +351,7 @@ const TeamFormModal = ({
                       onChange={(event) =>
                         setAthleteFilter((prev) => ({ ...prev, age: event.target.value }))
                       }
-                      className="rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
+                      className="rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none dark:border-[#e5e5e5]/30 dark:bg-container"
                     >
                       <option value="">All</option>
                       <option value="U14">U14</option>
@@ -380,7 +394,7 @@ const TeamFormModal = ({
                   </label>
                   <button
                     type="button"
-                    onClick={() => setAthleteFilter({ age: "", gender: "", teamStatus: "all" })}
+                    onClick={() => setAthleteFilter({ age: "", gender: "", query: "", teamStatus: "all" })}
                     className="ml-auto text-[0.65rem] uppercase text-action-primary hover:text-action-primary/80"
                   >
                     Clear
@@ -388,34 +402,33 @@ const TeamFormModal = ({
                 </div>
               </div>
 
-              <div className="min-h-[300px] max-h-[400px] overflow-y-auto rounded-lg border border-black/10 bg-white/70 p-2">
+              <div className="modal-card min-h-[300px] max-h-[400px] overflow-y-auto rounded-lg bg-white/70 p-2">
                 {teamBuilderCandidates.length === 0 ? (
                   <div className="flex h-32 items-center justify-center text-xs text-muted">
                     No athletes available with selected filters
                   </div>
                 ) : (
-                  <div className="space-y-1">
-                    {teamBuilderCandidates.map((athlete) => {
-                      const assignedTeamName =
-                        athlete.team_id && teamNameById[athlete.team_id]
-                          ? teamNameById[athlete.team_id]
-                          : null;
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {teamBuilderCandidates.map((athlete) => {
+                    const assignedTeamName =
+                      athlete.team_id && teamNameById[athlete.team_id]
+                        ? teamNameById[athlete.team_id]
+                        : null;
                       return (
                         <div
                           key={`available-athlete-${athlete.id}`}
                           draggable
                           onDragStart={() => setDraggedAthleteId(athlete.id)}
-                          className="flex items-center justify-between gap-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm transition hover:bg-blue-50"
+                          className="modal-card flex items-center justify-between gap-2 rounded-md bg-white px-3 py-2 text-sm transition hover:bg-blue-50"
                         >
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium text-container-foreground">
                               {athlete.first_name} {athlete.last_name}
                             </p>
                             <p className="truncate text-xs text-muted">
-                              {athlete.birth_date ? `Age: ${calculateAge(athlete.birth_date)}` : ""}
+                              {athlete.birth_date ? `U${calculateAge(athlete.birth_date) + 1}` : ""}
                               {athlete.gender ? ` • ${athlete.gender === "male" ? "Boys" : "Girls"}` : ""}
-                              {assignedTeamName ? ` • ${assignedTeamName}` : " • Unassigned"}
-                            </p>
+                            </p>  
                           </div>
                           <button
                             type="button"

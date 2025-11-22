@@ -182,6 +182,7 @@ def export_team_posts(
     current_user: User = Depends(get_current_active_user),
     team_id: int | None = None,
     delete_after: bool = False,
+    include_posts: bool = True,
 ):
     ensure_roles(current_user, {UserRole.ADMIN})
     statement = select(TeamPost)
@@ -192,18 +193,19 @@ def export_team_posts(
     buffer = io.BytesIO()
     timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-        payload = [
-            {
-                "id": post.id,
-                "team_id": post.team_id,
-                "author_id": post.author_id,
-                "content": post.content,
-                "media_url": post.media_url,
-                "created_at": post.created_at.isoformat(),
-            }
-            for post in posts
-        ]
-        zip_file.writestr("posts.json", json.dumps(payload, indent=2))
+        if include_posts:
+            payload = [
+                {
+                    "id": post.id,
+                    "team_id": post.team_id,
+                    "author_id": post.author_id,
+                    "content": post.content,
+                    "media_url": post.media_url,
+                    "created_at": post.created_at.isoformat(),
+                }
+                for post in posts
+            ]
+            zip_file.writestr("posts.json", json.dumps(payload, indent=2))
 
         for post in posts:
             if post.media_url and post.media_url.startswith("/media/"):

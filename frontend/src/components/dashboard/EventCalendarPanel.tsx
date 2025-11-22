@@ -110,10 +110,10 @@ const EventCalendarPanel = ({
                   className={`flex h-14 flex-col items-center justify-center rounded-lg border px-1 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-action-primary/60 ${
                     cell
                       ? isSelected
-                        ? "border-action-primary bg-action-primary/10 text-action-primary"
+                        ? "border-2 border-action-primary bg-action-primary/5 text-action-primary"
                         : isToday
-                          ? "border-action-primary/40 bg-[rgb(var(--color-container-background))] text-action-primary"
-                          : "border-black/20 bg-[rgb(var(--color-container-background))] text-container-foreground hover:border-action-primary/40"
+                          ? "border-2 border-action-primary/50 bg-[rgb(var(--color-container-background))] text-action-primary"
+                          : "border border-[#e7e8e9]/80 bg-[rgb(var(--color-container-background))] text-container-foreground hover:border-action-primary/30"
                       : "border-transparent bg-transparent text-transparent"
                   }`}
                 >
@@ -144,56 +144,63 @@ const EventCalendarPanel = ({
             ) : null}
           </div>
           {upcomingEvents.length ? (
-            <ul className="mt-3 space-y-3 text-sm">
-              {upcomingEvents.map((event) => (
-                <li key={event.id}>
-                  <div className="rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] px-3 py-2 shadow-sm">
-                    <div className="flex items-start gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedEventDate(event.date);
-                          const eventTeams = getEventTeamIds(event);
-                          if (eventTeams.length) {
-                            setSelectedTeamId(eventTeams[0]);
-                          }
-                          setCalendarCursor((prev) => {
-                            const eventDate = new Date(event.date);
-                            if (
-                              prev.getFullYear() === eventDate.getFullYear() &&
-                              prev.getMonth() === eventDate.getMonth()
-                            ) {
-                              return prev;
-                            }
-                            return new Date(eventDate.getFullYear(), eventDate.getMonth(), 1);
-                          });
-                        }}
-                        className="flex-1 text-left"
-                      >
-                        <p className="font-semibold text-container-foreground">{event.name}</p>
-                        <p className="text-xs text-muted">
-                          {readableDate(event.date)} • {event.time || summaryLabels.calendar.timeTbd}
-                        </p>
-                        {event.location ? (
-                          <p className="text-xs text-muted">{event.location}</p>
-                        ) : null}
-                      </button>
-                      {canManageEvents ? (
-                        <button
-                          type="button"
-                          onClick={() => onDeleteEvent(event.id)}
-                          disabled={deleteEventPending}
-                          className="flex h-7 w-7 items-center justify-center rounded-full text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
-                          aria-label={`Delete ${event.name}`}
-                        >
-                          <FontAwesomeIcon icon={faTrash} className="text-xs" />
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <details className="mt-3 rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] shadow-sm dark:border-[#f4a240]/70">
+              <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-container-foreground">
+                Upcoming Events ({upcomingEvents.length})
+              </summary>
+              <div className="px-3 py-2">
+                <ul className="space-y-3 text-sm">
+                  {upcomingEvents.map((event) => (
+                    <li key={event.id}>
+                      <div className="rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] px-3 py-2 shadow-sm dark:border-[#f4a240]/70">
+                        <div className="flex items-start gap-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedEventDate(event.date);
+                              const eventTeams = getEventTeamIds(event);
+                              if (eventTeams.length) {
+                                setSelectedTeamId(eventTeams[0]);
+                              }
+                              setCalendarCursor((prev) => {
+                                const eventDate = new Date(event.date);
+                                if (
+                                  prev.getFullYear() === eventDate.getFullYear() &&
+                                  prev.getMonth() === eventDate.getMonth()
+                                ) {
+                                  return prev;
+                                }
+                                return new Date(eventDate.getFullYear(), eventDate.getMonth(), 1);
+                              });
+                            }}
+                            className="flex-1 text-left"
+                          >
+                            <p className="font-semibold text-container-foreground">{event.name}</p>
+                            <p className="text-xs text-muted">
+                              {readableDate(event.date)} • {event.time || summaryLabels.calendar.timeTbd}
+                            </p>
+                            {event.location ? (
+                              <p className="text-xs text-muted">{event.location}</p>
+                            ) : null}
+                          </button>
+                          {canManageEvents ? (
+                            <button
+                              type="button"
+                              onClick={() => onDeleteEvent(event.id)}
+                              disabled={deleteEventPending}
+                              className="flex h-7 w-7 items-center justify-center rounded-full text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
+                              aria-label={`Delete ${event.name}`}
+                            >
+                              <FontAwesomeIcon icon={faTrash} className="text-xs" />
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </details>
           ) : (
             <p className="mt-3 text-xs text-muted">{summaryLabels.calendar.upcomingEmpty}</p>
           )}

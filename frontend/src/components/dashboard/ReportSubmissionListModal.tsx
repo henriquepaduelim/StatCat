@@ -115,7 +115,7 @@ const ReportSubmissionListModal = ({
                 pendingSlice.map((submission) => (
                   <article
                     key={`pending-submission-${submission.id}`}
-                    className="rounded-lg border border-black/10 bg-container/50 p-3 text-sm"
+                    className="modal-card rounded-lg bg-container/50 p-3 text-sm"
                   >
                     <p className="font-semibold text-container-foreground">
                       {activeTab === "report_card"
@@ -189,7 +189,7 @@ const ReportSubmissionListModal = ({
                 approvedSlice.map((submission) => (
                   <article
                     key={`approved-submission-${submission.id}`}
-                    className="rounded-lg border border-black/10 bg-white/70 p-3 text-sm"
+                    className="modal-card rounded-lg bg-white/70 p-3 text-sm"
                   >
                     <p className="font-semibold text-container-foreground">
                       {activeTab === "report_card"

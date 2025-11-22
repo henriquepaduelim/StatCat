@@ -1,5 +1,7 @@
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 
 import { useAuthStore } from "../stores/useAuthStore";
 import { useTheme } from "../theme/ThemeProvider";
@@ -7,6 +9,7 @@ import type { ThemeId } from "../theme/themes";
 import { useTeams } from "../hooks/useTeams";
 import type { PlayerRegistrationStatus, RegistrationCategory } from "../types/athlete";
 import { completeAthleteRegistration, updateAthlete } from "../api/athletes";
+import { exportTeamPostsArchive } from "../api/teamPosts";
 
 const registrationCategories: Array<{ value: RegistrationCategory; label: string }> = [
   { value: "youth", label: "Youth" },
@@ -127,9 +130,21 @@ const Settings = () => {
   const [isSavingContact, setIsSavingContact] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [showSecondaryGuardian, setShowSecondaryGuardian] = useState(false);
+  const [maintenanceTeamId, setMaintenanceTeamId] = useState<number | null>(null);
+  const [deleteAfterDownload, setDeleteAfterDownload] = useState(false);
+  const [isExportingArchive, setIsExportingArchive] = useState(false);
+  const [maintenanceFeedback, setMaintenanceFeedback] = useState<string | null>(null);
+  const [isMaintenanceOpen, setMaintenanceOpen] = useState(false);
+  const [isSummaryOpen, setSummaryOpen] = useState(false);
+  const [isPhotoOpen, setPhotoOpen] = useState(false);
+  const [isThemeOpen, setThemeOpen] = useState(false);
+  const [isPersonalOpen, setPersonalOpen] = useState(false);
+  const [isAthleteInfoOpen, setAthleteInfoOpen] = useState(false);
+  const [isContactOpen, setContactOpen] = useState(false);
   const { themeId, setThemeId } = useTheme();
   const teamsQuery = useTeams();
   const isAthlete = user?.role === "athlete";
+  const isAdminOrStaff = user?.role === "admin" || user?.role === "staff";
   const athleteId = isAthlete && user?.athlete_id ? user.athlete_id : null;
 
   useEffect(() => {
@@ -164,6 +179,18 @@ const Settings = () => {
 
     return () => URL.revokeObjectURL(previewUrl);
   }, [avatarFile]);
+
+  useEffect(() => {
+    if (!isAdminOrStaff) return;
+    const teams = teamsQuery.data ?? [];
+    if (!teams.length) {
+      setMaintenanceTeamId(null);
+      return;
+    }
+    if (!maintenanceTeamId || teams.every((team) => team.id !== maintenanceTeamId)) {
+      setMaintenanceTeamId(teams[0].id);
+    }
+  }, [teamsQuery.data, isAdminOrStaff, maintenanceTeamId]);
 
   const userInitials = useMemo(() => {
     if (!user?.full_name) return "PP";
@@ -350,35 +377,117 @@ const Settings = () => {
     setFeedback(`Theme ${mode === "dark" ? "dark" : "light"} applied.`);
   };
 
+  const handleTeamArchiveDownload = async (includePosts: boolean) => {
+    if (!isAdminOrStaff) {
+      setMaintenanceFeedback("Only admins and staff can export team content.");
+      return;
+    }
+    if (!maintenanceTeamId) {
+      setMaintenanceFeedback("Select a team to export.");
+      return;
+    }
+    setIsExportingArchive(true);
+    setMaintenanceFeedback(null);
+    try {
+      const blob = await exportTeamPostsArchive({
+        teamId: maintenanceTeamId,
+        deleteAfter: deleteAfterDownload,
+        includePosts,
+      });
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = includePosts ? "team-feed-media-text.zip" : "team-feed-media-only.zip";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+      setMaintenanceFeedback(
+        `${includePosts ? "Media + text" : "Media only"} download complete${
+          deleteAfterDownload ? " and content removed." : "."
+        }`,
+      );
+    } catch (error) {
+      console.error("Failed to export team posts", error);
+      setMaintenanceFeedback("Unable to export team content. Please try again.");
+    } finally {
+      setIsExportingArchive(false);
+    }
+  };
+
+  const CollapsibleCard = ({
+    title,
+    description,
+    isOpen,
+    onToggle,
+    children,
+    className = "",
+  }: {
+    title: string;
+    description?: string;
+    isOpen: boolean;
+    onToggle: () => void;
+    children: ReactNode;
+    className?: string;
+  }) => (
+    <section className={`rounded-2xl border border-black/5 bg-container-gradient p-6 shadow-sm ${className}`}>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-container-foreground">{title}</h2>
+          {description ? <p className="text-sm text-muted">{description}</p> : null}
+        </div>
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex items-center gap-2 rounded-full border border-black/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-container-foreground transition hover:border-action-primary"
+          aria-expanded={isOpen}
+        >
+          <span className="sr-only">{isOpen ? "Collapse" : "Expand"}</span>
+          <FontAwesomeIcon
+            icon={faChevronDown}
+            aria-hidden="true"
+            className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+          />
+        </button>
+      </div>
+      {isOpen ? <div className="mt-4 space-y-4">{children}</div> : null}
+    </section>
+  );
+
   return (
     <div className="space-y-8 settings-page">
-      <div className="flex flex-col gap-4 rounded-2xl bg-container-gradient p-6 shadow-lg">
-        <div>
-          <h1 className="text-2xl font-semibold text-container-foreground">Settings</h1>
-          <p className="text-sm text-muted">
-            Update your personal details, athlete info, and appearance preferences in one place.
-          </p>
-        </div>
+      <CollapsibleCard
+        title="Settings"
+        description="Update your personal details, athlete info, and appearance preferences in one place."
+        isOpen={isSummaryOpen}
+        onToggle={() => setSummaryOpen((open) => !open)}
+        className="shadow-lg"
+      >
         <div className="flex flex-wrap gap-4 text-sm text-muted">
-          <span>Signed in as: <strong>{user?.email}</strong></span>
-          <span>Role: <strong className="uppercase">{user?.role}</strong></span>
+          <span>
+            Signed in as: <strong>{user?.email}</strong>
+          </span>
+          <span>
+            Role: <strong className="uppercase">{user?.role}</strong>
+          </span>
           <Link to="/player-profile" className="text-action-primary hover:underline">
             View public profile
           </Link>
         </div>
-        {feedback && (
+        {feedback ? (
           <div className="rounded-xl border border-action-primary/30 bg-action-primary/10 px-4 py-3 text-sm text-action-primary-foreground">
             {feedback}
           </div>
-        )}
-      </div>
+        ) : null}
+      </CollapsibleCard>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-black/5 bg-container-gradient p-6 shadow-sm">
-          <header className="mb-4">
-            <h2 className="text-lg font-semibold text-container-foreground">Athlete photo</h2>
-            <p className="text-sm text-muted">Select a new square image (PNG or JPG) to use across the app.</p>
-          </header>
+        <CollapsibleCard
+          title="Athlete photo"
+          description="Select a new square image (PNG or JPG) to use across the app."
+          isOpen={isPhotoOpen}
+          onToggle={() => setPhotoOpen((open) => !open)}
+        >
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border border-black/10 bg-sidebar text-3xl font-bold text-sidebar-foreground shadow">
               {avatarPreview ? (
@@ -408,13 +517,14 @@ const Settings = () => {
               </button>
             </div>
           </div>
-        </section>
+        </CollapsibleCard>
 
-        <section className="rounded-2xl border border-black/5 bg-container-gradient p-6 shadow-sm">
-          <header className="mb-4">
-            <h2 className="text-lg font-semibold text-container-foreground">Theme</h2>
-            <p className="text-sm text-muted">Choose between light and dark mode. Changes apply immediately.</p>
-          </header>
+        <CollapsibleCard
+          title="Theme"
+          description="Choose between light and dark mode. Changes apply immediately."
+          isOpen={isThemeOpen}
+          onToggle={() => setThemeOpen((open) => !open)}
+        >
           <div className="grid gap-4 sm:grid-cols-2">
             {(["light", "dark"] as ThemeId[]).map((mode) => (
               <button
@@ -438,7 +548,7 @@ const Settings = () => {
               </button>
             ))}
           </div>
-        </section>
+        </CollapsibleCard>
       </div>
 
       <section className="rounded-2xl border border-black/5 bg-container-gradient p-6 shadow-sm">
@@ -875,6 +985,100 @@ const Settings = () => {
         </form>
       </section>
       )}
+
+      {isAdminOrStaff ? (
+        <section className="rounded-2xl border border-black/5 bg-container-gradient p-6 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-container-foreground">Season Maintenance</h2>
+              <p className="text-sm text-muted">
+                Export or clean team feeds. Pick the team, choose media-only or raw content, and optionally delete after download.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMaintenanceOpen((open) => !open)}
+              className="flex items-center gap-2 rounded-full border border-black/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-container-foreground transition hover:border-action-primary"
+              aria-expanded={isMaintenanceOpen}
+            >
+              <span className="sr-only">{isMaintenanceOpen ? "Collapse" : "Expand"}</span>
+              <FontAwesomeIcon
+                icon={faChevronDown}
+                aria-hidden="true"
+                className={`transition-transform ${isMaintenanceOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+          </div>
+
+          {isMaintenanceOpen ? (
+            <div className="mt-4 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-[1.5fr_1fr] sm:items-end">
+                <label className="block text-sm">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted">Team</span>
+                  <select
+                    value={maintenanceTeamId ?? ""}
+                    onChange={(event) => setMaintenanceTeamId(Number(event.target.value))}
+                    disabled={teamsQuery.isLoading || (teamsQuery.data?.length ?? 0) === 0}
+                    className="mt-2 w-full rounded-xl border border-black/10 bg-white px-4 py-2 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {(teamsQuery.data ?? []).map((team) => (
+                      <option key={team.id} value={team.id}>
+                        {team.name} ({team.age_category})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex items-center gap-2 text-sm text-container-foreground">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-black/30 text-action-primary focus:ring-action-primary"
+                    checked={deleteAfterDownload}
+                    onChange={(event) => setDeleteAfterDownload(event.target.checked)}
+                  />
+                  Remove posts after download
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleTeamArchiveDownload(false)}
+                  disabled={
+                    isExportingArchive ||
+                    teamsQuery.isLoading ||
+                    (teamsQuery.data?.length ?? 0) === 0 ||
+                    !maintenanceTeamId
+                  }
+                  className="rounded-md border border-black/15 bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isExportingArchive ? "Preparing..." : "Export Media"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleTeamArchiveDownload(true)}
+                  disabled={
+                    isExportingArchive ||
+                    teamsQuery.isLoading ||
+                    (teamsQuery.data?.length ?? 0) === 0 ||
+                    !maintenanceTeamId
+                  }
+                  className="rounded-md border border-black/15 bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isExportingArchive ? "Preparing..." : "Export Media + Text"}
+                </button>
+              </div>
+              {maintenanceFeedback ? (
+                <p className="text-sm text-muted">{maintenanceFeedback}</p>
+              ) : null}
+              {teamsQuery.isLoading ? (
+                <p className="text-xs text-muted">Loading teams...</p>
+              ) : null}
+              {!teamsQuery.isLoading && (teamsQuery.data?.length ?? 0) === 0 ? (
+                <p className="text-xs text-muted">No teams available to export.</p>
+              ) : null}
+            </div>
+          ) : null}
+        </section>
+      ) : null}
     </div>
   );
 };

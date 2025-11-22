@@ -111,14 +111,14 @@ input, select, textarea {
   .modal-surface {
     background-color: rgb(var(--color-container-background));
     color: rgb(var(--color-container-foreground));
-    border: 1px solid rgb(var(--color-border) / 0.4);
+    border: 1.5px solid rgb(var(--color-border) / 0.4);
     box-shadow: 0 25px 50px rgba(15, 23, 42, 0.25);
   }
 
   .theme-dark .modal-surface {
     background-color: rgba(15, 23, 42, 0.95);
     color: rgb(var(--color-container-foreground));
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: #e5e5e5;
     box-shadow: 0 30px 60px rgba(0, 0, 0, 0.65);
   }
 
@@ -146,6 +146,54 @@ input, select, textarea {
   .theme-dark .modal-surface [class*="bg-white"] {
     background-color: rgba(15, 23, 42, 0.8) !important;
     color: rgb(var(--color-container-foreground));
+  }
+
+  .theme-dark .athlete-table {
+    border-collapse: collapse;
+  }
+
+  .theme-dark .athlete-table tbody tr + tr td {
+    border-top: 1px solid #e7e8e9;
+  }
+
+  .theme-dark .athlete-table tbody tr:first-child td {
+    border-top: none;
+  }
+
+  .theme-dark .athlete-table thead {
+    border-bottom: 1px solid #e7e8e9;
+  }
+
+  .theme-dark .athlete-table td,
+  .theme-dark .athlete-table th {
+    padding-top: 0.3rem;
+    padding-bottom: 0.3rem;
+  }
+
+  .modal-card {
+    border-width: 1px;
+    border-style: solid;
+    border-color: rgba(15, 23, 42, 0.12);
+  }
+
+  .modal-card .modal-card {
+    border-width: 0.75px;
+  }
+
+  .modal-card .modal-card .modal-card {
+    border-width: 0.5px;
+  }
+
+  .theme-dark .modal-card {
+    border-color: #e5e5e5;
+  }
+
+  .theme-dark .modal-card .modal-card {
+    border-color: rgba(229, 229, 229, 0.8);
+  }
+
+  .theme-dark .modal-card .modal-card .modal-card {
+    border-color: rgba(229, 229, 229, 0.6);
   }
 }
 
@@ -221,20 +269,35 @@ textarea::placeholder {
 
 @layer utilities {
   .bg-container-gradient {
-    background-image: linear-gradient(
-      135deg,
-      rgb(var(--color-container-background) / 0.95),
-      rgb(var(--color-container-background) / 0.75)
-    );
+    background-image: none;
+    background-color: rgb(var(--color-container-background));
+    border: 2px solid rgba(15, 23, 42, 0.12);
   }
 
   .theme-dark .bg-container-gradient {
-    background-image: none;
-    background-color: rgb(var(--color-container-background));
+    border: 2px solid #f4a240;
+  }
+
+  .bg-container,
+  [class*="bg-container/"] {
+    border: 1.5px solid rgba(15, 23, 42, 0.1);
+  }
+
+  .theme-dark .bg-container,
+  .theme-dark [class*="bg-container/"] {
+    border: 1.5px solid rgba(244, 162, 64, 0.65);
   }
 }
 
 
+
+  .athlete-table .list-row + .list-row {
+    border-top: 0.10px solid rgba(15, 23, 42, 0.08);
+  }
+
+  .theme-dark .athlete-table .list-row + .list-row {
+    border-top: 0.10px solid #e7e8e9;
+  }
 
 @media print {
   body {
@@ -254,7 +317,7 @@ textarea::placeholder {
     background-color: #ffffff !important;
     color: #000000 !important;
     box-shadow: none !important;
-    border: 1px solid #d1d5db;
+    border: 1px solid #000000;
     page-break-inside: avoid;
   }
 

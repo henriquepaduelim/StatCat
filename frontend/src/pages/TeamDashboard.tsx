@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useTeams } from "../hooks/useTeams";
 import { useAuthStore } from "../stores/useAuthStore";
@@ -7,7 +7,7 @@ import { getCoachTeams, type Team } from "../api/teams";
 import { useEvents } from "../hooks/useEvents";
 import { useAthletes } from "../hooks/useAthletes";
 import { listTeamCombineMetrics } from "../api/teamMetrics";
-import { getTeamPosts, exportTeamPostsArchive } from "../api/teamPosts";
+import { getTeamPosts } from "../api/teamPosts";
 import LeaderboardCard from "../components/dashboard/LeaderboardCard";
 import TeamFeedPreview from "../components/team-dashboard/TeamFeedPreview";
 import TeamEventsWidget from "../components/team-dashboard/TeamEventsWidget";
@@ -113,49 +113,13 @@ const TeamDashboard = () => {
       selectedTeamId ? getTeamPosts(selectedTeamId, { size: 6 }) : Promise.resolve<TeamPost[]>([]),
   });
 
-  const downloadArchiveMutation = useMutation({
-    mutationFn: (options: { deleteAfter: boolean }) => {
-      if (!selectedTeamId) {
-        throw new Error("Missing team reference");
-      }
-      return exportTeamPostsArchive({ teamId: selectedTeamId, deleteAfter: options.deleteAfter });
-    },
-    onSuccess: (blob, variables) => {
-      const url = window.URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = variables.deleteAfter ? "team-feed-archive-cleanup.zip" : "team-feed-archive.zip";
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.URL.revokeObjectURL(url);
-      if (variables.deleteAfter) {
-        queryClient.invalidateQueries({ queryKey: ["teamPosts", selectedTeamId] });
-        queryClient.invalidateQueries({ queryKey: ["team-feed-preview", selectedTeamId] });
-      }
-    },
-  });
-
   const canRecordMetrics = roleCanRecordMetrics(role);
-  const canExportArchive = role === "admin" || role === "staff";
-
-  const handleArchiveDownload = (deleteAfter: boolean) => {
-    if (!selectedTeamId) {
-      return;
-    }
-    downloadArchiveMutation.mutate({ deleteAfter });
-  };
 
   const teamDashboardTexts = teamDashboardTranslations ?? {
     title: "Team Hub",
     description: "Live insights, performance metrics, and communication for your roster.",
     selectLabel: "Team",
     noTeams: "No Teams Available.",
-    maintenanceTitle: "Season Maintenance",
-    maintenanceDescription:
-      "Export community posts and clean up media before next season begins.",
-    exportButton: "Download Archive",
-    cleanButton: "Download & Clean",
   };
 
   const isLoading = teamsQuery.isLoading || (role === "coach" && coachTeamsQuery.isLoading);
@@ -230,13 +194,6 @@ const TeamDashboard = () => {
               isLoading={postsQuery.isLoading}
               isError={Boolean(postsQuery.isError)}
               teamName={selectedTeam.name}
-              showMaintenance={canExportArchive}
-              maintenanceTitle={teamDashboardTexts.maintenanceTitle}
-              maintenanceDescription={teamDashboardTexts.maintenanceDescription}
-              maintenancePrimaryLabel={teamDashboardTexts.exportButton}
-              maintenanceSecondaryLabel={teamDashboardTexts.cleanButton}
-              onMaintenanceAction={handleArchiveDownload}
-              maintenancePending={downloadArchiveMutation.isPending}
             />
           </div>
         </div>

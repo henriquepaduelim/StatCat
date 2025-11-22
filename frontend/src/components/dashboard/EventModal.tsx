@@ -1,6 +1,6 @@
-import { FormEvent, Dispatch, SetStateAction } from "react";
+import { FormEvent, Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTrash, faCheck, faQuestion, faTimes, faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
 
 import type { Event } from "../../types/event";
 import type { ParticipantStatus } from "../../types/event";
@@ -82,9 +82,12 @@ const EventModal = ({
   onCancel,
   getEventTeamIds,
 }: EventModalProps) => {
-  if (!isOpen) {
-    return null;
-  }
+  const [mapsReady, setMapsReady] = useState(false);
+  const [locationLatLng, setLocationLatLng] = useState<{ lat: number; lng: number } | null>(null);
+  const locationInputRef = useRef<HTMLInputElement | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markerRef = useRef<any>(null);
 
   const eventsDayTitle = readableDate(eventForm.date || selectedEventDate || formatDateKey(new Date()));
   const teamFilterOptions = eventForm.teamIds.length
@@ -99,6 +102,102 @@ const EventModal = ({
     onInputChange("teamIds", updated);
   };
 
+  useEffect(() => {
+    const loadGoogleMaps = (): Promise<any | null> => {
+      if (typeof window !== "undefined" && (window as any).google?.maps?.places) {
+        return Promise.resolve((window as any).google);
+      }
+
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+      if (!apiKey) {
+        return Promise.resolve(null);
+      }
+
+      return new Promise((resolve, reject) => {
+        const existing = document.querySelector<HTMLScriptElement>(
+          'script[src*="maps.googleapis.com/maps/api/js"]',
+        );
+        if (existing) {
+          existing.addEventListener("load", () => resolve((window as any).google));
+          existing.addEventListener("error", () => resolve(null));
+          return;
+        }
+
+        const script = document.createElement("script");
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+        script.async = true;
+        script.defer = true;
+        script.setAttribute("loading", "async");
+        script.onload = () => resolve((window as any).google);
+        script.onerror = () => {
+          console.error("Failed to load Google Maps");
+          resolve(null);
+        };
+        document.body.appendChild(script);
+      });
+    };
+
+    const initAutocomplete = async () => {
+      const googleLib = await loadGoogleMaps();
+      if (!googleLib || !locationInputRef.current) return;
+
+      const autocomplete = new googleLib.maps.places.Autocomplete(locationInputRef.current, {
+        fields: ["formatted_address", "geometry", "address_component", "place_id"],
+        types: ["geocode"],
+        componentRestrictions: { country: "ca" },
+      });
+      autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        const address = place.formatted_address || place.name || "";
+        if (address) {
+          onInputChange("location", address);
+        }
+        if (place.geometry?.location) {
+          const latlng = {
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng(),
+          };
+          setLocationLatLng(latlng);
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.setCenter(latlng);
+            mapInstanceRef.current.setZoom(14);
+          }
+          if (markerRef.current) {
+            markerRef.current.setPosition(latlng);
+          }
+        }
+      });
+
+      if (mapContainerRef.current && !mapInstanceRef.current) {
+        const center = locationLatLng ?? { lat: 0, lng: 0 };
+        mapInstanceRef.current = new googleLib.maps.Map(mapContainerRef.current, {
+          center,
+          zoom: locationLatLng ? 14 : 2,
+          disableDefaultUI: true,
+          zoomControl: true,
+        });
+        markerRef.current = new googleLib.maps.Marker({
+          position: center,
+          map: mapInstanceRef.current,
+        });
+      }
+
+      setMapsReady(true);
+    };
+
+    if (!isOpen) return;
+    initAutocomplete();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (mapsReady && mapInstanceRef.current && markerRef.current && locationLatLng) {
+      mapInstanceRef.current.setCenter(locationLatLng);
+      mapInstanceRef.current.setZoom(14);
+      markerRef.current.setPosition(locationLatLng);
+    }
+  }, [mapsReady, locationLatLng]);
+
   const handleCoachToggle = (coachId: number) => {
     const isSelected = eventForm.coachIds.includes(coachId);
     const updated = isSelected
@@ -107,14 +206,18 @@ const EventModal = ({
     onInputChange("coachIds", updated);
   };
 
+  if (!isOpen) {
+    return null;
+  }
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center modal-overlay px-8 py-4 sm:px-2 sm:py-2"
+      className="fixed inset-0 z-50 box-border flex items-center justify-center modal-overlay px-2 py-2 sm:px-8 sm:py-4"
       onClick={onCancel}
       role="presentation"
     >
       <div
-        className="modal-surface h-[96vh] w-full max-w-none overflow-y-auto rounded-lg p-3 shadow-2xl sm:h-[94vh] sm:rounded-none sm:p-6"
+        className="modal-surface box-border h-[96vh] w-full max-w-full overflow-x-hidden overflow-y-auto rounded-lg p-2 shadow-2xl sm:h-[94vh] sm:max-w-5xl sm:rounded-none sm:p-6"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="relative">
@@ -141,224 +244,84 @@ const EventModal = ({
           </div>
         </div>
 
-        <div className="mt-4 grid gap-6 lg:grid-cols-2 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-          <div className="rounded-xl border border-black/10 bg-white/80 p-4">
-            <h4 className="text-base font-semibold text-container-foreground">
-              {summaryLabels.calendar.title}
-            </h4>
-            <p className="text-xs text-muted">{summaryLabels.calendar.subtitle}</p>
-            {eventsOnSelectedDate.length ? (
-              <ul className="mt-3 space-y-3 text-sm">
-                {eventsOnSelectedDate.map((event) => {
-                  const participants = event.participants ?? [];
-                  const teamIds = getEventTeamIds(event);
-                  const teamLabel = teamIds.length
-                    ? teamIds
-                        .map((teamId) => teamNameById[teamId] ?? summaryLabels.teamPlaceholder)
-                        .join(", ")
-                    : summaryLabels.teamPlaceholder;
-                  const confirmedCount = participants.filter((p) => p.status === "confirmed").length;
-                  const declinedCount = participants.filter((p) => p.status === "declined").length;
-                  const pendingCount = participants.filter((p) => p.status === "invited").length;
-                  const myParticipant = participants.find((p) => p.user_id === currentUserId);
-
-                  return (
-                    <li key={`modal-day-event-${event.id}`} className="rounded-lg border border-black/10 bg-white/70 px-3 py-2 shadow-sm">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="font-semibold text-container-foreground">{event.name}</p>
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                                  event.status === "scheduled"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : event.status === "completed"
-                                      ? "bg-green-100 text-green-800"
-                                      : "bg-gray-100 text-gray-800"
-                                }`}
-                              >
-                                {event.status === "scheduled"
-                                  ? "Scheduled"
-                                  : event.status === "completed"
-                                    ? "Completed"
-                                    : "Cancelled"}
-                              </span>
-                              {canManageEvents ? (
-                                <button
-                                  type="button"
-                                  onClick={(buttonEvent) => {
-                                    buttonEvent.stopPropagation();
-                                    onDeleteEvent(event.id);
-                                  }}
-                                  disabled={deleteEventPending}
-                                  className="flex h-6 w-6 items-center justify-center rounded-full text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
-                                  title="Delete event"
-                                >
-                                  <FontAwesomeIcon icon={faTrash} className="h-3 w-3" />
-                                </button>
-                              ) : null}
-                            </div>
-                          </div>
-                          <p className="mt-1 text-xs text-muted">
-                            {event.time || summaryLabels.calendar.timeTbd}
-                            {event.location ? ` • ${event.location}` : ""}
-                          </p>
-                          <p className="text-[0.7rem] text-muted">
-                            {summaryLabels.teamLabel}: {teamLabel}
-                          </p>
-
-                          {participants.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                              {confirmedCount > 0 && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-700">
-                                  <FontAwesomeIcon icon={faCheck} className="h-3 w-3" />
-                                  {confirmedCount}
-                                </span>
-                              )}
-                              {declinedCount > 0 && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2 py-0.5 text-rose-700">
-                                  <FontAwesomeIcon icon={faTimes} className="h-3 w-3" />
-                                  {declinedCount}
-                                </span>
-                              )}
-                              {pendingCount > 0 && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-amber-700">
-                                  <FontAwesomeIcon icon={faQuestion} className="h-3 w-3" />
-                                  {pendingCount}
-                                </span>
-                              )}
-                            </div>
-                          )}
-
-                          {myParticipant && myParticipant.status === "invited" && (
-                            <div className="mt-2 flex gap-2">
-                              <button
-                                type="button"
-                                onClick={() => onConfirmAttendance(event.id, "confirmed")}
-                                disabled={confirmAttendancePending}
-                                className="flex items-center gap-1 rounded-md bg-emerald-600 px-2 py-1 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-                              >
-                                <FontAwesomeIcon icon={faCheck} className="h-3 w-3" />
-                                Confirm
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => onConfirmAttendance(event.id, "maybe")}
-                                disabled={confirmAttendancePending}
-                                className="flex items-center gap-1 rounded-md bg-amber-600 px-2 py-1 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50"
-                              >
-                                <FontAwesomeIcon icon={faQuestion} className="h-3 w-3" />
-                                Maybe
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => onConfirmAttendance(event.id, "declined")}
-                                disabled={confirmAttendancePending}
-                                className="flex items-center gap-1 rounded-md bg-rose-600 px-2 py-1 text-xs font-medium text-white hover:bg-rose-700 disabled:opacity-50"
-                              >
-                                <FontAwesomeIcon icon={faTimes} className="h-3 w-3" />
-                                Decline
-                              </button>
-                            </div>
-                          )}
-
-                          {myParticipant && myParticipant.status !== "invited" && (
-                            <div className="mt-2">
-                              <span
-                                className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium ${
-                                  myParticipant.status === "confirmed"
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : myParticipant.status === "declined"
-                                      ? "bg-rose-100 text-rose-700"
-                                      : "bg-amber-100 text-amber-700"
-                                }`}
-                              >
-                                {myParticipant.status === "confirmed"
-                                  ? "You confirmed attendance"
-                                  : myParticipant.status === "declined"
-                                    ? "You declined"
-                                    : "You marked maybe"}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="mt-3 text-xs text-muted">{summaryLabels.calendar.upcomingEmpty}</p>
-            )}
-          </div>
-
-          <form className="space-y-4 rounded-xl border border-black/10 bg-white/80 p-4" onSubmit={onSubmit}>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="text-xs font-medium text-muted">
-                {summaryLabels.calendar.nameLabel}
-                <input
-                  value={eventForm.name}
-                  onChange={(event) => onInputChange("name", event.target.value)}
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                  placeholder="Training session"
-                  required
-                />
-              </label>
-              <label className="text-xs font-medium text-muted">
-                {summaryLabels.calendar.dateLabel}
-                <input
-                  type="date"
-                  value={eventForm.date || selectedEventDate || formatDateKey(new Date())}
-                  onChange={(event) => onInputChange("date", event.target.value)}
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                  required
-                />
-              </label>
+        <div className="mt-4 space-y-6">
+        <form className="modal-card space-y-4 rounded-xl bg-white/80 p-4" onSubmit={onSubmit}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-4">
+                <label className="text-xs font-medium text-muted">
+                  {summaryLabels.calendar.nameLabel}
+                  <input
+                    value={eventForm.name}
+                    onChange={(event) => onInputChange("name", event.target.value)}
+                    className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                    placeholder="Training session"
+                    required
+                  />
+                </label>
+                <label className="text-xs font-medium text-muted">
+                  {summaryLabels.calendar.dateLabel}
+                  <input
+                    type="date"
+                    value={eventForm.date || selectedEventDate || formatDateKey(new Date())}
+                    onChange={(event) => onInputChange("date", event.target.value)}
+                    className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                    required
+                  />
+                </label>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="text-xs font-medium text-muted">
+                    {summaryLabels.calendar.timeLabel} 
+                    <input
+                      type="time"
+                      value={eventForm.startTime}
+                      onChange={(event) => onInputChange("startTime", event.target.value)}
+                      className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                      step={900}
+                    />
+                  </label>
+                  <label className="text-xs font-medium text-muted">
+                    End time
+                    <input
+                      type="time"
+                      value={eventForm.endTime}
+                      onChange={(event) => onInputChange("endTime", event.target.value)}
+                      className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                      step={900}
+                    />
+                  </label>
+                </div>
+                <label className="text-xs font-medium text-muted">
+                  {summaryLabels.calendar.notesLabel}
+                  <textarea
+                    value={eventForm.notes}
+                    onChange={(event) => onInputChange("notes", event.target.value)}
+                    className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                    rows={4}
+                  />
+                </label>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted">
+                  {summaryLabels.calendar.locationLabel}
+                  <input
+                    value={eventForm.location}
+                    onChange={(event) => onInputChange("location", event.target.value)}
+                    ref={locationInputRef}
+                    className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                    placeholder="Main field"
+                  />
+                </label>
+                <div className="mt-3 hidden border-t border-black/10 opacity-60 md:block" />
+                {mapsReady ? (
+                  <div className="mt-3 h-40 rounded-lg border border-black/10 md:h-72" ref={mapContainerRef} />
+                ) : null}
+              </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="text-xs font-medium text-muted">
-                {summaryLabels.calendar.timeLabel}
-                <input
-                  type="time"
-                  value={eventForm.startTime}
-                  onChange={(event) => onInputChange("startTime", event.target.value)}
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                />
-              </label>
-              <label className="text-xs font-medium text-muted">
-                End time
-                <input
-                  type="time"
-                  value={eventForm.endTime}
-                  onChange={(event) => onInputChange("endTime", event.target.value)}
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                />
-              </label>
-            </div>
-            <label className="text-xs font-medium text-muted">
-              {summaryLabels.calendar.locationLabel}
-              <input
-                value={eventForm.location}
-                onChange={(event) => onInputChange("location", event.target.value)}
-                className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                placeholder="Main field"
-              />
-            </label>
-            <label className="text-xs font-medium text-muted">
-              {summaryLabels.calendar.notesLabel}
-              <textarea
-                value={eventForm.notes}
-                onChange={(event) => onInputChange("notes", event.target.value)}
-                className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                rows={3}
-              />
-            </label>
 
             <div className="grid gap-4 lg:grid-cols-3">
               <div className="text-xs font-medium text-muted">
                 <p className="mb-1">{summaryLabels.calendar.teamLabel}</p>
-                <div className="space-y-1 rounded-lg border border-black/10 bg-white/90 p-2">
+                <div className="modal-card grid grid-cols-2 gap-2 rounded-lg bg-white/90 p-2 sm:grid-cols-2 lg:grid-cols-3">
                   {teams.map((team) => {
                     const isSelected = eventForm.teamIds.includes(team.id);
                     return (
@@ -366,12 +329,17 @@ const EventModal = ({
                         key={`team-toggle-${team.id}`}
                         type="button"
                         onClick={() => handleTeamToggle(team.id)}
-                        className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm transition ${
-                          isSelected ? "bg-action-primary/15 text-action-primary" : "text-container-foreground hover:bg-black/5"
+                        className={`flex w-full items-center justify-between rounded-md border px-3 py-1.5 text-left text-sm ${
+                          isSelected
+                            ? "border-action-primary/60 bg-action-primary/15 text-action-primary"
+                            : "border-white/80 bg-white text-container-foreground"
                         }`}
                       >
                         <span>{team.name}</span>
-                        <FontAwesomeIcon icon={isSelected ? faMinus : faPlus} className="h-3 w-3" />
+                        <FontAwesomeIcon
+                          icon={isSelected ? faMinus : faPlus}
+                          className={`h-3 w-3 transition ${isSelected ? "text-action-primary" : "text-muted"}`}
+                        />
                       </button>
                     );
                   })}
@@ -380,7 +348,7 @@ const EventModal = ({
 
               <div className="text-xs font-medium text-muted">
                 <p className="mb-1">Invite coaches</p>
-                <div className="space-y-1 rounded-lg border border-black/10 bg-white/90 p-2">
+                <div className="modal-card space-y-1 rounded-lg bg-white/90 p-2">
                   {availableCoaches.map((coach) => {
                     const isSelected = eventForm.coachIds.includes(coach.id);
                     return (
@@ -388,12 +356,15 @@ const EventModal = ({
                         key={`coach-toggle-${coach.id}`}
                         type="button"
                         onClick={() => handleCoachToggle(coach.id)}
-                        className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm transition ${
-                          isSelected ? "bg-action-primary/15 text-action-primary" : "text-container-foreground hover:bg-black/5"
+                        className={`flex w-full items-center justify-between rounded-md px-3 py-1.5 text-left text-sm ${
+                          isSelected ? "bg-action-primary/15 text-action-primary" : "text-container-foreground"
                         }`}
                       >
                         <span>{coach.full_name}</span>
-                        <FontAwesomeIcon icon={isSelected ? faMinus : faPlus} className="h-3 w-3" />
+                        <FontAwesomeIcon
+                          icon={isSelected ? faMinus : faPlus}
+                          className={`h-3 w-3 transition ${isSelected ? "text-action-primary" : "text-muted"}`}
+                        />
                       </button>
                     );
                   })}
@@ -410,7 +381,7 @@ const EventModal = ({
 
             <div className="text-xs font-medium text-muted">
               <p className="mb-3 text-sm font-semibold">Invite Athletes</p>
-              <div className="mb-3 rounded-lg border border-black/10 bg-white/70 p-2 text-xs text-muted">
+              <div className="modal-card mb-3 rounded-lg bg-white/70 p-2 text-xs text-muted">
                 <div className="flex flex-wrap items-center gap-2">
                   <label className="flex items-center gap-1">
                     <span className="text-[0.65rem] uppercase">Team</span>
@@ -498,32 +469,37 @@ const EventModal = ({
                 </label>
               </div>
 
-              <div className="min-h-[200px] max-h-[300px] overflow-y-auto rounded-lg border border-black/10 bg-white/70">
+              <div className="modal-card min-h-[200px] max-h-[300px] overflow-y-auto overflow-x-auto rounded-lg bg-container-gradient p-2">
                 {filteredEventAthletes.length ? (
-                  <ul className="divide-y divide-black/5 text-sm">
+                  <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
                     {filteredEventAthletes.map((athlete) => (
-                      <li key={`invitee-${athlete.id}`} className="flex items-center justify-between px-3 py-2">
-                        <div>
-                          <p className="font-semibold text-container-foreground">
+                      <div
+                        key={`invitee-${athlete.id}`}
+                        className="modal-card flex items-start justify-between gap-2 rounded-lg bg-white/80 px-3 py-2 text-sm"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-semibold text-container-foreground">
                             {athlete.first_name} {athlete.last_name}
                           </p>
-                          <p className="text-xs text-muted">{athlete.email || "No email"}</p>
+                          <p className="truncate text-xs text-muted">
+                            {athlete.email || "No email"}
+                          </p>
                         </div>
                         <button
                           type="button"
                           onClick={() => onInviteToggle(athlete.id)}
-                          className={`flex h-8 w-8 items-center justify-center rounded-full border text-sm transition ${
+                          className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-sm transition ${
                             eventForm.inviteeIds.includes(athlete.id)
                               ? "border-action-primary text-action-primary"
-                              : "border-black/20 text-muted hover:text-container-foreground"
+                              : "border-black/20 text-muted"
                           }`}
                           aria-label={eventForm.inviteeIds.includes(athlete.id) ? "Remove invitee" : "Add invitee"}
                         >
                           <FontAwesomeIcon icon={eventForm.inviteeIds.includes(athlete.id) ? faMinus : faPlus} />
                         </button>
-                      </li>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 ) : (
                   <p className="px-3 py-6 text-center text-xs text-muted">
                     No athletes found with the selected filters

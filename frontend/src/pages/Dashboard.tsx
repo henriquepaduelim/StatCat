@@ -180,6 +180,7 @@ const Dashboard = () => {
   const [athleteFilter, setAthleteFilter] = useState<AthleteFilter>({
     age: "",
     gender: "",
+    query: "",
     teamStatus: "all"
   });
   const { age: filterAge, gender: filterGender, teamStatus: filterTeamStatus } = athleteFilter;

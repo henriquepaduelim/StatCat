@@ -9,13 +9,6 @@ type TeamFeedPreviewProps = {
   isLoading: boolean;
   isError: boolean;
   teamName?: string;
-  showMaintenance?: boolean;
-  maintenanceTitle?: string;
-  maintenanceDescription?: string;
-  maintenancePrimaryLabel?: string;
-  maintenanceSecondaryLabel?: string;
-  onMaintenanceAction?: (deleteAfter: boolean) => void;
-  maintenancePending?: boolean;
 };
 
 const truncate = (value: string, max = 140) => {
@@ -28,16 +21,9 @@ const TeamFeedPreview = ({
   isLoading,
   isError,
   teamName,
-  showMaintenance = false,
-  maintenanceTitle,
-  maintenanceDescription,
-  maintenancePrimaryLabel,
-  maintenanceSecondaryLabel,
-  onMaintenanceAction,
-  maintenancePending = false,
 }: TeamFeedPreviewProps) => {
   return (
-    <div className="rounded-2xl border border-black/5 bg-white/90 p-4 shadow-lg sm:p-5">
+    <div className="rounded-2xl border border-black/5 bg-container p-4 shadow-lg sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h3 className="text-lg font-semibold text-container-foreground">
@@ -96,32 +82,6 @@ const TeamFeedPreview = ({
           ))
         )}
       </div>
-      {showMaintenance ? (
-        <div className="mt-6 rounded-xl border border-black/10 bg-white/90 p-3 text-xs text-muted shadow-sm">
-          <p className="text-[0.6rem] uppercase tracking-[0.25em] text-muted">
-            {maintenanceTitle}
-          </p>
-          <p className="mt-1 text-[0.85rem] leading-relaxed">{maintenanceDescription}</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => onMaintenanceAction?.(false)}
-              disabled={maintenancePending}
-              className="rounded-md border border-black/20 px-2.5 py-1 text-[0.7rem] font-semibold text-muted transition hover:text-container-foreground disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {maintenancePending ? "Preparing..." : maintenancePrimaryLabel}
-            </button>
-            <button
-              type="button"
-              onClick={() => onMaintenanceAction?.(true)}
-              disabled={maintenancePending}
-              className="rounded-md border border-black/20 px-2.5 py-1 text-[0.7rem] font-semibold text-muted transition hover:text-container-foreground disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {maintenancePending ? "Preparing..." : maintenanceSecondaryLabel}
-            </button>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 };

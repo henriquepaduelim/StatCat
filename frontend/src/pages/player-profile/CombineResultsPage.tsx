@@ -1,3 +1,5 @@
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowTrendUp, faArrowTrendDown, faEquals } from "@fortawesome/free-solid-svg-icons";
 import CollapsibleSection from "../../components/CollapsibleSection";
 import { usePlayerProfileContext } from "./context";
 import { useTranslation } from "../../i18n/useTranslation";
@@ -5,6 +7,7 @@ import { useTranslation } from "../../i18n/useTranslation";
 const CombineResultsPage = () => {
   const { report } = usePlayerProfileContext();
   const t = useTranslation();
+  const lastValueByTest = new Map<number, number>();
 
   if (!report) {
     return (
@@ -13,6 +16,12 @@ const CombineResultsPage = () => {
       </div>
     );
   }
+
+  const isLowerBetter = (testName: string) => {
+    const normalized = testName.toLowerCase();
+    const speedKeys = ["10m", "20m", "30m", "35m", "40m", "sprint"];
+    return speedKeys.some((key) => normalized.includes(key));
+  };
 
   return (
     <div className="space-y-4">
@@ -33,21 +42,64 @@ const CombineResultsPage = () => {
             }`}
             defaultOpen={false}
           >
-            <div className="mt-4 grid grid-cols-1 gap-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {session.results.map((metric) => (
-                <div
-                  key={`${session.session_id}-${metric.test_id}-${metric.recorded_at}`}
-                  className="rounded-lg bg-container px-4 py-3 text-sm flex items-center justify-between"
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-container-foreground">{metric.test_name}</p>
+            <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-3">
+              {session.results.map((metric) => {
+                const previousValue = lastValueByTest.get(metric.test_id);
+                let trend: "up" | "down" | "same" | "none" = "none";
+                const lowerIsBetter = isLowerBetter(metric.test_name);
+                if (previousValue !== undefined) {
+                  if (metric.value === previousValue) {
+                    trend = "same";
+                  } else if (metric.value > previousValue) {
+                    trend = lowerIsBetter ? "down" : "up";
+                  } else {
+                    trend = lowerIsBetter ? "up" : "down";
+                  }
+                }
+                lastValueByTest.set(metric.test_id, metric.value);
+
+                const trendChip =
+                  trend === "none" ? null : (
+                    <span
+                      className={`flex h-6 w-6 items-center justify-center rounded-full border text-[0.7rem] font-semibold ${
+                        trend === "up"
+                          ? "border-emerald-500 bg-emerald-500 text-emerald-50"
+                          : trend === "down"
+                            ? "border-rose-500 bg-rose-500 text-rose-50"
+                            : "border-slate-500 bg-slate-500 text-slate-50"
+                      }`}
+                    >
+                      <FontAwesomeIcon
+                        icon={trend === "up" ? faArrowTrendUp : trend === "down" ? faArrowTrendDown : faEquals}
+                        className="h-3.5 w-3.5"
+                      />
+                    </span>
+                  );
+
+                return (
+                  <div
+                    key={`${session.session_id}-${metric.test_id}-${metric.recorded_at}`}
+                    className="relative flex flex-nowrap items-center justify-between gap-2 rounded-lg bg-container px-4 py-3 pr-14 text-sm"
+                  >
+                    {trendChip ? (
+                      <div className="pointer-events-none absolute -right-2 -top-2">
+                        {trendChip}
+                      </div>
+                    ) : null}
+                    <div>
+                      <p className="max-w-[60%] truncate text-sm font-semibold text-container-foreground">
+                        {metric.test_name}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <p className="whitespace-nowrap text-lg font-semibold text-container-foreground">
+                        {metric.value}
+                        {metric.unit ? <span className="text-sm text-muted"> {metric.unit}</span> : null}
+                      </p>
+                    </div>
                   </div>
-                  <p className="text-lg font-semibold text-container-foreground">
-                    {metric.value}
-                    {metric.unit ? <span className="text-sm text-muted"> {metric.unit}</span> : null}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CollapsibleSection>
         ))}

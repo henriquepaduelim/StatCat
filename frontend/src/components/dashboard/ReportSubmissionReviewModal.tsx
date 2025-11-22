@@ -131,12 +131,12 @@ const ReportSubmissionReviewModal = ({
 
           <div className="max-h-[75vh] space-y-6 overflow-y-auto px-6 py-5">
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="rounded-xl border border-black/10 bg-container/80 p-4">
+              <div className="modal-card rounded-xl bg-container/80 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">Submitted by</p>
                 <p className="text-base font-semibold text-container-foreground">{submission.submitted_by}</p>
                 <p className="text-xs text-muted">{formatDateTime(submission.created_at)}</p>
               </div>
-              <div className="rounded-xl border border-black/10 bg-container/80 p-4">
+              <div className="modal-card rounded-xl bg-container/80 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">Athlete / team</p>
                 <p className="text-base font-semibold text-container-foreground">
                   {submission.report_type === "report_card"
@@ -153,11 +153,11 @@ const ReportSubmissionReviewModal = ({
 
             {isReportCard ? (
               <>
-                <div className="rounded-2xl border border-black/5 bg-container/80 p-4">
+                <div className="modal-card rounded-2xl bg-container/80 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted">Rating summary</p>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     {ratingFields.map((field) => (
-                      <div key={field.key} className="rounded-xl border border-black/5 bg-white/80 px-4 py-3">
+                      <div key={field.key} className="modal-card rounded-xl bg-white/80 px-4 py-3">
                         <p className="text-xs uppercase tracking-wide text-muted">{field.label}</p>
                         <p className="text-2xl font-semibold text-container-foreground">
                           {submission[field.key] ?? "—"}
@@ -166,7 +166,7 @@ const ReportSubmissionReviewModal = ({
                     ))}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-black/5 bg-container/80 p-4">
+                <div className="modal-card rounded-2xl bg-container/80 p-4">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted">General notes</p>
                   <p className="mt-2 whitespace-pre-wrap text-sm text-container-foreground">
                     {submission.general_notes?.trim() ? submission.general_notes : "No notes were provided."}
@@ -174,16 +174,16 @@ const ReportSubmissionReviewModal = ({
                 </div>
               </>
             ) : (
-              <div className="rounded-2xl border border-black/5 bg-container/80 p-4">
+              <div className="modal-card rounded-2xl bg-container/80 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">Match summary</p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-xl border border-black/5 bg-white/80 px-4 py-3">
+                  <div className="modal-card rounded-xl bg-white/80 px-4 py-3">
                     <p className="text-xs uppercase tracking-wide text-muted">Opponent</p>
                     <p className="text-base font-semibold text-container-foreground">
                       {submission.opponent ?? "TBD"}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-black/5 bg-white/80 px-4 py-3">
+                  <div className="modal-card rounded-xl bg-white/80 px-4 py-3">
                     <p className="text-xs uppercase tracking-wide text-muted">Score</p>
                     <p className="text-base font-semibold text-container-foreground">
                       {typeof submission.goals_for === "number" || typeof submission.goals_against === "number"
@@ -191,7 +191,7 @@ const ReportSubmissionReviewModal = ({
                         : "Not provided"}
                     </p>
                   </div>
-                  <div className="rounded-xl border border-black/5 bg-white/80 px-4 py-3">
+                  <div className="modal-card rounded-xl bg-white/80 px-4 py-3">
                     <p className="text-xs uppercase tracking-wide text-muted">Match date</p>
                     <p className="text-base font-semibold text-container-foreground">{formatDate(submission.match_date)}</p>
                   </div>
@@ -203,7 +203,7 @@ const ReportSubmissionReviewModal = ({
             )}
 
             {canResolve ? (
-              <label className="block rounded-2xl border border-black/5 bg-container/80 p-4 text-sm font-medium text-muted">
+              <label className="modal-card block rounded-2xl bg-container/80 p-4 text-sm font-medium text-muted">
                 Return notes to coach
                 <textarea
                   value={notes}
@@ -217,7 +217,7 @@ const ReportSubmissionReviewModal = ({
                 </span>
               </label>
             ) : submission.review_notes ? (
-              <div className="rounded-2xl border border-black/5 bg-container/80 p-4">
+              <div className="modal-card rounded-2xl bg-container/80 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">Reviewer notes</p>
                 <p className="mt-2 whitespace-pre-wrap text-sm text-container-foreground">{submission.review_notes}</p>
               </div>

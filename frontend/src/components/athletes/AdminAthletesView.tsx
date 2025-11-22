@@ -450,10 +450,10 @@ const AdminAthletesView = () => {
       >
         <div ref={tableWrapperRef} className="flex min-h-0 flex-1 flex-col p-4">
           <div className="relative flex min-h-0 flex-1 flex-col overflow-x-auto overflow-y-visible">
-            <table className="min-w-full divide-y divide-black/5">
+            <table className="athlete-table min-w-full border-y border-black/10 dark:border-[#e7e8e9]/80 divide-y divide-black/10 dark:divide-transparent">
               <thead ref={tableHeadRef} className="bg-container/80">
                 <tr>
-                  <th className="relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
+                  <th className="relative px-4 py-1 text-left text-xs font-semibold uppercase tracking-wider text-muted">
                     <div className="flex items-center gap-1">
                       <span>{t.athletes.table.name}</span>
                       <button
@@ -555,7 +555,7 @@ const AdminAthletesView = () => {
                       </div>
                     ) : null}
                   </th>
-                  <th className="relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
+                  <th className="relative px-4 py-1 text-left text-xs font-semibold uppercase tracking-wider text-muted">
                     <div className="flex items-center gap-1">
                       <span>{t.athletes.table.age}</span>
                       <button
@@ -687,7 +687,7 @@ const AdminAthletesView = () => {
                       </div>
                     ) : null}
                   </th>
-                  <th className="relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
+                  <th className="relative px-4 py-1 text-left text-xs font-semibold uppercase tracking-wider text-muted">
                     <div className="flex items-center gap-1">
                       <span>Category</span>
                       <button
@@ -817,7 +817,7 @@ const AdminAthletesView = () => {
                       </div>
                     ) : null}
                   </th>
-                  <th className="relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
+                  <th className="relative px-4 py-1 text-left text-xs font-semibold uppercase tracking-wider text-muted">
                     <div className="flex items-center gap-1">
                       <span>{t.athletes.table.email}</span>
                       <button
@@ -919,7 +919,7 @@ const AdminAthletesView = () => {
                       </div>
                     ) : null}
                   </th>
-                  <th className="relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
+                  <th className="relative px-4 py-1 text-left text-xs font-semibold uppercase tracking-wider text-muted">
                     <div className="flex items-center gap-1">
                       <span>Team</span>
                       <button
@@ -1002,7 +1002,7 @@ const AdminAthletesView = () => {
                       </div>
                     ) : null}
                   </th>
-                  <th className="relative px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
+                  <th className="relative px-4 py-1 text-left text-xs font-semibold uppercase tracking-wider text-muted">
                     <div className="flex items-center gap-1">
                       <span>Coach</span>
                       <button
@@ -1085,7 +1085,7 @@ const AdminAthletesView = () => {
                       </div>
                     ) : null}
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">
+                  <th className="px-4 py-1 text-right text-xs font-semibold uppercase tracking-wider text-muted">
                     Actions
                   </th>
                 </tr>
@@ -1131,22 +1131,31 @@ const AdminAthletesView = () => {
                   : t.athletes.filters.genderMale;
               const teamInfo = athlete.team_id ? teamsById.get(athlete.team_id) : undefined;
               const teamDisplay = teamInfo?.name ?? "-";
-              const coachDisplay = teamInfo?.coach ?? "-";
+              const coachDisplay = (() => {
+                const coachName = teamInfo?.coach;
+                if (!coachName) return "-";
+                const parts = coachName.trim().split(/\s+/);
+                if (parts.length === 1) {
+                  return parts[0];
+                }
+                const [first, ...rest] = parts;
+                return `${first[0]?.toUpperCase() ?? ""}. ${rest.join(" ")}`;
+              })();
               return (
                 <tr
                   key={athlete.id}
                   ref={index === 0 ? firstDataRowRef : undefined}
                   className="hover:bg-container/60"
                 >
-                  <td className="px-4 py-4 text-sm">
+                  <td className="px-4 py-1 text-sm">
                     <span className="font-medium text-container-foreground">{displayName}</span>
                   </td>
-                  <td className="px-4 py-4 text-sm text-muted">{ageLabel}</td>
-                  <td className="px-4 py-4 text-sm text-muted">{genderLabel}</td>
-                  <td className="px-4 py-4 text-sm text-muted">{athlete.email ?? "-"}</td>
-                  <td className="px-4 py-4 text-sm text-muted">{teamDisplay}</td>
-                  <td className="px-4 py-4 text-sm text-muted">{coachDisplay}</td>
-                  <td className="px-4 py-4">
+                  <td className="px-4 py-1 text-sm text-muted">{ageLabel}</td>
+                  <td className="px-4 py-1 text-sm text-muted">{genderLabel}</td>
+                  <td className="px-4 py-1 text-sm text-muted">{athlete.email ?? "-"}</td>
+                  <td className="px-4 py-1 text-sm text-muted">{teamDisplay}</td>
+                  <td className="px-4 py-1 text-sm text-muted whitespace-nowrap">{coachDisplay}</td>
+                  <td className="px-4 py-1">
                     <div className="flex justify-end gap-2">
                       <button
                         type="button"

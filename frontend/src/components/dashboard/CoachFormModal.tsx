@@ -156,7 +156,7 @@ const CoachFormModal = ({
           </div>
 
           {editingCoach && coachTeams.length > 0 && (
-            <div className="space-y-2 rounded-lg border border-black/10 bg-gray-50 p-3">
+            <div className="modal-card space-y-2 rounded-lg bg-gray-50 p-3">
               <p className="text-xs font-semibold text-container-foreground">Assigned Teams</p>
               <ul className="space-y-1">
                 {coachTeams.map((team) => (
