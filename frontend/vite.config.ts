@@ -144,10 +144,10 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: shouldEnablePwa
         ? {}
-        : {
-            "virtual:pwa-register": resolve(projectRoot, "src/lib/pwa-register-stub.ts"),
-            "virtual:pwa-register/react": resolve(projectRoot, "src/lib/pwa-register-stub.ts"),
-          },
+        : [
+            { find: /^virtual:pwa-register\/react$/, replacement: resolve(projectRoot, "src/lib/pwa-register-stub.ts") },
+            { find: /^virtual:pwa-register$/, replacement: resolve(projectRoot, "src/lib/pwa-register-stub.ts") },
+          ],
     },
     server: {
       port: 5173,
