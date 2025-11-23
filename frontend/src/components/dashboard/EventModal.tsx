@@ -89,24 +89,11 @@ const EventModal = ({
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
 
-  if (!isOpen) {
-    return null;
-  }
-
-  const eventsDayTitle = readableDate(eventForm.date || selectedEventDate || formatDateKey(new Date()));
-  const teamFilterOptions = eventForm.teamIds.length
-    ? teams.filter((team) => eventForm.teamIds.includes(team.id))
-    : teams;
-
-  const handleTeamToggle = (teamId: number) => {
-    const isSelected = eventForm.teamIds.includes(teamId);
-    const updated = isSelected
-      ? eventForm.teamIds.filter((id) => id !== teamId)
-      : [...eventForm.teamIds, teamId];
-    onInputChange("teamIds", updated);
-  };
-
   useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
     const loadGoogleMaps = (): Promise<typeof google | null> => {
       if (typeof window !== "undefined" && (window as any).google?.maps?.places) {
         return Promise.resolve((window as any).google);
@@ -191,12 +178,30 @@ const EventModal = ({
   }, [isOpen]);
 
   useEffect(() => {
-    if (mapsReady && mapInstanceRef.current && markerRef.current && locationLatLng) {
-      mapInstanceRef.current.setCenter(locationLatLng);
-      mapInstanceRef.current.setZoom(14);
-      markerRef.current.setPosition(locationLatLng);
+    if (!isOpen || !mapsReady || !mapInstanceRef.current || !markerRef.current || !locationLatLng) {
+      return;
     }
-  }, [mapsReady, locationLatLng]);
+    mapInstanceRef.current.setCenter(locationLatLng);
+    mapInstanceRef.current.setZoom(14);
+    markerRef.current.setPosition(locationLatLng);
+  }, [isOpen, mapsReady, locationLatLng]);
+
+  if (!isOpen) {
+    return null;
+  }
+
+  const eventsDayTitle = readableDate(eventForm.date || selectedEventDate || formatDateKey(new Date()));
+  const teamFilterOptions = eventForm.teamIds.length
+    ? teams.filter((team) => eventForm.teamIds.includes(team.id))
+    : teams;
+
+  const handleTeamToggle = (teamId: number) => {
+    const isSelected = eventForm.teamIds.includes(teamId);
+    const updated = isSelected
+      ? eventForm.teamIds.filter((id) => id !== teamId)
+      : [...eventForm.teamIds, teamId];
+    onInputChange("teamIds", updated);
+  };
 
   const handleCoachToggle = (coachId: number) => {
     const isSelected = eventForm.coachIds.includes(coachId);
