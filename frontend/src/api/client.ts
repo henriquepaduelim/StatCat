@@ -24,8 +24,12 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // If we get a 401 error, clear the auth state
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    const requestUrl = error.config?.url || "";
+    const isAuthEndpoint = requestUrl.includes("/auth/login") || requestUrl.includes("/auth/signup");
+
+    // If we get a 401 error (except on auth endpoints), clear the auth state
+    if (status === 401 && !isAuthEndpoint) {
       const { clear } = useAuthStore.getState();
       clear();
       // Redirect to login page

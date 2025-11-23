@@ -11,6 +11,7 @@ type AthleteOnboardingModalProps = {
   createdAthlete: OnboardingAthlete;
   error: string | null;
   isSubmitPending: boolean;
+  onCloseAll: () => void;
   onStepOneSuccess: (athlete: Athlete) => void;
   onStepTwoSuccess: () => void;
   onSkipStepTwo: () => void;
@@ -24,6 +25,7 @@ const AthleteOnboardingModal = ({
   createdAthlete,
   error,
   isSubmitPending,
+  onCloseAll,
   onStepOneSuccess,
   onStepTwoSuccess,
   onSkipStepTwo,
@@ -46,6 +48,16 @@ const AthleteOnboardingModal = ({
         className={`modal-surface w-full rounded-2xl bg-container-gradient shadow-xl ${containerSizeClass}`}
         onClick={(event) => event.stopPropagation()}
       >
+        <button
+          type="button"
+          onClick={onCloseAll}
+          className="absolute right-4 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-container text-muted shadow-sm transition hover:text-accent focus-visible:ring-2 focus-visible:ring-action-primary"
+          aria-label="Close"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4">
+            <path d="M5 5l10 10M15 5L5 15" strokeLinecap="round" />
+          </svg>
+        </button>
         {step === 1 ? (
           <div>
             <h2 className="text-lg sm:text-xl font-semibold mb-4 text-container-foreground">

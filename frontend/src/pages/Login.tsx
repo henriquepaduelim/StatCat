@@ -31,9 +31,12 @@ const Login = () => {
   const t = useTranslation();
 
   const [mode, setMode] = useState<Mode>("login");
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [confirmEmail, setConfirmEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -167,11 +170,28 @@ const Login = () => {
 
     try {
       if (isRegister) {
+        const trimmedFirst = firstName.trim();
+        const trimmedLast = lastName.trim();
+        const trimmedEmail = email.trim();
+        const trimmedConfirmEmail = confirmEmail.trim();
+        if (!trimmedFirst || !trimmedLast) {
+          setError("Please enter your first and last name.");
+          return;
+        }
+        if (!trimmedEmail || trimmedEmail !== trimmedConfirmEmail) {
+          setError("Emails do not match.");
+          return;
+        }
+        if (!password || password !== confirmPassword) {
+          setError("Passwords do not match.");
+          return;
+        }
+
         // Register and automatically login
-        await registerAccount(fullName.trim(), email.trim(), password, "athlete");
+        await registerAccount(`${trimmedFirst} ${trimmedLast}`, trimmedEmail, password, "athlete");
         
         // Automatically login the user
-        const { user, token } = await login(email.trim(), password, true);
+        const { user, token } = await login(trimmedEmail, password, true);
         setCredentials({ user, token });
         setInitialized(true);
         
@@ -222,15 +242,25 @@ const Login = () => {
     }
   };
 
+  const resetAuthFields = () => {
+    setFirstName("");
+    setLastName("");
+    setEmail("");
+    setConfirmEmail("");
+    setPassword("");
+    setConfirmPassword("");
+  };
+
   const switchMode = (nextMode: Mode) => {
     setMode(nextMode);
     setError(null);
     setSuccessMessage(null);
     // Clear form when switching modes
     if (nextMode === "login") {
-      setFullName("");
+      resetAuthFields();
     } else {
       setPassword("");
+      setConfirmPassword("");
     }
   };
 
@@ -279,9 +309,21 @@ const Login = () => {
     setOnboardingStep(2);
   };
 
-  const handlePendingReviewClose = () => {
+const handlePendingReviewClose = () => {
     setHasDismissedPendingModal(true);
     setOnboardingStep(null);
+    setMode("login");
+    resetAuthFields();
+  };
+
+  const handleOnboardingClose = () => {
+    setOnboardingStep(null);
+    setCreatedAthlete(null);
+    setError(null);
+    setSuccessMessage(null);
+    setHasDismissedPendingModal(true);
+    setMode("login");
+    resetAuthFields();
   };
 
   // Redirect logic for authenticated users
@@ -350,24 +392,30 @@ const Login = () => {
             </div>
           </div>
 
-          <AuthCredentialsForm
-            mode={mode}
-            fullName={fullName}
-            email={email}
-            password={password}
-            showPassword={showPassword}
-            isSubmitting={isSubmitting}
-            error={error}
-            successMessage={successMessage}
-            onSubmit={handleSubmit}
-            onFullNameChange={setFullName}
-            onEmailChange={setEmail}
-            onPasswordChange={setPassword}
-            onTogglePasswordVisibility={() => setShowPassword((previous) => !previous)}
-            onForgotPassword={() => openRecoveryModal("request")}
-            emailLabel={t.login.email}
-            passwordLabel={t.login.password}
-            signInLabel={t.common.signIn}
+        <AuthCredentialsForm
+          mode={mode}
+          firstName={firstName}
+          lastName={lastName}
+          email={email}
+          confirmEmail={confirmEmail}
+          password={password}
+          confirmPassword={confirmPassword}
+          showPassword={showPassword}
+          isSubmitting={isSubmitting}
+          error={error}
+          successMessage={successMessage}
+          onSubmit={handleSubmit}
+          onFirstNameChange={setFirstName}
+          onLastNameChange={setLastName}
+          onEmailChange={setEmail}
+          onConfirmEmailChange={setConfirmEmail}
+          onPasswordChange={setPassword}
+          onConfirmPasswordChange={setConfirmPassword}
+          onTogglePasswordVisibility={() => setShowPassword((previous) => !previous)}
+          onForgotPassword={() => openRecoveryModal("request")}
+          emailLabel={t.login.email}
+          passwordLabel={t.login.password}
+          signInLabel={t.common.signIn}
             loadingLabel={t.common.loading}
           />
 
@@ -399,6 +447,7 @@ const Login = () => {
           createdAthlete={createdAthlete}
           error={error}
           isSubmitPending={submitApprovalMutation.isPending}
+          onCloseAll={handleOnboardingClose}
           onStepOneSuccess={handleStepOneSuccess}
           onStepTwoSuccess={handleStepTwoSuccess}
           onSkipStepTwo={handleSkipStepTwo}

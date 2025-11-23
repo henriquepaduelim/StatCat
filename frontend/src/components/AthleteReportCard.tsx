@@ -3,6 +3,7 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 
 import { useTranslation } from "../i18n/useTranslation";
 import type { Athlete, AthleteReport } from "../types/athlete";
+import { getMediaUrl } from "../utils/media";
 import type { TestDefinition } from "../types/test";
 import {
   ATHLETE_CATEGORY_COLORS,
@@ -274,7 +275,7 @@ const AthleteReportCard = ({
     },
   ];
 
-  const athletePhoto = detailedAthlete?.photo_url ?? athlete?.photo_url ?? null;
+  const athletePhoto = getMediaUrl(detailedAthlete?.photo_url ?? athlete?.photo_url ?? null);
 
   return (
     <div className={className}>

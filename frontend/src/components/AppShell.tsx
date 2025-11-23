@@ -37,7 +37,7 @@ const AppShell = ({ children }: PropsWithChildren) => {
           className="pointer-events-auto inline-flex items-center justify-center"
           aria-label="Go to dashboard"
         >
-          <img src={branding.assets.logo} alt={`${branding.name} logo`} className="h-48 w-auto filter brightness-0" />
+          <img src={branding.assets.logo} alt={`${branding.name} logo`} className="h-48 w-auto" />
         </a>
       </div>
       <SideNav />

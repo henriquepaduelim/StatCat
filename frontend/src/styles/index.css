@@ -3,15 +3,48 @@
 @tailwind utilities;
 
 @layer base {
-input, select, textarea {
-  @apply w-full rounded-md border-black/10 bg-container px-3 py-2 text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary;
+:root {
+  --input-bg: #cccccc;
+  --input-text: #000000;
+  --input-border: rgba(15, 23, 42, 0.25);
+  --input-placeholder: rgba(0, 0, 0, 0.65);
+  --color-border: 0 0 0;
+}
+
+.theme-dark {
+  --input-bg: #ffeeaf;
+  --input-text: #000000;
+  --input-border: rgba(0, 0, 0, 0.55);
+  --input-placeholder: rgba(0, 0, 0, 0.7);
+  --color-border: 244 162 64; /* keep warm border tone in dark */
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  width: 100%;
+  border-radius: 0.375rem;
+  border: 1px solid var(--input-border) !important;
+  background-color: var(--input-bg) !important;
+  color: var(--input-text) !important;
+  padding: 0.5rem 0.75rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+input:not([type="checkbox"]):not([type="radio"])::placeholder,
+select::placeholder,
+textarea::placeholder {
+  color: var(--input-placeholder) !important;
 }
 
 .settings-page input,
 .settings-page select,
 .settings-page textarea {
-  background-color: rgba(255, 255, 255, 0.9);
-  border: 1px solid rgba(15, 23, 42, 0.15);
+  background-color: var(--input-bg) !important;
+  color: var(--input-text) !important;
+  border: 1px solid var(--input-border) !important;
   box-shadow: 0 5px 15px rgba(15, 23, 42, 0.08);
   backdrop-filter: blur(4px);
   transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
@@ -20,10 +53,10 @@ input, select, textarea {
 .theme-dark .settings-page input,
 .theme-dark .settings-page select,
 .theme-dark .settings-page textarea {
-  background-color: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.25);
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  border-color: var(--input-border);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.45);
-  color: rgb(var(--color-page-foreground));
 }
 
 }
@@ -125,25 +158,33 @@ input, select, textarea {
   .modal-surface input,
   .modal-surface select,
   .modal-surface textarea {
-    background-color: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(15, 23, 42, 0.1);
-    color: rgb(var(--color-container-foreground));
+    background-color: var(--input-bg) !important;
+    border: 1px solid var(--input-border) !important;
+    color: var(--input-text) !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
   }
 
   .theme-dark .modal-surface input,
   .theme-dark .modal-surface select,
   .theme-dark .modal-surface textarea {
-    background-color: rgba(15, 23, 42, 0.75);
-    border-color: rgba(255, 255, 255, 0.15);
-    color: rgb(var(--color-container-foreground));
+    background-color: var(--input-bg) !important;
+    border-color: var(--input-border) !important;
+    color: var(--input-text) !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.25);
   }
 
-  .modal-surface [class*="bg-white"] {
+  .modal-surface input::placeholder,
+  .modal-surface select::placeholder,
+  .modal-surface textarea::placeholder {
+    color: var(--input-placeholder) !important;
+  }
+
+  .modal-surface [class*="bg-white"]:not(input):not(select):not(textarea) {
     background-color: rgb(var(--color-container-background)) !important;
     color: inherit;
   }
 
-  .theme-dark .modal-surface [class*="bg-white"] {
+  .theme-dark .modal-surface [class*="bg-white"]:not(input):not(select):not(textarea) {
     background-color: rgba(15, 23, 42, 0.8) !important;
     color: rgb(var(--color-container-foreground));
   }
@@ -271,7 +312,7 @@ textarea::placeholder {
   .bg-container-gradient {
     background-image: none;
     background-color: rgb(var(--color-container-background));
-    border: 2px solid rgba(15, 23, 42, 0.12);
+    border: 1px solid rgb(15, 23, 42);
   }
 
   .theme-dark .bg-container-gradient {

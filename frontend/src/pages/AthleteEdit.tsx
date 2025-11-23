@@ -8,6 +8,7 @@ import { updateAthlete, uploadAthletePhoto } from "../api/athletes";
 import { useAthlete } from "../hooks/useAthlete";
 import { useTranslation } from "../i18n/useTranslation";
 import type { AthletePayload } from "../types/athlete";
+import { getMediaUrl } from "../utils/media";
 
 const AthleteEdit = () => {
   const params = useParams<{ id: string }>();
@@ -26,7 +27,7 @@ const AthleteEdit = () => {
   const [additionalInfoMessage, setAdditionalInfoMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    setCurrentPhotoUrl(athlete?.photo_url ?? null);
+    setCurrentPhotoUrl(getMediaUrl(athlete?.photo_url) ?? null);
   }, [athlete?.photo_url]);
 
   useEffect(() => {
@@ -64,7 +65,7 @@ const AthleteEdit = () => {
       await mutation.mutateAsync(payload);
       if (photoFile) {
         const updated = await uploadAthletePhoto(athleteId!, photoFile);
-        setCurrentPhotoUrl(updated.photo_url ?? null);
+        setCurrentPhotoUrl(getMediaUrl(updated.photo_url) ?? null);
         queryClient.invalidateQueries({ queryKey: ["athlete", athleteId!] });
         queryClient.invalidateQueries({ queryKey: ["athletes"] });
         setPhotoFile(null);
@@ -111,6 +112,8 @@ const AthleteEdit = () => {
     last_name: athlete.last_name,
     email: athlete.email,
     birth_date: athlete.birth_date,
+    team_id: athlete.team_id ?? undefined,
+    photo_url: getMediaUrl(athlete.photo_url) ?? undefined,
     dominant_foot: athlete.dominant_foot ?? undefined,
     club_affiliation: athlete.club_affiliation ?? undefined,
     height_cm: athlete.height_cm ?? undefined,

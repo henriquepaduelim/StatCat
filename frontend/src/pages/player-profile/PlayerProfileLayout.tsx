@@ -10,6 +10,7 @@ import { useAthleteReportSubmissions } from "../../hooks/useAthleteReportSubmiss
 import { useTests } from "../../hooks/useTests";
 import { useTranslation } from "../../i18n/useTranslation";
 import type { Athlete } from "../../types/athlete";
+import { getMediaUrl } from "../../utils/media";
 import type { PlayerProfileContextValue } from "./context";
 
 const linkClass =
@@ -132,7 +133,7 @@ const PlayerProfileLayout = () => {
           <div className="h-12 w-12 rounded-full bg-gradient-to-br from-action-primary/30 to-action-primary/70 text-action-primary-foreground flex items-center justify-center overflow-hidden text-lg font-semibold uppercase">
             {currentAthlete.photo_url ? (
               <img
-                src={currentAthlete.photo_url}
+                src={getMediaUrl(currentAthlete.photo_url) ?? undefined}
                 alt={`${currentAthlete.first_name} ${currentAthlete.last_name}`}
                 className="h-full w-full object-cover"
               />

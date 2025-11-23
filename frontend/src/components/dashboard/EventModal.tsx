@@ -308,15 +308,17 @@ const EventModal = ({
                 ) : null}
               </div>
             </div>
-            <label className="text-xs font-medium text-muted">
-              {summaryLabels.calendar.notesLabel}
-              <textarea
-                value={eventForm.notes}
-                onChange={(event) => onInputChange("notes", event.target.value)}
-                className="mt-1 w-1/2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                rows={3}
-              />
-            </label>
+            <div className="text-xs font-medium text-muted">
+              <label className="flex flex-col">
+                <span>{summaryLabels.calendar.notesLabel}</span>
+                <textarea
+                  value={eventForm.notes}
+                  onChange={(event) => onInputChange("notes", event.target.value)}
+                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  rows={3}
+                />
+              </label>
+            </div>
 
             <div className="grid gap-4 lg:grid-cols-3">
               <div className="text-xs font-medium text-muted">

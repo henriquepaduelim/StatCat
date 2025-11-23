@@ -317,6 +317,7 @@ export type TranslationDictionary = {
     description: string;
     selectLabel: string;
     noTeams: string;
+    rosterTitle?: string;
     leaderboard: {
       scorersTitle: string;
       scorersDescription: string;
@@ -968,6 +969,7 @@ export const translations: Record<Locale, TranslationDictionary> = {
       description: "Live insights, combined metrics, and collaboration for your roster.",
       selectLabel: "Team",
       noTeams: "No teams available for this account.",
+      rosterTitle: "Team Roster",
       leaderboard: {
         scorersTitle: "Top Scorers",
         scorersDescription: "Goals recorded across official sessions.",

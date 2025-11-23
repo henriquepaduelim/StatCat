@@ -5,17 +5,23 @@ import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 
 type AuthCredentialsFormProps = {
   mode: "login" | "register";
-  fullName: string;
+  firstName: string;
+  lastName: string;
   email: string;
+  confirmEmail: string;
   password: string;
+  confirmPassword: string;
   showPassword: boolean;
   isSubmitting: boolean;
   error: string | null;
   successMessage: string | null;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-  onFullNameChange: (value: string) => void;
+  onFirstNameChange: (value: string) => void;
+  onLastNameChange: (value: string) => void;
   onEmailChange: (value: string) => void;
+  onConfirmEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
+  onConfirmPasswordChange: (value: string) => void;
   onTogglePasswordVisibility: () => void;
   onForgotPassword: () => void;
   emailLabel: string;
@@ -26,17 +32,23 @@ type AuthCredentialsFormProps = {
 
 const AuthCredentialsForm = ({
   mode,
-  fullName,
+  firstName,
+  lastName,
   email,
+  confirmEmail,
   password,
+  confirmPassword,
   showPassword,
   isSubmitting,
   error,
   successMessage,
   onSubmit,
-  onFullNameChange,
+  onFirstNameChange,
+  onLastNameChange,
   onEmailChange,
+  onConfirmEmailChange,
   onPasswordChange,
+  onConfirmPasswordChange,
   onTogglePasswordVisibility,
   onForgotPassword,
   emailLabel,
@@ -50,18 +62,34 @@ const AuthCredentialsForm = ({
     <form onSubmit={onSubmit} className="space-y-4">
       {isRegister ? (
         <div>
-          <label className="text-sm font-medium text-muted" htmlFor="full-name">
-            Full name
-          </label>
-          <TextInput
-            id="full-name"
-            name="full-name"
-            value={fullName}
-            onChange={(event) => onFullNameChange(event.target.value)}
-            placeholder="Marvin Fergusson"
-            className="mt-2 placeholder:text-gray-500"
-            required
-          />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="text-sm font-medium text-muted" htmlFor="first-name">
+              First Name
+            </label>
+             <label className="text-sm font-medium text-muted" htmlFor="last-name">
+              Last Name
+            </label>
+          </div>
+          <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <TextInput
+              id="first-name"
+              name="first-name"
+              value={firstName}
+              onChange={(event) => onFirstNameChange(event.target.value)}
+              placeholder="Marvin"
+              className="placeholder:text-gray-500"
+              required
+            />
+            <TextInput
+              id="last-name"
+              name="last-name"
+              value={lastName}
+              onChange={(event) => onLastNameChange(event.target.value)}
+              placeholder="Fergusson"
+              className="placeholder:text-gray-500"
+              required
+            />
+          </div>
         </div>
       ) : null}
 
@@ -81,6 +109,24 @@ const AuthCredentialsForm = ({
           required
         />
       </div>
+      {isRegister ? (
+        <div>
+          <label className="text-sm font-medium text-muted" htmlFor="confirm-email">
+            Confirm Email
+          </label>
+          <TextInput
+            id="confirm-email"
+            type="email"
+            name="confirm-email"
+            autoComplete="email"
+            value={confirmEmail}
+            onChange={(event) => onConfirmEmailChange(event.target.value)}
+            placeholder="exemple@statcat.com"
+            className="mt-2 placeholder:text-gray-500"
+            required
+          />
+        </div>
+      ) : null}
 
       <div>
         <label className="text-sm font-medium text-muted" htmlFor="password">
@@ -119,6 +165,34 @@ const AuthCredentialsForm = ({
           </button>
         </div>
       </div>
+      {isRegister ? (
+        <div>
+          <label className="text-sm font-medium text-muted" htmlFor="confirm-password">
+            Confirm Password
+          </label>
+          <div className="relative mt-2">
+            <input
+              id="confirm-password"
+              type={showPassword ? "text" : "password"}
+              name="confirm-password"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(event) => onConfirmPasswordChange(event.target.value)}
+              placeholder="••••••••"
+              className="w-full rounded-md border border-black/10 px-3 py-2 pr-10 text-sm placeholder:text-gray-500 focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+              required
+            />
+            <button
+              type="button"
+              onClick={onTogglePasswordVisibility}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-black/60 hover:text-black transition"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {error ? <p className="text-sm text-red-500">{error}</p> : null}
       {successMessage ? <p className="text-sm text-emerald-500">{successMessage}</p> : null}

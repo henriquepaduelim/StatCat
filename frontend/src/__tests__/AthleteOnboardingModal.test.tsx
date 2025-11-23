@@ -9,6 +9,7 @@ const defaultCallbacks = {
   onSubmitForApproval: vi.fn(),
   onBackToStepTwo: vi.fn(),
   onClosePendingReview: vi.fn(),
+  onCloseAll: vi.fn(),
 };
 
 const renderModal = (step: 1 | 2 | 3 | 4 | null, overrides?: Partial<typeof defaultCallbacks>) =>

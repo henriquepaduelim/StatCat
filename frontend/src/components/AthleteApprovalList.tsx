@@ -165,7 +165,7 @@ function AthleteApprovalList() {
       <div className="text-center">
         <button
           type="button"
-          className="flex items-center justify-between rounded-lg border border-black/10 bg-gray-50 px-4 py-2 text-sm font-medium text-muted"
+          className="flex items-center justify-between rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] px-4 py-2 text-sm font-medium text-container-foreground"
           disabled
         >
           Pending Athletes
@@ -180,7 +180,7 @@ function AthleteApprovalList() {
       <button
         type="button"
         onClick={toggleDropdown}
-        className="relative inline-flex items-center gap-2 rounded-md border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+        className="relative inline-flex items-left gap-2 rounded-md border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] px-3 py-2 text-sm font-semibold text-container-foreground shadow-sm transition hover:bg-container"
       >
         <span>Pending Athletes</span>
         {pendingAthletes.length > 0 && (
@@ -190,9 +190,12 @@ function AthleteApprovalList() {
       </button>
 
       {isDropdownOpen && (
-        <div className="absolute left-0 z-10 mt-2 w-full min-w-[320px] rounded-xl border border-black/10 bg-white shadow-lg">
-          <div className="flex items-center justify-between border-b border-black/10 px-4 py-3">
-            <span className="text-sm font-semibold text-primary">Pending list</span>
+        <div
+          className="absolute right-0 z-10 mt-2 min-w-[280px] max-w-[calc(100vw-1.5rem)] rounded-xl border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] shadow-lg"
+          style={{ color: "rgb(var(--color-container-foreground))" }}
+        >
+          <div className="flex items-center justify-between border-b border-[rgb(var(--color-border))] px-4 py-3">
+            <span className="text-sm font-semibold text-container-foreground">Pending List</span>
             <button
               type="button"
               onClick={handleApproveAll}
