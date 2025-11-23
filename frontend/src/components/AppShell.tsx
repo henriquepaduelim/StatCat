@@ -7,6 +7,7 @@ import SideNav from "./SideNav";
 import { useAuthStore } from "../stores/useAuthStore";
 import branding from "../theme/branding.generated";
 import ThemeToggleSwitch from "./ThemeToggleSwitch";
+import BackToTopButton from "./BackToTopButton";
 
 const AppShell = ({ children }: PropsWithChildren) => {
   const location = useLocation();
@@ -70,6 +71,7 @@ const AppShell = ({ children }: PropsWithChildren) => {
           {children}
         </main>
       </div>
+      <BackToTopButton />
     </div>
   );
 };
