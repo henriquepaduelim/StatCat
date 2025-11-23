@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
 
 import type { Team, TeamCoach } from "../../api/teams";
+import type { Event, ParticipantStatus } from "../../types/event";
 import type { Athlete } from "../../types/athlete";
 import type { TranslationDictionary } from "../../i18n/translations";
 import type { EventFormState } from "../../types/dashboard";
@@ -16,9 +17,18 @@ type EventModalProps = {
   selectedEventDate: string | null;
   readableDate: (dateStr: string) => string;
   formatDateKey: (date: Date) => string;
+  eventsOnSelectedDate?: Event[];
+  teamNameById?: Record<number, string>;
   teams: Team[];
   availableCoaches: TeamCoach[];
   createEventPending: boolean;
+  getEventTeamIds?: (event: Event) => number[];
+  canManageEvents?: boolean;
+  onDeleteEvent?: (eventId: number) => void;
+  deleteEventPending?: boolean;
+  currentUserId?: number | null;
+  onConfirmAttendance?: (eventId: number, status: ParticipantStatus) => void;
+  confirmAttendancePending?: boolean;
   athleteFilterTeam: number | "unassigned" | null;
   setAthleteFilterTeam: Dispatch<SetStateAction<number | "unassigned" | null>>;
   athleteFilterAge: string;
@@ -46,6 +56,13 @@ const EventModal = ({
   teams,
   availableCoaches,
   createEventPending,
+  getEventTeamIds, // legacy prop accepted
+  canManageEvents,
+  onDeleteEvent,
+  deleteEventPending,
+  currentUserId,
+  onConfirmAttendance,
+  confirmAttendancePending,
   athleteFilterTeam,
   setAthleteFilterTeam,
   athleteFilterAge,

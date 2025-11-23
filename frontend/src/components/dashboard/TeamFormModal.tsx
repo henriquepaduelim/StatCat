@@ -24,6 +24,7 @@ type TeamFormModalProps = {
   availableCoaches: TeamCoach[];
   teamBuilderCandidates: Athlete[];
   remainingAthleteCount: number;
+  teamNameById?: Record<number, string>;
   athleteById: Map<number, Athlete>;
   draggedAthleteId: number | null;
   athleteFilter: AthleteFilter;

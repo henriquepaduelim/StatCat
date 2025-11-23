@@ -27,6 +27,7 @@ const playerStatuses: Array<{ value: PlayerRegistrationStatus; label: string }> 
 
 interface NewAthleteStepOneFormProps {
   onSuccess?: (athlete: Athlete) => void;
+  onClose?: () => void;
 }
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
