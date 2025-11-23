@@ -30,6 +30,7 @@ export default defineConfig(({ mode }) => {
 
   const pwaPlugin = shouldEnablePwa
     ? VitePWA({
+        injectRegister: null,
         registerType: "autoUpdate",
         includeAssets: [
           "/media/1ELITE0LOGO.svg",

@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { registerSW } from "virtual:pwa-register";
 
 import App from "./App";
 import "./styles/index.css";
@@ -43,6 +44,14 @@ const scheduleSplashRemoval = () => {
 };
 
 const queryClient = new QueryClient();
+
+const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(
+  navigator.userAgent || ""
+);
+
+if (isMobile) {
+  registerSW({ immediate: true });
+}
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
