@@ -80,7 +80,7 @@ const TeamFormModal = ({
       role="presentation"
     >
       <div
-        className="modal-surface w-full max-w-lg max-h-[90vh] space-y-4 overflow-y-auto rounded-2xl p-4 shadow-2xl sm:max-w-7xl sm:max-h-[98vh] sm:p-6 md:px-10"
+        className="modal-surface relative w-full max-w-lg max-h-[90vh] space-y-4 overflow-y-auto rounded-2xl p-4 shadow-2xl sm:max-w-7xl sm:max-h-[98vh] sm:p-6 md:px-10"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="relative">

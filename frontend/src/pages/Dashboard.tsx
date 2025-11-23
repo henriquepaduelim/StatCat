@@ -1478,12 +1478,12 @@ const Dashboard = () => {
         {shouldShowInsights || shouldShowCoaches ? (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {shouldShowInsights ? (
-              <div className="h-[34rem]">
+              <div className="lg:h-[34rem]">
                 <TeamInsightsCard {...teamInsightsCardProps} />
               </div>
             ) : null}
             {shouldShowCoaches ? (
-              <div className="h-[34rem]">
+              <div className="lg:h-[34rem]">
                 <CoachDirectorySection {...coachDirectorySectionProps} />
               </div>
             ) : null}

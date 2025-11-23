@@ -56,13 +56,6 @@ const EventModal = ({
   teams,
   availableCoaches,
   createEventPending,
-  getEventTeamIds, // legacy prop accepted
-  canManageEvents,
-  onDeleteEvent,
-  deleteEventPending,
-  currentUserId,
-  onConfirmAttendance,
-  confirmAttendancePending,
   athleteFilterTeam,
   setAthleteFilterTeam,
   athleteFilterAge,
@@ -224,7 +217,7 @@ const EventModal = ({
       role="presentation"
     >
       <div
-        className="modal-surface box-border h-[96vh] w-full max-w-full overflow-x-hidden overflow-y-auto rounded-lg p-2 shadow-2xl sm:h-[94vh] sm:max-w-5xl sm:rounded-none sm:p-6"
+        className="modal-surface relative box-border h-[96vh] w-full max-w-full overflow-x-hidden overflow-y-auto rounded-lg p-2 shadow-2xl sm:h-[94vh] sm:max-w-5xl sm:rounded-none sm:p-6"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="relative">
