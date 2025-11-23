@@ -12,4 +12,4 @@ export const useRegisterSW = () => ({
 });
 
 // Simple noop registerSW for builds without the PWA plugin
-export const registerSW = (_options?: any) => () => undefined;
+export const registerSW = () => () => undefined;

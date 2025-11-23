@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from "react";
+import { useMemo } from "react";
 import { Link, useParams, Navigate } from "react-router-dom";
 
 import { useAthlete } from "../hooks/useAthlete";

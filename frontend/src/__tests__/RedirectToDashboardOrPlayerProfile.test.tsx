@@ -2,9 +2,10 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { render, screen } from "@testing-library/react";
 
 import { RedirectToDashboardOrPlayerProfile } from "../App";
+import type { AuthUser } from "../stores/useAuthStore";
 
 const authState = {
-  user: null as any,
+  user: null as Partial<AuthUser> | null,
   isInitialized: true,
 };
 

@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "../../i18n/useTranslation";
 import { useEvents, useConfirmEventAttendance } from "../../hooks/useEvents";
 import { usePlayerProfileContext } from "./context";
-import type { ParticipantStatus, EventConfirmationPayload } from "../../types/event";
+import type { EventConfirmationPayload } from "../../types/event";
 import { useAuthStore } from "../../stores/useAuthStore";
 
 const SchedulingPage = () => {

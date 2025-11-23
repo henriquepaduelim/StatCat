@@ -142,7 +142,7 @@ const Login = () => {
       return;
     }
     setHasDismissedPendingModal(false);
-  }, [user?.id, user?.athlete_status]);
+  }, [user]);
   
   const submitApprovalMutation = useMutation({
     mutationFn: (athleteId: number) => submitForApproval(athleteId),
@@ -213,7 +213,7 @@ const Login = () => {
               setOnboardingStep(1);
           }
         } else {
-          // Coaches and other roles navigate normally
+          // Admin, Staff and Coaches navigate normally
           navigate(from, { replace: true });
         }
       }

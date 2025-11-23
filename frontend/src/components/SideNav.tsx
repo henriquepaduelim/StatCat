@@ -83,7 +83,7 @@ const SideNav = () => {
         parentTo: item.to,
       }));
     });
-  }, [allowedNavItems, isAthlete, playerProfileItem]);
+  }, [allowedNavItems, isAthlete, playerProfileChildren.length]);
 
   const mobileNavItems = useMemo<MobileNavEntry[]>(() => {
     const baseEntries = allowedNavItems.map<MobileNavEntry>((item) => ({

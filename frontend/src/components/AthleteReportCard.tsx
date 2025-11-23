@@ -1,23 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { useTranslation } from "../i18n/useTranslation";
 import type { Athlete, AthleteReport } from "../types/athlete";
 import type { TestDefinition } from "../types/test";
 import {
   ATHLETE_CATEGORY_COLORS,
-  type CategoryKey,
   CATEGORY_KEYS,
   calculateAge,
   calculateSessionCategoryStats,
@@ -47,12 +35,6 @@ const timeframeDurations = {
 } as const;
 
 type TimeframeValue = keyof typeof timeframeDurations | "all";
-
-const MAX_INDEX = 160;
-
-const donutColors = {
-  remainder: "rgba(255, 255, 255, 0.45)",
-} as const;
 
 type AthleteReportCardProps = {
   athlete: Athlete | null | undefined;
@@ -107,15 +89,6 @@ const AthleteReportCard = ({
     [report, testMetaMap]
   );
 
-  const latestStat =
-    sessionCategoryStats.length > 0
-      ? sessionCategoryStats[sessionCategoryStats.length - 1]
-      : null;
-  const previousStat =
-    sessionCategoryStats.length > 1
-      ? sessionCategoryStats[sessionCategoryStats.length - 2]
-      : null;
-
   const sessionSummaries = useMemo(
     () =>
       sessionCategoryStats
@@ -132,32 +105,6 @@ const AthleteReportCard = ({
   );
 
   const recentSessions = sessionSummaries.slice(0, 3);
-
-  const mainSkillLabels: Record<CategoryKey, string> = useMemo(
-    () => ({
-      Physical: t.dashboard.mainSkills.labels.physical,
-      Technical: t.dashboard.mainSkills.labels.technical,
-    }),
-    [t.dashboard.mainSkills.labels.physical, t.dashboard.mainSkills.labels.technical]
-  );
-
-  const mainSkills = useMemo(
-    () => {
-      if (!latestStat) {
-        return [] as Array<{ category: CategoryKey; current: number | null; delta: number | null }>;
-      }
-      return CATEGORY_KEYS.map((category) => {
-        const current = latestStat.categoryIndexes[category] ?? null;
-        const previous = previousStat?.categoryIndexes[category] ?? null;
-        const delta =
-          current != null && previous != null
-            ? Number((current - previous).toFixed(1))
-            : null;
-        return { category, current, delta };
-      });
-    },
-    [latestStat, previousStat]
-  );
 
   const testOptions = useMemo(() => {
     if (!report) {
@@ -330,7 +277,7 @@ const AthleteReportCard = ({
   const athletePhoto = detailedAthlete?.photo_url ?? athlete?.photo_url ?? null;
 
   return (
-    <>
+    <div className={className}>
       <div className="flex flex-col gap-2 lg:flex-row lg:items-start">
         <div className="flex flex-col items-center gap-4 lg:w-84">
           <div className="relative h-64 w-56 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-primary/15 to-accent/10 shadow-lg">
@@ -574,7 +521,7 @@ const AthleteReportCard = ({
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

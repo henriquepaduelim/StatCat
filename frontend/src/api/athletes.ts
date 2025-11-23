@@ -70,24 +70,21 @@ export const uploadAthleteDocument = async (
   return data;
 };
 
-export const approveAthlete = async (athleteId: number): Promise<any> => {
-  const { data } = await api.post(`/athletes/${athleteId}/approve`);
-  return data;
+export const approveAthlete = async (athleteId: number): Promise<void> => {
+  await api.post(`/athletes/${athleteId}/approve`);
 };
 
-export const approveAllAthletes = async (): Promise<any> => {
-  const { data } = await api.post(`/athletes/approve-all`);
-  return data;
+export const approveAllAthletes = async (): Promise<void> => {
+  await api.post(`/athletes/approve-all`);
 };
 
 export const rejectAthlete = async (
   athleteId: number, 
   reason: string
-): Promise<any> => {
-  const { data } = await api.post(`/athletes/${athleteId}/reject`, null, {
+): Promise<void> => {
+  await api.post(`/athletes/${athleteId}/reject`, null, {
     params: { reason },
   });
-  return data;
 };
 
 export const getPendingAthletesCount = async (): Promise<{ count: number }> => {
@@ -100,7 +97,6 @@ export const getPendingAthletes = async (): Promise<PendingAthleteSummary[]> => 
   return data;
 };
 
-export const submitForApproval = async (athleteId: number): Promise<any> => {
-  const { data } = await api.post(`/athletes/${athleteId}/submit-for-approval`);
-  return data;
+export const submitForApproval = async (athleteId: number): Promise<void> => {
+  await api.post(`/athletes/${athleteId}/submit-for-approval`);
 };

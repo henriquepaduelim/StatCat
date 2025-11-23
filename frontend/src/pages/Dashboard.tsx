@@ -183,7 +183,6 @@ const Dashboard = () => {
     query: "",
     teamStatus: "all"
   });
-  const { age: filterAge, gender: filterGender, teamStatus: filterTeamStatus } = athleteFilter;
   const [draggedAthleteId, setDraggedAthleteId] = useState<number | null>(null);
   const createEmptyCoachForm = (): CoachFormState => ({
     fullName: "",

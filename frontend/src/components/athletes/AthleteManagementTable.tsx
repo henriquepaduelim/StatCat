@@ -1,5 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 
 import { useTranslation } from "../../i18n/useTranslation";
 import type { Athlete } from "../../types/athlete";

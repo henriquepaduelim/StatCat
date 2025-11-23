@@ -138,9 +138,6 @@ const Settings = () => {
   const [isSummaryOpen, setSummaryOpen] = useState(false);
   const [isPhotoOpen, setPhotoOpen] = useState(false);
   const [isThemeOpen, setThemeOpen] = useState(false);
-  const [isPersonalOpen, setPersonalOpen] = useState(false);
-  const [isAthleteInfoOpen, setAthleteInfoOpen] = useState(false);
-  const [isContactOpen, setContactOpen] = useState(false);
   const { themeId, setThemeId } = useTheme();
   const teamsQuery = useTeams();
   const isAthlete = user?.role === "athlete";

@@ -1,7 +1,6 @@
-import { useState } from "react";
 import type { CSSProperties } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMedal, faArrowRotateRight } from "@fortawesome/free-solid-svg-icons";
+import { faMedal } from "@fortawesome/free-solid-svg-icons";
 
 import { useScoringLeaderboard } from "../../hooks/useScoringLeaderboard";
 import type { LeaderboardEntry, LeaderboardType } from "../../api/leaderboards";
@@ -13,11 +12,6 @@ type LeaderboardCardProps = {
   description?: string;
   teamId?: number | null;
 };
-
-const tabOptions: Array<{ id: LeaderboardType; label: string }> = [
-  { id: "scorers", label: "Goals" },
-  { id: "clean_sheets", label: "Clean sheets" },
-];
 
 const LeaderboardRow = ({
   position,
@@ -79,7 +73,7 @@ const LeaderboardCard = ({
   description,
   teamId = null,
 }: LeaderboardCardProps) => {
-  const [activeTab, setActiveTab] = useState<LeaderboardType>(presetType ?? "scorers");
+  const activeTab: LeaderboardType = presetType ?? "scorers";
   const leaderboardQuery = useScoringLeaderboard({
     leaderboard_type: activeTab,
     limit,

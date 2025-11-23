@@ -15,52 +15,23 @@ type TeamInsightsCardProps = {
   isGameReportPending?: boolean;
   pendingReports?: ReportSubmissionSummary[];
   mySubmissions?: ReportSubmissionSummary[];
-  onApproveReport?: (submissionId: number) => void;
-  onReviewSubmission?: (submission: ReportSubmissionSummary) => void;
-  onViewMySubmission?: (submission: ReportSubmissionSummary) => void;
   onOpenSubmissionsModal?: () => void;
-  approvingSubmissionId?: number | null;
   canApproveReports?: boolean;
   onRecordCombineMetrics?: () => void;
   canRecordCombineMetrics?: boolean;
 };
 
-const formatNumber = (value: number) => new Intl.NumberFormat().format(value);
-
 const TeamInsightsCard = ({
-  teams,
-  athletes,
-  athletesByTeamId,
   onNewReportCard,
   onGameReport,
   isGameReportPending = false,
   pendingReports = [],
   mySubmissions = [],
-  onApproveReport = () => undefined,
-  onReviewSubmission = () => undefined,
-  onViewMySubmission = () => undefined,
   onOpenSubmissionsModal = () => undefined,
-  approvingSubmissionId = null,
   canApproveReports = false,
   onRecordCombineMetrics,
   canRecordCombineMetrics = false,
 }: TeamInsightsCardProps) => {
-  const totalTeams = teams.length;
-  const assignedAthletes = athletes.filter((athlete) => typeof athlete.team_id === "number").length;
-  const unassignedAthletes = Math.max(athletes.length - assignedAthletes, 0);
-  const averageRosterSize = totalTeams ? (assignedAthletes / totalTeams).toFixed(1) : "0.0";
-  const assignmentRate = athletes.length ? Math.round((assignedAthletes / athletes.length) * 100) : 0;
-
-  const topTeams = teams
-    .map((team) => ({
-      id: team.id,
-      name: team.name,
-      category: team.age_category || "—",
-      athleteCount: athletesByTeamId[team.id]?.length ?? 0,
-    }))
-    .sort((a, b) => b.athleteCount - a.athleteCount)
-    .slice(0, 3);
-
   const submissionSummary = useMemo(() => {
     const pendingReportCards = pendingReports.filter((report) => report.report_type === "report_card").length;
     const pendingGameReports = pendingReports.filter((report) => report.report_type === "game_report").length;

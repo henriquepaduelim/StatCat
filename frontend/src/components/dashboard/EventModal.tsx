@@ -2,8 +2,6 @@ import { FormEvent, Dispatch, SetStateAction, useEffect, useRef, useState } from
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
 
-import type { Event } from "../../types/event";
-import type { ParticipantStatus } from "../../types/event";
 import type { Team, TeamCoach } from "../../api/teams";
 import type { Athlete } from "../../types/athlete";
 import type { TranslationDictionary } from "../../i18n/translations";
@@ -18,18 +16,9 @@ type EventModalProps = {
   selectedEventDate: string | null;
   readableDate: (dateStr: string) => string;
   formatDateKey: (date: Date) => string;
-  eventsOnSelectedDate: Event[];
-  teamNameById: Record<number, string>;
   teams: Team[];
   availableCoaches: TeamCoach[];
-  getEventTeamIds: (event: Event) => number[];
-  canManageEvents: boolean;
-  onDeleteEvent: (eventId: number) => void;
-  deleteEventPending: boolean;
   createEventPending: boolean;
-  currentUserId: number | null;
-  onConfirmAttendance: (eventId: number, status: ParticipantStatus) => void;
-  confirmAttendancePending: boolean;
   athleteFilterTeam: number | "unassigned" | null;
   setAthleteFilterTeam: Dispatch<SetStateAction<number | "unassigned" | null>>;
   athleteFilterAge: string;
@@ -54,17 +43,9 @@ const EventModal = ({
   selectedEventDate,
   readableDate,
   formatDateKey,
-  eventsOnSelectedDate,
-  teamNameById,
   teams,
   availableCoaches,
-  canManageEvents,
-  onDeleteEvent,
-  deleteEventPending,
   createEventPending,
-  currentUserId,
-  onConfirmAttendance,
-  confirmAttendancePending,
   athleteFilterTeam,
   setAthleteFilterTeam,
   athleteFilterAge,
@@ -80,14 +61,13 @@ const EventModal = ({
   onInputChange,
   onSubmit,
   onCancel,
-  getEventTeamIds,
 }: EventModalProps) => {
   const [mapsReady, setMapsReady] = useState(false);
   const [locationLatLng, setLocationLatLng] = useState<{ lat: number; lng: number } | null>(null);
   const locationInputRef = useRef<HTMLInputElement | null>(null);
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  const mapInstanceRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+  const markerRef = useRef<google.maps.Marker | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
@@ -95,8 +75,11 @@ const EventModal = ({
     }
 
     const loadGoogleMaps = (): Promise<typeof google | null> => {
-      if (typeof window !== "undefined" && (window as any).google?.maps?.places) {
-        return Promise.resolve((window as any).google);
+      if (typeof window !== "undefined") {
+        const googleGlobal = (window as typeof window & { google?: typeof google }).google;
+        if (googleGlobal?.maps?.places) {
+          return Promise.resolve(googleGlobal);
+        }
       }
 
       const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -104,12 +87,15 @@ const EventModal = ({
         return Promise.resolve(null);
       }
 
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         const existing = document.querySelector<HTMLScriptElement>(
           'script[src*="maps.googleapis.com/maps/api/js"]',
         );
         if (existing) {
-          existing.addEventListener("load", () => resolve((window as any).google));
+          existing.addEventListener("load", () => {
+            const googleGlobal = (window as typeof window & { google?: typeof google }).google ?? null;
+            resolve(googleGlobal);
+          });
           existing.addEventListener("error", () => resolve(null));
           return;
         }
@@ -118,7 +104,10 @@ const EventModal = ({
         script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
         script.async = true;
         script.defer = true;
-        script.onload = () => resolve((window as any).google);
+        script.onload = () => {
+          const googleGlobal = (window as typeof window & { google?: typeof google }).google ?? null;
+          resolve(googleGlobal);
+        };
         script.onerror = () => {
           console.error("Failed to load Google Maps");
           resolve(null);

@@ -17,10 +17,13 @@ export const fetchMe = async (): Promise<AuthUser> => {
     logger.debug("fetchMe - User role:", data?.role);
     logger.debug("fetchMe - Athlete status:", data?.athlete_status);
     return data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("fetchMe - Error:", error);
-    logger.error("fetchMe - Error response:", error?.response);
-    logger.error("fetchMe - Error status:", error?.response?.status);
+    if (typeof error === "object" && error !== null) {
+      const maybeError = error as { response?: { status?: number } };
+      logger.error("fetchMe - Error response:", maybeError.response);
+      logger.error("fetchMe - Error status:", maybeError.response?.status);
+    }
     throw error;
   }
 };

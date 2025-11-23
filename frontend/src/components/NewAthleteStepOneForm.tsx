@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
 
 import { registerAthlete } from "../api/athletes";
 import { useTeams } from "../hooks/useTeams";
@@ -28,14 +27,12 @@ const playerStatuses: Array<{ value: PlayerRegistrationStatus; label: string }> 
 
 interface NewAthleteStepOneFormProps {
   onSuccess?: (athlete: Athlete) => void;
-  onClose?: () => void;
 }
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
-const NewAthleteStepOneForm = ({ onSuccess, onClose }: NewAthleteStepOneFormProps) => {
+const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
   const t = useTranslation();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [teamId, setTeamId] = useState<string>("");
 

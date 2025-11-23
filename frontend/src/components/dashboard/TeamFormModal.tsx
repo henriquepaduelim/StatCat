@@ -24,7 +24,6 @@ type TeamFormModalProps = {
   availableCoaches: TeamCoach[];
   teamBuilderCandidates: Athlete[];
   remainingAthleteCount: number;
-  teamNameById: Record<number, string>;
   athleteById: Map<number, Athlete>;
   draggedAthleteId: number | null;
   athleteFilter: AthleteFilter;
@@ -47,7 +46,6 @@ const TeamFormModal = ({
   availableCoaches,
   teamBuilderCandidates,
   remainingAthleteCount,
-  teamNameById,
   athleteById,
   draggedAthleteId,
   athleteFilter,
@@ -410,11 +408,7 @@ const TeamFormModal = ({
                 ) : (
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {teamBuilderCandidates.map((athlete) => {
-                    const assignedTeamName =
-                      athlete.team_id && teamNameById[athlete.team_id]
-                        ? teamNameById[athlete.team_id]
-                        : null;
-                      return (
+                    return (
                         <div
                           key={`available-athlete-${athlete.id}`}
                           draggable

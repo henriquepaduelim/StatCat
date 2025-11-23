@@ -3,10 +3,11 @@ import { render, screen } from "@testing-library/react";
 
 import ProtectedRoute from "../components/ProtectedRoute";
 import type { Permissions } from "../hooks/usePermissions";
+import type { AuthUser } from "../stores/useAuthStore";
 
 const authState = {
   token: null as string | null,
-  user: null as any,
+  user: null as Partial<AuthUser> | null,
   isInitialized: true,
 };
 

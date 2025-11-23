@@ -36,12 +36,12 @@ export const useAuthBootstrap = () => {
           // console.log("useAuthBootstrap - Setting credentials with fetched profile");
           setCredentials({ user: profile, token: token! });
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         // console.error("useAuthBootstrap - Error fetching user profile:", error);
         // console.error("useAuthBootstrap - Error response:", error?.response);
         // console.error("useAuthBootstrap - Error status:", error?.response?.status);
         // Only clear if it's a 401 Unauthorized error
-        if (error?.response?.status === 401) {
+        if (typeof error === "object" && error !== null && (error as { response?: { status?: number } }).response?.status === 401) {
           // console.log("useAuthBootstrap - Token expired or invalid, clearing auth");
           clear(); // This clears token and user, effectively logging them out
         }

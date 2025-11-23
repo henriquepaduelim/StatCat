@@ -62,7 +62,7 @@ const TeamDashboard = () => {
   );
 
   const athletesQuery = useAthletes();
-  const athletes = athletesQuery.data ?? [];
+  const athletes = useMemo(() => athletesQuery.data ?? [], [athletesQuery.data]);
   const athleteNameById = useMemo(() => {
     return athletes.reduce<Record<number, string>>((acc, athlete) => {
       acc[athlete.id] = `${athlete.first_name} ${athlete.last_name}`.trim();

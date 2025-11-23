@@ -52,7 +52,7 @@ export function InstallPrompt() {
       setShowSafariInstructions(true);
     }, delay);
     return () => clearTimeout(timer);
-  }, [isInstalled]);
+  }, [isInstalled, isDismissed]);
 
   // This effect handles the Chrome/Edge install prompt (beforeinstallprompt event)
   // Only for browsers that support it (Android Chrome, Edge, etc.)
@@ -92,7 +92,7 @@ export function InstallPrompt() {
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [isInstallable, isInstalled]);
+  }, [isInstallable, isInstalled, isDismissed]);
 
   const handleInstall = async () => {
     const accepted = await promptInstall();

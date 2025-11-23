@@ -13,7 +13,8 @@ export function useInstallPrompt() {
   useEffect(() => {
     // Check if already installed
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-    const isIOSStandalone = (window.navigator as any).standalone === true;
+    const nav = window.navigator as Navigator & { standalone?: boolean };
+    const isIOSStandalone = nav.standalone === true;
     
     console.log('[useInstallPrompt] Install Status:', {
       isStandalone,
