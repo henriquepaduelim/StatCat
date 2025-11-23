@@ -10,3 +10,6 @@ export const useRegisterSW = () => ({
   offlineReady: createState(),
   updateServiceWorker: async () => undefined,
 });
+
+// Simple noop registerSW for builds without the PWA plugin
+export const registerSW = (_options?: any) => () => undefined;

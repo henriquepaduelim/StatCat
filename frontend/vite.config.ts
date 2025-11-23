@@ -145,6 +145,7 @@ export default defineConfig(({ mode }) => {
       alias: shouldEnablePwa
         ? {}
         : {
+            "virtual:pwa-register": resolve(projectRoot, "src/lib/pwa-register-stub.ts"),
             "virtual:pwa-register/react": resolve(projectRoot, "src/lib/pwa-register-stub.ts"),
           },
     },
