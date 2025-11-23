@@ -32,7 +32,7 @@ const BackToTopButton = ({
       const candidates = Array.from(
         document.querySelectorAll<HTMLElement>(targetSelector),
       ).filter((el) => el.offsetParent !== null);
-      return candidates.at(-1) ?? null;
+      return candidates.length ? candidates[candidates.length - 1] : null;
     };
   }, [targetSelector]);
 
