@@ -1,6 +1,8 @@
 from pydantic import ConfigDict
 from sqlmodel import SQLModel
 
+__test__ = False  # Prevent pytest from collecting these schema classes as tests
+
 
 class TestDefinitionBase(SQLModel):
     name: str

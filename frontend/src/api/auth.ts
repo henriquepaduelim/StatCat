@@ -81,3 +81,22 @@ export const confirmPasswordReset = async (token: string, newPassword: string): 
     new_password: newPassword,
   });
 };
+
+export const updateSelf = async (payload: {
+  full_name?: string;
+  phone?: string;
+  current_password?: string;
+  new_password?: string;
+}): Promise<AuthUser> => {
+  const { data } = await api.put<AuthUser>("/auth/me", payload);
+  return data;
+};
+
+export const uploadUserPhoto = async (file: File): Promise<AuthUser> => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const { data } = await api.put<AuthUser>("/auth/me/photo", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+};

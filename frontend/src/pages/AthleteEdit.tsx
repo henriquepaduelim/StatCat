@@ -9,6 +9,7 @@ import { useAthlete } from "../hooks/useAthlete";
 import { useTranslation } from "../i18n/useTranslation";
 import type { AthletePayload } from "../types/athlete";
 import { getMediaUrl } from "../utils/media";
+import PageTitle from "../components/PageTitle";
 
 const AthleteEdit = () => {
   const params = useParams<{ id: string }>();
@@ -131,9 +132,7 @@ const AthleteEdit = () => {
           <span>/</span>
           <span>{athlete.first_name} {athlete.last_name}</span>
         </div>
-        <h1 className="text-3xl font-semibold text-container-foreground">
-          {t.athleteAssessment.title}
-        </h1>
+        <PageTitle title={t.athleteAssessment.title} className="pb-1" />
       </header>
 
       <section className="space-y-4">
@@ -177,7 +176,7 @@ const AthleteEdit = () => {
             {additionalInfoMessage}
           </div>
         )}
-        <div className="rounded-lg border border-black/5 bg-white p-6 shadow-sm">
+        <div className="rounded-lg border border-black/10 bg-container p-6 shadow-sm dark:border-white/10">
           <NewAthleteStepTwoForm
             athlete={athlete}
             onSuccess={handleAdditionalInfoSuccess}

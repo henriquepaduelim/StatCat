@@ -1,16 +1,15 @@
-from pathlib import Path
 import logging
+from pathlib import Path
+from datetime import datetime, date, time
+import json
 
 from fastapi import FastAPI, Request
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from fastapi import HTTPException
 from fastapi.exceptions import RequestValidationError
 from starlette.requests import Request
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
 
 from app.api.v1.router import api_router
 from app.core.config import settings
@@ -41,9 +40,14 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     logger.error(f"Validation error on {request.url}: {exc}")
+    def _default(o):
+        if isinstance(o, (datetime, date, time)):
+            return o.isoformat()
+        raise TypeError
+
     return JSONResponse(
         status_code=422,
-        content={"detail": exc.errors()},
+        content=json.loads(json.dumps({"detail": exc.errors()}, default=_default)),
     )
 
 # Set up CORS

@@ -1,5 +1,7 @@
 from sqlmodel import Field, SQLModel
 
+__test__ = False  # Prevent pytest from collecting this model as a test
+
 
 class TestDefinition(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)

@@ -1,8 +1,9 @@
 from datetime import datetime
 from pathlib import Path
+import anyio
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
-from sqlmodel import Session, delete, select
+from sqlmodel import Session, delete, select, func
 
 from app.api.deps import ensure_roles, get_current_active_user
 from app.core.config import settings
@@ -17,6 +18,7 @@ from app.models.match_stat import MatchStat
 from app.models.session_result import SessionResult
 from app.models.team import Team
 from app.models.user import User, UserRole, UserAthleteApprovalStatus
+from app.services.email_service import email_service
 from app.schemas.athlete import (
     AthleteCreate,
     AthleteRead,
@@ -25,6 +27,7 @@ from app.schemas.athlete import (
     AthleteRegistrationCreate,
     AthleteUpdate,
 )
+from app.schemas.pagination import PaginatedResponse
 from app.schemas.user import UserRead
 
 MANAGE_ATHLETE_ROLES = {UserRole.ADMIN, UserRole.STAFF}
@@ -35,18 +38,6 @@ athlete_media_root = media_root / "athletes"
 athlete_media_root.mkdir(parents=True, exist_ok=True)
 documents_root = athlete_media_root / "documents"
 documents_root.mkdir(parents=True, exist_ok=True)
-
-MAX_DOCUMENT_SIZE = 10 * 1024 * 1024  # 10 MB
-MAX_PHOTO_SIZE = 5 * 1024 * 1024  # 5 MB
-
-ALLOWED_DOCUMENT_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg"}
-ALLOWED_DOCUMENT_MIME_TYPES = {
-    "application/pdf",
-    "image/png",
-    "image/jpeg",
-}
-ALLOWED_PHOTO_EXTENSIONS = {".png", ".jpg", ".jpeg"}
-ALLOWED_PHOTO_MIME_TYPES = {"image/png", "image/jpeg"}
 
 def _safe_filename(filename: str | None) -> str:
     stem = (filename or "upload").replace("/", "_").replace("\\", "_")
@@ -63,9 +54,17 @@ def _validate_upload(file: UploadFile, allowed_exts: set[str], allowed_mimes: se
 
 def _store_file(athlete_id: int, file: UploadFile, base_dir: Path, max_size: int) -> str:
     if base_dir is documents_root:
-        _validate_upload(file, ALLOWED_DOCUMENT_EXTENSIONS, ALLOWED_DOCUMENT_MIME_TYPES)
+        _validate_upload(
+            file,
+            settings.ATHLETE_ALLOWED_DOCUMENT_EXTENSIONS,
+            settings.ATHLETE_ALLOWED_DOCUMENT_MIME_TYPES,
+        )
     else:
-        _validate_upload(file, ALLOWED_PHOTO_EXTENSIONS, ALLOWED_PHOTO_MIME_TYPES)
+        _validate_upload(
+            file,
+            settings.ATHLETE_ALLOWED_PHOTO_EXTENSIONS,
+            settings.ATHLETE_ALLOWED_PHOTO_MIME_TYPES,
+        )
     file.file.seek(0)
     data = file.file.read()
     if len(data) > max_size:
@@ -179,7 +178,7 @@ def register_athlete(
     return athlete
 
 
-@router.get("/", response_model=list[AthleteRead])
+@router.get("/", response_model=PaginatedResponse[AthleteRead])
 def list_athletes(
     gender: AthleteGender | None = None,
     team_id: int | None = None,
@@ -188,14 +187,13 @@ def list_athletes(
     size: int = 50,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
-) -> list[AthleteRead]:
+) -> PaginatedResponse[AthleteRead]:
     """List athletes with optional pagination.
     
     Args:
         page: Page number (1-indexed), default 1
         size: Items per page, default 50, max 100
     """
-    # Validate pagination params
     if page < 1:
         page = 1
     if size < 1:
@@ -212,6 +210,10 @@ def list_athletes(
         statement = statement.where(Athlete.gender == gender)
     if team_id is not None:
         statement = statement.where(Athlete.team_id == team_id)
+
+    # Get total count
+    count_statement = select(func.count()).select_from(statement.subquery())
+    total = session.exec(count_statement).one()
     
     # Apply pagination
     offset = (page - 1) * size
@@ -219,7 +221,6 @@ def list_athletes(
     
     athletes = session.exec(statement).all()
     
-    # Optimize N+1 query: Preload user statuses for all athletes at once
     user_status_map = {}
     if include_user_status and current_user.role in MANAGE_ATHLETE_ROLES and athletes:
         athlete_ids = [athlete.id for athlete in athletes]
@@ -228,35 +229,34 @@ def list_athletes(
         ).all()
         user_status_map = {user.athlete_id: user for user in users}
     
-    result = []
+    result_items = []
     for athlete in athletes:
         try:
-            # Use model_dump to get the base data
             athlete_dict = athlete.model_dump()
             
-            # Add the additional fields required by AthleteRead
             athlete_dict['user_athlete_status'] = None
             athlete_dict['user_rejection_reason'] = None
             
-            # If requested, enrich athletes with user status information
             if include_user_status and current_user.role in MANAGE_ATHLETE_ROLES:
                 user = user_status_map.get(athlete.id)
                 if user:
                     if user.athlete_status:
-                        # Safely get the status value
                         if hasattr(user.athlete_status, 'value'):
                             athlete_dict['user_athlete_status'] = user.athlete_status.value
                         else:
                             athlete_dict['user_athlete_status'] = str(user.athlete_status)
                     athlete_dict['user_rejection_reason'] = user.rejection_reason
             
-            result.append(AthleteRead(**athlete_dict))
-        except Exception as e:
-            print(f"Error processing athlete {athlete.id}: {e}")
-            # Skip this athlete if there's an error
+            result_items.append(AthleteRead(**athlete_dict))
+        except Exception:
             continue
     
-    return result
+    return PaginatedResponse(
+        total=total,
+        page=page,
+        size=size,
+        items=result_items,
+    )
 
 
 @router.post("/", response_model=AthleteRead, status_code=status.HTTP_201_CREATED)
@@ -280,6 +280,18 @@ def create_athlete(
     session.add(athlete)
     session.commit()
     session.refresh(athlete)
+
+    # Notify athlete about team assignment if email and team were provided
+    if athlete.team_id and athlete.email:
+        team = session.get(Team, athlete.team_id)
+        team_name = team.name if team else "your team"
+        anyio.from_thread.run(
+            email_service.send_team_assignment,
+            athlete.email,
+            f"{athlete.first_name} {athlete.last_name}".strip(),
+            team_name,
+        )
+
     return athlete
 
 
@@ -402,61 +414,45 @@ def get_pending_athletes(
     current_user: User = Depends(get_current_active_user),
 ):
     """Get all pending athletes for admin/staff review."""
-    print(f"=== PENDING ENDPOINT CALLED ===")
-    print(f"User: {current_user.email}, Role: {current_user.role}")
-    
-    try:
-        ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
-        
-        # Include both PENDING and INCOMPLETE athletes that need approval
-        pending_users = session.exec(
-            select(User).where(
-                User.athlete_id.isnot(None),  # Must have an athlete profile
-                User.athlete_status.in_([
-                    UserAthleteApprovalStatus.PENDING,
-                    UserAthleteApprovalStatus.INCOMPLETE
-                ])
-            )
-        ).all()
-        
-        print(f"Found {len(pending_users)} pending/incomplete users (need approval)")
-        
-        result = []
-        for user in pending_users:
-            athlete = (
-                session.get(Athlete, user.athlete_id)
-                if user.athlete_id is not None
-                else None
-            )
+    ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
 
-            first_name = athlete.first_name if athlete else (user.full_name.split(" ")[0] if user.full_name else "")
-            last_name = (
-                athlete.last_name
-                if athlete
-                else (" ".join(user.full_name.split(" ")[1:]) if user.full_name and len(user.full_name.split(" ")) > 1 else "")
-            )
+    pending_users = session.exec(
+        select(User).where(
+            User.athlete_id.isnot(None),
+            User.athlete_status.in_([
+                UserAthleteApprovalStatus.PENDING,
+                UserAthleteApprovalStatus.INCOMPLETE
+            ])
+        )
+    ).all()
 
-            result.append({
-                "id": athlete.id if athlete else user.athlete_id,
-                "user_id": user.id,
-                "first_name": first_name,
-                "last_name": last_name,
-                "email": athlete.email if athlete and athlete.email else user.email,
-                "user_email": user.email,
-                "phone": athlete.phone if athlete else user.phone,
-                "date_of_birth": athlete.birth_date.isoformat() if hasattr(athlete, "birth_date") and athlete and athlete.birth_date else None,
-                "gender": athlete.gender.value if hasattr(athlete, "gender") and athlete and athlete.gender else None,
-                "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
-                "athlete_id": athlete.id if athlete else user.athlete_id,
-                "athlete_status": user.athlete_status.value if hasattr(user.athlete_status, 'value') else str(user.athlete_status),
-              })
-        
-        print(f"Returning {len(result)} results")
-        return result
-        
-    except Exception as e:
-        print(f"Error in get_pending_athletes: {e}")
-        raise
+    result = []
+    for user in pending_users:
+        athlete = session.get(Athlete, user.athlete_id) if user.athlete_id is not None else None
+
+        first_name = athlete.first_name if athlete else (user.full_name.split(" ")[0] if user.full_name else "")
+        last_name = (
+            athlete.last_name
+            if athlete
+            else (" ".join(user.full_name.split(" ")[1:]) if user.full_name and len(user.full_name.split(" ")) > 1 else "")
+        )
+
+        result.append({
+            "id": athlete.id if athlete else user.athlete_id,
+            "user_id": user.id,
+            "first_name": first_name,
+            "last_name": last_name,
+            "email": athlete.email if athlete and athlete.email else user.email,
+            "user_email": user.email,
+            "phone": athlete.phone if athlete else user.phone,
+            "date_of_birth": athlete.birth_date.isoformat() if hasattr(athlete, "birth_date") and athlete and athlete.birth_date else None,
+            "gender": athlete.gender.value if hasattr(athlete, "gender") and athlete and athlete.gender else None,
+            "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
+            "athlete_id": athlete.id if athlete else user.athlete_id,
+            "athlete_status": user.athlete_status.value if hasattr(user.athlete_status, 'value') else str(user.athlete_status),
+          })
+
+    return result
 
 
 @router.get("/pending/count")
@@ -486,31 +482,6 @@ def get_pending_athletes_count(
         return {"count": 0}
 
 
-@router.get("/pending-debug")
-def debug_pending():
-    """Ultra simple debug endpoint."""
-    print("DEBUG ENDPOINT CALLED")
-    return {"debug": "working"}
-
-
-@router.get("/test-pending")
-def test_pending_athletes(
-    current_user: User = Depends(get_current_active_user),
-):
-    """Test endpoint for debugging pending athletes."""
-    print(f"=== TEST ENDPOINT CALLED ===")
-    print(f"User: {current_user.email}")
-    print(f"Role: {current_user.role}")
-    
-    return {
-        "message": "Test endpoint working",
-        "user": {
-            "email": current_user.email,
-            "role": current_user.role.value if hasattr(current_user.role, 'value') else str(current_user.role),
-        }
-    }
-
-
 @router.get("/{athlete_id}", response_model=AthleteRead)
 def get_athlete(
     athlete_id: int,
@@ -536,6 +507,7 @@ def update_athlete(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
     _ensure_can_edit(current_user, athlete)
 
+    previous_team_id = athlete.team_id
     update_data = payload.model_dump(exclude_unset=True)
     if "team_id" in update_data:
         _validate_team(session, update_data.get("team_id"))
@@ -551,6 +523,21 @@ def update_athlete(
     session.add(athlete)
     session.commit()
     session.refresh(athlete)
+
+    # Notify user if they were moved to a different team
+    if "team_id" in update_data and athlete.team_id != previous_team_id:
+        user = session.exec(select(User).where(User.athlete_id == athlete.id)).first()
+        if user and user.email:
+            team_name = None
+            if athlete.team_id:
+                team = session.get(Team, athlete.team_id)
+                team_name = team.name if team else None
+            anyio.from_thread.run(
+                email_service.send_team_assignment,
+                user.email,
+                user.full_name,
+                team_name or "your team",
+            )
     return athlete
 
 
@@ -590,7 +577,7 @@ async def upload_photo(
         "image/heic": ".heic",
         "image/heif": ".heif",
     }
-    if content_type not in allowed_types:
+    if content_type not in allowed_types or content_type not in settings.ATHLETE_ALLOWED_PHOTO_MIME_TYPES:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported file type")
 
     extension = allowed_types[content_type]
@@ -600,7 +587,7 @@ async def upload_photo(
     destination = athlete_dir / f"profile{extension}"
 
     data = await file.read()
-    if len(data) > MAX_PHOTO_SIZE:
+    if len(data) > settings.ATHLETE_PHOTO_MAX_BYTES:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail="Image exceeds 5MB limit",
@@ -632,7 +619,12 @@ def upload_document(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
     _ensure_can_edit(current_user, athlete)
 
-    file_url = _store_file(athlete_id, file, documents_root, MAX_DOCUMENT_SIZE)
+    file_url = _store_file(
+        athlete_id,
+        file,
+        documents_root,
+        settings.ATHLETE_DOCUMENT_MAX_BYTES,
+    )
 
     document = AthleteDocument(athlete_id=athlete_id, label=label, file_url=file_url)
     session.add(document)
@@ -642,7 +634,7 @@ def upload_document(
 
 
 @router.post("/{athlete_id}/approve", response_model=UserRead)
-def approve_athlete(
+async def approve_athlete(
     athlete_id: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
@@ -671,25 +663,28 @@ def approve_athlete(
                 detail=f"Email {email} is already registered. Please update athlete's email first."
             )
         
+        temp_password = f"temp{athlete_id}"
+        temp_password = f"temp{athlete_id}"
         user = User(
             email=email,
-            hashed_password=get_password_hash(f"temp{athlete_id}"),  # Temporary password
+            hashed_password=get_password_hash(temp_password),  # Temporary password
             full_name=f"{athlete.first_name} {athlete.last_name}",
             role=UserRole.ATHLETE,
             athlete_id=athlete_id,
             athlete_status=UserAthleteApprovalStatus.INCOMPLETE,
+            must_change_password=True,
         )
         session.add(user)
         session.commit()
         session.refresh(user)
-        print(f"INFO: Created user account for athlete {athlete_id} with email {email}")
+        # Send temporary password to the athlete if email available
+        await email_service.send_temp_password(
+            to_email=user.email,
+            to_name=user.full_name,
+            password=temp_password,
+        )
     
-    # Log current status for debugging
-    print(f"DEBUG approve_athlete: athlete_id={athlete_id}, user_id={user.id}, current_status={user.athlete_status}")
-    
-    # If already approved, return success (idempotent operation)
     if user.athlete_status == UserAthleteApprovalStatus.APPROVED:
-        print(f"INFO: Athlete {athlete_id} is already approved, returning success")
         return user
     
     # Allow approval for PENDING or INCOMPLETE status
@@ -707,12 +702,26 @@ def approve_athlete(
     session.commit()
     session.refresh(user)
     
-    print(f"INFO: Athlete {athlete_id} approved successfully")
+    # Notify athlete about approval
+    await email_service.send_account_approved(
+        to_email=user.email,
+        to_name=user.full_name or None,
+    )
+    # If athlete has a team, remind them about assignment
+    if athlete.team_id and athlete.email:
+        team = session.get(Team, athlete.team_id)
+        team_name = team.name if team else "your team"
+        await email_service.send_team_assignment(
+            to_email=athlete.email,
+            to_name=user.full_name or None,
+            team_name=team_name,
+        )
+    
     return user
 
 
 @router.post("/approve-all")
-def approve_all_pending_athletes(
+async def approve_all_pending_athletes(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
 ) -> dict[str, int]:
@@ -745,6 +754,10 @@ def approve_all_pending_athletes(
         user.rejection_reason = None
         session.add(user)
         approved += 1
+        await email_service.send_account_approved(
+            to_email=user.email,
+            to_name=user.full_name or None,
+        )
 
     session.commit()
     return {"approved": approved, "skipped": skipped}
@@ -758,7 +771,6 @@ def reject_athlete(
     current_user: User = Depends(get_current_active_user),
 ) -> User:
     """Reject a pending athlete with a reason and update their status."""
-    print(f"DEBUG reject_athlete called: athlete_id={athlete_id}, reason='{reason}'")
     ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
     
     athlete = session.get(Athlete, athlete_id)
@@ -773,12 +785,10 @@ def reject_athlete(
         
         # Generate email if not present
         email = athlete.email if athlete.email else f"athlete{athlete_id}@temp.local"
-        print(f"DEBUG: No user for athlete {athlete_id}, will create with email: {email}")
         
         # Check if email already exists
         existing_user = session.exec(select(User).where(User.email == email)).first()
         if existing_user:
-            print(f"ERROR reject: Email conflict - {email} already registered to user_id={existing_user.id} (athlete_id={existing_user.athlete_id})")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Email {email} is already registered to user {existing_user.id}. This athlete cannot be rejected without first updating their email."
@@ -795,14 +805,9 @@ def reject_athlete(
         session.add(user)
         session.commit()
         session.refresh(user)
-        print(f"INFO: Created user account for athlete {athlete_id} with email {email}")
-    
-    # Log current status for debugging
-    print(f"DEBUG reject_athlete: athlete_id={athlete_id}, user_id={user.id}, current_status={user.athlete_status}")
     
     # If already rejected, allow re-rejection (just update reason)
     if user.athlete_status == UserAthleteApprovalStatus.REJECTED:
-        print(f"INFO: Athlete {athlete_id} is already rejected, updating reason")
         user.rejection_reason = reason.strip()
         session.add(user)
         session.commit()

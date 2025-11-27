@@ -32,62 +32,17 @@ export type ThemeDefinition = {
   logo: ThemeLogo;
 };
 
-import generatedTheme from "./activeTheme.generated";
+import { themeTokens } from "./tokens";
 
-const darkTheme: ThemeDefinition = {
-  id: "elite-1-academy-dark",
-  name: "ELITE 1 ACADEMY (Night)",
-  description: "High contrast palette optimized for low light",
-  colors: {
-    page: {
-      background: "#050913",
-      foreground: "#F5F7FF",
-    },
-    container: {
-      background: "#11182B",
-      foreground: "#F9FBFF",
-    },
-    header: {
-      background: "#0F172A",
-      foreground: "#F9FBFF",
-    },
-    sidebar: {
-      background: "#0C1324",
-      foreground: "#11182A",
-    },
-    footer: {
-      background: "#0C1324",
-      foreground: "#E5E7F5",
-    },
-    action: {
-      primary: {
-        background: "#F4A240",
-        foreground: "#1B1206",
-      },
-    },
-    accent: "#F4A240",
-    border: "#F4A240",
-    muted: "#E5E5E5",
-  },
-  logo: {
-    label: "ELITE 1",
-    background: "#F4A240",
-    color: "#1B1206",
-  },
-};
+export const THEMES = themeTokens;
 
-export const THEMES = {
-  light: generatedTheme,
-  dark: darkTheme,
-};
-
-export type ThemeId = keyof typeof THEMES;
+export type ThemeId = keyof typeof themeTokens;
 
 export const DEFAULT_THEME_ID: ThemeId = "light";
 
 export const getThemeDefinition = (themeId: ThemeId): ThemeDefinition =>
-  THEMES[themeId] ?? generatedTheme;
+  THEMES[themeId] ?? THEMES[DEFAULT_THEME_ID];
 
-export const activeTheme: ThemeDefinition = generatedTheme;
+export const activeTheme: ThemeDefinition = THEMES[DEFAULT_THEME_ID];
 
 export default activeTheme;

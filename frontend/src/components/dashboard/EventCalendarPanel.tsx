@@ -113,7 +113,7 @@ const EventCalendarPanel = ({
                         ? "border-2 border-action-primary bg-action-primary/5 text-action-primary"
                         : isToday
                           ? "border-2 border-action-primary/50 bg-[rgb(var(--color-container-background))] text-action-primary"
-                          : "border border-[#e7e8e9]/80 bg-[rgb(var(--color-container-background))] text-container-foreground hover:border-action-primary/30"
+                          : "border border-[var(--border-table-light)]/80 bg-[rgb(var(--color-container-background))] text-container-foreground hover:border-action-primary/30"
                       : "border-transparent bg-transparent text-transparent"
                   }`}
                 >
@@ -144,7 +144,7 @@ const EventCalendarPanel = ({
             ) : null}
           </div>
           {upcomingEvents.length ? (
-            <details className="mt-3 rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] shadow-sm dark:border-[#f4a240]/70">
+            <details className="mt-3 rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] shadow-sm dark:border-[rgb(var(--color-border))]/70">
               <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-container-foreground">
                 Upcoming Events ({upcomingEvents.length})
               </summary>
@@ -152,18 +152,18 @@ const EventCalendarPanel = ({
                 <ul className="space-y-3 text-sm">
                   {upcomingEvents.map((event) => (
                     <li key={event.id}>
-                      <div className="rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] px-3 py-2 shadow-sm dark:border-[#f4a240]/70">
+                      <div className="rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] px-3 py-2 shadow-sm dark:border-[rgb(var(--color-border))]/70">
                         <div className="flex items-start gap-3">
                           <button
                             type="button"
                             onClick={() => {
-                              setSelectedEventDate(event.date);
+                              setSelectedEventDate(event.event_date);
                               const eventTeams = getEventTeamIds(event);
                               if (eventTeams.length) {
                                 setSelectedTeamId(eventTeams[0]);
                               }
                               setCalendarCursor((prev) => {
-                                const eventDate = new Date(event.date);
+                                const eventDate = new Date(event.event_date);
                                 if (
                                   prev.getFullYear() === eventDate.getFullYear() &&
                                   prev.getMonth() === eventDate.getMonth()
@@ -177,7 +177,7 @@ const EventCalendarPanel = ({
                           >
                             <p className="font-semibold text-container-foreground">{event.name}</p>
                             <p className="text-xs text-muted">
-                              {readableDate(event.date)} • {event.time || summaryLabels.calendar.timeTbd}
+                          {readableDate(event.event_date)} • {event.start_time || summaryLabels.calendar.timeTbd}
                             </p>
                             {event.location ? (
                               <p className="text-xs text-muted">{event.location}</p>

@@ -102,3 +102,34 @@ def list_team_combine_metrics(
     )
     metrics = session.exec(statement).scalars().all()
     return [TeamCombineMetricRead.model_validate(metric) for metric in metrics]
+
+
+@router.get(
+    "/athletes/{athlete_id}/combine-metrics",
+    response_model=list[TeamCombineMetricRead],
+)
+def list_athlete_combine_metrics(
+    athlete_id: int,
+    session: SessionDep,
+    current_user: User = Depends(get_current_active_user),
+    limit: int = 10,
+) -> list[TeamCombineMetricRead]:
+    """List combine metrics recorded for a specific athlete."""
+    if limit < 1:
+        limit = 10
+    if limit > 50:
+        limit = 50
+
+    # Permission: staff/admin/coach see all; athlete sees own metrics
+    if current_user.role not in {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH}:
+        if current_user.athlete_id != athlete_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+
+    statement = (
+        select(TeamCombineMetric)
+        .where(TeamCombineMetric.athlete_id == athlete_id)
+        .order_by(TeamCombineMetric.recorded_at.desc())
+        .limit(limit)
+    )
+    metrics = session.exec(statement).scalars().all()
+    return [TeamCombineMetricRead.model_validate(metric) for metric in metrics]

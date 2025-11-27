@@ -1,7 +1,7 @@
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faUserTie, faPenToSquare, faUserXmark } from "@fortawesome/free-solid-svg-icons";
 
-import type { TeamCoach } from "../../api/teams";
+import type { TeamCoach } from "../../types/coach";
 
 type CoachDirectoryCardProps = {
   canCreateCoaches: boolean;

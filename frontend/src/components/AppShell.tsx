@@ -1,4 +1,4 @@
-import { PropsWithChildren, useMemo } from "react";
+import { PropsWithChildren, useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRightFromBracket, faGear } from "@fortawesome/free-solid-svg-icons";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -13,6 +13,28 @@ const AppShell = ({ children }: PropsWithChildren) => {
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
+  const [hasModalTarget, setHasModalTarget] = useState(false);
+
+  useEffect(() => {
+    const selector = ".modal-overlay .modal-surface";
+    const checkModalVisible = () => {
+      if (typeof document === "undefined") return;
+      const el = Array.from(document.querySelectorAll<HTMLElement>(selector)).find(
+        (node) => node.offsetParent !== null
+      );
+      setHasModalTarget(Boolean(el));
+    };
+
+    checkModalVisible();
+    const observer = new MutationObserver(checkModalVisible);
+    observer.observe(document.body, { childList: true, subtree: true });
+    window.addEventListener("resize", checkModalVisible);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", checkModalVisible);
+    };
+  }, []);
 
   const greeting = useMemo(() => {
     if (!user || !user.full_name) return "";
@@ -23,14 +45,14 @@ const AppShell = ({ children }: PropsWithChildren) => {
     location.pathname === "/athletes" || location.pathname === "/athletes/";
   const isPlayerProfilePage = location.pathname.startsWith("/player-profile");
   const baseMainClasses =
-    "flex flex-1 min-h-0 w-full flex-col px-3 sm:px-6 pb-20 md:pb-8 pt-3 md:pt-6 md:[&>*:nth-child(n+3)]:mt-16";
+    "flex flex-1 min-h-0 w-full flex-col px-3 sm:px-6 pb-20 md:pb-8 pt-1 md:pt-3 md:[&>*:nth-child(n+3)]:mt-12";
   const mainClassName = `${baseMainClasses} ${
     isAthletesListPage || isPlayerProfilePage ? "max-w-none" : "mx-auto w-full md:max-w-6xl"
   }`;
 
   return (
     <div className="relative min-h-screen bg-page text-page-foreground">
-      <ThemeToggleSwitch />
+      <ThemeToggleSwitch greeting={greeting} />
       <div className="hidden md:flex fixed left-0 top-0 z-20 w-72 flex-col items-center pt-0 pointer-events-none">
         <a
           href="/dashboard"
@@ -45,7 +67,6 @@ const AppShell = ({ children }: PropsWithChildren) => {
         <header className="print-hidden md:hidden flex items-center justify-between px-2 pt-6 pb-4">
           <img src={branding.assets.logo} alt={`${branding.name} logo`} className="h-16 w-auto" />
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-muted">{greeting}</span>
             <button
               type="button"
               onClick={() => navigate("/settings")}
@@ -64,15 +85,20 @@ const AppShell = ({ children }: PropsWithChildren) => {
             </button>
           </div>
         </header>
-        <header className="print-hidden hidden md:flex items-center justify-start px-6 py-4">
-          <span className="text-sm font-medium text-muted">{greeting}</span>
-        </header>
+        <header className="print-hidden hidden md:flex items-center justify-start px-6 py-4" />
         <main className={mainClassName}>
           {children}
         </main>
       </div>
-      <BackToTopButton className="bottom-16 md:bottom-6" />
-      <BackToTopButton targetSelector=".modal-overlay .modal-surface" mobileOnly className="bottom-16 md:bottom-6" />
+      {!hasModalTarget && <BackToTopButton className="bottom-16 md:bottom-6" />}
+      {hasModalTarget && (
+        <BackToTopButton
+          targetSelector=".modal-overlay .modal-surface"
+          fallbackToWindow={false}
+          mobileOnly
+          className="bottom-16 md:bottom-6"
+        />
+      )}
     </div>
   );
 };

@@ -15,7 +15,8 @@ export const useTests = () => {
   return useQuery({
     queryKey: ["tests"],
     queryFn: () => fetchTests(),
-    staleTime: 1000 * 60 * 5,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 20 * 60 * 1000,
     enabled: Boolean(token),
   });
 };

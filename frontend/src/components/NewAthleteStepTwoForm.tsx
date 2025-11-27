@@ -234,7 +234,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
       )}
 
       {/* Contact Information */}
-      <section className="space-y-4 rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+      <section className="space-y-4 rounded-lg border border-black/10 bg-container p-4 shadow-sm dark:border-white/10">
         <h3 className="text-sm font-semibold text-container-foreground">
           Contact Information
         </h3>
@@ -247,7 +247,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="email"
               value={form.email}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -258,14 +258,14 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="phone"
               value={form.phone}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
             />
           </label>
         </div>
       </section>
 
       {/* Address */}
-      <section className="space-y-4 rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+      <section className="space-y-4 rounded-lg border border-black/10 bg-container p-4 shadow-sm dark:border-white/10">
         <h3 className="text-sm font-semibold text-container-foreground">
           Address
         </h3>
@@ -279,7 +279,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="address_line1"
               value={form.address_line1}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -290,7 +290,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="address_line2"
               value={form.address_line2}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
             />
           </label>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -303,7 +303,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="city"
                 value={form.city}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -315,7 +315,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="province"
                 value={form.province}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -327,7 +327,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="postal_code"
                 value={form.postal_code}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -339,7 +339,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="country"
                 value={form.country}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
               />
             </label>
           </div>
@@ -347,7 +347,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
       </section>
 
       {/* Guardian/Responsible */}
-      <section className="space-y-4 rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+      <section className="space-y-4 rounded-lg border border-black/10 bg-container p-4 shadow-sm dark:border-white/10">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-container-foreground">
             Guardian/Responsible
@@ -371,7 +371,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="guardian_name"
               value={form.guardian_name}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -383,7 +383,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               value={form.guardian_relationship}
               onChange={handleFieldChange}
               placeholder="e.g. Father, Mother, Guardian"
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -394,7 +394,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="guardian_email"
               value={form.guardian_email}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -405,7 +405,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="guardian_phone"
               value={form.guardian_phone}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
             />
           </label>
         </div>
@@ -420,7 +420,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="secondary_guardian_name"
                 value={form.secondary_guardian_name}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -431,7 +431,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="secondary_guardian_relationship"
                 value={form.secondary_guardian_relationship}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -442,7 +442,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="secondary_guardian_email"
                 value={form.secondary_guardian_email}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -453,7 +453,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="secondary_guardian_phone"
                 value={form.secondary_guardian_phone}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
               />
             </label>
           </div>
@@ -461,7 +461,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
       </section>
 
       {/* Emergency Contact */}
-      <section className="space-y-4 rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+      <section className="space-y-4 rounded-lg border border-black/10 bg-container p-4 shadow-sm dark:border-white/10">
         <h3 className="text-sm font-semibold text-container-foreground">
           Emergency Contact
         </h3>
@@ -475,7 +475,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="emergency_contact_name"
               value={form.emergency_contact_name}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -487,7 +487,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="emergency_contact_relationship"
               value={form.emergency_contact_relationship}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -499,14 +499,14 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               name="emergency_contact_phone"
               value={form.emergency_contact_phone}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
             />
           </label>
         </div>
       </section>
 
       {/* Medical Information */}
-      <section className="space-y-4 rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+      <section className="space-y-4 rounded-lg border border-black/10 bg-container p-4 shadow-sm dark:border-white/10">
         <h3 className="text-sm font-semibold text-container-foreground">
           Medical Information
         </h3>
@@ -519,7 +519,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               rows={3}
               value={form.medical_allergies}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
               placeholder="Describe any known allergies..."
             />
           </label>
@@ -531,7 +531,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               rows={3}
               value={form.medical_conditions}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
               placeholder="Describe any relevant medical conditions..."
             />
           </label>
@@ -544,7 +544,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="physician_name"
                 value={form.physician_name}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -555,7 +555,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
                 name="physician_phone"
                 value={form.physician_phone}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
               />
             </label>
           </div>

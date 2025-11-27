@@ -14,7 +14,7 @@ from app.models.athlete import (
 class AthleteBase(SQLModel):
     first_name: str
     last_name: str
-    email: str | None = None
+    email: str
     phone: str | None = None
     birth_date: date
     dominant_foot: str | None = None

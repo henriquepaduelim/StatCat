@@ -2,7 +2,7 @@ import { FormEvent, Dispatch, SetStateAction } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
 
-import type { TeamCoach } from "../../api/teams";
+import type { TeamCoach } from "../../types/coach";
 import type { Athlete } from "../../types/athlete";
 import type { AthleteFilter, NewTeamFormState } from "../../types/dashboard";
 import { calculateAge } from "../../utils/athletes";
@@ -256,7 +256,7 @@ const TeamFormModal = ({
               <p className="text-sm font-semibold text-container-foreground">Team Roster</p>
               <p className="text-xs text-muted">Athletes currently on this team</p>
               <div
-                className="min-h-[300px] max-h-[400px] overflow-y-auto rounded-lg border-2 border-dashed border-action-primary/30 bg-blue-50/30 p-2 dark:border-[#e5e5e5]/60 dark:bg-container"
+                className="min-h-[300px] max-h-[400px] overflow-y-auto rounded-lg border-2 border-dashed border-action-primary/30 bg-[var(--bg-soft-blue)] p-2 dark:border-[var(--border-table-dark)]/60 dark:bg-container"
                 onDragOver={(event) => {
                   event.preventDefault();
                   event.currentTarget.classList.add("border-action-primary", "bg-blue-100/50");
@@ -340,7 +340,7 @@ const TeamFormModal = ({
                         setAthleteFilter((prev) => ({ ...prev, query: event.target.value }))
                       }
                       placeholder="e.g., 16, U18, Alice, female"
-                      className="w-32 rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none dark:border-[#e5e5e5]/30 dark:bg-container"
+                      className="w-32 rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none dark:border-[var(--border-table-dark)]/30 dark:bg-container"
                     />
                   </label>
                   <label className="flex items-center gap-1">
@@ -350,7 +350,7 @@ const TeamFormModal = ({
                       onChange={(event) =>
                         setAthleteFilter((prev) => ({ ...prev, age: event.target.value }))
                       }
-                      className="rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none dark:border-[#e5e5e5]/30 dark:bg-container"
+                      className="rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none dark:border-[var(--border-table-dark)]/30 dark:bg-container"
                     >
                       <option value="">All</option>
                       <option value="U14">U14</option>

@@ -30,24 +30,26 @@ export const useDashboardEventData = ({
   const eventsByDate = useMemo(() => {
     const map = new Map<string, Event[]>();
     events.forEach((event) => {
-      if (!event.date) return;
-      map.set(event.date, [...(map.get(event.date) ?? []), event]);
+      if (!event.event_date) return;
+      map.set(event.event_date, [...(map.get(event.event_date) ?? []), event]);
     });
     return map;
   }, [events]);
 
   const upcomingEvents = useMemo(() => {
-    const toLocalTs = (dateStr: string, timeStr?: string | null) => {
+    const toLocalTs = (dateStr: string, startTime?: string | null) => {
       const [y, m, d] = (dateStr || "").split("-").map(Number);
-      const [hh = 0, mm = 0] = (timeStr || "00:00").split(":").map(Number);
+      const [hh = 0, mm = 0] = (startTime || "00:00").split(":").map(Number);
       return new Date((y || 0), (m || 1) - 1, (d || 1), hh, mm).getTime();
     };
-    return [...events].sort((a, b) => toLocalTs(a.date, a.time) - toLocalTs(b.date, b.time)).slice(0, 4);
+    return [...events]
+      .sort((a, b) => toLocalTs(a.event_date, a.start_time) - toLocalTs(b.event_date, b.start_time))
+      .slice(0, 4);
   }, [events]);
 
   const eventsOnSelectedDate = useMemo(() => {
     if (!selectedEventDate) return [];
-    return events.filter((event) => event.date === selectedEventDate);
+    return events.filter((event) => event.event_date === selectedEventDate);
   }, [events, selectedEventDate]);
 
   const eventAvailabilityData = useMemo(() => {
@@ -122,4 +124,3 @@ export const useDashboardEventData = ({
     availabilityPages,
   };
 };
-

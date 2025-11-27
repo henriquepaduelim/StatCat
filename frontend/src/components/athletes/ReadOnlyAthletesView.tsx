@@ -4,9 +4,10 @@ import { useAthletes } from "../../hooks/useAthletes";
 import { useTeams } from "../../hooks/useTeams";
 import { useTranslation } from "../../i18n/useTranslation";
 import ReadOnlyAthleteTable from "./ReadOnlyAthleteTable";
+import PageTitle from "../PageTitle";
 
 const ReadOnlyAthletesView = () => {
-  const { data, isLoading, isError } = useAthletes();
+  const athletesQuery = useAthletes();
   const teamsQuery = useTeams();
   const t = useTranslation();
 
@@ -19,10 +20,13 @@ const ReadOnlyAthletesView = () => {
   }, [teamsQuery.data]);
 
   const readonlyAthletes = useMemo(() => {
-    if (!data) {
-      return [];
-    }
-    return [...data].filter((athlete) => {
+    const data = athletesQuery.data;
+    const flatData = data?.pages
+      ? data.pages.flatMap((page) => page.items ?? [])
+      : Array.isArray(data)
+        ? data
+        : [];
+    return flatData.filter((athlete) => {
       if (athlete.user_athlete_status) {
         const status = athlete.user_athlete_status.toUpperCase();
         if (["PENDING", "REJECTED", "INCOMPLETE"].includes(status)) {
@@ -31,19 +35,17 @@ const ReadOnlyAthletesView = () => {
       }
       return true;
     });
-  }, [data]);
+  }, [athletesQuery.data]);
 
   return (
     <div className="space-y-6">
-      <section className="space-y-1">
-        <h1 className="text-3xl font-semibold text-container-foreground">{t.athletes.title}</h1>
-        <p className="text-sm text-muted">{t.athletes.description}</p>
-      </section>
+      <PageTitle title={t.athletes.title} description={t.athletes.description} />
       <ReadOnlyAthleteTable
         athletes={readonlyAthletes}
         teamsById={teamsById}
-        isLoading={isLoading}
-        isError={isError}
+        isLoading={athletesQuery.isLoading}
+        isError={athletesQuery.isError}
+        athletesQuery={athletesQuery}
       />
     </div>
   );

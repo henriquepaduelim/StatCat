@@ -1,7 +1,7 @@
 import { FormEvent } from "react";
 
 import type { Athlete } from "../../types/athlete";
-import type { Team } from "../../api/teams";
+import type { Team } from "../../types/team";
 
 type ReportCardModalProps = {
   isOpen: boolean;

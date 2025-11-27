@@ -29,9 +29,9 @@ const SchedulingPage = () => {
     return [];
   }
   return [...eventsQuery.data].sort((a, b) => {
-    const timeA = a.time ?? "00:00";
-      const timeB = b.time ?? "00:00";
-      return new Date(`${a.date}T${timeA}`).getTime() - new Date(`${b.date}T${timeB}`).getTime();
+    const timeA = a.start_time ?? "00:00";
+    const timeB = b.start_time ?? "00:00";
+      return new Date(`${a.event_date}T${timeA}`).getTime() - new Date(`${b.event_date}T${timeB}`).getTime();
     });
   }, [eventsQuery.data]);
 
@@ -113,7 +113,7 @@ const SchedulingPage = () => {
             <div>
               <h3 className="text-lg font-semibold text-container-foreground">{event.name}</h3>
               <p className="text-sm text-muted">
-                {event.date} {event.time ? `• ${event.time}` : ""}{" "}
+                {event.event_date} {event.start_time ? `• ${event.start_time}` : ""}{" "}
                 {event.location ? `• ${event.location}` : ""}
               </p>
             </div>

@@ -3,12 +3,12 @@ type DashboardHeroProps = {
   description: string;
 };
 
+import PageTitle from "../PageTitle";
+
 const DashboardHero = ({ title, description }: DashboardHeroProps) => (
-  <section className="print-hidden space-y-2">
-    <h1 className="text-3xl font-semibold text-container-foreground">{title}</h1>
-    <p className="text-sm text-muted">{description}</p>
+  <section className="print-hidden">
+    <PageTitle title={title} description={description} className="pb-2" />
   </section>
 );
 
 export default DashboardHero;
-

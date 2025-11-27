@@ -12,6 +12,7 @@ import { useTranslation } from "../../i18n/useTranslation";
 import type { Athlete } from "../../types/athlete";
 import { getMediaUrl } from "../../utils/media";
 import type { PlayerProfileContextValue } from "./context";
+import PageTitle from "../../components/PageTitle";
 
 const linkClass =
   "rounded-full border px-2 py-1 text-sm font-semibold transition hover:text-action-primary";
@@ -46,25 +47,27 @@ function buildContextValue(params: {
 const PlayerProfileLayout = () => {
   const user = useAuthStore((state) => state.user);
   const permissions = usePermissions();
-  const { data: allAthletes } = useAthletes();
+  const { data: allAthletesData, fetchNextPage, hasNextPage, isFetchingNextPage } = useAthletes();
   const [currentAthleteId, setCurrentAthleteId] = useState<number | undefined>(undefined);
   const t = useTranslation();
   const isAthleteUser = (user?.role || "").toLowerCase() === "athlete";
   const location = useLocation();
 
   const athletes = useMemo(() => {
-    if (!allAthletes) return undefined;
+    if (!allAthletesData) return undefined;
+    
+    const flatAllAthletes = allAthletesData.pages.flatMap(page => page.items);
 
     if (permissions.canViewAllReports) {
-      return allAthletes;
+      return flatAllAthletes;
     }
 
     if (user?.role === "athlete") {
-      return allAthletes.filter((athlete) => athlete.email === user.email);
+      return flatAllAthletes.filter((athlete) => athlete.email === user.email);
     }
 
-    return allAthletes;
-  }, [allAthletes, permissions.canViewAllReports, user]);
+    return flatAllAthletes;
+  }, [allAthletesData, permissions.canViewAllReports, user]);
 
   useEffect(() => {
     if (athletes && athletes.length && !currentAthleteId) {
@@ -99,14 +102,15 @@ const PlayerProfileLayout = () => {
   const initials =
     currentAthlete && `${currentAthlete.first_name?.[0] ?? ""}${currentAthlete.last_name?.[0] ?? ""}`.toUpperCase();
 
+  const handleLoadAll = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage().then(() => handleLoadAll());
+    }
+  }
+
   return (
     <div className="space-y-4">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold text-container-foreground">
-          {t.playerProfile.title}
-        </h1>
-        <p className="text-sm text-muted">{t.playerProfile.description}</p>
-      </header>
+      <PageTitle title={t.playerProfile.title} description={t.playerProfile.description} className="pb-0" />
 
       {!isAthleteUser && (
         <div className="print-hidden flex flex-col gap-4 rounded-xl bg-container p-3 shadow-sm md:flex-row md:items-end md:justify-between">
@@ -125,6 +129,15 @@ const PlayerProfileLayout = () => {
               ))}
             </select>
           </label>
+          {hasNextPage && (
+            <button
+              onClick={handleLoadAll}
+              disabled={isFetchingNextPage}
+              className="rounded-md bg-action-primary/10 px-3 py-2 text-sm font-semibold text-action-primary transition hover:bg-action-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isFetchingNextPage ? 'Loading...' : 'Load All Athletes'}
+            </button>
+          )}
         </div>
       )}
 

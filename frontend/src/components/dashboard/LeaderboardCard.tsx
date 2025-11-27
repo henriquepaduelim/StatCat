@@ -4,6 +4,7 @@ import { faMedal } from "@fortawesome/free-solid-svg-icons";
 
 import { useScoringLeaderboard } from "../../hooks/useScoringLeaderboard";
 import type { LeaderboardEntry, LeaderboardType } from "../../api/leaderboards";
+import { chartPalette } from "../../theme/chartPalette";
 
 type LeaderboardCardProps = {
   limit?: number;
@@ -23,9 +24,9 @@ const LeaderboardRow = ({
   leaderboardType: LeaderboardType;
 }) => {
   const medalCircleStyles: Record<number, CSSProperties> = {
-    1: { backgroundColor: "#D4AF37", color: "#1f2937" },
-    2: { backgroundColor: "#C0C0C0", color: "#1f2937" },
-    3: { backgroundColor: "#CD7F32", color: "#fff" },
+    1: { backgroundColor: chartPalette.podium.gold, color: chartPalette.podium.textDark },
+    2: { backgroundColor: chartPalette.podium.silver, color: chartPalette.podium.textDark },
+    3: { backgroundColor: chartPalette.podium.bronze, color: chartPalette.podium.textLight },
   };
   const primaryValue = leaderboardType === "scorers" ? entry.goals : entry.clean_sheets;
 

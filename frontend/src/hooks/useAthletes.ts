@@ -1,7 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 
 import api from "../api/client";
 import type { Athlete } from "../types/athlete";
+import type { PaginatedResponse } from "../types/pagination";
 import { useAuthStore } from "../stores/useAuthStore";
 import { usePermissions } from "./usePermissions";
 
@@ -9,6 +10,8 @@ export type AthleteFilters = {
   gender?: Athlete["gender"];
   team_id?: number | null;
   include_user_status?: boolean;
+  page?: number;
+  size?: number;
 };
 
 const sanitizeFilters = (filters?: AthleteFilters) => {
@@ -30,28 +33,40 @@ const sanitizeFilters = (filters?: AthleteFilters) => {
   return Object.fromEntries(entries) as AthleteFilters;
 };
 
-const fetchAthletes = async (filters?: AthleteFilters): Promise<Athlete[]> => {
+const fetchAthletes = async (
+  filters?: AthleteFilters,
+): Promise<PaginatedResponse<Athlete>> => {
   const params = sanitizeFilters(filters);
-  const { data } = await api.get<Athlete[]>("/athletes/", { params });
+  const { data } = await api.get<PaginatedResponse<Athlete>>("/athletes/", {
+    params,
+  });
   return data;
 };
 
-export const useAthletes = (filters?: AthleteFilters) => {
+export const useAthletes = (filters?: Omit<AthleteFilters, "page" | "size">) => {
   const token = useAuthStore((state) => state.token);
   const permissions = usePermissions();
-  
-  // Automatically include user status for admins/staff
+
   const enhancedFilters = {
     ...filters,
     include_user_status: permissions.canCreateAthletes,
   };
-  
+
   const params = sanitizeFilters(enhancedFilters);
 
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["athletes", params ?? null],
-    queryFn: () => fetchAthletes(params),
-    staleTime: 1000 * 60,
+    queryFn: ({ pageParam = 1 }) =>
+      fetchAthletes({ ...params, page: pageParam, size: 50 }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      if (lastPage.items.length > 0) {
+        return lastPage.page + 1;
+      }
+      return undefined;
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     enabled: Boolean(token),
   });
 };

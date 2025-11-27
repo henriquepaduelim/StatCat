@@ -1,9 +1,15 @@
 import { useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faUsers, faPenToSquare, faTrash } from "@fortawesome/free-solid-svg-icons";
+import {
+  faPlus,
+  faUsers,
+  faPenToSquare,
+  faTrash,
+} from "@fortawesome/free-solid-svg-icons";
 
 import type { Athlete } from "../../types/athlete";
-import type { Team } from "../../api/teams";
+import type { Team } from "../../types/team";
+import type { useAthletes } from "../../hooks/useAthletes";
 
 type NoticeState = { variant: "success" | "error"; message: string } | null;
 
@@ -25,6 +31,7 @@ type TeamListCardProps = {
     error: string;
     empty: string;
   };
+  athletesQuery: ReturnType<typeof useAthletes>;
 };
 
 type TeamActionButtonsProps = {
@@ -44,7 +51,10 @@ const TeamActionButtons = ({
   onDeleteTeam,
   className = "",
 }: TeamActionButtonsProps) => {
-  const containerClassName = ["flex items-center gap-2", className].filter(Boolean).join(" ").trim();
+  const containerClassName = ["flex items-center gap-2", className]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
 
   return (
     <div className={containerClassName}>
@@ -85,6 +95,7 @@ const TeamListCard = ({
   onDeleteTeam,
   addButtonLabel,
   statusCopy,
+  athletesQuery,
 }: TeamListCardProps) => {
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -100,21 +111,26 @@ const TeamListCard = ({
       }
       const teamAthletes = athletesByTeamId[team.id] ?? [];
       return teamAthletes.some((athlete) => {
-        const fullName = `${athlete.first_name} ${athlete.last_name}`.trim().toLowerCase();
+        const fullName =
+          `${athlete.first_name} ${athlete.last_name}`.trim().toLowerCase();
         return fullName.includes(normalizedSearch);
       });
     });
   }, [teams, athletesByTeamId, normalizedSearch]);
 
   const showEmptyState = !teams.length;
-  const showNoMatches = Boolean(teams.length && normalizedSearch && !filteredTeams.length);
+  const showNoMatches = Boolean(
+    teams.length && normalizedSearch && !filteredTeams.length,
+  );
 
   return (
-    <div className="flex h-full w-full flex-col rounded-xl border border-black/10 bg-container-gradient p-4 sm:p-3 shadow-xl backdrop-blur dark:border-[#f4a240]/70">
+    <div className="flex h-full w-full flex-col rounded-xl border border-black/10 bg-container-gradient p-4 sm:p-3 shadow-xl backdrop-blur dark:border-[rgb(var(--color-border))]/70">
       <div className="flex h-full flex-col gap-4">
         <div className="flex flex-shrink-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="w-full sm:max-w-sm">
-            <h2 className="text-lg font-semibold text-container-foreground">Teams</h2>
+            <h2 className="text-lg font-semibold text-container-foreground">
+              Teams
+            </h2>
             <label className="mt-2 block text-xs font-semibold uppercase tracking-wide text-muted">
               Search
               <input
@@ -123,7 +139,9 @@ const TeamListCard = ({
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Search by team or athlete name"
                 className="mt-1 w-full rounded-lg border border-black/10 px-3 py-2 text-sm text-container-foreground shadow-sm transition focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary placeholder-muted"
-                style={{ backgroundColor: "rgb(var(--color-container-background))" }}
+                style={{
+                  backgroundColor: "rgb(var(--color-container-background))",
+                }}
               />
             </label>
           </div>
@@ -162,10 +180,8 @@ const TeamListCard = ({
             ) : showNoMatches ? (
               <p className="text-sm text-muted">No teams match your search.</p>
             ) : (
-              <div
-                className="flex h-full flex-col overflow-hidden rounded-lg border border-black/10 bg-container-gradient dark:border-[#f4a240]/50"
-              >
-                <div className="hidden grid-cols-[minmax(60px,0.6fr)_minmax(140px,0.9fr)_90px_90px_minmax(100px,0.8fr)] gap-3 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted dark:border-[#e7e8e9] sm:grid">
+              <div className="flex h-full flex-col overflow-hidden rounded-lg border border-black/10 bg-container-gradient dark:border-[rgb(var(--color-border))]/50">
+                <div className="hidden grid-cols-[minmax(60px,0.6fr)_minmax(140px,0.9fr)_90px_90px_minmax(100px,0.8fr)] gap-3 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted dark:border-[var(--border-table-light)] sm:grid">
                   <span className="text-left">Team Name</span>
                   <span className="text-center">Coach</span>
                   <span className="text-center">Age Group</span>
@@ -181,16 +197,19 @@ const TeamListCard = ({
                     return (
                       <div
                         key={team.id}
-                        className="team-row list-row grid grid-cols-1 items-center gap-2 border-b border-black/10 px-3 py-2 text-sm last:border-b-0 sm:grid-cols-[minmax(60px,0.6fr)_minmax(140px,0.9fr)_90px_90px_minmax(100px,0.8fr)] sm:px-4 dark:border-[#e7e8e9]"
+                        className="team-row list-row grid grid-cols-1 items-center gap-2 border-b border-black/10 px-3 py-2 text-sm last:border-b-0 sm:grid-cols-[minmax(60px,0.6fr)_minmax(140px,0.9fr)_90px_90px_minmax(100px,0.8fr)] sm:px-4 dark:border-[var(--border-table-light)]"
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-action-primary/10 text-action-primary">
                             <FontAwesomeIcon icon={faUsers} className="text-xs" />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-container-foreground">{team.name}</p>
+                            <p className="font-semibold text-container-foreground">
+                              {team.name}
+                            </p>
                             <p className="text-xs text-muted sm:hidden">
-                              Coach: {coachName} • {team.age_category || "—"} • {teamAthleteCount} players
+                              Coach: {coachName} • {team.age_category || "—"} •{" "}
+                              {teamAthleteCount} players
                             </p>
                           </div>
                           <TeamActionButtons
@@ -222,6 +241,22 @@ const TeamListCard = ({
                       </div>
                     );
                   })}
+                </div>
+                <div className="border-t border-black/10 p-2 dark:border-[rgb(var(--color-border))]/50">
+                  <button
+                    onClick={() => athletesQuery.fetchNextPage()}
+                    disabled={
+                      !athletesQuery.hasNextPage ||
+                      athletesQuery.isFetchingNextPage
+                    }
+                    className="w-full rounded-md bg-action-primary/10 px-3 py-2 text-sm font-semibold text-action-primary transition hover:bg-action-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {athletesQuery.isFetchingNextPage
+                      ? "Loading more..."
+                      : athletesQuery.hasNextPage
+                      ? "Load More"
+                      : "Nothing more to load"}
+                  </button>
                 </div>
               </div>
             )}

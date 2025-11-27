@@ -11,6 +11,10 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
+
+# Ensure the project root (backend/) is on sys.path so "app" imports work
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from sqlmodel import Session, select
 

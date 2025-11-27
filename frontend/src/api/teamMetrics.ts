@@ -45,6 +45,20 @@ export const listTeamCombineMetrics = async (
   return data;
 };
 
+export const listAthleteCombineMetrics = async (
+  athleteId: number,
+  options: { limit?: number } = {},
+) => {
+  const params: Record<string, number> = {};
+  if (options.limit) {
+    params.limit = options.limit;
+  }
+  const { data } = await api.get<TeamCombineMetric[]>(`/athletes/${athleteId}/combine-metrics`, {
+    params,
+  });
+  return data;
+};
+
 export const createTeamCombineMetric = async (
   teamId: number,
   payload: TeamCombineMetricPayload,

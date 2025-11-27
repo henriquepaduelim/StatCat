@@ -24,6 +24,7 @@ from app.models.assessment_session import AssessmentSession
 from app.models.session_result import SessionResult
 from app.models.match_stat import MatchStat
 from app.models.event import Event, EventParticipant, Notification, PushSubscription
+from app.models.event_team_link import EventTeamLink
 from app.core.config import settings
 from sqlmodel import SQLModel
 
@@ -88,7 +89,9 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata,
+            render_as_batch=True if connection.dialect.name == "sqlite" else False,
         )
 
         with context.begin_transaction():

@@ -38,7 +38,14 @@ const calculateAge = (birthDate?: string | null): number | null => {
 const DEFAULT_ROW_HEIGHT = 56;
 
 const AdminAthletesView = () => {
-  const { data, isLoading, isError } = useAthletes();
+  const {
+    data,
+    isLoading,
+    isError,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useAthletes();
   const teamsQuery = useTeams();
   const t = useTranslation();
   const queryClient = useQueryClient();
@@ -161,8 +168,10 @@ const AdminAthletesView = () => {
     return map;
   }, [teamsQuery.data]);
 
+  const allFetchedAthletes = useMemo(() => data?.pages.flatMap(page => page.items) ?? [], [data]);
+
   const tableRows = useMemo(() => {
-    if (!data) {
+    if (!allFetchedAthletes.length) {
       return [];
     }
 
@@ -186,9 +195,7 @@ const AdminAthletesView = () => {
       return computed;
     };
 
-    const filtered = data.filter((athlete) => {
-      // Only show athletes that are approved or have no user status (created by admin)
-      // Exclude PENDING, REJECTED, and INCOMPLETE athletes from main list
+    const filtered = allFetchedAthletes.filter((athlete) => {
       if (athlete.user_athlete_status) {
         const status = athlete.user_athlete_status.toUpperCase();
         if (status === "PENDING" || status === "REJECTED" || status === "INCOMPLETE") {
@@ -324,7 +331,7 @@ const AdminAthletesView = () => {
 
     return sorted;
   }, [
-    data,
+    allFetchedAthletes,
     teamsById,
     nameFilter,
     emailFilter,
@@ -450,7 +457,7 @@ const AdminAthletesView = () => {
       >
         <div ref={tableWrapperRef} className="flex min-h-0 flex-1 flex-col p-4">
           <div className="relative flex min-h-0 flex-1 flex-col overflow-x-auto overflow-y-visible">
-            <table className="athlete-table min-w-full border-y border-black/10 dark:border-[#e7e8e9]/80 divide-y divide-black/10 dark:divide-transparent">
+          <table className="athlete-table min-w-full border-y border-black/10 dark:border-[var(--border-table-light)]/80 divide-y divide-black/10 dark:divide-transparent">
               <thead ref={tableHeadRef} className="bg-container/80">
                 <tr>
                   <th className="relative px-4 py-1 text-left text-xs font-semibold uppercase tracking-wider text-muted">
@@ -1100,19 +1107,33 @@ const AdminAthletesView = () => {
             )}
             {isError && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-sm text-red-500">
-                  {t.athletes.error}
+                <td colSpan={7} className="px-4 py-6">
+                  <div className="mx-auto max-w-xl rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    {t.athletes.error}
+                    <div className="mt-2 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAlert(null);
+                          queryClient.invalidateQueries({ queryKey: ["athletes"] });
+                        }}
+                        className="rounded-md border border-amber-400 px-3 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  </div>
                 </td>
               </tr>
             )}
-            {!isLoading && !isError && data?.length === 0 && (
+            {!isLoading && !isError && allFetchedAthletes.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-6 text-center text-sm text-muted">
                   {t.athletes.empty}
                 </td>
               </tr>
             )}
-            {!isLoading && !isError && (data?.length ?? 0) > 0 && tableRows.length === 0 && (
+            {!isLoading && !isError && allFetchedAthletes.length > 0 && tableRows.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-6 text-center text-sm text-muted">
                   {t.athletes.filters.noResults}
@@ -1223,6 +1244,25 @@ const AdminAthletesView = () => {
               </tr>
             ))}
               </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={7}>
+                    <div className="p-4 text-center">
+                      <button
+                        onClick={() => fetchNextPage()}
+                        disabled={!hasNextPage || isFetchingNextPage}
+                        className="w-full max-w-xs rounded-md bg-action-primary/10 px-3 py-2 text-sm font-semibold text-action-primary transition hover:bg-action-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isFetchingNextPage
+                          ? 'Loading more...'
+                          : hasNextPage
+                          ? 'Load More Athletes'
+                          : 'Nothing more to load'}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>

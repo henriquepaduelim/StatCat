@@ -1,16 +1,5 @@
 import api from "./client";
-
-export interface Team {
-  id: number;
-  name: string;
-  age_category: string;
-  description?: string | null;
-  coach_name?: string | null;
-  created_by_id?: number | null;
-  created_at: string;
-  updated_at: string;
-  athlete_count: number;
-}
+import type { Team } from "../types/team";
 
 export const listTeams = async (ageCategory?: string) => {
   const params = ageCategory ? { age_category: ageCategory } : undefined;

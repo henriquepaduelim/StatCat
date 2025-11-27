@@ -12,8 +12,8 @@ import {
   listAllCoaches,
   listTeamCoaches,
   updateTeam,
-  type Team,
 } from "../api/teams";
+import type { Team } from "../types/team";
 import { updateAthlete } from "../api/athletes";
 import { useEvents } from "../hooks/useEvents";
 import { useAthletes } from "../hooks/useAthletes";
@@ -32,6 +32,7 @@ import { useTeamBuilderData } from "../hooks/useTeamBuilderData";
 import TeamFormModal from "../components/dashboard/TeamFormModal";
 import { createTeamLabels, teamAgeOptions } from "../constants/dashboard";
 import { getMediaUrl } from "../utils/media";
+import PageTitle from "../components/PageTitle";
 
 const roleCanRecordMetrics = (role: string | null) =>
   role === "admin" || role === "staff" || role === "coach";
@@ -107,17 +108,19 @@ const TeamDashboard = () => {
   );
 
   const athletesQuery = useAthletes();
-  const athletes = useMemo(() => athletesQuery.data ?? [], [athletesQuery.data]);
+  const flatAthletes = useMemo(() => athletesQuery.data?.pages.flatMap(page => page.items) ?? [], [athletesQuery.data]);
+
   const athleteNameById = useMemo(() => {
-    return athletes.reduce<Record<number, string>>((acc, athlete) => {
+    return flatAthletes.reduce<Record<number, string>>((acc, athlete) => {
       acc[athlete.id] = `${athlete.first_name} ${athlete.last_name}`.trim();
       return acc;
     }, {});
-  }, [athletes]);
+  }, [flatAthletes]);
+
   const teamAthletes = useMemo(() => {
     if (!selectedTeamId) return [];
-    return athletes.filter((athlete) => athlete.team_id === selectedTeamId);
-  }, [athletes, selectedTeamId]);
+    return flatAthletes.filter((athlete) => athlete.team_id === selectedTeamId);
+  }, [flatAthletes, selectedTeamId]);
 
   const teamDashboardTranslations = t.teamDashboard;
   const leaderboardLabels =
@@ -135,11 +138,11 @@ const TeamDashboard = () => {
   const upcomingEvents = useMemo(() => {
     const events = eventsQuery.data ?? [];
     return events
-      .filter((event) => new Date(`${event.date}T${event.time ?? "00:00"}`) >= new Date())
+      .filter((event) => new Date(`${event.event_date}T${event.start_time ?? "00:00"}`) >= new Date())
       .sort(
         (a, b) =>
-          new Date(`${a.date}T${a.time ?? "00:00"}`).getTime() -
-          new Date(`${b.date}T${b.time ?? "00:00"}`).getTime(),
+          new Date(`${a.event_date}T${a.start_time ?? "00:00"}`).getTime() -
+          new Date(`${b.event_date}T${b.start_time ?? "00:00"}`).getTime(),
       )
       .slice(0, 4);
   }, [eventsQuery.data]);
@@ -157,11 +160,17 @@ const TeamDashboard = () => {
     queryFn: () =>
       selectedTeamId ? getTeamPosts(selectedTeamId, { size: 6 }) : Promise.resolve<TeamPost[]>([]),
   });
+  const loadErrorMessage = useMemo(() => {
+    if (teamsQuery.isError) return "Unable to load teams. Please try again.";
+    if (eventsQuery.isError) return "Unable to load events. Please try again.";
+    if (postsQuery.isError) return "Unable to load posts. Please try again.";
+    return null;
+  }, [eventsQuery.isError, postsQuery.isError, teamsQuery.isError]);
 
   const canRecordMetrics = roleCanRecordMetrics(role);
-  const athleteById = useMemo(() => new Map(athletes.map((athlete) => [athlete.id, athlete])), [athletes]);
+  const athleteById = useMemo(() => new Map(flatAthletes.map((athlete) => [athlete.id, athlete])), [flatAthletes]);
   const { candidates: teamBuilderCandidates, remainingAthleteCount } = useTeamBuilderData({
-    athletes,
+    athletes: flatAthletes,
     teamForm,
     athleteFilter,
   });
@@ -221,10 +230,6 @@ const TeamDashboard = () => {
       setTeamFormError("Team name is required.");
       return;
     }
-    if (!teamForm.coachIds.length) {
-      setTeamFormError("Select at least one coach.");
-      return;
-    }
     setTeamFormSubmitting(true);
     setTeamFormError(null);
     try {
@@ -280,13 +285,8 @@ const TeamDashboard = () => {
   return (
     <>
     <div className="space-y-6">
-      <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold text-container-foreground">
-            {teamDashboardTexts.title}
-          </h1>
-          <p className="text-base text-muted">{teamDashboardTexts.description}</p>
-        </div>
+      <header className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <PageTitle title={teamDashboardTexts.title} description={teamDashboardTexts.description} className="pb-0" />
         <div className="w-full max-w-xs">
           <label className="text-xs font-semibold uppercase tracking-wide text-muted">
             {teamDashboardTexts.selectLabel}
@@ -313,6 +313,22 @@ const TeamDashboard = () => {
 
       {selectedTeam ? (
         <div className="space-y-6">
+          {loadErrorMessage ? (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {loadErrorMessage}
+              <button
+                type="button"
+                onClick={() => {
+                  queryClient.invalidateQueries({ queryKey: ["teams"] });
+                  queryClient.invalidateQueries({ queryKey: ["events"] });
+                  queryClient.invalidateQueries({ queryKey: ["team-feed-preview", selectedTeamId] });
+                }}
+                className="ml-3 rounded-md border border-amber-400 px-3 py-1 text-xs font-semibold hover:bg-amber-100"
+              >
+                {"Retry"}
+              </button>
+            </div>
+          ) : null}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <LeaderboardCard
               presetType="scorers"

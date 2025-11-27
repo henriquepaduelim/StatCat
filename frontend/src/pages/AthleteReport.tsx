@@ -9,6 +9,7 @@ import { usePermissions } from "../hooks/usePermissions";
 import { activeTheme } from "../theme/themes";
 import { useTranslation } from "../i18n/useTranslation";
 import type { AthleteReportSession } from "../types/athlete";
+import PageTitle from "../components/PageTitle";
 
 const AthleteReport = () => {
   const params = useParams<{ id: string }>();
@@ -77,13 +78,12 @@ const AthleteReport = () => {
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1">
-          <p className="text-xs uppercase tracking-wide text-muted">{theme.logo.label}</p>
-          <h1 className="text-3xl font-semibold text-container-foreground">
-            {athlete.first_name} {athlete.last_name}
-          </h1>
-          <p className="text-sm text-muted">{t.dashboard.athleteReport.subtitle}</p>
-        </div>
+        <PageTitle
+          eyebrow={theme.logo.label}
+          title={`${athlete.first_name} ${athlete.last_name}`}
+          description={t.dashboard.athleteReport.subtitle}
+          className="pb-0"
+        />
         <Link
           to="/player-profile"
           className="inline-flex items-center rounded-md border border-action-primary/40 bg-action-primary px-3 py-2 text-xs font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"

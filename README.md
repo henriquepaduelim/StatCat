@@ -2,7 +2,7 @@
 
 # StatCat Football Platform
 
-StatCat centralizes combine data, athlete onboarding, and team collaboration for grassroots and academy programs. The stack pairs a FastAPI/SQLModel backend with a Vite React frontend so clubs, staff, coaches, and athletes can share metrics, content, and schedules through one channel.
+StatCat centralizes combine data, athlete onboarding, and team collaboration for grassroots and academy programs. The stack pairs a FastAPI/SQLModel backend with a Vite React frontend so clubs can share testtings, content, and schedules with RSVP, manage teams, coaches, schedulling and athletes through one channel.
 
 ## Deployment (Render backend + Vercel frontend + Neon DB)
 
@@ -123,6 +123,9 @@ Set `VITE_API_BASE_URL` and `VITE_MEDIA_BASE_URL` for non-local deployments. Whe
 ### Backend `.env`
 ```
 SECRET_KEY=change-me
+ENCRYPTION_KEY_CURRENT=your-32-byte-hex-or-random
+# Optional during key rotation:
+# ENCRYPTION_KEY_PREVIOUS=old-key
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=10080
 BACKEND_CORS_ORIGINS=["http://localhost:5173"]
@@ -164,6 +167,12 @@ VITE_ENABLE_PWA_BUILD=false
 - Events: `/api/v1/events/*`
 
 Refer to the OpenAPI schema for parameter details and response models.
+
+## Style and Text
+
+- **Theme tokens**: `frontend/src/theme/tokens.ts` (colors, typography, radii, shadows) and `frontend/src/theme/chartPalette.ts` (chart palettes). The `ThemeProvider` converts these tokens into CSS variables.
+- **Vars/utilities**: `frontend/src/styles/index.css` maps the CSS vars (colors, fonts, radii, shadows) to classes used in components.
+- **Texts/labels**: `frontend/src/i18n/translations.ts` centralizes all strings; avoid hardcoded text in components.
 
 ## Branding Packages
 

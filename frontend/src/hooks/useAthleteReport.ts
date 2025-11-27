@@ -16,6 +16,7 @@ export const useAthleteReport = (athleteId?: number) => {
     queryKey: ["athlete-report", athleteId],
     queryFn: () => fetchAthleteReport(athleteId as number),
     enabled: Boolean(token) && Boolean(athleteId),
-    staleTime: 1000 * 60,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 };

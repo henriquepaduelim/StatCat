@@ -7,7 +7,8 @@ import { useTeams } from "../hooks/useTeams";
 import { getTeamPosts, createTeamPost } from "../api/teamPosts";
 import type { TeamPost } from "../types/teamPost";
 import TeamPostCard from "../components/team-feed/TeamPostCard";
-import type { Team } from "../api/teams";
+import type { Team } from "../types/team";
+import PageTitle from "../components/PageTitle";
 
 const TeamFeed = () => {
   const t = useTranslation();
@@ -27,6 +28,10 @@ const TeamFeed = () => {
     }
     return teams;
   }, [teamsQuery.data, role, athleteTeamId]);
+  const loadErrorMessage =
+    teamsQuery.isError && availableTeams.length === 0
+      ? t.teamFeed?.error ?? "Unable to load teams right now."
+      : null;
 
   useEffect(() => {
     if (!selectedTeamId && availableTeams.length > 0) {
@@ -89,14 +94,11 @@ const TeamFeed = () => {
   return (
     <div className="space-y-4">
       <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-container-foreground">
-            {t.teamFeed?.title ?? "Team Feed"}
-          </h1>
-          <p className="text-sm text-muted">
-            {t.teamFeed?.description ?? "Share updates and media with teammates."}
-          </p>
-        </div>
+        <PageTitle
+          title={t.teamFeed?.title ?? "Team Feed"}
+          description={t.teamFeed?.description ?? "Share updates and media with teammates."}
+          className="pb-0"
+        />
         <div className="w-full max-w-xs">
           <label className="text-xs font-semibold uppercase tracking-wide text-muted">
             {t.teamFeed?.teamSelect ?? "Team"}
@@ -119,6 +121,19 @@ const TeamFeed = () => {
           </label>
         </div>
       </header>
+
+      {loadErrorMessage ? (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          {loadErrorMessage}
+          <button
+            type="button"
+            onClick={() => queryClient.invalidateQueries({ queryKey: ["teams"] })}
+            className="ml-3 rounded-md border border-amber-400 px-3 py-1 text-xs font-semibold hover:bg-amber-100"
+          >
+            Retry
+          </button>
+        </div>
+      ) : null}
 
       {noTeamsMessage ? (
         <div className="rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-900">
@@ -171,7 +186,16 @@ const TeamFeed = () => {
           <p className="text-sm text-muted">{t.teamFeed?.loading ?? "Loading posts..."}</p>
         )}
         {postsQuery.isError && (
-          <p className="text-sm text-red-500">{t.teamFeed?.error ?? "Unable to load posts."}</p>
+          <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {t.teamFeed?.error ?? "Unable to load posts."}
+            <button
+              type="button"
+              onClick={() => queryClient.invalidateQueries({ queryKey: ["teamPosts", selectedTeamId] })}
+              className="ml-3 rounded-md border border-amber-400 px-3 py-1 text-xs font-semibold hover:bg-amber-100"
+            >
+              Retry
+            </button>
+          </div>
         )}
         {!postsQuery.isLoading && postsQuery.data?.length === 0 && (
           <p className="text-sm text-muted">{t.teamFeed?.empty ?? "No posts yet."}</p>

@@ -1,6 +1,6 @@
 """Notification service for coordinating email and push notifications."""
 import logging
-from typing import List, Optional
+from typing import List
 from datetime import datetime
 from sqlmodel import Session, select
 
@@ -39,8 +39,8 @@ class NotificationService:
                     to_email=user.email,
                     to_name=user.full_name,
                     event_name=event.name,
-                    event_date=event.date,
-                    event_time=event.time,
+                    event_date=event.event_date,
+                    event_time=event.start_time,
                     event_location=event.location,
                     event_notes=event.notes,
                     organizer_name=organizer.full_name,
@@ -53,7 +53,7 @@ class NotificationService:
                     type="event_invite",
                     channel="email" if not send_push else "both",
                     title=f"You're invited: {event.name}",
-                    body=f"Event on {event.date}" + (f" at {event.time}" if event.time else ""),
+                    body=f"Event on {event.event_date}" + (f" at {event.start_time}" if event.start_time else ""),
                     sent=success,
                     sent_at=datetime.utcnow() if success else None,
                 )
@@ -94,8 +94,8 @@ class NotificationService:
                 to_email=user.email,
                 to_name=user.full_name,
                 event_name=event.name,
-                event_date=event.date,
-                event_time=event.time,
+                event_date=event.event_date,
+                event_time=event.start_time,
                 event_location=event.location,
                 changes=changes,
             )
@@ -118,6 +118,49 @@ class NotificationService:
         db.commit()
         
         logger.info(f"Sent event update for event {event.id} to {len(participants)} confirmed participants")
+
+    async def send_event_reminders(
+        self,
+        db: Session,
+        event: Event,
+        hours_until: int = 24,
+    ) -> int:
+        """Send reminder emails to confirmed participants."""
+        stmt = select(EventParticipant).where(
+            EventParticipant.event_id == event.id,
+            EventParticipant.status == "confirmed"
+        )
+        participants = db.exec(stmt).all()
+        sent = 0
+        for participant in participants:
+            user = db.get(User, participant.user_id)
+            if not user or not user.email:
+                continue
+            success = await email_service.send_event_reminder(
+                to_email=user.email,
+                to_name=user.full_name,
+                event_name=event.name,
+                event_date=event.event_date,
+                event_time=event.start_time,
+                event_location=event.location,
+                hours_until=hours_until,
+            )
+            if success:
+                sent += 1
+                notification = Notification(
+                    user_id=user.id,
+                    event_id=event.id,
+                    type="event_reminder",
+                    channel="email",
+                    title=f"Reminder: {event.name}",
+                    body=f"Starts in {hours_until}h",
+                    sent=True,
+                    sent_at=datetime.utcnow(),
+                )
+                db.add(notification)
+        db.commit()
+        logger.info("Sent %s reminders for event %s", sent, event.id)
+        return sent
     
     async def notify_confirmation_received(
         self,

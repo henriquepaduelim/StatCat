@@ -235,7 +235,7 @@ const EventAvailabilityPanel = ({
             <div>
               <p>{event.name}</p>
               <p className="text-xs text-muted">
-                {readableDate(event.date)} • {event.time || summaryLabels.calendar.timeTbd}
+                {readableDate(event.event_date)} • {event.start_time || summaryLabels.calendar.timeTbd}
               </p>
               <p className="text-xs text-muted mt-1">{currentTeam.teamName}</p>
             </div>

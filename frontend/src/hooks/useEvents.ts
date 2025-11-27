@@ -40,6 +40,8 @@ export const useEvents = (
     queryKey: eventKeys.list(filters),
     queryFn: () => eventsApi.listEvents(filters),
     enabled: options?.enabled ?? true,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 };
 
@@ -53,6 +55,8 @@ export const useMyEvents = (
     queryKey: eventKeys.myEvents(),
     queryFn: eventsApi.listMyEvents,
     enabled: options?.enabled ?? true,
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
   });
 };
 
@@ -64,6 +68,8 @@ export const useEvent = (eventId: number): UseQueryResult<Event, Error> => {
     queryKey: eventKeys.detail(eventId),
     queryFn: () => eventsApi.getEvent(eventId),
     enabled: !!eventId,
+    staleTime: 60 * 1000,
+    gcTime: 2 * 60 * 1000,
   });
 };
 

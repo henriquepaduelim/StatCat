@@ -2,7 +2,7 @@ import { FormEvent, Dispatch, SetStateAction, useMemo } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
 
-import type { Team } from "../../api/teams";
+import type { Team } from "../../types/team";
 import type { Athlete } from "../../types/athlete";
 import type { GameReportFormState } from "../../types/dashboard";
 

@@ -1,6 +1,13 @@
 from datetime import datetime
+from enum import Enum
 
 from sqlmodel import Field, SQLModel
+
+
+class CombineMetricStatus(str, Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
 
 
 class TeamCombineMetric(SQLModel, table=True):
@@ -11,7 +18,11 @@ class TeamCombineMetric(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     team_id: int = Field(foreign_key="team.id", index=True)
     athlete_id: int | None = Field(default=None, foreign_key="athlete.id", index=True)
+    
+    status: CombineMetricStatus = Field(default=CombineMetricStatus.PENDING, index=True)
     recorded_by_id: int = Field(foreign_key="user.id", index=True)
+    approved_by_id: int | None = Field(default=None, foreign_key="user.id")
+    
     recorded_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
     sitting_height_cm: float | None = Field(default=None)

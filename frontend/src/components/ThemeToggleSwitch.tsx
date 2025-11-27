@@ -2,13 +2,18 @@ import styled from "styled-components";
 
 import { useTheme } from "../theme/ThemeProvider";
 
-const ThemeToggleSwitch = () => {
+type ThemeToggleSwitchProps = {
+  greeting?: string;
+};
+
+const ThemeToggleSwitch = ({ greeting }: ThemeToggleSwitchProps) => {
   const { themeId, toggleTheme } = useTheme();
   const isLightTheme = themeId === "light";
 
   return (
     <StyledWrapper>
-      <div className="toggle-switch">
+      {greeting && <span className="greeting">{greeting}</span>}
+      <div className="toggle-switch" aria-label="Toggle between light and dark themes">
         <label className="switch-label">
           <input
             type="checkbox"
@@ -29,17 +34,26 @@ const StyledWrapper = styled.div`
   top: 1rem;
   right: 1rem;
   z-index: 50;
-  display: flex;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   justify-content: flex-end;
+
+  .greeting {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--toggle-muted);
+    text-align: right;
+  }
 
   .toggle-switch {
     position: relative;
     width: 20px;
     height: 10px;
-    --light: #d8dbe0;
-    --dark: #28292c;
-    --link: rgb(27, 129, 112);
-    --link-hover: rgb(24, 94, 82);
+    --light: var(--toggle-light);
+    --dark: var(--toggle-dark);
+    --link: var(--toggle-link);
+    --link-hover: var(--toggle-link-hover);
   }
 
   .switch-label {

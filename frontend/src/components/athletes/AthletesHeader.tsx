@@ -1,5 +1,6 @@
 import { useTranslation } from "../../i18n/useTranslation";
 import AthleteApprovalList from "../AthleteApprovalList";
+import PageTitle from "../PageTitle";
 
 interface AthletesHeaderProps {
   canCreateAthletes: boolean;
@@ -11,10 +12,7 @@ const AthletesHeader = ({ canCreateAthletes, onAddAthlete }: AthletesHeaderProps
 
   return (
     <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-      <div>
-        <h1 className="text-2xl font-semibold text-container-foreground">{t.athletes.title}</h1>
-        <p className="text-sm text-muted">{t.athletes.description}</p>
-      </div>
+      <PageTitle title={t.athletes.title} description={t.athletes.description} className="pb-0" />
       <div className="flex gap-3">
         {canCreateAthletes && <AthleteApprovalList />}
         {canCreateAthletes ? (

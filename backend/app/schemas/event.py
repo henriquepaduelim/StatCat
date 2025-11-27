@@ -1,7 +1,7 @@
 """Schemas for Event API endpoints."""
-from datetime import datetime
+from datetime import date, datetime, time
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class EventParticipantResponse(BaseModel):
@@ -17,8 +17,8 @@ class EventParticipantResponse(BaseModel):
 class EventCreate(BaseModel):
     """Schema for creating an event."""
     name: str = Field(..., max_length=200)
-    date: str = Field(..., pattern=r'^\d{4}-\d{2}-\d{2}$')  # YYYY-MM-DD
-    time: Optional[str] = Field(None, pattern=r'^\d{2}:\d{2}$')  # HH:MM
+    event_date: date
+    start_time: Optional[str] = None
     location: Optional[str] = Field(None, max_length=500)
     notes: Optional[str] = None
     team_id: Optional[int] = None
@@ -29,12 +29,38 @@ class EventCreate(BaseModel):
     send_email: bool = Field(default=True)
     send_push: bool = Field(default=True)
 
+    @field_validator("event_date", mode="before")
+    @classmethod
+    def _normalize_date(cls, value):
+        if value is None or value == "":
+            return value
+        if isinstance(value, date):
+            return value
+        if isinstance(value, str):
+            try:
+                return datetime.strptime(value, "%Y-%m-%d").date()
+            except ValueError:
+                pass
+        raise ValueError("Invalid date format. Use YYYY-MM-DD.")
+
+    @field_validator("start_time", mode="before")
+    @classmethod
+    def _normalize_time(cls, value):
+        if value is None or value == "":
+            return None
+        if isinstance(value, str):
+            v = value.strip()
+            if v == "":
+                return None
+            return v
+        raise ValueError("Invalid time format. Use HH:MM or HH:MM:SS.")
+
 
 class EventUpdate(BaseModel):
     """Schema for updating an event."""
     name: Optional[str] = Field(None, max_length=200)
-    date: Optional[str] = Field(None, pattern=r'^\d{4}-\d{2}-\d{2}$')
-    time: Optional[str] = Field(None, pattern=r'^\d{2}:\d{2}$')
+    event_date: Optional[date] = None
+    start_time: Optional[str] = None
     location: Optional[str] = Field(None, max_length=500)
     notes: Optional[str] = None
     status: Optional[str] = None  # scheduled, cancelled, completed
@@ -43,13 +69,39 @@ class EventUpdate(BaseModel):
     coach_id: Optional[int] = None
     send_notification: bool = Field(default=True)
 
+    @field_validator("event_date", mode="before")
+    @classmethod
+    def _normalize_date(cls, value):
+        if value is None or value == "":
+            return None
+        if isinstance(value, date):
+            return value
+        if isinstance(value, str):
+            try:
+                return datetime.strptime(value, "%Y-%m-%d").date()
+            except ValueError:
+                pass
+        raise ValueError("Invalid date format. Use YYYY-MM-DD.")
+
+    @field_validator("start_time", mode="before")
+    @classmethod
+    def _normalize_time(cls, value):
+        if value is None or value == "":
+            return None
+        if isinstance(value, str):
+            v = value.strip()
+            if v == "":
+                return None
+            return v
+        raise ValueError("Invalid time format. Use HH:MM or HH:MM:SS.")
+
 
 class EventResponse(BaseModel):
     """Response model for event."""
     id: int
     name: str
-    date: str
-    time: Optional[str] = None
+    event_date: date
+    start_time: Optional[time] = None
     location: Optional[str] = None
     notes: Optional[str] = None
     status: str

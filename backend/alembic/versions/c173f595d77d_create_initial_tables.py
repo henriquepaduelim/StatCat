@@ -1,8 +1,8 @@
-"""Consolidated initial migration
+"""Create initial tables
 
-Revision ID: 164c04db699d
+Revision ID: c173f595d77d
 Revises: 
-Create Date: 2025-11-16 16:11:39.688256
+Create Date: 2025-11-26 16:16:03.176867
 
 """
 from typing import Sequence, Union
@@ -10,10 +10,11 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 import sqlmodel
+import app.db.types
 
 
 # revision identifiers, used by Alembic.
-revision: str = '164c04db699d'
+revision: str = 'c173f595d77d'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -27,7 +28,7 @@ def upgrade() -> None:
     sa.Column('team_id', sa.Integer(), nullable=True),
     sa.Column('first_name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('last_name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('email', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('email', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('phone', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('birth_date', sa.Date(), nullable=False),
     sa.Column('dominant_foot', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
@@ -44,19 +45,22 @@ def upgrade() -> None:
     sa.Column('player_registration_status', sa.Enum('new', 'transfer', 'return_player', 'guest', name='playerregistrationstatus'), nullable=True),
     sa.Column('preferred_position', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('desired_shirt_number', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.ForeignKeyConstraint(['team_id'], ['team.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_athlete_dominant_foot'), 'athlete', ['dominant_foot'], unique=False)
-    op.create_index(op.f('ix_athlete_email'), 'athlete', ['email'], unique=False)
-    op.create_index(op.f('ix_athlete_gender'), 'athlete', ['gender'], unique=False)
-    op.create_index(op.f('ix_athlete_phone'), 'athlete', ['phone'], unique=False)
-    op.create_index(op.f('ix_athlete_player_registration_status'), 'athlete', ['player_registration_status'], unique=False)
-    op.create_index(op.f('ix_athlete_primary_position'), 'athlete', ['primary_position'], unique=False)
-    op.create_index(op.f('ix_athlete_registration_category'), 'athlete', ['registration_category'], unique=False)
-    op.create_index(op.f('ix_athlete_registration_year'), 'athlete', ['registration_year'], unique=False)
-    op.create_index(op.f('ix_athlete_secondary_position'), 'athlete', ['secondary_position'], unique=False)
-    op.create_index(op.f('ix_athlete_status'), 'athlete', ['status'], unique=False)
-    op.create_index(op.f('ix_athlete_team_id'), 'athlete', ['team_id'], unique=False)
+    with op.batch_alter_table('athlete', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_athlete_dominant_foot'), ['dominant_foot'], unique=False)
+        batch_op.create_index(batch_op.f('ix_athlete_email'), ['email'], unique=False)
+        batch_op.create_index(batch_op.f('ix_athlete_gender'), ['gender'], unique=False)
+        batch_op.create_index(batch_op.f('ix_athlete_phone'), ['phone'], unique=False)
+        batch_op.create_index(batch_op.f('ix_athlete_player_registration_status'), ['player_registration_status'], unique=False)
+        batch_op.create_index(batch_op.f('ix_athlete_primary_position'), ['primary_position'], unique=False)
+        batch_op.create_index(batch_op.f('ix_athlete_registration_category'), ['registration_category'], unique=False)
+        batch_op.create_index(batch_op.f('ix_athlete_registration_year'), ['registration_year'], unique=False)
+        batch_op.create_index(batch_op.f('ix_athlete_secondary_position'), ['secondary_position'], unique=False)
+        batch_op.create_index(batch_op.f('ix_athlete_status'), ['status'], unique=False)
+        batch_op.create_index(batch_op.f('ix_athlete_team_id'), ['team_id'], unique=False)
+
     op.create_table('team',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -66,11 +70,14 @@ def upgrade() -> None:
     sa.Column('created_by_id', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['created_by_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_team_age_category'), 'team', ['age_category'], unique=False)
-    op.create_index(op.f('ix_team_created_by_id'), 'team', ['created_by_id'], unique=False)
-    op.create_index(op.f('ix_team_name'), 'team', ['name'], unique=False)
+    with op.batch_alter_table('team', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_team_age_category'), ['age_category'], unique=False)
+        batch_op.create_index(batch_op.f('ix_team_created_by_id'), ['created_by_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_team_name'), ['name'], unique=False)
+
     op.create_table('testdefinition',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -86,17 +93,24 @@ def upgrade() -> None:
     sa.Column('hashed_password', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('full_name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('phone', sqlmodel.sql.sqltypes.AutoString(length=30), nullable=True),
+    sa.Column('photo_url', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('role', sa.Enum('ADMIN', 'STAFF', 'COACH', 'ATHLETE', name='userrole'), nullable=True),
     sa.Column('athlete_id', sa.Integer(), nullable=True),
     sa.Column('athlete_status', sa.Enum('INCOMPLETE', 'PENDING', 'APPROVED', 'REJECTED', name='userathleteapprovalstatus'), nullable=True),
     sa.Column('rejection_reason', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('must_change_password', sa.Boolean(), nullable=False),
+    sa.Column('last_login_at', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['athlete_id'], ['athlete.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_user_athlete_id'), 'user', ['athlete_id'], unique=False)
-    op.create_index(op.f('ix_user_created_at'), 'user', ['created_at'], unique=False)
-    op.create_index(op.f('ix_user_email'), 'user', ['email'], unique=True)
+    with op.batch_alter_table('user', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_user_athlete_id'), ['athlete_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_user_created_at'), ['created_at'], unique=False)
+        batch_op.create_index(batch_op.f('ix_user_email'), ['email'], unique=True)
+        batch_op.create_index(batch_op.f('ix_user_last_login_at'), ['last_login_at'], unique=False)
+
     op.create_table('assessmentsession',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('athlete_id', sa.Integer(), nullable=True),
@@ -107,6 +121,9 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['athlete_id'], ['athlete.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    with op.batch_alter_table('assessmentsession', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_assessmentsession_athlete_id'), ['athlete_id'], unique=False)
+
     op.create_table('athlete_group',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
@@ -117,8 +134,10 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['created_by_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_athlete_group_created_by_id'), 'athlete_group', ['created_by_id'], unique=False)
-    op.create_index(op.f('ix_athlete_group_name'), 'athlete_group', ['name'], unique=False)
+    with op.batch_alter_table('athlete_group', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_athlete_group_created_by_id'), ['created_by_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_athlete_group_name'), ['name'], unique=False)
+
     op.create_table('athletedetail',
     sa.Column('athlete_id', sa.Integer(), nullable=False),
     sa.Column('email', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
@@ -158,7 +177,9 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['athlete_id'], ['athlete.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_athletedocument_athlete_id'), 'athletedocument', ['athlete_id'], unique=False)
+    with op.batch_alter_table('athletedocument', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_athletedocument_athlete_id'), ['athlete_id'], unique=False)
+
     op.create_table('athletepayment',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('athlete_id', sa.Integer(), nullable=False),
@@ -172,7 +193,9 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['athlete_id'], ['athlete.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_athletepayment_athlete_id'), 'athletepayment', ['athlete_id'], unique=False)
+    with op.batch_alter_table('athletepayment', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_athletepayment_athlete_id'), ['athlete_id'], unique=False)
+
     op.create_table('coachteamlink',
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('team_id', sa.Integer(), nullable=False),
@@ -182,9 +205,9 @@ def upgrade() -> None:
     )
     op.create_table('event',
     sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('event_date', app.db.types.SafeDate(), nullable=False),
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(length=200), nullable=False),
-    sa.Column('date', sqlmodel.sql.sqltypes.AutoString(length=10), nullable=False),
-    sa.Column('time', sqlmodel.sql.sqltypes.AutoString(length=5), nullable=True),
+    sa.Column('start_time', app.db.types.SafeTime(), nullable=True),
     sa.Column('location', sqlmodel.sql.sqltypes.AutoString(length=500), nullable=True),
     sa.Column('notes', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('status', sa.Enum('SCHEDULED', 'CANCELLED', 'COMPLETED', name='eventstatus'), nullable=True),
@@ -200,9 +223,12 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['team_id'], ['team.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_event_created_at'), 'event', ['created_at'], unique=False)
-    op.create_index(op.f('ix_event_created_by_id'), 'event', ['created_by_id'], unique=False)
-    op.create_index(op.f('ix_event_team_id'), 'event', ['team_id'], unique=False)
+    with op.batch_alter_table('event', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_event_coach_id'), ['coach_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_event_created_at'), ['created_at'], unique=False)
+        batch_op.create_index(batch_op.f('ix_event_created_by_id'), ['created_by_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_event_team_id'), ['team_id'], unique=False)
+
     op.create_table('push_subscription',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
@@ -214,7 +240,9 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_push_subscription_user_id'), 'push_subscription', ['user_id'], unique=True)
+    with op.batch_alter_table('push_subscription', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_push_subscription_user_id'), ['user_id'], unique=True)
+
     op.create_table('report_submission',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('report_type', sa.Enum('GAME', 'REPORT_CARD', name='reportsubmissiontype'), nullable=True),
@@ -242,10 +270,55 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['team_id'], ['team.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_report_submission_athlete_id'), 'report_submission', ['athlete_id'], unique=False)
-    op.create_index(op.f('ix_report_submission_created_at'), 'report_submission', ['created_at'], unique=False)
-    op.create_index(op.f('ix_report_submission_submitted_by_id'), 'report_submission', ['submitted_by_id'], unique=False)
-    op.create_index(op.f('ix_report_submission_team_id'), 'report_submission', ['team_id'], unique=False)
+    with op.batch_alter_table('report_submission', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_report_submission_approved_by_id'), ['approved_by_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_report_submission_athlete_id'), ['athlete_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_report_submission_created_at'), ['created_at'], unique=False)
+        batch_op.create_index(batch_op.f('ix_report_submission_submitted_by_id'), ['submitted_by_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_report_submission_team_id'), ['team_id'], unique=False)
+
+    op.create_table('team_combine_metric',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('team_id', sa.Integer(), nullable=False),
+    sa.Column('athlete_id', sa.Integer(), nullable=True),
+    sa.Column('recorded_by_id', sa.Integer(), nullable=False),
+    sa.Column('recorded_at', sa.DateTime(), nullable=False),
+    sa.Column('sitting_height_cm', sa.Float(), nullable=True),
+    sa.Column('standing_height_cm', sa.Float(), nullable=True),
+    sa.Column('weight_kg', sa.Float(), nullable=True),
+    sa.Column('split_10m_s', sa.Float(), nullable=True),
+    sa.Column('split_20m_s', sa.Float(), nullable=True),
+    sa.Column('split_35m_s', sa.Float(), nullable=True),
+    sa.Column('yoyo_distance_m', sa.Float(), nullable=True),
+    sa.Column('jump_cm', sa.Float(), nullable=True),
+    sa.Column('max_power_kmh', sa.Float(), nullable=True),
+    sa.ForeignKeyConstraint(['athlete_id'], ['athlete.id'], ),
+    sa.ForeignKeyConstraint(['recorded_by_id'], ['user.id'], ),
+    sa.ForeignKeyConstraint(['team_id'], ['team.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    with op.batch_alter_table('team_combine_metric', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_team_combine_metric_athlete_id'), ['athlete_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_team_combine_metric_recorded_at'), ['recorded_at'], unique=False)
+        batch_op.create_index(batch_op.f('ix_team_combine_metric_recorded_by_id'), ['recorded_by_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_team_combine_metric_team_id'), ['team_id'], unique=False)
+
+    op.create_table('team_post',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('team_id', sa.Integer(), nullable=False),
+    sa.Column('author_id', sa.Integer(), nullable=False),
+    sa.Column('content', sqlmodel.sql.sqltypes.AutoString(length=2000), nullable=False),
+    sa.Column('media_url', sqlmodel.sql.sqltypes.AutoString(length=500), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['author_id'], ['user.id'], ),
+    sa.ForeignKeyConstraint(['team_id'], ['team.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    with op.batch_alter_table('team_post', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_team_post_author_id'), ['author_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_team_post_created_at'), ['created_at'], unique=False)
+        batch_op.create_index(batch_op.f('ix_team_post_team_id'), ['team_id'], unique=False)
+
     op.create_table('event_participant',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('event_id', sa.Integer(), nullable=False),
@@ -259,9 +332,11 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_event_participant_athlete_id'), 'event_participant', ['athlete_id'], unique=False)
-    op.create_index(op.f('ix_event_participant_event_id'), 'event_participant', ['event_id'], unique=False)
-    op.create_index(op.f('ix_event_participant_user_id'), 'event_participant', ['user_id'], unique=False)
+    with op.batch_alter_table('event_participant', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_event_participant_athlete_id'), ['athlete_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_event_participant_event_id'), ['event_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_event_participant_user_id'), ['user_id'], unique=False)
+
     op.create_table('group_membership',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('group_id', sa.Integer(), nullable=False),
@@ -273,8 +348,10 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['group_id'], ['athlete_group.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_group_membership_athlete_id'), 'group_membership', ['athlete_id'], unique=False)
-    op.create_index(op.f('ix_group_membership_group_id'), 'group_membership', ['group_id'], unique=False)
+    with op.batch_alter_table('group_membership', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_group_membership_athlete_id'), ['athlete_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_group_membership_group_id'), ['group_id'], unique=False)
+
     op.create_table('match_stat',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('athlete_id', sa.Integer(), nullable=False),
@@ -295,10 +372,12 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['team_id'], ['team.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_match_stat_athlete_id'), 'match_stat', ['athlete_id'], unique=False)
-    op.create_index(op.f('ix_match_stat_match_date'), 'match_stat', ['match_date'], unique=False)
-    op.create_index(op.f('ix_match_stat_report_submission_id'), 'match_stat', ['report_submission_id'], unique=False)
-    op.create_index(op.f('ix_match_stat_team_id'), 'match_stat', ['team_id'], unique=False)
+    with op.batch_alter_table('match_stat', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_match_stat_athlete_id'), ['athlete_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_match_stat_match_date'), ['match_date'], unique=False)
+        batch_op.create_index(batch_op.f('ix_match_stat_report_submission_id'), ['report_submission_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_match_stat_team_id'), ['team_id'], unique=False)
+
     op.create_table('notification',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
@@ -315,9 +394,11 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_notification_created_at'), 'notification', ['created_at'], unique=False)
-    op.create_index(op.f('ix_notification_event_id'), 'notification', ['event_id'], unique=False)
-    op.create_index(op.f('ix_notification_user_id'), 'notification', ['user_id'], unique=False)
+    with op.batch_alter_table('notification', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_notification_created_at'), ['created_at'], unique=False)
+        batch_op.create_index(batch_op.f('ix_notification_event_id'), ['event_id'], unique=False)
+        batch_op.create_index(batch_op.f('ix_notification_user_id'), ['user_id'], unique=False)
+
     op.create_table('sessionresult',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('session_id', sa.Integer(), nullable=False),
@@ -332,76 +413,114 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['test_id'], ['testdefinition.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    # Add foreign keys that were deferred to avoid circular dependencies during table creation
-    op.create_foreign_key('fk_athlete_team', 'athlete', 'team', ['team_id'], ['id'])
-    op.create_foreign_key('fk_team_created_by', 'team', 'user', ['created_by_id'], ['id'])
-    op.create_foreign_key('fk_user_athlete', 'user', 'athlete', ['athlete_id'], ['id'])
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_constraint('fk_user_athlete', 'user', type_='foreignkey')
-    op.drop_constraint('fk_team_created_by', 'team', type_='foreignkey')
-    op.drop_constraint('fk_athlete_team', 'athlete', type_='foreignkey')
     op.drop_table('sessionresult')
-    op.drop_index(op.f('ix_notification_user_id'), table_name='notification')
-    op.drop_index(op.f('ix_notification_event_id'), table_name='notification')
-    op.drop_index(op.f('ix_notification_created_at'), table_name='notification')
+    with op.batch_alter_table('notification', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_notification_user_id'))
+        batch_op.drop_index(batch_op.f('ix_notification_event_id'))
+        batch_op.drop_index(batch_op.f('ix_notification_created_at'))
+
     op.drop_table('notification')
-    op.drop_index(op.f('ix_match_stat_team_id'), table_name='match_stat')
-    op.drop_index(op.f('ix_match_stat_report_submission_id'), table_name='match_stat')
-    op.drop_index(op.f('ix_match_stat_match_date'), table_name='match_stat')
-    op.drop_index(op.f('ix_match_stat_athlete_id'), table_name='match_stat')
+    with op.batch_alter_table('match_stat', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_match_stat_team_id'))
+        batch_op.drop_index(batch_op.f('ix_match_stat_report_submission_id'))
+        batch_op.drop_index(batch_op.f('ix_match_stat_match_date'))
+        batch_op.drop_index(batch_op.f('ix_match_stat_athlete_id'))
+
     op.drop_table('match_stat')
-    op.drop_index(op.f('ix_group_membership_group_id'), table_name='group_membership')
-    op.drop_index(op.f('ix_group_membership_athlete_id'), table_name='group_membership')
+    with op.batch_alter_table('group_membership', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_group_membership_group_id'))
+        batch_op.drop_index(batch_op.f('ix_group_membership_athlete_id'))
+
     op.drop_table('group_membership')
-    op.drop_index(op.f('ix_event_participant_user_id'), table_name='event_participant')
-    op.drop_index(op.f('ix_event_participant_event_id'), table_name='event_participant')
-    op.drop_index(op.f('ix_event_participant_athlete_id'), table_name='event_participant')
+    with op.batch_alter_table('event_participant', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_event_participant_user_id'))
+        batch_op.drop_index(batch_op.f('ix_event_participant_event_id'))
+        batch_op.drop_index(batch_op.f('ix_event_participant_athlete_id'))
+
     op.drop_table('event_participant')
-    op.drop_index(op.f('ix_report_submission_team_id'), table_name='report_submission')
-    op.drop_index(op.f('ix_report_submission_submitted_by_id'), table_name='report_submission')
-    op.drop_index(op.f('ix_report_submission_created_at'), table_name='report_submission')
-    op.drop_index(op.f('ix_report_submission_athlete_id'), table_name='report_submission')
+    with op.batch_alter_table('team_post', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_team_post_team_id'))
+        batch_op.drop_index(batch_op.f('ix_team_post_created_at'))
+        batch_op.drop_index(batch_op.f('ix_team_post_author_id'))
+
+    op.drop_table('team_post')
+    with op.batch_alter_table('team_combine_metric', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_team_combine_metric_team_id'))
+        batch_op.drop_index(batch_op.f('ix_team_combine_metric_recorded_by_id'))
+        batch_op.drop_index(batch_op.f('ix_team_combine_metric_recorded_at'))
+        batch_op.drop_index(batch_op.f('ix_team_combine_metric_athlete_id'))
+
+    op.drop_table('team_combine_metric')
+    with op.batch_alter_table('report_submission', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_report_submission_team_id'))
+        batch_op.drop_index(batch_op.f('ix_report_submission_submitted_by_id'))
+        batch_op.drop_index(batch_op.f('ix_report_submission_created_at'))
+        batch_op.drop_index(batch_op.f('ix_report_submission_athlete_id'))
+        batch_op.drop_index(batch_op.f('ix_report_submission_approved_by_id'))
+
     op.drop_table('report_submission')
-    op.drop_index(op.f('ix_push_subscription_user_id'), table_name='push_subscription')
+    with op.batch_alter_table('push_subscription', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_push_subscription_user_id'))
+
     op.drop_table('push_subscription')
-    op.drop_index(op.f('ix_event_team_id'), table_name='event')
-    op.drop_index(op.f('ix_event_created_by_id'), table_name='event')
-    op.drop_index(op.f('ix_event_created_at'), table_name='event')
+    with op.batch_alter_table('event', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_event_team_id'))
+        batch_op.drop_index(batch_op.f('ix_event_created_by_id'))
+        batch_op.drop_index(batch_op.f('ix_event_created_at'))
+        batch_op.drop_index(batch_op.f('ix_event_coach_id'))
+
     op.drop_table('event')
     op.drop_table('coachteamlink')
-    op.drop_index(op.f('ix_athletepayment_athlete_id'), table_name='athletepayment')
+    with op.batch_alter_table('athletepayment', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_athletepayment_athlete_id'))
+
     op.drop_table('athletepayment')
-    op.drop_index(op.f('ix_athletedocument_athlete_id'), table_name='athletedocument')
+    with op.batch_alter_table('athletedocument', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_athletedocument_athlete_id'))
+
     op.drop_table('athletedocument')
     op.drop_table('athletedetail')
-    op.drop_index(op.f('ix_athlete_group_name'), table_name='athlete_group')
-    op.drop_index(op.f('ix_athlete_group_created_by_id'), table_name='athlete_group')
+    with op.batch_alter_table('athlete_group', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_athlete_group_name'))
+        batch_op.drop_index(batch_op.f('ix_athlete_group_created_by_id'))
+
     op.drop_table('athlete_group')
+    with op.batch_alter_table('assessmentsession', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_assessmentsession_athlete_id'))
+
     op.drop_table('assessmentsession')
-    op.drop_index(op.f('ix_user_email'), table_name='user')
-    op.drop_index(op.f('ix_user_created_at'), table_name='user')
-    op.drop_index(op.f('ix_user_athlete_id'), table_name='user')
+    with op.batch_alter_table('user', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_user_last_login_at'))
+        batch_op.drop_index(batch_op.f('ix_user_email'))
+        batch_op.drop_index(batch_op.f('ix_user_created_at'))
+        batch_op.drop_index(batch_op.f('ix_user_athlete_id'))
+
     op.drop_table('user')
     op.drop_table('testdefinition')
-    op.drop_index(op.f('ix_team_name'), table_name='team')
-    op.drop_index(op.f('ix_team_created_by_id'), table_name='team')
-    op.drop_index(op.f('ix_team_age_category'), table_name='team')
+    with op.batch_alter_table('team', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_team_name'))
+        batch_op.drop_index(batch_op.f('ix_team_created_by_id'))
+        batch_op.drop_index(batch_op.f('ix_team_age_category'))
+
     op.drop_table('team')
-    op.drop_index(op.f('ix_athlete_team_id'), table_name='athlete')
-    op.drop_index(op.f('ix_athlete_status'), table_name='athlete')
-    op.drop_index(op.f('ix_athlete_secondary_position'), table_name='athlete')
-    op.drop_index(op.f('ix_athlete_registration_year'), table_name='athlete')
-    op.drop_index(op.f('ix_athlete_registration_category'), table_name='athlete')
-    op.drop_index(op.f('ix_athlete_primary_position'), table_name='athlete')
-    op.drop_index(op.f('ix_athlete_player_registration_status'), table_name='athlete')
-    op.drop_index(op.f('ix_athlete_phone'), table_name='athlete')
-    op.drop_index(op.f('ix_athlete_gender'), table_name='athlete')
-    op.drop_index(op.f('ix_athlete_email'), table_name='athlete')
-    op.drop_index(op.f('ix_athlete_dominant_foot'), table_name='athlete')
+    with op.batch_alter_table('athlete', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_athlete_team_id'))
+        batch_op.drop_index(batch_op.f('ix_athlete_status'))
+        batch_op.drop_index(batch_op.f('ix_athlete_secondary_position'))
+        batch_op.drop_index(batch_op.f('ix_athlete_registration_year'))
+        batch_op.drop_index(batch_op.f('ix_athlete_registration_category'))
+        batch_op.drop_index(batch_op.f('ix_athlete_primary_position'))
+        batch_op.drop_index(batch_op.f('ix_athlete_player_registration_status'))
+        batch_op.drop_index(batch_op.f('ix_athlete_phone'))
+        batch_op.drop_index(batch_op.f('ix_athlete_gender'))
+        batch_op.drop_index(batch_op.f('ix_athlete_email'))
+        batch_op.drop_index(batch_op.f('ix_athlete_dominant_foot'))
+
     op.drop_table('athlete')
     # ### end Alembic commands ###

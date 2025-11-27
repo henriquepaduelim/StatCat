@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta
+import anyio
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from sqlmodel import Session, select
@@ -20,12 +22,15 @@ from app.schemas.user import (
     UserRead,
     UserReadWithToken,
     UserSignup,
+    UserSelfUpdate,
 )
 from app.services.email_service import EmailService
 
 router = APIRouter()
 email_service = EmailService()
-PASSWORD_RESET_ALLOWED_ROLES = {UserRole.ADMIN, UserRole.ATHLETE}
+PASSWORD_RESET_ALLOWED_ROLES = {UserRole.ADMIN, UserRole.ATHLETE, UserRole.COACH}
+user_media_root = Path(settings.MEDIA_ROOT) / "users"
+user_media_root.mkdir(parents=True, exist_ok=True)
 
 
 def _generate_password_reset_token(user_id: int) -> str:
@@ -37,6 +42,28 @@ def _generate_password_reset_token(user_id: int) -> str:
         "exp": expire,
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.SECURITY_ALGORITHM)
+
+
+async def _handle_first_login(session: Session, user: User) -> None:
+    """Update last_login and send welcome email on first login."""
+    if user.role == UserRole.ATHLETE and user.athlete_status != UserAthleteApprovalStatus.APPROVED:
+        # Do not treat as first login for pending athletes
+        return
+    first_login = user.last_login_at is None
+    user.last_login_at = datetime.utcnow()
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    if first_login and user.email:
+        await email_service.send_welcome_email(to_email=user.email, to_name=user.full_name or None)
+
+
+def _validate_user_photo(file: UploadFile) -> str:
+    content_type = (file.content_type or "").lower()
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in settings.USER_ALLOWED_PHOTO_EXTENSIONS or content_type not in settings.USER_ALLOWED_PHOTO_MIME_TYPES:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported file type.")
+    return ext
 
 
 def _decode_password_reset_token(token: str) -> int:
@@ -60,7 +87,7 @@ def _decode_password_reset_token(token: str) -> int:
 
 
 @router.post("/login", response_model=Token)
-def login_access_token(
+async def login_access_token(
     session: Session = Depends(get_session),
     form_data: OAuth2PasswordRequestForm = Depends(),
 ) -> Token:
@@ -72,6 +99,12 @@ def login_access_token(
     if not user.is_active:
         # User is inactive
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
+    if user.role == UserRole.ATHLETE and user.athlete_status != UserAthleteApprovalStatus.APPROVED:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account pending approval. Please wait for an admin to approve your registration.",
+        )
+    await _handle_first_login(session, user)
 
     token = create_access_token(user.email)
     return Token(access_token=token)
@@ -110,8 +143,72 @@ def read_users_me(
     else:
         user_dict['athlete_status'] = "INCOMPLETE"
     
-    print(f"Returning user_dict: {user_dict}")
     return user_dict
+
+
+@router.put("/me", response_model=UserRead)
+def update_me(
+    payload: UserSelfUpdate,
+    current_user: User = Depends(get_current_active_user),
+    session: Session = Depends(get_session),
+) -> User:
+    """Allow any logged-in user (including coaches) to update own profile and password."""
+    # Update basic fields
+    if payload.full_name:
+        current_user.full_name = payload.full_name
+    if payload.phone:
+        current_user.phone = payload.phone
+
+    # Change password if requested
+    if payload.new_password:
+        # If must_change_password is set, we don't require current_password
+        if not current_user.must_change_password:
+            if not payload.current_password:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Current password is required to change password.",
+                )
+            authenticated = authenticate_user(session, current_user.email, payload.current_password)
+            if not authenticated:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Current password is incorrect.",
+                )
+        current_user.hashed_password = get_password_hash(payload.new_password)
+        current_user.must_change_password = False
+
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+    return current_user
+
+
+@router.put("/me/photo", response_model=UserRead)
+async def upload_user_photo(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_active_user),
+    session: Session = Depends(get_session),
+) -> User:
+    """Upload/update avatar for the current user (any role)."""
+    ext = _validate_user_photo(file)
+    data = await file.read()
+    if len(data) > settings.USER_PHOTO_MAX_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Image exceeds size limit",
+        )
+
+    user_dir = user_media_root / str(current_user.id)
+    user_dir.mkdir(parents=True, exist_ok=True)
+    destination = user_dir / f"profile{ext}"
+    destination.write_bytes(data)
+
+    relative_path = destination.relative_to(Path(settings.MEDIA_ROOT))
+    current_user.photo_url = f"/media/{relative_path.as_posix()}"
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+    return current_user
 
 
 @router.get("/athlete-status")
@@ -173,15 +270,30 @@ def register_user(
         role=payload.role,
         athlete_id=payload.athlete_id,
         is_active=payload.is_active,
+        must_change_password=True,  # force update on first login
     )
     session.add(user)
     session.commit()
     session.refresh(user)
+
+    # Send temp password email so the user can sign in and change it
+    if user.email:
+        anyio.from_thread.run(
+            email_service.send_temp_password,
+            user.email,
+            user.full_name or None,
+            payload.password,
+        )
+        anyio.from_thread.run(
+            email_service.send_account_approved,
+            user.email,
+            user.full_name or None,
+        )
     return user
 
 
 @router.post("/signup", response_model=UserRead, status_code=status.HTTP_201_CREATED)
-def signup_user(
+async def signup_user(
     payload: UserSignup,
     session: Session = Depends(get_session),
 ) -> User:
@@ -226,6 +338,12 @@ def signup_user(
         session.add(user)
         session.commit()
         session.refresh(user)
+
+        # Notify user their signup is pending approval
+        await email_service.send_registration_pending(
+            to_email=user.email,
+            to_name=user.full_name or None,
+        )
         return user
     except HTTPException:
         raise
@@ -235,7 +353,7 @@ def signup_user(
 
 
 @router.post("/login/full", response_model=UserReadWithToken)
-def login_with_profile(
+async def login_with_profile(
     session: Session = Depends(get_session),
     form_data: OAuth2PasswordRequestForm = Depends(),
 ) -> UserReadWithToken:
@@ -244,6 +362,12 @@ def login_with_profile(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
+    if user.role == UserRole.ATHLETE and user.athlete_status != UserAthleteApprovalStatus.APPROVED:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account pending approval. Please wait for an admin to approve your registration.",
+        )
+    await _handle_first_login(session, user)
 
     token = create_access_token(user.email)
     
@@ -297,7 +421,7 @@ async def request_password_reset(
     "/password-reset/confirm",
     response_model=PasswordResetResponse,
 )
-def confirm_password_reset(
+async def confirm_password_reset(
     payload: PasswordResetConfirm,
     session: Session = Depends(get_session),
 ) -> PasswordResetResponse:
@@ -315,6 +439,13 @@ def confirm_password_reset(
         )
 
     user.hashed_password = get_password_hash(payload.new_password)
+    user.must_change_password = False
     session.add(user)
     session.commit()
+
+    # Confirm to the user that the password was changed
+    await email_service.send_password_change_confirmation(
+        to_email=user.email,
+        to_name=user.full_name or None,
+    )
     return PasswordResetResponse(detail="Your password has been updated. You can sign in with your new credentials.")

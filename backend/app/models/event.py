@@ -1,17 +1,13 @@
 """Event models for calendar functionality with notifications."""
-from __future__ import annotations
 
 import enum
 from datetime import date, datetime, time as dt_time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Column, Enum
-from sqlalchemy.orm import relationship
 from sqlmodel import Field, Relationship, SQLModel
 from app.db.types import SafeDate, SafeTime
-
-if TYPE_CHECKING:
-    from .user import User
+from app.models.user import User
 
 
 class EventStatus(str, enum.Enum):
@@ -32,9 +28,9 @@ class ParticipantStatus(str, enum.Enum):
 class Event(SQLModel, table=True):
     """Event model for calendar events."""
     id: int | None = Field(default=None, primary_key=True)
+    event_date: date = Field(sa_column=Column(SafeDate(), nullable=False))
     name: str = Field(max_length=200)
-    date: date = Field(sa_column=Column(SafeDate(), nullable=False))
-    time: dt_time | None = Field(default=None, sa_column=Column(SafeTime(), nullable=True))
+    start_time: dt_time | None = Field(default=None, sa_column=Column(SafeTime(), nullable=True))
     location: str | None = Field(default=None, max_length=500)
     notes: str | None = Field(default=None)
     status: EventStatus = Field(default=EventStatus.SCHEDULED, sa_column=Column(Enum(EventStatus)))
@@ -53,16 +49,12 @@ class Event(SQLModel, table=True):
     push_sent: bool = Field(default=False)
     
     # Relationships
-    participants: list["EventParticipant"] = Relationship(
-        sa_relationship=relationship(
-            "EventParticipant",
-            back_populates="event",
-            cascade="all, delete-orphan",
-            passive_deletes=True,
-        )
+    participants: Optional[list["EventParticipant"]] = Relationship(
+        back_populates="event",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan", "passive_deletes": True},
     )
-    created_by: "User" = Relationship(
-        sa_relationship=relationship("User", foreign_keys="[Event.created_by_id]")
+    created_by: Optional["User"] = Relationship(
+        sa_relationship_kwargs={"foreign_keys": "[Event.created_by_id]"}
     )
 
     def set_team_ids(self, team_ids: list[int]) -> None:
@@ -97,9 +89,7 @@ class EventParticipant(SQLModel, table=True):
     responded_at: datetime | None = Field(default=None)
     
     # Relationships
-    event: "Event" = Relationship(
-        sa_relationship=relationship("Event", back_populates="participants")
-    )
+    event: Event = Relationship(back_populates="participants")
 
 
 class Notification(SQLModel, table=True):

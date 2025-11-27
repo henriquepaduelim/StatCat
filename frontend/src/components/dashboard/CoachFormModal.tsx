@@ -2,7 +2,7 @@ import { FormEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUsers } from "@fortawesome/free-solid-svg-icons";
 
-import type { Team } from "../../api/teams";
+import type { Team } from "../../types/team";
 import type { CoachFormState } from "../../types/dashboard";
 
 type EditingCoach = { id: number; fullName: string; email: string; phone: string } | null;

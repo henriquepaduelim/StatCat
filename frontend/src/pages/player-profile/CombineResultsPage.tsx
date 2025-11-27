@@ -3,7 +3,6 @@ import { faArrowTrendUp, faArrowTrendDown, faEquals } from "@fortawesome/free-so
 import CollapsibleSection from "../../components/CollapsibleSection";
 import { usePlayerProfileContext } from "./context";
 import { useAthleteCombineMetrics } from "../../hooks/useAthleteCombineMetrics";
-import { format } from "date-fns";
 import type { TeamCombineMetric } from "../../api/teamMetrics";
 import { useTranslation } from "../../i18n/useTranslation";
 
@@ -119,38 +118,6 @@ const CombineResultsPage = () => {
       {hasCombineData ? (
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-container-foreground">{t.playerProfile.tabs.combine}</h3>
-          <div className="rounded-xl border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b border-black/5 text-left text-xs uppercase tracking-wide text-muted">
-                    <th className="px-3 py-2">Date</th>
-                    <th className="px-3 py-2">10m</th>
-                    <th className="px-3 py-2">20m</th>
-                    <th className="px-3 py-2">35m</th>
-                    <th className="px-3 py-2">Yo-Yo</th>
-                    <th className="px-3 py-2">Jump</th>
-                    <th className="px-3 py-2">Max Power</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {combineMetrics.map((metric) => (
-                    <tr key={metric.id} className="border-b border-black/5">
-                      <td className="px-3 py-2">
-                        {metric.recorded_at ? format(new Date(metric.recorded_at), "MMM d, yyyy") : "–"}
-                      </td>
-                      <td className="px-3 py-2">{metric.split_10m_s ?? "–"}</td>
-                      <td className="px-3 py-2">{metric.split_20m_s ?? "–"}</td>
-                      <td className="px-3 py-2">{metric.split_35m_s ?? "–"}</td>
-                      <td className="px-3 py-2">{metric.yoyo_distance_m ?? "–"}</td>
-                      <td className="px-3 py-2">{metric.jump_cm ?? "–"}</td>
-                      <td className="px-3 py-2">{metric.max_power_kmh ?? "–"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
       ) : null}
     </div>

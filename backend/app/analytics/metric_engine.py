@@ -9,11 +9,7 @@ from typing import Iterable, Sequence
 from sqlalchemy import select
 from sqlmodel import Session
 
-from app.analytics.metric_definitions import (
-    METRIC_DEFINITIONS,
-    MetricDefinition,
-    get_metric_by_id,
-)
+from app.analytics.metric_definitions import MetricDefinition, get_metric_by_id
 from app.models.athlete import Athlete
 from app.models.session_result import SessionResult
 from app.models.test_definition import TestDefinition

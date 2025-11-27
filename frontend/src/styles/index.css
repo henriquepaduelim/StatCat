@@ -12,7 +12,7 @@
 }
 
 .theme-dark {
-  --input-bg: #ffeeaf;
+  --input-bg: #f5e6c6;
   --input-text: #000000;
   --input-border: rgba(0, 0, 0, 0.55);
   --input-placeholder: rgba(0, 0, 0, 0.7);
@@ -64,6 +64,19 @@ textarea::placeholder {
 @layer components {
   .interactive-hover {
     @apply relative overflow-hidden bg-action-primary text-action-primary-foreground;
+  }
+
+  .nav-mobile {
+    background-color: var(--nav-mobile-bg);
+    border-top: 2px solid var(--nav-mobile-border);
+  }
+
+  .nav-mobile-icon {
+    color: var(--nav-mobile-accent);
+  }
+
+  .nav-mobile-label {
+    color: var(--nav-mobile-label);
   }
 
   .interactive-hover::before,
@@ -151,7 +164,7 @@ textarea::placeholder {
   .theme-dark .modal-surface {
     background-color: rgba(15, 23, 42, 0.95);
     color: rgb(var(--color-container-foreground));
-    border-color: #e5e5e5;
+    border-color: var(--border-table-dark);
     box-shadow: 0 30px 60px rgba(0, 0, 0, 0.65);
   }
 
@@ -194,7 +207,7 @@ textarea::placeholder {
   }
 
   .theme-dark .athlete-table tbody tr + tr td {
-    border-top: 1px solid #e7e8e9;
+    border-top: 1px solid var(--border-table-light);
   }
 
   .theme-dark .athlete-table tbody tr:first-child td {
@@ -202,7 +215,7 @@ textarea::placeholder {
   }
 
   .theme-dark .athlete-table thead {
-    border-bottom: 1px solid #e7e8e9;
+    border-bottom: 1px solid var(--border-table-light);
   }
 
   .theme-dark .athlete-table td,
@@ -226,7 +239,7 @@ textarea::placeholder {
   }
 
   .theme-dark .modal-card {
-    border-color: #e5e5e5;
+    border-color: var(--border-table-dark);
   }
 
   .theme-dark .modal-card .modal-card {
@@ -280,6 +293,33 @@ textarea::placeholder {
   --color-muted: 107 114 128;
   --color-logo-background: 33 145 251;
   --color-logo-foreground: 255 255 255;
+  --print-bg: rgb(255 255 255);
+  --print-fg: rgb(0 0 0);
+  --splash-bg: rgb(15 23 42);
+  --placeholder-muted-light: rgb(209 213 219);
+  --placeholder-muted-strong: rgb(214 235 252);
+
+  /* Tipografia e tokens globais */
+  --font-family-base: "Geist", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --line-height-tight: 1.1;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.7;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --shadow-card: 0 10px 20px rgba(15, 23, 42, 0.08);
+  --shadow-modal: 0 25px 50px rgba(15, 23, 42, 0.25);
+  --shadow-popover: 0 10px 30px rgba(0, 0, 0, 0.15);
 
   /* FullCalendar Theme Overrides */
   --fc-border-color: rgb(var(--color-action-primary-background) / 0.2);
@@ -293,14 +333,14 @@ textarea::placeholder {
 }
 
 body {
-  font-family: "Geist", system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-family: var(--font-family-base);
   background-color: rgb(var(--color-page-background));
   color: rgb(var(--color-page-foreground));
   transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
 }
 
 body.pwa-splash-active {
-  background-color: #0f172a;
+  background-color: var(--splash-bg);
 }
 
 input::placeholder,
@@ -312,21 +352,21 @@ textarea::placeholder {
   .bg-container-gradient {
     background-image: none;
     background-color: rgb(var(--color-container-background));
-    border: 1px solid rgb(15, 23, 42);
+    border: 1px solid rgb(var(--color-border));
   }
 
   .theme-dark .bg-container-gradient {
-    border: 2px solid #f4a240;
+    border: 2px solid rgb(var(--color-border));
   }
 
   .bg-container,
   [class*="bg-container/"] {
-    border: 1.5px solid rgba(15, 23, 42, 0.1);
+    border: 1.5px solid rgb(var(--color-border) / 0.1);
   }
 
   .theme-dark .bg-container,
   .theme-dark [class*="bg-container/"] {
-    border: 1.5px solid rgba(244, 162, 64, 0.65);
+    border: 1.5px solid rgb(var(--color-border) / 0.65);
   }
 }
 
@@ -337,13 +377,13 @@ textarea::placeholder {
   }
 
   .theme-dark .athlete-table .list-row + .list-row {
-    border-top: 0.10px solid #e7e8e9;
+    border-top: 0.10px solid var(--border-table-light);
   }
 
 @media print {
   body {
-    background-color: #ffffff;
-    color: #000000;
+    background-color: var(--print-bg);
+    color: var(--print-fg);
   }
 
   .print-hidden {
@@ -355,21 +395,21 @@ textarea::placeholder {
   }
 
   #athlete-report-card {
-    background-color: #ffffff !important;
-    color: #000000 !important;
+    background-color: var(--print-bg) !important;
+    color: var(--print-fg) !important;
     box-shadow: none !important;
-    border: 1px solid #000000;
+    border: 1px solid var(--print-fg);
     page-break-inside: avoid;
   }
 
   #athlete-report-card * {
-    color: #000000 !important;
+    color: var(--print-fg) !important;
   }
 }
 .placeholder-muted::placeholder {
-  color: #d1d5db !important;
+  color: var(--placeholder-muted-light) !important;
 }
 .placeholder-muted::placeholder {
-  color: #d6ebfc !important;
+  color: var(--placeholder-muted-strong) !important;
   font-weight: 200;
 }

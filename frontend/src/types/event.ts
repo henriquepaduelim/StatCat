@@ -18,8 +18,8 @@ export interface EventParticipant {
 export interface Event {
   id: number;
   name: string;
-  date: string; // YYYY-MM-DD
-  time: string | null;
+  event_date: string; // YYYY-MM-DD
+  start_time: string | null;
   location: string | null;
   notes: string | null;
   status: EventStatus;
@@ -36,8 +36,8 @@ export interface Event {
 
 export interface EventCreatePayload {
   name: string;
-  date: string; // YYYY-MM-DD
-  time?: string | null;
+  event_date: string; // YYYY-MM-DD - FIX: Changed from 'date' to 'event_date'
+  start_time?: string | null;
   location?: string | null;
   notes?: string | null;
   team_id?: number | null;
@@ -52,7 +52,7 @@ export interface EventCreatePayload {
 export interface EventUpdatePayload {
   name?: string;
   date?: string;
-  time?: string | null;
+  start_time?: string | null;
   location?: string | null;
   notes?: string | null;
   status?: EventStatus;

@@ -6,16 +6,21 @@ from random import choice, randint, uniform
 from sqlmodel import Session, select
 
 from app.core.security import get_password_hash
-from app.models import AssessmentSession, Athlete, SessionResult, Team, TestDefinition, User
+from app.models import AssessmentSession, Athlete, SessionResult, Team, TeamCombineMetric, TestDefinition, User
 from app.models.athlete import AthleteGender, AthleteStatus
-from app.models.user import UserRole
+from app.models.user import UserRole, UserAthleteApprovalStatus
 
 
 TEST_DEFINITIONS = [
-    {"name": "10 m Sprint", "category": "Speed", "unit": "s", "target_direction": "lower"},
-    {"name": "30 m Sprint", "category": "Speed", "unit": "s", "target_direction": "lower"},
-    {"name": "Vertical Jump", "category": "Power", "unit": "cm", "target_direction": "higher"},
-    {"name": "Beep Test", "category": "Endurance", "unit": "level", "target_direction": "higher"},
+    {"name": "Sitting height", "category": "Anthropometrics", "unit": "cm", "target_direction": "higher"},
+    {"name": "Standing height", "category": "Anthropometrics", "unit": "cm", "target_direction": "higher"},
+    {"name": "Weight", "category": "Anthropometrics", "unit": "kg", "target_direction": "lower"},
+    {"name": "10m sprint", "category": "Speed", "unit": "s", "target_direction": "lower"},
+    {"name": "20m sprint", "category": "Speed", "unit": "s", "target_direction": "lower"},
+    {"name": "35m sprint", "category": "Speed", "unit": "s", "target_direction": "lower"},
+    {"name": "YoYo distance", "category": "Endurance", "unit": "m", "target_direction": "higher"},
+    {"name": "Jump", "category": "Power", "unit": "cm", "target_direction": "higher"},
+    {"name": "Max shot power", "category": "Power", "unit": "km/h", "target_direction": "higher"},
 ]
 
 TEAM_BLUEPRINTS = [
@@ -72,15 +77,43 @@ def _random_birth_date_for_team(age_category: str) -> date:
 
 def _test_value(test_name: str) -> float:
     lower_name = test_name.lower()
-    if "10 m" in lower_name:
+    if "10m" in lower_name:
         return round(uniform(1.65, 1.95), 2)
-    if "30 m" in lower_name:
-        return round(uniform(3.9, 4.5), 2)
-    if "vertical" in lower_name:
-        return round(uniform(45, 68), 1)
-    if "beep" in lower_name:
-        return round(uniform(9.0, 13.2), 1)
+    if "20m" in lower_name:
+        return round(uniform(3.2, 3.8), 2)
+    if "35m" in lower_name:
+        return round(uniform(5.1, 6.0), 2)
+    if "yoyo" in lower_name:
+        return round(uniform(800, 1600), 0)
+    if "jump" in lower_name:
+        return round(uniform(40, 65), 1)
+    if "power" in lower_name:
+        return round(uniform(90, 140), 1)
+    if "sitting" in lower_name:
+        return round(uniform(80, 110), 1)
+    if "standing" in lower_name:
+        return round(uniform(150, 195), 1)
+    if "weight" in lower_name:
+        return round(uniform(55, 90), 1)
     return round(uniform(1, 100), 2)
+
+
+def _combine_payload(team_id: int, athlete_id: int, recorded_at: datetime) -> TeamCombineMetric:
+    return TeamCombineMetric(
+        team_id=team_id,
+        athlete_id=athlete_id,
+        recorded_at=recorded_at,
+        recorded_by_id=1,  # admin (seeded user)
+        sitting_height_cm=_test_value("sitting height"),
+        standing_height_cm=_test_value("standing height"),
+        weight_kg=_test_value("weight"),
+        split_10m_s=_test_value("10m sprint"),
+        split_20m_s=_test_value("20m sprint"),
+        split_35m_s=_test_value("35m sprint"),
+        yoyo_distance_m=_test_value("yoyo distance"),
+        jump_cm=_test_value("jump"),
+        max_power_kmh=_test_value("max power"),
+    )
 
 
 def seed_database(session: Session) -> None:
@@ -153,28 +186,36 @@ def seed_database(session: Session) -> None:
         athletes.append(athlete)
     session.commit()
 
-    assessments: list[AssessmentSession] = []
-    base_date = datetime.utcnow()
-    for offset, name in zip([28, 21, 14, 7], ["Foundation", "Acceleration", "Power", "Match Prep"]):
-        assessment = AssessmentSession(
-            name=f"{name} Block",
-            scheduled_at=base_date - timedelta(days=offset),
-            location="Training Center",
-        )
-        session.add(assessment)
-        assessments.append(assessment)
+    # Opcional: criar contas de atleta para testes de login (vinculadas aos dois primeiros atletas)
+    athlete_user_payloads = athletes[:2]
+    for athlete in athlete_user_payloads:
+        session.add(
+            User(
+                email=athlete.email,
+                hashed_password=get_password_hash("athlete123"),
+                full_name=f"{athlete.first_name} {athlete.last_name}",
+                role=UserRole.ATHLETE,
+                athlete_id=athlete.id,
+                athlete_status=UserAthleteApprovalStatus.APPROVED,
+                is_active=True,
+            )
+    )
     session.commit()
 
-    for assessment in assessments:
-        for athlete in athletes:
-            for definition in tests:
-                session.add(
-                    SessionResult(
-                        session_id=assessment.id,
-                        athlete_id=athlete.id,
-                        test_id=definition.id,
-                        value=_test_value(definition.name),
-                        unit=definition.unit,
-                    )
-                )
+    # Seed combine metrics to match the UI collection (Testing/New Session)
+    for athlete in athletes:
+        session.add(
+            _combine_payload(
+                team_id=athlete.team_id,
+                athlete_id=athlete.id,
+                recorded_at=datetime.utcnow() - timedelta(days=3),
+            )
+        )
+        session.add(
+            _combine_payload(
+                team_id=athlete.team_id,
+                athlete_id=athlete.id,
+                recorded_at=datetime.utcnow() - timedelta(days=12),
+            )
+        )
     session.commit()

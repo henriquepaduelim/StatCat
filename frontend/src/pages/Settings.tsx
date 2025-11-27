@@ -8,7 +8,8 @@ import { useTheme } from "../theme/ThemeProvider";
 import type { ThemeId } from "../theme/themes";
 import { useTeams } from "../hooks/useTeams";
 import type { PlayerRegistrationStatus, RegistrationCategory } from "../types/athlete";
-import { completeAthleteRegistration, updateAthlete } from "../api/athletes";
+import { completeAthleteRegistration, updateAthlete, uploadAthletePhoto } from "../api/athletes";
+import { updateSelf, uploadUserPhoto } from "../api/auth";
 import { exportTeamPostsArchive } from "../api/teamPosts";
 
 const registrationCategories: Array<{ value: RegistrationCategory; label: string }> = [
@@ -135,12 +136,18 @@ const Settings = () => {
   const [isExportingArchive, setIsExportingArchive] = useState(false);
   const [maintenanceFeedback, setMaintenanceFeedback] = useState<string | null>(null);
   const [isMaintenanceOpen, setMaintenanceOpen] = useState(false);
-  const [isSummaryOpen, setSummaryOpen] = useState(false);
   const [isPhotoOpen, setPhotoOpen] = useState(false);
   const [isThemeOpen, setThemeOpen] = useState(false);
   const { themeId, setThemeId } = useTheme();
   const teamsQuery = useTeams();
+  const teamsErrorMessage =
+    teamsQuery.isError && teamsQuery.error
+      ? teamsQuery.error instanceof Error
+        ? teamsQuery.error.message
+        : "Failed to load teams."
+      : null;
   const isAthlete = user?.role === "athlete";
+  const isCoach = user?.role === "coach";
   const isAdminOrStaff = user?.role === "admin" || user?.role === "staff";
   const athleteId = isAthlete && user?.athlete_id ? user.athlete_id : null;
 
@@ -224,37 +231,49 @@ const Settings = () => {
       setFeedback("Select an image before saving.");
       return;
     }
-
-    setIsUploadingPhoto(true);
-    // Hook up to backend upload endpoint in the future.
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    setIsUploadingPhoto(false);
-    setFeedback("Photo updated! Once it syncs, it will appear on your profile.");
+    try {
+      setIsUploadingPhoto(true);
+      if (athleteId) {
+        await uploadAthletePhoto(athleteId, avatarFile);
+      } else {
+        await uploadUserPhoto(avatarFile);
+      }
+      setFeedback("Photo updated! Once it syncs, it will appear on your profile.");
+    } catch (error) {
+      console.error("Photo upload failed", error);
+      setFeedback("Failed to upload photo. Please try again.");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
   };
 
   const handleProfileSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSavingProfile(true);
     setFeedback(null);
-    if (!athleteId) {
-      setFeedback("Unable to update profile because no athlete record is linked.");
-      setIsSavingProfile(false);
-      return;
-    }
-
-    const payload = {
-      first_name: profileForm.firstName.trim(),
-      last_name: profileForm.lastName.trim(),
-      birth_date: profileForm.birthDate,
-      gender: profileForm.gender,
-      email: profileForm.email.trim(),
-      phone: profileForm.phone.trim(),
-    };
+    const fullName = `${profileForm.firstName} ${profileForm.lastName}`.trim();
 
     try {
-      await updateAthlete(athleteId, payload);
+      if (isCoach) {
+        await updateSelf({
+          full_name: fullName,
+          phone: profileForm.phone.trim(),
+        });
+      } else if (athleteId) {
+        await updateAthlete(athleteId, {
+          first_name: profileForm.firstName.trim(),
+          last_name: profileForm.lastName.trim(),
+          birth_date: profileForm.birthDate,
+          gender: profileForm.gender,
+          email: profileForm.email.trim(),
+          phone: profileForm.phone.trim(),
+        });
+      } else {
+        setFeedback("Unable to update profile because no athlete record is linked.");
+        setIsSavingProfile(false);
+        return;
+      }
       if (user && token) {
-        const fullName = `${profileForm.firstName} ${profileForm.lastName}`.trim();
         setCredentials({
           user: {
             ...user,
@@ -265,7 +284,7 @@ const Settings = () => {
           token,
         });
       }
-      setFeedback("Personal details updated. Remember to publish the change through the backend.");
+      setFeedback("Personal details updated.");
     } catch (error) {
       console.error("Failed to update personal details", error);
       setFeedback("Failed to update personal details. Please try again.");
@@ -453,34 +472,34 @@ const Settings = () => {
 
   return (
     <div className="space-y-8 settings-page">
-      <CollapsibleCard
-        title="Settings"
-        description="Update your personal details, athlete info, and appearance preferences in one place."
-        isOpen={isSummaryOpen}
-        onToggle={() => setSummaryOpen((open) => !open)}
-        className="shadow-lg"
-      >
-        <div className="flex flex-wrap gap-4 text-sm text-muted">
+      <section className="rounded-2xl border border-black/5 bg-container-gradient p-6 shadow-sm">
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold text-container-foreground">Settings</h2>
+          <p className="text-sm text-muted">Summary of your account information and profile.</p>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted">
           <span>
             Signed in as: <strong>{user?.email}</strong>
           </span>
           <span>
             Role: <strong className="uppercase">{user?.role}</strong>
           </span>
-          <Link to="/player-profile" className="text-action-primary hover:underline">
-            View public profile
-          </Link>
+          {isAthlete ? (
+            <Link to="/player-profile" className="text-action-primary hover:underline">
+              View public profile
+            </Link>
+          ) : null}
         </div>
         {feedback ? (
-          <div className="rounded-xl border border-action-primary/30 bg-action-primary/10 px-4 py-3 text-sm text-action-primary-foreground">
+          <div className="mt-3 rounded-xl border border-action-primary/30 bg-action-primary/10 px-4 py-3 text-sm text-action-primary-foreground">
             {feedback}
           </div>
         ) : null}
-      </CollapsibleCard>
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <CollapsibleCard
-          title="Athlete photo"
+          title={"Profile Photo"}
           description="Select a new square image (PNG or JPG) to use across the app."
           isOpen={isPhotoOpen}
           onToggle={() => setPhotoOpen((open) => !open)}
@@ -550,7 +569,7 @@ const Settings = () => {
 
       <section className="rounded-2xl border border-black/5 bg-container-gradient p-6 shadow-sm">
         <header className="mb-6">
-          <h2 className="text-lg font-semibold text-container-foreground">Personal details</h2>
+          <h2 className="text-lg font-semibold text-container-foreground">Personal Details</h2>
           <p className="text-sm text-muted">Keep the same data you provided when your account was created.</p>
         </header>
         <form className="grid gap-4 md:grid-cols-3" onSubmit={handleProfileSubmit}>
@@ -725,9 +744,9 @@ const Settings = () => {
               name="teamId"
               value={athleteForm.teamId}
               onChange={handleAthleteChange}
-              disabled={teamsQuery.isLoading}
+              disabled={teamsQuery.isLoading || teamsQuery.isError}
             >
-              <option value="">Select team</option>
+              <option value="">{teamsErrorMessage ? "Teams unavailable" : "Select team"}</option>
               {teamsQuery.data?.map((team) => (
                 <option key={team.id} value={String(team.id)}>
                   {team.name}
@@ -735,6 +754,11 @@ const Settings = () => {
               ))}
             </select>
           </label>
+          {teamsErrorMessage ? (
+            <div className="lg:col-span-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              Unable to load team options right now. Please retry in a moment.
+            </div>
+          ) : null}
           <div className="lg:col-span-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-muted">
               All changes stay local until your operations team syncs them.
@@ -1015,16 +1039,22 @@ const Settings = () => {
                   <select
                     value={maintenanceTeamId ?? ""}
                     onChange={(event) => setMaintenanceTeamId(Number(event.target.value))}
-                    disabled={teamsQuery.isLoading || (teamsQuery.data?.length ?? 0) === 0}
+                    disabled={teamsQuery.isLoading || teamsQuery.isError || (teamsQuery.data?.length ?? 0) === 0}
                     className="mt-2 w-full rounded-xl border border-black/10 bg-white px-4 py-2 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {(teamsQuery.data ?? []).map((team) => (
+                    {teamsQuery.data?.map((team) => (
                       <option key={team.id} value={team.id}>
                         {team.name} ({team.age_category})
                       </option>
                     ))}
+                    {teamsErrorMessage ? <option value="">Teams unavailable</option> : null}
                   </select>
                 </label>
+                {teamsErrorMessage ? (
+                  <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                    Unable to load teams for export right now. Try again shortly.
+                  </div>
+                ) : null}
                 <label className="flex items-center gap-2 text-sm text-container-foreground">
                   <input
                     type="checkbox"

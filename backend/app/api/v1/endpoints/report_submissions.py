@@ -22,6 +22,7 @@ from app.schemas.report_submission import (
     ReportSubmissionItem,
     ReportSubmissionReview,
 )
+from app.services.email_service import email_service
 
 router = APIRouter()
 
@@ -242,7 +243,7 @@ def request_report_card(
 
 
 @router.post("/{submission_id}/approve", response_model=ReportSubmissionItem)
-def approve_submission(
+async def approve_submission(
     submission_id: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
@@ -265,12 +266,22 @@ def approve_submission(
 
     team_name = None
     athlete_name = None
+    athlete_email = None
     if submission.team_id:
         team = session.get(Team, submission.team_id)
         team_name = team.name if team else None
     if submission.athlete_id:
         athlete = session.get(Athlete, submission.athlete_id)
-        athlete_name = f"{athlete.first_name} {athlete.last_name}".strip() if athlete else None
+        if athlete:
+            athlete_name = f"{athlete.first_name} {athlete.last_name}".strip()
+            athlete_email = athlete.email
+
+    # Notify athlete if we have an email (only after approval)
+    if athlete_email:
+        await email_service.send_report_ready(
+            to_email=athlete_email,
+            to_name=athlete_name or None,
+        )
 
     return ReportSubmissionItem(
         id=submission.id,

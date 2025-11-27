@@ -36,7 +36,7 @@ class Athlete(SQLModel, table=True):
     team_id: int | None = Field(default=None, foreign_key="team.id", index=True)
     first_name: str
     last_name: str
-    email: str | None = Field(default=None, index=True)
+    email: str = Field(index=True)
     phone: str | None = Field(default=None, index=True)
     birth_date: date
     dominant_foot: str | None = Field(default=None, index=True)

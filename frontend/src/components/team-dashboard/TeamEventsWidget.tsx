@@ -43,7 +43,7 @@ const TeamEventsWidget = ({ events, isLoading, isError }: TeamEventsWidgetProps)
                 </span>
               </div>
               <p className="text-sm text-muted">
-                {formatDate(event.date, event.time)} • {event.location || "TBD"}
+                {formatDate(event.event_date, event.start_time)} • {event.location || "TBD"}
               </p>
               {event.notes ? (
                 <p className="mt-1 text-xs text-muted">{event.notes.slice(0, 160)}</p>

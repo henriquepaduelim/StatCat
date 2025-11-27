@@ -2,7 +2,8 @@ import { FormEvent, Dispatch, SetStateAction, useEffect, useRef, useState } from
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faMinus } from "@fortawesome/free-solid-svg-icons";
 
-import type { Team, TeamCoach } from "../../api/teams";
+import type { Team } from "../../types/team";
+import type { TeamCoach } from "../../types/coach";
 import type { Event, ParticipantStatus } from "../../types/event";
 import type { Athlete } from "../../types/athlete";
 import type { TranslationDictionary } from "../../i18n/translations";

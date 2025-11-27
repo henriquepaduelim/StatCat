@@ -1,9 +1,9 @@
 """API endpoints for events management."""
-from datetime import datetime
+from datetime import date as date_type, datetime, time as time_type
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import delete, or_
-from sqlmodel import Session, select
+from sqlmodel import select
 
 from app.api.deps import SessionDep, get_current_active_user
 from app.models.user import User
@@ -29,6 +29,21 @@ from app.services.event_team_service import (
 router = APIRouter()
 
 
+def _parse_time_str(value: Optional[str]) -> Optional[time_type]:
+    if value is None:
+        return None
+    v = value.strip()
+    if not v:
+        return None
+    try:
+        return time_type.fromisoformat(v)
+    except ValueError:
+        try:
+            return datetime.strptime(v, "%H:%M").time()
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time format. Use HH:MM.")
+
+
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 async def create_event(
     *,
@@ -40,8 +55,8 @@ async def create_event(
     # Create event
     event = Event(
         name=event_in.name,
-        date=event_in.date,
-        time=event_in.time,
+        event_date=event_in.event_date,
+        start_time=_parse_time_str(event_in.start_time),
         location=event_in.location,
         notes=event_in.notes,
         team_id=event_in.team_id,
@@ -117,12 +132,14 @@ def list_events(
         stmt = stmt.where(or_(Event.team_id == team_id, Event.id.in_(linked_event_ids)))
     
     # Filter by date range
-    if date_from:
-        stmt = stmt.where(Event.date >= date_from)
-    if date_to:
-        stmt = stmt.where(Event.date <= date_to)
+    parsed_from = _parse_date_str(date_from)
+    parsed_to = _parse_date_str(date_to)
+    if parsed_from:
+        stmt = stmt.where(Event.date >= parsed_from)
+    if parsed_to:
+        stmt = stmt.where(Event.date <= parsed_to)
     
-    stmt = stmt.order_by(Event.date.desc(), Event.time.desc())
+    stmt = stmt.order_by(Event.date.desc(), Event.start_time.desc())
     
     events = db.exec(stmt).all()
     attach_team_ids(db, events)
@@ -155,7 +172,11 @@ def list_my_events(
             all_events[e.id] = e
     
     # Sort by date
-    events = sorted(all_events.values(), key=lambda e: (e.date, e.time or ""), reverse=True)
+    events = sorted(
+        all_events.values(),
+        key=lambda e: (e.date or date_type.min, e.start_time or time_type.min),
+        reverse=True,
+    )
     attach_team_ids(db, events)
     return events
 
@@ -199,13 +220,14 @@ async def update_event(
         changes.append(f"Name changed to: {event_in.name}")
         event.name = event_in.name
     
-    if event_in.date and event_in.date != event.date:
-        changes.append(f"Date changed to: {event_in.date}")
-        event.date = event_in.date
+    if event_in.event_date and event_in.event_date != event.event_date:
+        changes.append(f"Date changed to: {event_in.event_date}")
+        event.event_date = event_in.event_date
     
-    if event_in.time is not None and event_in.time != event.time:
-        changes.append(f"Time changed to: {event_in.time}")
-        event.time = event_in.time
+    if event_in.start_time is not None and event_in.start_time != event.start_time:
+        parsed_time = _parse_time_str(event_in.start_time)
+        changes.append(f"Time changed to: {event_in.start_time}")
+        event.start_time = parsed_time
     
     if event_in.location is not None and event_in.location != event.location:
         changes.append(f"Location changed to: {event_in.location}")
@@ -254,6 +276,15 @@ async def update_event(
         )
     
     return event
+
+
+def _parse_date_str(value: Optional[str]) -> Optional[date_type]:
+    if not value:
+        return None
+    try:
+        return date_type.fromisoformat(value)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date format. Use YYYY-MM-DD.")
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)

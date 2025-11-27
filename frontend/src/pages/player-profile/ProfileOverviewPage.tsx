@@ -1,5 +1,4 @@
 import AthleteReportCard from "../../components/AthleteReportCard";
-import CollapsibleSection from "../../components/CollapsibleSection";
 import { useTranslation } from "../../i18n/useTranslation";
 import { usePlayerProfileContext } from "./context";
 
@@ -15,27 +14,31 @@ const ProfileOverviewPage = () => {
   const t = useTranslation();
 
   return (
-    <CollapsibleSection title={t.playerProfile.profileSection}>
-      {!currentAthlete && <p className="text-sm text-muted">{t.playerProfile.noAthlete}</p>}
+    <section className="rounded-xl bg-container/40 shadow-sm print:bg-white">
+      <div className="px-4 pt-4 pb-4 space-y-6 sm:px-6 sm:pt-6 sm:pb-6">
+        {!currentAthlete && <p className="text-sm text-muted">{t.playerProfile.noAthlete}</p>}
 
-      {currentAthlete && reportLoading && (
-        <p className="text-sm text-muted">{t.playerProfile.loading}</p>
-      )}
+        {currentAthlete && reportLoading && (
+          <p className="text-sm text-muted">{t.playerProfile.loading}</p>
+        )}
 
-      {currentAthlete && reportError && (
-        <p className="text-sm text-red-500">{t.playerProfile.error}</p>
-      )}
+        {currentAthlete && reportError && (
+          <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            {t.playerProfile.error}
+          </div>
+        )}
 
-      {currentAthlete && (
-        <AthleteReportCard
-          athlete={currentAthlete}
-          detailedAthlete={athleteDetail}
-          report={report}
-          tests={tests}
-          hideRecentSessions
-        />
-      )}
-    </CollapsibleSection>
+        {currentAthlete && (
+          <AthleteReportCard
+            athlete={currentAthlete}
+            detailedAthlete={athleteDetail}
+            report={report}
+            tests={tests}
+            hideRecentSessions
+          />
+        )}
+      </div>
+    </section>
   );
 };
 

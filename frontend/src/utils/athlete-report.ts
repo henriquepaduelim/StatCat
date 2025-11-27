@@ -1,16 +1,13 @@
 import type { AthleteReport } from "../types/athlete";
 import type { TestDefinition } from "../types/test";
+import { chartPalette } from "../theme/chartPalette";
 
 type Category = "Physical" | "Technical";
 
 export type CategoryKey = Category;
 
 export const CATEGORY_KEYS: CategoryKey[] = ["Physical", "Technical"];
-
-export const ATHLETE_CATEGORY_COLORS: Record<CategoryKey, string> = {
-  Physical: "#F11E48",
-  Technical: "#7B61FF",
-};
+export const ATHLETE_CATEGORY_COLORS: Record<CategoryKey, string> = chartPalette.athleteCategories;
 
 export const safeParseDate = (value?: string | null): Date | null => {
   if (!value) {

@@ -19,6 +19,7 @@ BRANDING_ASSETS_DIR = REPO_ROOT / "branding" / "assets"
 FRONTEND_DIR = REPO_ROOT / "frontend"
 FRONTEND_DIST = FRONTEND_DIR / "dist"
 THEME_FILE = FRONTEND_DIR / "src" / "theme" / "activeTheme.generated.ts"
+THEME_DARK_FILE = FRONTEND_DIR / "src" / "theme" / "activeThemeDark.generated.ts"
 BRANDING_CONFIG_FILE = FRONTEND_DIR / "src" / "theme" / "branding.generated.ts"
 PUBLIC_BRANDING_ROOT = FRONTEND_DIR / "public" / "branding"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "packages"
@@ -135,6 +136,18 @@ def write_theme(theme: Dict[str, Any]) -> str:
         "export default activeTheme;\n"
     )
     THEME_FILE.write_text(generated, encoding="utf-8")
+    return original
+
+
+def write_theme_dark(theme: Dict[str, Any]) -> str:
+    original = THEME_DARK_FILE.read_text(encoding="utf-8")
+    serialized = json.dumps(theme, indent=2)
+    generated = (
+        'import type { ThemeDefinition } from "./themes";\n\n'
+        f"export const activeThemeDark: ThemeDefinition = {serialized};\n\n"
+        "export default activeThemeDark;\n"
+    )
+    THEME_DARK_FILE.write_text(generated, encoding="utf-8")
     return original
 
 
@@ -322,6 +335,7 @@ def main() -> None:
     )
 
     theme_backup: Optional[str] = None
+    theme_dark_backup: Optional[str] = None
     branding_backup: Optional[str] = None
     copied_assets: Optional[Path] = None
     try:
@@ -329,12 +343,16 @@ def main() -> None:
             if assets_source is not None:
                 copied_assets = sync_brand_assets(config["id"], assets_source)
             theme_backup = write_theme(config["theme"])
+            dark_theme = config.get("theme_dark") or config["theme"]
+            theme_dark_backup = write_theme_dark(dark_theme)
             branding_backup = write_branding_config(branding_metadata)
             run_frontend_build(frontend_env)
             copy_frontend_dist(package_dir / "frontend-dist")
     finally:
         if theme_backup is not None and not args.persist_theme:
             THEME_FILE.write_text(theme_backup, encoding="utf-8")
+        if theme_dark_backup is not None and not args.persist_theme:
+            THEME_DARK_FILE.write_text(theme_dark_backup, encoding="utf-8")
         if branding_backup is not None and not args.persist_branding:
             BRANDING_CONFIG_FILE.write_text(branding_backup, encoding="utf-8")
         if copied_assets and not args.persist_assets and copied_assets.exists():

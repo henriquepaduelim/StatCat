@@ -23,6 +23,7 @@ frontend/public/branding/*
 frontend/.env.local
 frontend/.env.development.local
 frontend/.env.test.local
+backend/.env.local
 
 # Database files
 *.db
@@ -60,3 +61,4 @@ backend/backend.log
 backend/backend_error.log
 backend/backend_startup.log
 frontend/.env.local
+frontend/src/theme/activeThemeDark.generated.ts

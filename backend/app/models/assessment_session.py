@@ -5,7 +5,7 @@ from sqlmodel import Field, SQLModel
 
 class AssessmentSession(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    athlete_id: int | None = Field(default=None, foreign_key="athlete.id")
+    athlete_id: int | None = Field(default=None, foreign_key="athlete.id", index=True)
     name: str
     location: str | None = None
     scheduled_at: datetime | None = None

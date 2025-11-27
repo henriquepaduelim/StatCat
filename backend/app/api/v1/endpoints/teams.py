@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Iterable, Sequence
 
+import anyio
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import delete, func, select
 from sqlalchemy.exc import OperationalError
@@ -17,6 +19,7 @@ from sqlalchemy import text
 
 from app.models.team import CoachTeamLink, Team
 from app.models.user import User, UserRole
+from app.services.email_service import email_service
 from app.schemas.team import TeamCoachCreate, TeamCreate, TeamRead
 from app.schemas.user import UserRead
 
@@ -124,6 +127,12 @@ def create_team(
     session.commit()
     session.refresh(team)
 
+    # Notify coach if email provided in payload
+    if payload.coach_name:
+        coach_user = session.exec(select(User).where(User.full_name == payload.coach_name, User.role == UserRole.COACH)).first()
+        if coach_user and coach_user.email:
+            anyio.from_thread.run(email_service.send_team_assignment, coach_user.email, coach_user.full_name, team.name)
+
     return TeamRead(
         id=team.id,
         name=team.name,
@@ -213,10 +222,16 @@ def _create_coach_user(session: Session, payload: TeamCoachCreate) -> User:
         hashed_password=get_password_hash(payload.password),
         role=UserRole.COACH,
         is_active=True,
+        must_change_password=True,
     )
     session.add(user)
     session.commit()
     session.refresh(user)
+
+    # Send temporary password to coach
+    if user.email:
+        anyio.from_thread.run(email_service.send_temp_password, user.email, user.full_name, payload.password)
+
     return user
 
 
@@ -237,6 +252,11 @@ def create_team_coach(
         team.coach_name = user.full_name
         session.add(team)
     session.commit()
+    # Notify coach of team assignment if email is present
+    if user.email:
+        import anyio
+
+        anyio.from_thread.run(email_service.send_team_assignment, user.email, user.full_name, team.name)
     return user
 
 
@@ -282,6 +302,8 @@ def assign_existing_coach(
         team.coach_name = coach.full_name
         session.add(team)
     session.commit()
+    if coach.email:
+        anyio.from_thread.run(email_service.send_team_assignment, coach.email, coach.full_name, team.name)
     return coach
 
 

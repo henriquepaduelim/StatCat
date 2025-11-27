@@ -32,11 +32,14 @@ class User(SQLModel, table=True):
     hashed_password: str
     full_name: str
     phone: str | None = Field(default=None, max_length=30)
+    photo_url: str | None = Field(default=None)
     role: UserRole = Field(default=UserRole.ATHLETE, sa_column=Column(Enum(UserRole)))
     athlete_id: int | None = Field(default=None, foreign_key="athlete.id", index=True)
     athlete_status: UserAthleteApprovalStatus = Field(default=UserAthleteApprovalStatus.INCOMPLETE, sa_column=Column(Enum(UserAthleteApprovalStatus)))
     rejection_reason: Optional[str] = Field(default=None)
     is_active: bool = Field(default=True)
+    must_change_password: bool = Field(default=False)
+    last_login_at: Optional[datetime] = Field(default=None, index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
     teams: List["Team"] = Relationship(
         back_populates="coaches",

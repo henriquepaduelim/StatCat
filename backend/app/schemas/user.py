@@ -36,6 +36,7 @@ class UserBase(SQLModel):
     email: LocalEmailStr
     full_name: str
     phone: str | None = None
+    photo_url: str | None = None
     role: UserRole = UserRole.STAFF
     athlete_id: int | None = None
     athlete_status: UserAthleteApprovalStatus = UserAthleteApprovalStatus.INCOMPLETE
@@ -65,6 +66,13 @@ class UserRead(UserBase):
 class UserReadWithToken(UserRead):
     access_token: str
     token_type: str = "bearer"
+
+
+class UserSelfUpdate(SQLModel):
+    full_name: str | None = None
+    phone: str | None = None
+    current_password: str | None = None
+    new_password: str | None = None
 
 
 class Token(SQLModel):

@@ -7,7 +7,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Application configuration pulled from environment variables."""
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        # Load base `.env` first, allow `.env.local` to override for local dev
+        env_file=(".env", ".env.local"),
+        env_file_encoding="utf-8",
+        extra="ignore",  # ignore unrelated env vars (e.g., frontend VITE_* values)
+    )
 
     ENVIRONMENT: str = "development"
     PROJECT_NAME: str = "Combine Backend"
@@ -47,8 +52,25 @@ class Settings(BaseSettings):
     SMTP_USER: str | None = None
     SMTP_PASSWORD: str | None = None
     SMTP_FROM_EMAIL: str | None = None
-    SMTP_FROM_NAME: str | None = "Combine Platform"
+    SMTP_FROM_NAME: str | None = "StatCat - No Reply"
+    RESEND_API_KEY: str | None = None
+    RESEND_FROM_EMAIL: str | None = None
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 30
+    ENCRYPTION_KEY_CURRENT: str | None = None
+    ENCRYPTION_KEY_PREVIOUS: str | None = None
+    ATHLETE_PHOTO_MAX_BYTES: int = 5 * 1024 * 1024
+    ATHLETE_DOCUMENT_MAX_BYTES: int = 10 * 1024 * 1024
+    ATHLETE_ALLOWED_DOCUMENT_EXTENSIONS: set[str] = {".pdf", ".png", ".jpg", ".jpeg"}
+    ATHLETE_ALLOWED_DOCUMENT_MIME_TYPES: set[str] = {
+        "application/pdf",
+        "image/png",
+        "image/jpeg",
+    }
+    ATHLETE_ALLOWED_PHOTO_EXTENSIONS: set[str] = {".png", ".jpg", ".jpeg"}
+    ATHLETE_ALLOWED_PHOTO_MIME_TYPES: set[str] = {"image/png", "image/jpeg", "image/heic", "image/heif"}
+    USER_PHOTO_MAX_BYTES: int = 5 * 1024 * 1024
+    USER_ALLOWED_PHOTO_EXTENSIONS: set[str] = {".png", ".jpg", ".jpeg"}
+    USER_ALLOWED_PHOTO_MIME_TYPES: set[str] = {"image/png", "image/jpeg", "image/heic", "image/heif"}
 
     @model_validator(mode="after")
     def _validate_security_basics(self) -> "Settings":

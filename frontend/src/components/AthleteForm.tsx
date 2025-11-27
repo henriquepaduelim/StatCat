@@ -150,7 +150,7 @@ const AthleteForm = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 rounded-xl bg-white p-6 shadow-sm">
+    <form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-black/5 bg-container p-6 shadow-sm dark:border-white/10">
       {errorMessage ? (
         <div
           role="alert"
@@ -162,7 +162,7 @@ const AthleteForm = ({
 
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="flex-1 space-y-6">
-          <section className="space-y-4 rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+          <section className="space-y-4 rounded-lg border border-black/10 bg-container p-4 shadow-sm dark:border-white/10">
 
             <div className="grid gap-4 md:grid-cols-2">
               <label className="block text-sm font-medium text-muted">
@@ -173,7 +173,7 @@ const AthleteForm = ({
                   name="first_name"
                   value={formState.first_name}
                   onChange={handleChange}
-                  className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-[rgb(var(--color-input-background))] text-[rgb(var(--color-input-foreground))] shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                 />
               </label>
               <label className="block text-sm font-medium text-muted">
@@ -184,7 +184,7 @@ const AthleteForm = ({
                   name="last_name"
                   value={formState.last_name}
                   onChange={handleChange}
-                  className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-[rgb(var(--color-input-background))] text-[rgb(var(--color-input-foreground))] shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                 />
               </label>
             </div>
@@ -198,7 +198,7 @@ const AthleteForm = ({
                   value={formState.team_id}
                   onChange={handleChange}
                   disabled={teamsQuery.isLoading}
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))] shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <option value="">{t.common.select}</option>
                   {teamOptions.map((option) => (
@@ -218,7 +218,7 @@ const AthleteForm = ({
                   name="primary_position"
                   value={formState.primary_position}
                   onChange={handleChange}
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))] shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                 >
                   {POSITION_OPTIONS.map((position) => (
                     <option key={position} value={position}>
@@ -235,7 +235,7 @@ const AthleteForm = ({
                 name="secondary_position"
                 value={formState.secondary_position}
                 onChange={handleChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))] shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               >
                 <option value="">None</option>
                 {POSITION_OPTIONS.filter((position) => position !== formState.primary_position).map((position) => (
@@ -248,7 +248,7 @@ const AthleteForm = ({
             </label>
           </section>
 
-          <section className="space-y-4 rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+          <section className="space-y-4 rounded-lg border border-black/10 bg-container p-4 shadow-sm dark:border-white/10">
             <div className="grid gap-4 md:grid-cols-2">
               <label className="block text-sm font-medium text-muted">
                 {t.newAthlete.gender}
@@ -257,7 +257,7 @@ const AthleteForm = ({
                   name="gender"
                   value={formState.gender}
                   onChange={handleChange}
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))] shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                 >
                   <option value="male">{t.newAthlete.genderOptions.male}</option>
                   <option value="female">{t.newAthlete.genderOptions.female}</option>
@@ -271,7 +271,7 @@ const AthleteForm = ({
                   name="email"
                   value={formState.email}
                   onChange={handleChange}
-                  className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-[rgb(var(--color-input-background))] text-[rgb(var(--color-input-foreground))] shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                 />
               </label>
             </div>
@@ -285,7 +285,7 @@ const AthleteForm = ({
                   name="birth_date"
                   value={formState.birth_date}
                   onChange={handleChange}
-                  className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-[rgb(var(--color-input-background))] text-[rgb(var(--color-input-foreground))] shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                 />
               </label>
               <label className="block text-sm font-medium text-muted">
@@ -296,7 +296,7 @@ const AthleteForm = ({
                   name="height_cm"
                   value={formState.height_cm}
                   onChange={handleChange}
-                  className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-[rgb(var(--color-input-background))] text-[rgb(var(--color-input-foreground))] shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                 />
               </label>
               <label className="block text-sm font-medium text-muted">
@@ -307,7 +307,7 @@ const AthleteForm = ({
                   name="weight_kg"
                   value={formState.weight_kg}
                   onChange={handleChange}
-                  className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-white text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  className="mt-1 w-full rounded-md border border-black/10 px-3 py-2 bg-[rgb(var(--color-input-background))] text-[rgb(var(--color-input-foreground))] shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                 />
               </label>
             </div>
@@ -315,7 +315,7 @@ const AthleteForm = ({
         </div>
 
         <aside className="space-y-4 lg:w-72">
-          <div className="space-y-3 rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+          <div className="space-y-3 rounded-lg border border-black/10 bg-container p-4 shadow-sm dark:border-white/10">
             <label className="block text-sm font-medium text-muted">
               {t.newAthlete.photo}
               <input
@@ -323,7 +323,7 @@ const AthleteForm = ({
                 accept="image/jpeg,image/png,image/heic,image/heif"
                 capture="environment"
                 onChange={handlePhotoInput}
-                className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-sm text-[rgb(var(--color-input-foreground))] shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               />
               <span className="mt-1 block text-xs text-muted">{t.newAthlete.photoHint}</span>
             </label>

@@ -27,7 +27,7 @@ class ReportSubmission(SQLModel, table=True):
         sa_column=Column(Enum(ReportSubmissionStatus)),
     )
     submitted_by_id: int = Field(foreign_key="user.id", index=True)
-    approved_by_id: int | None = Field(default=None, foreign_key="user.id")
+    approved_by_id: int | None = Field(default=None, foreign_key="user.id", index=True)
     team_id: int | None = Field(default=None, foreign_key="team.id", index=True)
     athlete_id: int | None = Field(default=None, foreign_key="athlete.id", index=True)
     opponent: str | None = None

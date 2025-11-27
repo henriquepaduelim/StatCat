@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 
 import type { Athlete } from "../../types/athlete";
-import type { Team } from "../../api/teams";
+import type { Team } from "../../types/team";
 import type { ReportSubmissionSummary } from "../../api/reportSubmissions";
 
 type TeamInsightsCardProps = {
