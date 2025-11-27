@@ -119,7 +119,7 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
         <h3 className="text-sm font-semibold text-container-foreground">
           {t.newAthlete.identitySection}
         </h3>
-        <div className="grid gap-4 xl:grid-cols-5 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <label className="text-sm font-medium text-muted">
             {t.newAthlete.firstName}
             <input
@@ -218,7 +218,6 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
               <option value="both">{t.newAthlete.dominantFootOptions.both}</option>
             </select>
           </label>
-          <div aria-hidden />
         </div>
       </section>
 
@@ -226,7 +225,7 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
         <h3 className="text-sm font-semibold text-container-foreground">
           {t.newAthlete.registrationSection}
         </h3>
-        <div className="grid gap-4 xl:grid-cols-5 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <label className="text-sm font-medium text-muted">
             {t.newAthlete.registrationYear}
             <input
@@ -287,7 +286,7 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
           </label>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-5 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <label className="text-sm font-medium text-muted">
             {t.newAthlete.team}
             <select
@@ -305,10 +304,6 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
               ))}
             </select>
           </label>
-          <div aria-hidden></div>
-          <div aria-hidden></div>
-          <div aria-hidden></div>
-          <div aria-hidden></div>
         </div>
       </section>
 
@@ -316,7 +311,7 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
         <p className="text-sm text-red-600">{t.newAthlete.error}</p>
       ) : null}
 
-      <div className="flex justify-end">
+      <div className="flex justify-end px-4 sm:px-0">
         <button
           type="submit"
           disabled={submitDisabled}

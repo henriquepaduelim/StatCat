@@ -56,7 +56,7 @@ const AthleteModals = ({
               >
                 <Dialog.Panel className="modal-surface w-full max-w-8xl sm:max-w-[92vw] transform overflow-hidden rounded-3xl bg-container-gradient shadow-2xl transition-all">
                   <Dialog.Title className="sr-only">{t.newAthlete.title}</Dialog.Title>
-                  <div className="relative h-[95vh] overflow-y-invisible p-1 sm:p-6">
+                  <div className="relative max-h-[calc(100vh-6.5rem)] overflow-y-auto p-1 sm:p-6">
                     <button
                       type="button"
                       onClick={() => setIsNewAthleteOpen(false)}
@@ -110,7 +110,7 @@ const AthleteModals = ({
                 <Dialog.Panel className="modal-surface w-full max-w-8xl sm:max-w-[92vw] transform overflow-hidden rounded-3xl bg-container-gradient shadow-2xl transition-all">
                   <Dialog.Title className="sr-only">{t.newAthlete.stepTwoTitle}</Dialog.Title>
 
-                  <div className="relative h-[95vh] overflow-y-auto p-1 sm:p-6">
+                  <div className="relative max-h-[calc(100vh-6.5rem)] overflow-y-auto p-1 sm:p-6">
                     <button
                       type="button"
                       onClick={() => {
