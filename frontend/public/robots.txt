@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Block API routes if served from the same origin
+Disallow: /api/
+
+Sitemap: https://stats-3momynf60-henriquepaduelims-projects.vercel.app/sitemap.xml
+
+# Production URLs for reference:
+# https://stats-cat-git-main-henriquepaduelims-projects.vercel.app
+# https://stats-3momynf60-henriquepaduelims-projects.vercel.app
