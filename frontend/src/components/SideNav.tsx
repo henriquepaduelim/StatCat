@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faRightFromBracket, faAngleUp, faGear } from "@fortawesome/free-solid-svg-icons";
+import { faRightFromBracket, faAngleUp, faGear, faUserAstronaut } from "@fortawesome/free-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/free-solid-svg-icons";
           
 import { useAuthStore } from "../stores/useAuthStore";
@@ -30,8 +30,6 @@ type MobileNavEntry = {
   label: NavItem["label"];
 };
 
-const PLAYER_PROFILE_ROUTE = "/player-profile";
-
 const SideNav = () => {
   const t = useTranslation();
   const clearAuth = useAuthStore((state) => state.clear);
@@ -57,55 +55,44 @@ const SideNav = () => {
     }, []);
   }, [permissions]);
 
-  const playerProfileItem = useMemo(
-    () => allowedNavItems.find((item) => item.to === PLAYER_PROFILE_ROUTE),
-    [allowedNavItems],
-  );
-  const playerProfileChildren = playerProfileItem?.children ?? [];
-
   const desktopNavItems = useMemo<AllowedNavItem[]>(() => {
-    if (!isAthlete || !playerProfileChildren.length) {
-      return allowedNavItems;
-    }
-
-    return allowedNavItems.flatMap<AllowedNavItem>((item) => {
-      if (item.to !== PLAYER_PROFILE_ROUTE || !item.children?.length) {
-        return [item];
-      }
-
-      return item.children.map((child) => ({
-        ...item,
-        to: child.to,
-        label: child.label,
-        icon: child.icon ?? item.icon,
-        children: undefined,
-        isStandaloneChild: true,
-        parentTo: item.to,
-      }));
-    });
-  }, [allowedNavItems, isAthlete, playerProfileChildren.length]);
+    // Keep the "Player Profile" parent visible for athletes, including its children.
+    return allowedNavItems;
+  }, [allowedNavItems]);
 
   const mobileNavItems = useMemo<MobileNavEntry[]>(() => {
-    const baseEntries = allowedNavItems.map<MobileNavEntry>((item) => ({
+    if (isAthlete) {
+      // Ordem desejada para atleta: Team Hub, Community, Profile, Combine, Report Cards, Scheduling
+      const findItem = (path: string) => allowedNavItems.find((item) => item.to === path);
+      const teamHub = findItem("/team-dashboard");
+      const community = findItem("/team-feed");
+      const playerProfile = findItem("/player-profile");
+      const children = playerProfile?.children ?? [];
+
+      const desiredOrder: Array<MobileNavEntry | null> = [
+        teamHub
+          ? { to: teamHub.to, icon: teamHub.icon, label: teamHub.label }
+          : null,
+        community
+          ? { to: community.to, icon: community.icon, label: community.label }
+          : null,
+        ...children.map((child) => ({
+          to: child.to,
+          icon: child.icon ?? playerProfile?.icon ?? faUserAstronaut,
+          label: child.label,
+        })),
+      ];
+
+      return desiredOrder.filter(Boolean) as MobileNavEntry[];
+    }
+
+    // Other roles: only parent items on mobile.
+    return allowedNavItems.map<MobileNavEntry>((item) => ({
       to: item.to,
       icon: item.icon,
       label: item.label,
     }));
-
-    if (isAthlete && playerProfileItem?.children?.length) {
-      const childEntries = playerProfileItem.children.map<MobileNavEntry>((child) => ({
-        to: child.to,
-        icon: child.icon ?? playerProfileItem.icon,
-        label: child.label,
-      }));
-      return [
-        ...baseEntries.filter((entry) => entry.to !== PLAYER_PROFILE_ROUTE),
-        ...childEntries,
-      ];
-    }
-
-    return baseEntries;
-  }, [allowedNavItems, isAthlete, playerProfileItem]);
+  }, [allowedNavItems, isAthlete]);
 
   useEffect(() => {
     if (isAthlete) {
@@ -121,7 +108,7 @@ const SideNav = () => {
     <>
       {/* Mobile Logout Icon */}
       {/* Mobile Navigation - Fixed Bottom Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#14203c] border-t-2 border-yellow-600/50 shadow-2xl">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 nav-mobile shadow-2xl">
         <nav className="flex items-stretch justify-around h-20">
           {mobileNavItems.map((item) => (
             <NavLink
@@ -142,7 +129,7 @@ const SideNav = () => {
                   >
                     <FontAwesomeIcon
                       icon={item.icon}
-                      className={`${isActive ? "text-2xl" : "text-xl"} text-[#f4a240] transition-all duration-200 drop-shadow-sm`}
+                      className={`${isActive ? "text-2xl" : "text-xl"} nav-mobile-icon transition-all duration-200 drop-shadow-sm`}
                     />
                     {item.to === "/athletes" && pendingCount && pendingCount.count > 0 && (
                       <div className="absolute -top-1 -right-1">
@@ -150,11 +137,7 @@ const SideNav = () => {
                       </div>
                     )}
                   </div>
-                  <span
-                    className={`text-[9px] font-semibold uppercase tracking-wider transition-all duration-200 ${
-                      isActive ? "text-white" : "text-white/70"
-                    }`}
-                  >
+                  <span className={`text-center text-[9px] font-semibold uppercase tracking-wider transition-all duration-200 nav-mobile-label ${isActive ? "opacity-100" : "opacity-70"}`}>
                     {item.label(t)}
                   </span>
                 </>
@@ -171,7 +154,7 @@ const SideNav = () => {
             <nav className="mt-8 flex-1 space-y-0.5 px-0">
               {desktopNavItems.map((item) => {
                 const childLinks = item.children ?? [];
-                const hasChildren = !isAthlete && childLinks.length > 0;
+                const hasChildren = childLinks.length > 0;
                 const hasActiveChild =
                   hasChildren && childLinks.some((child) => location.pathname.startsWith(child.to));
                 const shouldExpand = hasChildren && (hasActiveChild || expandedItem === item.to);
@@ -203,7 +186,7 @@ const SideNav = () => {
                         {item.label(t)}
                       </span>
                       <span className="flex items-center gap-2">
-                        {item.children && item.children.length > 0 && !isAthlete && (
+                        {item.children && item.children.length > 0 && (
                           <FontAwesomeIcon
                             icon={faAngleUp}
                             className={`text-xs text-current transition-transform ${

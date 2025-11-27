@@ -16,7 +16,7 @@ export interface Permissions {
 
 export const usePermissions = (): Permissions => {
   const user = useAuthStore((state) => state.user);
-  
+
   if (!user) {
     return {
       canViewDashboard: false,
@@ -73,24 +73,25 @@ export const usePermissions = (): Permissions => {
         canManageUsers: false,
       };
 
-    case "athlete":
-      {
-        // Athletes can only access features if they are approved
-        const isApproved = user.athlete_status === "APPROVED";
-        const canOnboard = user.athlete_status === "INCOMPLETE" || user.athlete_status === "REJECTED";
-        
-        return {
-          canViewDashboard: false,
-          canViewAthletes: false,
-          canCreateAthletes: false,
-          canEditAthletes: canOnboard, // Allow editing during onboarding
-          canDeleteAthletes: false,
-          canViewReports: isApproved,
-          canViewAllReports: false, // Can only view their own reports
-          canCreateCoaches: false,
-          canManageUsers: false,
-        };
-      }
+    case "athlete": {
+      const isApproved = user.athlete_status === "APPROVED";
+      const canOnboard =
+        user.athlete_status === "INCOMPLETE" ||
+        user.athlete_status === "REJECTED";
+
+      return {
+        // Athlete should focus on Player Profile; hide dashboard and athletes list
+        canViewDashboard: false,
+        canViewAthletes: false,
+        canCreateAthletes: false,
+        canEditAthletes: canOnboard, // Allow editing during onboarding/correction
+        canDeleteAthletes: false,
+        canViewReports: isApproved,
+        canViewAllReports: false, // Can only view their own reports
+        canCreateCoaches: false,
+        canManageUsers: false,
+      };
+    }
 
     default:
       return {

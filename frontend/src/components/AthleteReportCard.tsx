@@ -5,6 +5,7 @@ import { useTranslation } from "../i18n/useTranslation";
 import type { Athlete, AthleteReport } from "../types/athlete";
 import { getMediaUrl } from "../utils/media";
 import type { TestDefinition } from "../types/test";
+import { useAthleteCombineMetrics } from "../hooks/useAthleteCombineMetrics";
 import {
   ATHLETE_CATEGORY_COLORS,
   CATEGORY_KEYS,
@@ -14,6 +15,7 @@ import {
   normalizeCategory,
   safeParseDate,
 } from "../utils/athlete-report";
+import { chartPalette } from "../theme/chartPalette";
 
 const numberFormatter = new Intl.NumberFormat("en-US");
 const decimalFormatter = new Intl.NumberFormat("en-US", {
@@ -26,7 +28,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 });
 
-const chartPalette = ATHLETE_CATEGORY_COLORS;
+const categoryColors = ATHLETE_CATEGORY_COLORS;
 
 const timeframeDurations = {
   "30d": 30,
@@ -36,6 +38,26 @@ const timeframeDurations = {
 } as const;
 
 type TimeframeValue = keyof typeof timeframeDurations | "all";
+
+type CombineMetricKey =
+  | "sitting_height_cm"
+  | "standing_height_cm"
+  | "weight_kg"
+  | "split_10m_s"
+  | "split_20m_s"
+  | "split_35m_s"
+  | "yoyo_distance_m"
+  | "jump_cm"
+  | "max_power_kmh";
+
+type MetricOption = {
+  key: string;
+  name: string;
+  unit?: string;
+  kind: "report" | "combine";
+  targetDirection: "higher" | "lower";
+  combineKey?: CombineMetricKey;
+};
 
 type AthleteReportCardProps = {
   athlete: Athlete | null | undefined;
@@ -54,6 +76,23 @@ type PerformancePoint = {
   dateValue: number;
 };
 
+const COMBINE_METRIC_DEFINITIONS: Array<{
+  key: CombineMetricKey;
+  name: string;
+  unit?: string;
+  targetDirection: "higher" | "lower";
+}> = [
+  { key: "sitting_height_cm", name: "Sitting height (cm)", unit: "cm", targetDirection: "higher" },
+  { key: "standing_height_cm", name: "Standing height (cm)", unit: "cm", targetDirection: "higher" },
+  { key: "weight_kg", name: "Weight (kg)", unit: "kg", targetDirection: "lower" },
+  { key: "split_10m_s", name: "10m sprint (s)", unit: "s", targetDirection: "lower" },
+  { key: "split_20m_s", name: "20m sprint (s)", unit: "s", targetDirection: "lower" },
+  { key: "split_35m_s", name: "35m sprint (s)", unit: "s", targetDirection: "lower" },
+  { key: "yoyo_distance_m", name: "YoYo Distance (m)", unit: "m", targetDirection: "higher" },
+  { key: "jump_cm", name: "Jump (cm)", unit: "cm", targetDirection: "higher" },
+  { key: "max_power_kmh", name: "Max Shot Power (km/h)", unit: "km/h", targetDirection: "higher" },
+];
+
 const AthleteReportCard = ({
   athlete,
   detailedAthlete,
@@ -63,8 +102,11 @@ const AthleteReportCard = ({
   className,
 }: AthleteReportCardProps) => {
   const t = useTranslation();
-  const [selectedTestId, setSelectedTestId] = useState<number | null>(null);
+  const [selectedMetricKey, setSelectedMetricKey] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<TimeframeValue>("all");
+
+  const combineMetricsQuery = useAthleteCombineMetrics(athlete?.id ?? detailedAthlete?.id);
+  const combineMetrics = useMemo(() => combineMetricsQuery.data ?? [], [combineMetricsQuery.data]);
 
   const displayTests = useMemo(() => tests ?? [], [tests]);
 
@@ -107,55 +149,60 @@ const AthleteReportCard = ({
 
   const recentSessions = sessionSummaries.slice(0, 3);
 
-  const testOptions = useMemo(() => {
-    if (!report) {
-      return [] as Array<{ id: number; name: string; unit?: string }>;
-    }
-    const lookup = new Map<number, { name: string; unit?: string | null }>();
-    report.sessions.forEach((session) => {
-      session.results.forEach((metric) => {
-        if (!lookup.has(metric.test_id)) {
-          lookup.set(metric.test_id, {
-            name: metric.test_name,
-            unit: metric.unit,
-          });
+  const availableCombineKeys = useMemo(() => {
+    const keys = new Set<CombineMetricKey>();
+    combineMetrics.forEach((metric) => {
+      COMBINE_METRIC_DEFINITIONS.forEach((definition) => {
+        if (metric[definition.key] !== null && metric[definition.key] !== undefined) {
+          keys.add(definition.key);
         }
       });
     });
-    return Array.from(lookup.entries()).map(([id, meta]) => ({
-      id,
-      name: meta.name,
-      unit: meta.unit ?? undefined,
-    }));
-  }, [report]);
+    return keys;
+  }, [combineMetrics]);
+
+  const combineMetricOptions = useMemo<MetricOption[]>(() => {
+    return COMBINE_METRIC_DEFINITIONS
+      .filter((definition) => availableCombineKeys.has(definition.key))
+      .map((definition) => ({
+        key: `combine-${definition.key}`,
+        name: definition.name,
+        unit: definition.unit,
+        kind: "combine" as const,
+        targetDirection: definition.targetDirection,
+        combineKey: definition.key,
+      }));
+  }, [availableCombineKeys]);
+
+  // Only expose metrics that are collected via the UI (combine)
+  const metricOptions: MetricOption[] = useMemo(() => [...combineMetricOptions], [combineMetricOptions]);
 
   useEffect(() => {
-    if (!testOptions.length) {
-      setSelectedTestId(null);
+    if (!metricOptions.length) {
+      setSelectedMetricKey(null);
       return;
     }
-    if (!selectedTestId || !testOptions.some((option) => option.id === selectedTestId)) {
-      setSelectedTestId(testOptions[0].id);
+    if (!selectedMetricKey || !metricOptions.some((option) => option.key === selectedMetricKey)) {
+      setSelectedMetricKey(metricOptions[0].key);
     }
-  }, [testOptions, selectedTestId]);
+  }, [metricOptions, selectedMetricKey]);
 
-  const selectedTestMeta = useMemo(() => {
-    if (!selectedTestId) {
+  const selectedMetricMeta = useMemo(() => {
+    if (!selectedMetricKey) {
       return null;
     }
-    const fromReport = testOptions.find((option) => option.id === selectedTestId);
-    const fromDefinitions = displayTests.find((test) => test.id === selectedTestId);
-    return {
-      name: fromReport?.name ?? fromDefinitions?.name ?? "",
-      unit: fromReport?.unit ?? fromDefinitions?.unit ?? undefined,
-      targetDirection: fromDefinitions?.target_direction === "lower" ? "lower" : "higher",
-    };
-  }, [selectedTestId, testOptions, displayTests]);
+    return metricOptions.find((option) => option.key === selectedMetricKey) ?? null;
+  }, [selectedMetricKey, metricOptions]);
 
-  const timeframeOptions = t.dashboard.filters.rangeOptions as Array<{
-    value: TimeframeValue;
-    label: string;
-  }>;
+  const timeframeOptions =
+    (t.dashboard?.filters?.rangeOptions as Array<{ value: TimeframeValue; label: string }> | undefined) ??
+    [
+      { value: "30d", label: "30 days" },
+      { value: "90d", label: "90 days" },
+      { value: "180d", label: "180 days" },
+      { value: "365d", label: "12 months" },
+      { value: "all", label: "All time" },
+    ];
 
   const filteredSessions = useMemo(() => {
     if (!report) {
@@ -177,13 +224,57 @@ const AthleteReportCard = ({
     });
   }, [report, timeframe]);
 
+  const filteredCombineMetrics = useMemo(() => {
+    if (!combineMetrics.length) {
+      return [] as typeof combineMetrics;
+    }
+    if (timeframe === "all") {
+      return combineMetrics;
+    }
+    const days = timeframeDurations[timeframe];
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+    return combineMetrics.filter((metric) => {
+      const recorded = safeParseDate(metric.recorded_at);
+      if (!recorded) {
+        return true;
+      }
+      return recorded.getTime() >= cutoff;
+    });
+  }, [combineMetrics, timeframe]);
+
   const performanceSeries = useMemo(() => {
-    if (!filteredSessions.length || !selectedTestId) {
+    if (!selectedMetricMeta) {
+      return [] as PerformancePoint[];
+    }
+
+    if (selectedMetricMeta.kind === "combine" && selectedMetricMeta.combineKey) {
+      const rows: PerformancePoint[] = [];
+      filteredCombineMetrics.forEach((metric) => {
+        const value = metric[selectedMetricMeta.combineKey!];
+        if (value === null || value === undefined) {
+          return;
+        }
+        const recorded = safeParseDate(metric.recorded_at);
+        const dateValue = recorded ? recorded.getTime() : Date.now();
+        rows.push({
+          sessionId: metric.id,
+          label: recorded ? dateFormatter.format(recorded) : `Entry ${metric.id}`,
+          value,
+          peerAverage: null,
+          dateValue,
+        });
+      });
+      return rows.sort((a, b) => a.dateValue - b.dateValue);
+    }
+
+    if (!filteredSessions.length) {
       return [] as PerformancePoint[];
     }
     const rows: PerformancePoint[] = [];
     filteredSessions.forEach((session) => {
-      const metric = session.results.find((result) => result.test_id === selectedTestId);
+      const metric = session.results.find(
+        (result) => `report-${result.test_id}` === selectedMetricMeta.key
+      );
       if (!metric) {
         return;
       }
@@ -203,7 +294,7 @@ const AthleteReportCard = ({
       });
     });
     return rows.sort((a, b) => a.dateValue - b.dateValue);
-  }, [filteredSessions, selectedTestId]);
+  }, [filteredSessions, filteredCombineMetrics, selectedMetricMeta]);
 
   const performanceTicks = useMemo(
     () => performanceSeries.map((entry) => entry.dateValue),
@@ -211,9 +302,10 @@ const AthleteReportCard = ({
   );
 
   const performanceValues = performanceSeries.map((entry) => entry.value);
-  const hasPeerAverageLine = performanceSeries.some((entry) => entry.peerAverage != null);
+  const hasPeerAverageLine =
+    selectedMetricMeta?.kind === "report" && performanceSeries.some((entry) => entry.peerAverage != null);
   const bestValue = performanceValues.length
-    ? selectedTestMeta?.targetDirection === "lower"
+    ? selectedMetricMeta?.targetDirection === "lower"
       ? Math.min(...performanceValues)
       : Math.max(...performanceValues)
     : null;
@@ -223,8 +315,9 @@ const AthleteReportCard = ({
   const lastValue = performanceSeries.length
     ? performanceSeries[performanceSeries.length - 1].value
     : null;
+  const hasErrorOrEmpty = !selectedMetricMeta || performanceSeries.length === 0;
 
-  const selectedTestUnit = selectedTestMeta?.unit;
+  const selectedTestUnit = selectedMetricMeta?.unit;
 
   const dominantFootOptions = t.newAthlete.dominantFootOptions;
   const dominantFootLabels: Record<string, string> = {
@@ -326,23 +419,25 @@ const AthleteReportCard = ({
 
 
 
-          <div className="mt-6 space-y-4 overflow-hidden rounded-xl border border-white/10 bg-container/60 px-0 py-3 sm:px-2 md:px-6 md:py-6">
+          <div className="mt-6 space-y-4 overflow-hidden rounded-xl border border-white/10 bg-container/60 px-3 py-3 sm:px-4 md:px-6 md:py-6">
+            {hasErrorOrEmpty ? (
+              <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                {t.playerProfile.noReportData}
+              </div>
+            ) : null}
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h4 className="text-xl font-semibold text-container-foreground">
                   {t.dashboard.athleteReport.chartTitle}
                 </h4>
-                <p className="text-sm text-muted">
-                  {selectedTestMeta?.name || t.dashboard.filters.athletePlaceholder}
-                </p>
               </div>
-              <div className="flex flex-col gap-2 print-hidden sm:flex-row sm:items-center sm:gap-3">
+              <div className="grid grid-cols-2 gap-2 print-hidden sm:flex sm:items-center sm:gap-3">
                 <label className="text-xs font-medium text-muted">
                   {t.dashboard.filters.timeRangeLabel}
                   <select
                     value={timeframe}
                     onChange={(event) => setTimeframe(event.target.value as TimeframeValue)}
-                    className="ml-2 w-32 rounded-md border border-action-primary/30 bg-container/80 px-2 py-1 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                    className="mt-1 w-full min-w-0 rounded-md border border-action-primary/30 bg-container/80 px-2 py-1 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary sm:ml-2 sm:w-28 sm:min-w-[7rem]"
                   >
                     {timeframeOptions.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -351,49 +446,47 @@ const AthleteReportCard = ({
                     ))}
                   </select>
                 </label>
-                <label className="text-xs font-medium text-muted">
-                  {t.dashboard.athleteReport.selectTestLabel}
-                  <select
-                    value={selectedTestId ?? ""}
-                    onChange={(event) => {
-                      const value = event.target.value;
-                      setSelectedTestId(value ? Number(value) : null);
-                    }}
-                    className="ml-2 w-40 rounded-md border border-action-primary/30 bg-container/80 px-2 py-1 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                  >
-                    {testOptions.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <select
+                  aria-label={t.dashboard.athleteReport.selectTestLabel}
+                  value={selectedMetricKey ?? ""}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setSelectedMetricKey(value || null);
+                  }}
+                  className="mt-1 w-full min-w-0 rounded-md border border-action-primary/30 bg-container/80 px-2 py-1 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary sm:ml-2 sm:w-32 sm:min-w-[8rem]"
+                >
+                  {metricOptions.map((option) => (
+                    <option key={option.key} value={option.key}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
             <div className="h-64">
               {performanceSeries.length ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={performanceSeries} margin={{ top: 10, right: 5, bottom: 0, left: -15 }}>
-                    <CartesianGrid stroke="rgba(0,0,0,0.1)" strokeDasharray="3 3" />
+                    <LineChart data={performanceSeries} margin={{ top: 10, right: 20, bottom: 0, left: -40 }}>
+                    <CartesianGrid stroke="rgba(244,162,64,0.1)" strokeDasharray="3 3" />
                     <XAxis
                       dataKey="dateValue"
                       type="number"
                       domain={["dataMin", "dataMax"]}
                       ticks={performanceTicks}
-                      tick={{ fill: "rgba(0,0,0,0.5)" }}
+                      tick={{ fill: "rgba(244,162,64,0.8)" }}
                       tickFormatter={(value: number) => {
                         const match = performanceSeries.find((entry) => entry.dateValue === value);
                         return match?.label ?? dateFormatter.format(new Date(value));
                       }}
                     />
-                    <YAxis tick={{ fill: "rgba(0,0,0,0.5)" }} />
+                    <YAxis tick={{ fill: "rgba(244,162,64,0.8)" }} />
                     <Tooltip
                       formatter={(value: number | string, name: string) => {
                         if (typeof value !== "number") {
                           const label =
                             name === "peerAverage"
                               ? t.dashboard.athleteReport.peerAverageLabel
-                              : selectedTestMeta?.name ?? t.dashboard.athleteReport.selectTestLabel;
+                              : selectedMetricMeta?.name ?? t.dashboard.athleteReport.selectTestLabel;
                           return ["--", label];
                         }
                         const formattedValue = `${decimalFormatter.format(value)}${
@@ -404,7 +497,7 @@ const AthleteReportCard = ({
                         }
                         return [
                           formattedValue,
-                          selectedTestMeta?.name ?? t.dashboard.athleteReport.selectTestLabel,
+                          selectedMetricMeta?.name ?? t.dashboard.athleteReport.selectTestLabel,
                         ];
                       }}
                       labelFormatter={(value) => {
@@ -414,16 +507,16 @@ const AthleteReportCard = ({
                       }}
                       contentStyle={{
                         backgroundColor: "rgba(5, 12, 24, 0.92)",
-                        border: "1px solid rgba(123, 97, 255, 0.3)",
+                        border: `1px solid ${chartPalette.athleteLines.value}4D`, // 0.3 alpha
                         borderRadius: "0.75rem",
-                        color: "#E2F2FF",
+                        color: chartPalette.athleteLines.fill,
                       }}
                     />
                     {hasPeerAverageLine ? (
                       <Line
                         type="monotone"
                         dataKey="peerAverage"
-                        stroke="#f97316"
+                        stroke={chartPalette.athleteLines.peer}
                         strokeWidth={2}
                         strokeDasharray="6 6"
                         dot={false}
@@ -433,7 +526,7 @@ const AthleteReportCard = ({
                     <Line
                       type="monotone"
                       dataKey="value"
-                      stroke="#7B61FF"
+                    stroke={chartPalette.athleteLines.value}
                       strokeWidth={2.5}
                       dot={{ r: 3 }}
                       activeDot={{ r: 5 }}
@@ -444,32 +537,32 @@ const AthleteReportCard = ({
                 <p className="text-sm text-muted">{t.dashboard.athleteReport.chartEmpty}</p>
               )}
             </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div>
+            <div className="grid grid-cols-3 gap-3 px-2 sm:px-0">
+              <div className="rounded-lg border border-black/30 bg-container px-2.5 py-2 text-sm dark:border-[rgb(var(--color-border))] sm:px-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                   {t.dashboard.athleteReport.bestValueLabel}
                 </p>
-                <p className="mt-1 text-lg font-semibold text-container-foreground">
+                <p className="mt-1 text-base font-semibold text-container-foreground sm:text-lg">
                   {bestValue !== null
                     ? `${decimalFormatter.format(bestValue)}${selectedTestUnit ? ` ${selectedTestUnit}` : ""}`
                     : t.dashboard.athleteReport.notAvailable}
                 </p>
               </div>
-              <div>
+              <div className="rounded-lg border border-black/30 bg-container px-2.5 py-2 text-sm dark:border-[rgb(var(--color-border))] sm:px-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                   {t.dashboard.athleteReport.lastValueLabel}
                 </p>
-                <p className="mt-1 text-lg font-semibold text-container-foreground">
+                <p className="mt-1 text-base font-semibold text-container-foreground sm:text-lg">
                   {lastValue !== null
                     ? `${decimalFormatter.format(lastValue)}${selectedTestUnit ? ` ${selectedTestUnit}` : ""}`
                     : t.dashboard.athleteReport.notAvailable}
                 </p>
               </div>
-              <div>
+              <div className="rounded-lg border border-black/30 bg-container px-2.5 py-2 text-sm dark:border-[rgb(var(--color-border))] sm:px-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                   {t.dashboard.athleteReport.averageLabel}
                 </p>
-                <p className="mt-1 text-lg font-semibold text-container-foreground">
+                <p className="mt-1 text-base font-semibold text-container-foreground sm:text-lg">
                   {averageValue !== null
                     ? `${decimalFormatter.format(averageValue)}${selectedTestUnit ? ` ${selectedTestUnit}` : ""}`
                     : t.dashboard.athleteReport.notAvailable}
@@ -499,11 +592,11 @@ const AthleteReportCard = ({
                           {CATEGORY_KEYS.map((category) => {
                             const value = session.categoryIndexes[category];
                             return (
-                              <span key={`${session.id}-${category}`} className="flex items-center gap-1">
-                                <span
-                                  className="h-2 w-2 rounded-full"
-                                  style={{ backgroundColor: chartPalette[category] }}
-                                />
+                            <span key={`${session.id}-${category}`} className="flex items-center gap-1">
+                              <span
+                                className="h-2 w-2 rounded-full"
+                                style={{ backgroundColor: categoryColors[category] }}
+                              />
                                 {value != null
                                   ? numberFormatter.format(value)
                                   : t.dashboard.athleteReport.notAvailable}
@@ -518,7 +611,7 @@ const AthleteReportCard = ({
               ) : (
                 <p className="text-sm text-muted">{t.dashboard.athleteReport.chartEmpty}</p>
               )}
-            </div>
+            </div>  
           )}
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { PropsWithChildren, createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import { DEFAULT_THEME_ID, getThemeDefinition, type ThemeId } from "./themes";
+import { globalStyleTokens, supportColors } from "./tokens";
 import { mapThemeToCssVariables } from "./colorUtils";
 
 type ThemeContextValue = {
@@ -34,6 +35,45 @@ const applyTheme = (themeId: ThemeId) => {
   if (pageForeground) {
     document.body.style.color = `rgb(${pageForeground})`;
   }
+
+  // Global tokens (typography, radii, shadows) exposed as CSS vars for easier future edits.
+  const { typography, radii, shadows } = globalStyleTokens;
+  root.style.setProperty("--font-family-base", typography.fontFamily);
+  root.style.setProperty("--font-weight-regular", typography.fontWeight.regular.toString());
+  root.style.setProperty("--font-weight-medium", typography.fontWeight.medium.toString());
+  root.style.setProperty("--font-weight-semibold", typography.fontWeight.semibold.toString());
+  root.style.setProperty("--font-weight-bold", typography.fontWeight.bold.toString());
+  Object.entries(typography.fontSize).forEach(([key, value]) => {
+    root.style.setProperty(`--font-size-${key}`, value);
+  });
+  Object.entries(typography.lineHeight).forEach(([key, value]) => {
+    root.style.setProperty(`--line-height-${key}`, value);
+  });
+  Object.entries(radii).forEach(([key, value]) => {
+    root.style.setProperty(`--radius-${key}`, value);
+  });
+  Object.entries(shadows).forEach(([key, value]) => {
+    root.style.setProperty(`--shadow-${key}`, value);
+  });
+
+  // Theme-specific support colors (inputs, mobile nav, toggle, auxiliary borders).
+  const support = supportColors[themeId] ?? supportColors.light;
+  root.style.setProperty("--nav-mobile-bg", support.navMobileBg);
+  root.style.setProperty("--nav-mobile-border", support.navMobileBorder);
+  root.style.setProperty("--nav-mobile-accent", support.navMobileAccent);
+  root.style.setProperty("--nav-mobile-label", support.navMobileLabel);
+  root.style.setProperty("--input-bg", support.inputBg);
+  root.style.setProperty("--input-text", support.inputText);
+  root.style.setProperty("--input-border", support.inputBorder);
+  root.style.setProperty("--input-placeholder", support.inputPlaceholder);
+  root.style.setProperty("--toggle-muted", support.toggleMuted);
+  root.style.setProperty("--toggle-light", support.toggleLight);
+  root.style.setProperty("--toggle-dark", support.toggleDark);
+  root.style.setProperty("--toggle-link", support.toggleLink);
+  root.style.setProperty("--toggle-link-hover", support.toggleLinkHover);
+  root.style.setProperty("--border-table-light", support.borderTableLight);
+  root.style.setProperty("--border-table-dark", support.borderTableDark);
+  root.style.setProperty("--bg-soft-blue", support.bgSoftBlue);
 };
 
 const getInitialTheme = (): ThemeId => {

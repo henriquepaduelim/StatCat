@@ -1,14 +1,17 @@
 """Event models for calendar functionality with notifications."""
+from __future__ import annotations
+
 import enum
-from datetime import datetime
-from typing import TYPE_CHECKING, List
+from datetime import date, datetime, time as dt_time
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Column, Enum
+from sqlalchemy.orm import relationship
 from sqlmodel import Field, Relationship, SQLModel
+from app.db.types import SafeDate, SafeTime
 
 if TYPE_CHECKING:
     from .user import User
-    from .team import Team
 
 
 class EventStatus(str, enum.Enum):
@@ -30,8 +33,8 @@ class Event(SQLModel, table=True):
     """Event model for calendar events."""
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(max_length=200)
-    date: str = Field(max_length=10)  # YYYY-MM-DD
-    time: str | None = Field(default=None, max_length=5)  # HH:MM
+    date: date = Field(sa_column=Column(SafeDate(), nullable=False))
+    time: dt_time | None = Field(default=None, sa_column=Column(SafeTime(), nullable=True))
     location: str | None = Field(default=None, max_length=500)
     notes: str | None = Field(default=None)
     status: EventStatus = Field(default=EventStatus.SCHEDULED, sa_column=Column(Enum(EventStatus)))
@@ -39,7 +42,7 @@ class Event(SQLModel, table=True):
     # Relations
     team_id: int | None = Field(default=None, foreign_key="team.id", index=True)
     created_by_id: int = Field(foreign_key="user.id", index=True)
-    coach_id: int | None = Field(default=None, foreign_key="user.id")
+    coach_id: int | None = Field(default=None, foreign_key="user.id", index=True)
     
     # Timestamps
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
@@ -50,18 +53,24 @@ class Event(SQLModel, table=True):
     push_sent: bool = Field(default=False)
     
     # Relationships
-    participants: List["EventParticipant"] = Relationship(
-        back_populates="event",
-        sa_relationship_kwargs={"cascade": "all, delete-orphan", "passive_deletes": True},
+    participants: list["EventParticipant"] = Relationship(
+        sa_relationship=relationship(
+            "EventParticipant",
+            back_populates="event",
+            cascade="all, delete-orphan",
+            passive_deletes=True,
+        )
     )
-    created_by: "User" = Relationship(sa_relationship_kwargs={"foreign_keys": "[Event.created_by_id]"})
+    created_by: "User" = Relationship(
+        sa_relationship=relationship("User", foreign_keys="[Event.created_by_id]")
+    )
 
-    def set_team_ids(self, team_ids: List[int]) -> None:
+    def set_team_ids(self, team_ids: list[int]) -> None:
         """Cache resolved team ids for serialization."""
         setattr(self, "_team_ids_cache", team_ids)
 
     @property
-    def team_ids(self) -> List[int]:
+    def team_ids(self) -> list[int]:
         """Return cached team ids, falling back to single team_id if unset."""
         cached = getattr(self, "_team_ids_cache", None)
         if cached is not None:
@@ -88,7 +97,9 @@ class EventParticipant(SQLModel, table=True):
     responded_at: datetime | None = Field(default=None)
     
     # Relationships
-    event: Event = Relationship(back_populates="participants")
+    event: "Event" = Relationship(
+        sa_relationship=relationship("Event", back_populates="participants")
+    )
 
 
 class Notification(SQLModel, table=True):

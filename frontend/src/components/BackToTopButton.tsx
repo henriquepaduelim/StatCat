@@ -23,6 +23,7 @@ const BackToTopButton = ({
 }: BackToTopButtonProps) => {
   const [isVisible, setIsVisible] = useState(false);
   const [target, setTarget] = useState<HTMLElement | null>(null);
+  const hasTarget = targetSelector ? target !== null : true;
 
   const resolveTarget = useMemo(() => {
     if (!targetSelector || typeof document === "undefined") {
@@ -60,6 +61,12 @@ const BackToTopButton = ({
       setIsVisible(getScrollTop() > SCROLL_THRESHOLD);
     };
 
+    // Without a target or fallback, do not render or attach scroll listeners.
+    if (targetSelector && !target && !fallbackToWindow) {
+      setIsVisible(false);
+      return;
+    }
+
     handleScroll();
     if (target && target.addEventListener) {
       target.addEventListener("scroll", handleScroll, { passive: true });
@@ -73,9 +80,9 @@ const BackToTopButton = ({
         window.removeEventListener("scroll", handleScroll);
       }
     };
-  }, [target, fallbackToWindow]);
+  }, [target, fallbackToWindow, targetSelector]);
 
-  if (!isVisible) {
+  if (!hasTarget || !isVisible) {
     return null;
   }
 
