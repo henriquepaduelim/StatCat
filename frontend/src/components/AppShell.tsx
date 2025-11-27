@@ -6,7 +6,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import SideNav from "./SideNav";
 import { useAuthStore } from "../stores/useAuthStore";
 import branding from "../theme/branding.generated";
-import ThemeToggleSwitch from "./ThemeToggleSwitch";
+
 import BackToTopButton from "./BackToTopButton";
 
 const AppShell = ({ children }: PropsWithChildren) => {
@@ -52,7 +52,7 @@ const AppShell = ({ children }: PropsWithChildren) => {
 
   return (
     <div className="relative min-h-screen bg-page text-page-foreground">
-      <ThemeToggleSwitch greeting={greeting} />
+      {greeting}
       <div className="hidden md:flex fixed left-0 top-0 z-20 w-72 flex-col items-center pt-0 pointer-events-none">
         <a
           href="/dashboard"
