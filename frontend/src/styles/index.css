@@ -339,10 +339,6 @@ body {
   transition: background-color 200ms ease-in-out, color 200ms ease-in-out;
 }
 
-body.pwa-splash-active {
-  background-color: var(--splash-bg);
-}
-
 input::placeholder,
 textarea::placeholder {
   color: rgba(20, 20, 20, 0.4);

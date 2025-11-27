@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
     "i",
   );
 
-  const enablePwaInBuild = env.VITE_ENABLE_PWA_BUILD === "true";
+  const enablePwaInBuild = env.VITE_ENABLE_PWA_BUILD === "false";
   const shouldEnablePwa = mode !== "production" || enablePwaInBuild;
 
   const pwaPlugin = shouldEnablePwa

@@ -9,40 +9,6 @@ import "./styles/index.css";
 import LocaleProvider from "./i18n/LocaleProvider";
 import ThemeProvider from "./theme/ThemeProvider";
 
-const MIN_SPLASH_DURATION = 300;
-const splashMountedAt = performance.now();
-
-const removeSplashBackground = () => {
-  document.body.classList.remove("pwa-splash-active");
-};
-
-const hideSplashScreen = () => {
-  const splash = document.getElementById("pwa-splash");
-  if (!splash) {
-    removeSplashBackground();
-    return;
-  }
-  if (splash.classList.contains("splash-hidden")) {
-    removeSplashBackground();
-    return;
-  }
-  splash.classList.add("splash-hidden");
-  splash.addEventListener(
-    "transitionend",
-    () => {
-      splash.remove();
-      removeSplashBackground();
-    },
-    { once: true }
-  );
-};
-
-const scheduleSplashRemoval = () => {
-  const elapsed = performance.now() - splashMountedAt;
-  const delay = Math.max(MIN_SPLASH_DURATION - elapsed, 0);
-  window.setTimeout(hideSplashScreen, delay);
-};
-
 const queryClient = new QueryClient();
 
 const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(
@@ -68,7 +34,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
 );
 
 if (document.readyState === "complete") {
-  scheduleSplashRemoval();
+  // no-op
 } else {
-  window.addEventListener("load", scheduleSplashRemoval, { once: true });
+  window.addEventListener("load", () => {}, { once: true });
 }
