@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 
 import { useTranslation } from "../../i18n/useTranslation";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCheck, faQuestion, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { useEvents, useConfirmEventAttendance } from "../../hooks/useEvents";
 import { usePlayerProfileContext } from "./context";
 import type { EventConfirmationPayload } from "../../types/event";
@@ -76,7 +78,7 @@ const SchedulingPage = () => {
     if (!isSelfView) {
       return;
     }
-    setActionError(null);
+    setActionError(null); 
     setPendingEventId(eventId);
     try {
       await confirmAttendanceMutation.mutateAsync({
@@ -124,44 +126,37 @@ const SchedulingPage = () => {
           <p className="text-sm text-muted">{event.notes || "No additional notes."}</p>
 
           {currentAthleteId && myParticipant && (
-            <div
-              className={`rounded-lg p-3 text-sm border transition ${
-                currentStatus === "confirmed"
-                  ? "bg-green-50 border-green-200 text-green-900"
-                  : currentStatus === "maybe"
-                    ? "bg-yellow-50 border-yellow-200 text-yellow-900"
-                    : currentStatus === "declined"
-                      ? "bg-red-50 border-red-200 text-red-900"
-                      : "bg-container border-black/5"
-              }`}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-semibold text-container-foreground">
-                  {t.playerProfile.schedulingRsvpTitle}
-                </span>
-                <span className="text-xs font-semibold uppercase tracking-wide inline-flex items-center rounded-full border border-white/20 px-3 py-1">
-                  {t.playerProfile.schedulingStatus[currentStatus]}
-                </span>
-              </div>
+            <div className="mt-4 flex w-full flex-wrap items-center justify-end gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wide inline-flex items-center rounded-full border-action-primary bg-action-primary/5 px-3 py-1 text-container-foreground">
+                {t.playerProfile.schedulingStatus[currentStatus]}
+              </span>
               {canRespond ? (
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-1">
                   {rsvpOptions.map((option) => {
                     const isSelected = currentStatus === option.status;
                     const isDisabled =
                       pendingEventId === event.id || confirmAttendanceMutation.isPending;
+                    const icon =
+                      option.status === "confirmed"
+                        ? faCheck
+                        : option.status === "maybe"
+                          ? faQuestion
+                          : faXmark;
                     return (
                       <button
                         key={`${event.id}-${option.status}`}
                         type="button"
                         onClick={() => handleRespond(event.id, option.status)}
                         disabled={isDisabled}
-                        className={`rounded-full border px-4 py-1 text-xs font-semibold uppercase tracking-wide transition ${
+                        className={`flex items-center justify-center rounded-full border p-2 transition ${
                           isSelected
                             ? "border-action-primary bg-action-primary text-action-primary-foreground shadow"
                             : "border-black/10 bg-container hover:border-action-primary hover:text-action-primary"
-                        } ${isDisabled ? "opacity-60" : ""}`}
+                        } ${isDisabled ? "opacity-60 cursor-not-allowed" : ""}`}
+                        title={option.label}
+                        aria-label={option.label}
                       >
-                        {option.label}
+                        <FontAwesomeIcon icon={icon} className="h-5 w-5" />
                       </button>
                     );
                   })}
