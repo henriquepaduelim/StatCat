@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import api from "./client";
 import type { AuthUser } from "../stores/useAuthStore";
 import { logger } from "../utils/logger";
+import type { Athlete } from "../types/athlete";
 
 export type AuthResponse = {
   user: AuthUser;
@@ -61,6 +62,26 @@ export const registerAccount = async (
     role,
   };
   const { data } = await api.post("/auth/signup", payload);
+  return data;
+};
+
+export type SignupAthleteResponse = {
+  user_id: number;
+  athlete_id: number;
+  signup_token: string;
+};
+
+export const signupAthlete = async (payload: {
+  full_name: string;
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  birth_date: string;
+  gender: "male" | "female";
+  phone?: string;
+}): Promise<SignupAthleteResponse> => {
+  const { data } = await api.post<SignupAthleteResponse>("/auth/signup-athlete", payload);
   return data;
 };
 

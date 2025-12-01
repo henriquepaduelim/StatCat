@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { completeAthleteRegistration } from "../api/athletes";
+import { completeAthleteRegistration, completeAthleteRegistrationPublic } from "../api/athletes";
 import type {
   Athlete,
   AthleteRegistrationCompletionPayload,
@@ -51,9 +51,10 @@ interface NewAthleteStepTwoFormProps {
   onSuccess?: () => void;
   onClose?: () => void;
   isEditMode?: boolean;
+  signupToken?: string | null;
 }
 
-const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false }: NewAthleteStepTwoFormProps) => {
+const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false, signupToken = null }: NewAthleteStepTwoFormProps) => {
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState<StepTwoFormState>({
@@ -87,8 +88,12 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
   const [formErrors, setFormErrors] = useState<string[]>([]);
 
   const mutation = useMutation({
-    mutationFn: (payload: AthleteRegistrationCompletionPayload) =>
-      completeAthleteRegistration(athlete.id, payload),
+    mutationFn: (payload: AthleteRegistrationCompletionPayload) => {
+      if (signupToken) {
+        return completeAthleteRegistrationPublic(athlete.id, payload, signupToken);
+      }
+      return completeAthleteRegistration(athlete.id, payload);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["athlete", athlete.id] });
       queryClient.invalidateQueries({ queryKey: ["athlete-report", athlete.id] });

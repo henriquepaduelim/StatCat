@@ -9,6 +9,7 @@ type OnboardingAthlete = (Partial<Athlete> & { id: number }) | null;
 type AthleteOnboardingModalProps = {
   step: OnboardingStep;
   createdAthlete: OnboardingAthlete;
+  signupToken: string | null;
   error: string | null;
   isSubmitPending: boolean;
   onCloseAll: () => void;
@@ -23,6 +24,7 @@ type AthleteOnboardingModalProps = {
 const AthleteOnboardingModal = ({
   step,
   createdAthlete,
+  signupToken,
   error,
   isSubmitPending,
   onCloseAll,
@@ -70,6 +72,7 @@ const AthleteOnboardingModal = ({
             <div>
               <NewAthleteStepTwoForm
                 athlete={createdAthlete as Athlete}
+                signupToken={signupToken}
                 onSuccess={onStepTwoSuccess}
                 onClose={onSkipStepTwo}
                 isEditMode={false}

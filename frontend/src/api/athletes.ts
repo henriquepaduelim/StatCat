@@ -50,6 +50,19 @@ export const completeAthleteRegistration = async (
   return data;
 };
 
+export const completeAthleteRegistrationPublic = async (
+  athleteId: number,
+  payload: AthleteRegistrationCompletionPayload,
+  signupToken: string
+): Promise<Athlete> => {
+  const { data } = await api.put<Athlete>(
+    `/athletes/${athleteId}/onboarding-public`,
+    payload,
+    { headers: { Authorization: `Bearer ${signupToken}` } }
+  );
+  return data;
+};
+
 export interface UploadAthleteDocumentResponse extends AthleteDocumentMetadata {
   id: number;
   uploaded_at: string;
@@ -99,4 +112,15 @@ export const getPendingAthletes = async (): Promise<PendingAthleteSummary[]> => 
 
 export const submitForApproval = async (athleteId: number): Promise<void> => {
   await api.post(`/athletes/${athleteId}/submit-for-approval`);
+};
+
+export const submitForApprovalPublic = async (
+  athleteId: number,
+  signupToken: string
+): Promise<void> => {
+  await api.post(
+    `/athletes/${athleteId}/submit-for-approval-public`,
+    null,
+    { headers: { Authorization: `Bearer ${signupToken}` } }
+  );
 };

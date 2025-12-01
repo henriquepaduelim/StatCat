@@ -9,9 +9,9 @@ from sqlmodel import Session, select
 
 from app.api.deps import authenticate_user, get_current_active_user
 from app.core.config import settings  # Import settings to get origins
-from app.core.security import create_access_token, get_password_hash
+from app.core.security import create_access_token, create_signup_token, get_password_hash
 from app.db.session import get_session
-from app.models.athlete import Athlete
+from app.models.athlete import Athlete, AthleteGender
 from app.models.user import User, UserRole, UserAthleteApprovalStatus
 from app.schemas.user import (
     PasswordResetConfirm,
@@ -23,6 +23,8 @@ from app.schemas.user import (
     UserReadWithToken,
     UserSignup,
     UserSelfUpdate,
+    AthleteSignup,
+    AthleteSignupResponse,
 )
 from app.services.email_service import EmailService
 
@@ -209,6 +211,62 @@ async def upload_user_photo(
     session.commit()
     session.refresh(current_user)
     return current_user
+
+
+@router.post("/signup-athlete", response_model=AthleteSignupResponse, status_code=status.HTTP_201_CREATED)
+def signup_athlete(
+    payload: AthleteSignup,
+    session: Session = Depends(get_session),
+) -> AthleteSignupResponse:
+    """Public signup for athletes. Creates user+athlete as INCOMPLETE and returns a short-lived onboarding token."""
+    existing = session.exec(select(User).where(User.email == payload.email)).first()
+    if existing:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+
+    try:
+        gender_value = AthleteGender(payload.gender.lower())
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid gender") from exc
+
+    hashed_password = get_password_hash(payload.password)
+    user = User(
+        email=payload.email.strip(),
+        hashed_password=hashed_password,
+        full_name=payload.full_name.strip(),
+        phone=payload.phone.strip() if payload.phone else None,
+        role=UserRole.ATHLETE,
+        athlete_status=UserAthleteApprovalStatus.INCOMPLETE,
+        is_active=True,
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    athlete = Athlete(
+        first_name=payload.first_name.strip(),
+        last_name=payload.last_name.strip(),
+        email=payload.email.strip(),
+        phone=payload.phone.strip() if payload.phone else None,
+        birth_date=payload.birth_date,
+        gender=gender_value,
+        primary_position="unknown",
+        preferred_position=None,
+    )
+    session.add(athlete)
+    session.commit()
+    session.refresh(athlete)
+
+    user.athlete_id = athlete.id
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    signup_token = create_signup_token(athlete.id)
+    return AthleteSignupResponse(
+        user_id=user.id,
+        athlete_id=athlete.id,
+        signup_token=signup_token,
+    )
 
 
 @router.get("/athlete-status")

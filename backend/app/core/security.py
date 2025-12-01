@@ -22,6 +22,17 @@ def create_access_token(subject: str, expires_minutes: int | None = None) -> str
     return encoded_jwt
 
 
+def create_signup_token(athlete_id: int, expires_minutes: int = 60 * 24) -> str:
+    """Short-lived token used to complete onboarding before approval."""
+    expire = datetime.utcnow() + timedelta(minutes=expires_minutes)
+    payload: dict[str, Any] = {
+        "sub": f"signup:{athlete_id}",
+        "scope": "signup",
+        "exp": expire,
+    }
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.SECURITY_ALGORITHM)
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 

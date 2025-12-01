@@ -1,4 +1,5 @@
 from typing import Annotated
+from datetime import date
 
 from email_validator import EmailNotValidError, validate_email
 from pydantic import AfterValidator, ConfigDict
@@ -54,6 +55,23 @@ class UserSignup(SQLModel):
     password: str
     role: UserRole = UserRole.ATHLETE
     phone: str | None = None
+
+
+class AthleteSignup(SQLModel):
+    full_name: str
+    email: LocalEmailStr
+    password: str
+    first_name: str
+    last_name: str
+    birth_date: date
+    gender: str
+    phone: str | None = None
+
+
+class AthleteSignupResponse(SQLModel):
+    user_id: int
+    athlete_id: int
+    signup_token: str
 
 
 class UserRead(UserBase):

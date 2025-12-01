@@ -215,7 +215,7 @@ StatCat is under active development. Larger backlog items include comment reacti
   The `--persist-*` flags keep the temporary files so the next `npm run dev` / Docker build reuses them. Omit the flags in CI or when you just want to produce a clean package.
 
 - `python scripts/build_club_package.py` automatically appends `http://localhost:3000` and `http://localhost:5173` to `BACKEND_CORS_ORIGINS` so the package works locally. Provide `--no-localhost-cors` if you need a production-only `.env`.
-- The dev server (`npm run dev`) now reads default branding values from `frontend/.env.development` (Elite 1). Override them per machine using `frontend/.env.local` so you can keep the base experience intact while preparing custom packages.
+- The dev server (`npm run dev`) now reads default branding values from `frontend/.env.development` (StatCat). Override them per machine using `frontend/.env.local` so you can keep the base experience intact while preparing custom packages.
 
 ## Project Status
 

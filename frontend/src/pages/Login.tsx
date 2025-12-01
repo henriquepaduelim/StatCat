@@ -7,10 +7,11 @@ import { faCat } from "@fortawesome/free-solid-svg-icons";
 import {
   login,
   registerAccount,
+  signupAthlete,
 } from "../api/auth";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useTranslation } from "../i18n/useTranslation";
-import { submitForApproval } from "../api/athletes";
+import { submitForApproval, submitForApprovalPublic } from "../api/athletes";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import api from "../api/client";
 const PasswordRecoveryDialog = lazy(() => import("../components/PasswordRecoveryDialog"));
@@ -48,6 +49,7 @@ const Login = () => {
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep>(null);
   const [createdAthlete, setCreatedAthlete] = useState<OnboardingAthlete>(null);
   const [hasDismissedPendingModal, setHasDismissedPendingModal] = useState(false);
+  const [signupToken, setSignupToken] = useState<string | null>(null);
 
   const from = (location.state as { from?: Location })?.from?.pathname ?? "/dashboard";
   const isRegister = mode === "register";
@@ -141,7 +143,12 @@ const Login = () => {
   }, [user]);
   
   const submitApprovalMutation = useMutation({
-    mutationFn: (athleteId: number) => submitForApproval(athleteId),
+    mutationFn: (athleteId: number) => {
+      if (signupToken) {
+        return submitForApprovalPublic(athleteId, signupToken);
+      }
+      return submitForApproval(athleteId);
+    },
     onSuccess: () => {
       // Update user status in store
       const user = useAuthStore.getState().user;
@@ -187,18 +194,29 @@ const Login = () => {
           return;
         }
 
-        // Register and automatically login
-        await registerAccount(`${trimmedFirst} ${trimmedLast}`, trimmedEmail, password, "athlete");
-        
-        // Automatically login the user
-        const { user, token } = await login(trimmedEmail, password, true);
-        setCredentials({ user, token });
-        setInitialized(true);
-        
-        // Start onboarding process in modal - Skip step 1, go directly to step 2
+        const signupResponse = await signupAthlete({
+          full_name: `${trimmedFirst} ${trimmedLast}`,
+          first_name: trimmedFirst,
+          last_name: trimmedLast,
+          email: trimmedEmail,
+          password,
+          birth_date: new Date().toISOString().slice(0, 10),
+          gender: "male",
+          phone: "",
+        });
+        setCreatedAthlete({
+          id: signupResponse.athlete_id,
+          user_id: signupResponse.user_id,
+          full_name: `${trimmedFirst} ${trimmedLast}`,
+          first_name: trimmedFirst,
+          last_name: trimmedLast,
+          email: trimmedEmail,
+        });
+        setSignupToken(signupResponse.signup_token);
         setOnboardingStep(2);
         setError(null);
-        setSuccessMessage(null);
+        setSuccessMessage("Account created. Complete onboarding to submit for approval.");
+        setInitialized(true);
       } else {
         const { user, token } = await login(email.trim(), password, true);
         setCredentials({ user, token });
@@ -262,6 +280,8 @@ const Login = () => {
       setPassword("");
       setConfirmPassword("");
     }
+    setSignupToken(null);
+    setCreatedAthlete(null);
   };
 
   const openRecoveryModal = (step: "request" | "confirm" = "request") => {
@@ -324,6 +344,7 @@ const handlePendingReviewClose = () => {
     setHasDismissedPendingModal(true);
     setMode("login");
     resetAuthFields();
+    setSignupToken(null);
   };
 
   // Redirect logic for authenticated users
@@ -445,6 +466,7 @@ const handlePendingReviewClose = () => {
         <AthleteOnboardingModal
           step={onboardingStep}
           createdAthlete={createdAthlete}
+          signupToken={signupToken}
           error={error}
           isSubmitPending={submitApprovalMutation.isPending}
           onCloseAll={handleOnboardingClose}

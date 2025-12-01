@@ -42,6 +42,7 @@ backend/app/combine_backend.egg-info/
 .DS_Store
 .idea/
 .vscode/
+READMEBYGOOGLE.md
 
 # Credentials and environment files
 client_secret_*.json

@@ -17,6 +17,7 @@ const renderModal = (step: 1 | 2 | 3 | 4 | null, overrides?: Partial<typeof defa
     <AthleteOnboardingModal
       step={step}
       createdAthlete={step === 2 ? { id: 1, first_name: "Test", last_name: "Athlete" } : null}
+      signupToken="token"
       error={null}
       isSubmitPending={false}
       {...defaultCallbacks}

@@ -18,6 +18,8 @@ from app.models.match_stat import MatchStat
 from app.models.session_result import SessionResult
 from app.models.team import Team
 from app.models.user import User, UserRole, UserAthleteApprovalStatus
+from app.core.security import create_signup_token
+from jose import jwt, JWTError
 from app.services.email_service import email_service
 from app.schemas.athlete import (
     AthleteCreate,
@@ -26,6 +28,8 @@ from app.schemas.athlete import (
     AthleteRegistrationCompletion,
     AthleteRegistrationCreate,
     AthleteUpdate,
+    AthleteDocumentPayload,
+    AthletePaymentPayload,
 )
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.user import UserRead
@@ -85,6 +89,144 @@ def _store_file(athlete_id: int, file: UploadFile, base_dir: Path, max_size: int
 
 
 router = APIRouter()
+
+
+def _decode_signup_token(token: str, athlete_id: int) -> None:
+    """Validate signup token scope and athlete id."""
+    try:
+        decoded = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.SECURITY_ALGORITHM])
+    except JWTError as exc:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signup token") from exc
+    if decoded.get("scope") != "signup":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signup token")
+    sub = decoded.get("sub") or ""
+    if not sub.startswith("signup:"):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signup token")
+    try:
+        token_athlete_id = int(sub.split("signup:")[-1])
+    except ValueError as exc:  # pragma: no cover
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signup token") from exc
+    if token_athlete_id != athlete_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Signup token mismatch")
+
+
+def _get_signup_token(auth_header: str | None) -> str:
+    if not auth_header or not auth_header.lower().startswith("bearer "):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Signup token required")
+    return auth_header.split(" ", 1)[1].strip()
+
+
+@router.put(
+    "/{athlete_id}/onboarding-public",
+    response_model=AthleteRead,
+    status_code=status.HTTP_200_OK,
+)
+def complete_registration_public(
+    athlete_id: int,
+    payload: AthleteRegistrationCompletion,
+    authorization: str | None = None,
+    session: Session = Depends(get_session),
+) -> AthleteRead:
+    """Complete onboarding using a signup token (no auth required)."""
+    token = _get_signup_token(authorization)
+    _decode_signup_token(token, athlete_id)
+
+    athlete = session.get(Athlete, athlete_id)
+    if not athlete:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+
+    detail = session.get(AthleteDetail, athlete_id)
+    if not detail:
+        detail = AthleteDetail(athlete_id=athlete_id)
+
+    detail.email = payload.email
+    detail.phone = payload.phone
+    detail.address_line1 = payload.address_line1
+    detail.address_line2 = payload.address_line2
+    detail.city = payload.city
+    detail.province = payload.province
+    detail.postal_code = payload.postal_code
+    detail.country = payload.country
+    detail.guardian_name = payload.guardian_name
+    detail.guardian_relationship = payload.guardian_relationship
+    detail.guardian_email = payload.guardian_email
+    detail.guardian_phone = payload.guardian_phone
+    detail.secondary_guardian_name = payload.secondary_guardian_name
+    detail.secondary_guardian_relationship = payload.secondary_guardian_relationship
+    detail.secondary_guardian_email = payload.secondary_guardian_email
+    detail.secondary_guardian_phone = payload.secondary_guardian_phone
+    detail.emergency_contact_name = payload.emergency_contact_name
+    detail.emergency_contact_relationship = payload.emergency_contact_relationship
+    detail.emergency_contact_phone = payload.emergency_contact_phone
+    detail.medical_allergies_encrypted = encrypt_text(payload.medical_allergies)
+    detail.medical_conditions_encrypted = encrypt_text(payload.medical_conditions)
+    detail.physician_name_encrypted = encrypt_text(payload.physician_name)
+    detail.physician_phone_encrypted = encrypt_text(payload.physician_phone)
+    detail.updated_at = datetime.utcnow()
+
+    if payload.email:
+        athlete.email = payload.email
+    if payload.phone:
+        athlete.phone = payload.phone
+
+    session.add(detail)
+    session.add(athlete)
+
+    if payload.documents:
+        existing_docs = session.exec(
+            select(AthleteDocument).where(AthleteDocument.athlete_id == athlete_id)
+        ).all()
+        docs_by_label = {doc.label: doc for doc in existing_docs}
+        for doc_payload in payload.documents:
+            document = docs_by_label.get(doc_payload.label)
+            if document:
+                document.file_url = doc_payload.file_url
+                document.uploaded_at = datetime.utcnow()
+                session.add(document)
+            else:
+                session.add(
+                    AthleteDocument(
+                        athlete_id=athlete_id,
+                        label=doc_payload.label,
+                        file_url=doc_payload.file_url,
+                    )
+                )
+
+    payment_payload = payload.payment
+    if payment_payload:
+        payment_record = session.exec(
+            select(AthletePayment).where(AthletePayment.athlete_id == athlete_id)
+        ).first()
+        if payment_record:
+            payment_record.amount = payment_payload.amount
+            payment_record.currency = payment_payload.currency
+            payment_record.method = payment_payload.method
+            payment_record.reference = payment_payload.reference
+            payment_record.receipt_url = payment_payload.receipt_url
+            payment_record.paid_at = payment_payload.paid_at
+            session.add(payment_record)
+        else:
+            session.add(
+                AthletePayment(
+                    athlete_id=athlete_id,
+                    amount=payment_payload.amount,
+                    currency=payment_payload.currency,
+                    method=payment_payload.method,
+                    reference=payment_payload.reference,
+                    receipt_url=payment_payload.receipt_url,
+                    paid_at=payment_payload.paid_at,
+                )
+            )
+    else:
+        payment_record = session.exec(
+            select(AthletePayment).where(AthletePayment.athlete_id == athlete_id)
+        ).first()
+        if payment_record:
+            session.delete(payment_record)
+
+    session.commit()
+    session.refresh(athlete)
+    return athlete
 
 def _validate_team(session: Session, team_id: int | None) -> None:
     if team_id is None:
@@ -884,3 +1026,49 @@ def submit_for_approval(
     session.refresh(current_user)
     
     return current_user
+
+
+@router.post("/{athlete_id}/submit-for-approval-public", response_model=UserRead)
+def submit_for_approval_public(
+    athlete_id: int,
+    authorization: str | None = None,
+    session: Session = Depends(get_session),
+) -> User:
+    """Submit athlete registration for admin approval using a signup token."""
+    token = _get_signup_token(authorization)
+    _decode_signup_token(token, athlete_id)
+
+    athlete = session.get(Athlete, athlete_id)
+    if not athlete:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+
+    user = session.exec(select(User).where(User.athlete_id == athlete_id)).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if user.athlete_status != UserAthleteApprovalStatus.INCOMPLETE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Can only submit incomplete registrations for approval",
+        )
+
+    if not all([athlete.first_name, athlete.last_name, athlete.birth_date]):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Basic athlete information (name and date of birth) is required before submitting for approval",
+        )
+
+    detail = session.get(AthleteDetail, athlete_id)
+    if detail:
+        required_contact_fields = [detail.emergency_contact_name, detail.emergency_contact_phone]
+        if not all(field and field.strip() for field in required_contact_fields if isinstance(field, str)):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Emergency contact information is required before submitting for approval",
+            )
+
+    user.athlete_status = UserAthleteApprovalStatus.PENDING
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
