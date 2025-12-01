@@ -285,7 +285,7 @@ const TeamDashboard = () => {
 
   return (
     <>
-    <div className="space-y-6">
+    <div className="space-y-2">
       <header className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <PageTitle title={teamDashboardTexts.title} description={teamDashboardTexts.description} className="pb-0" />
         <div className="w-full max-w-xs">

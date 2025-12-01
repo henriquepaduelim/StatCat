@@ -3,9 +3,9 @@ import type { ThemeDefinition } from "./themes";
 // Cores por tema (hex), mantidas iguais às definições atuais.
 export const themeTokens: Record<"light" | "dark", ThemeDefinition> = {
   light: {
-    id: "elite-1-academy",
-    name: "ELITE 1 ACADEMY",
-    description: "Default Elite 1 color palette",
+    id: "statcat-sports-analysis",
+    name: "StatCat Sports Analysis",
+    description: "Default StatCat color palette",
     colors: {
       page: { background: "#F5F5F5", foreground: "#000000" },
       container: { background: "#FFFFFF", foreground: "#000000" },
@@ -17,12 +17,12 @@ export const themeTokens: Record<"light" | "dark", ThemeDefinition> = {
       border: "#000000",
       muted: "#000000",
     },
-    logo: { label: "ELITE 1", background: "#2191FB", color: "#FFFFFF" },
+    logo: { label: "STATCAT", background: "#2191FB", color: "#FFFFFF" },
   },
   dark: {
-    id: "elite-1-academy-dark",
-    name: "ELITE 1 ACADEMY Dark",
-    description: "Default Elite 1 dark color palette",
+    id: "statcat-sports-analysis-dark",
+    name: "StatCat Sports Analysis Dark",
+    description: "Default StatCat dark color palette",
     colors: {
       page: { background: "#0B0B0B", foreground: "#F5F5F5" },
       container: { background: "#161616", foreground: "#FFFFFF" },
@@ -34,7 +34,7 @@ export const themeTokens: Record<"light" | "dark", ThemeDefinition> = {
       border: "#2C2C2C",
       muted: "#9E9E9E",
     },
-    logo: { label: "ELITE 1", background: "#F4A240", color: "#0B0B0B" },
+    logo: { label: "STATCAT", background: "#F4A240", color: "#0B0B0B" },
   },
 };
 

@@ -6,7 +6,7 @@ type PageTitleProps = {
 };
 
 const PageTitle = ({ title, description, eyebrow, className = "" }: PageTitleProps) => (
-  <header className={`space-y-1 pt-1 pb-3 ${className}`}>
+  <header className={`space-y-1 pt-0 pb-1 md:pb-2 ${className}`}>
     {eyebrow ? (
       <p className="text-xs uppercase tracking-wide text-muted">{eyebrow}</p>
     ) : null}

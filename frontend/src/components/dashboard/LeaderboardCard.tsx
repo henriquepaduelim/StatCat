@@ -5,6 +5,7 @@ import { faMedal } from "@fortawesome/free-solid-svg-icons";
 import { useScoringLeaderboard } from "../../hooks/useScoringLeaderboard";
 import type { LeaderboardEntry, LeaderboardType } from "../../api/leaderboards";
 import { chartPalette } from "../../theme/chartPalette";
+import { getMediaUrl } from "../../utils/media";
 
 type LeaderboardCardProps = {
   limit?: number;
@@ -29,6 +30,14 @@ const LeaderboardRow = ({
     3: { backgroundColor: chartPalette.podium.bronze, color: chartPalette.podium.textLight },
   };
   const primaryValue = leaderboardType === "scorers" ? entry.goals : entry.clean_sheets;
+  const avatarSrc = entry.photo_url ? getMediaUrl(entry.photo_url) : null;
+  const initials = entry.full_name
+    .split(" ")
+    .filter(Boolean)
+    .map((chunk) => chunk[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <li
@@ -38,17 +47,22 @@ const LeaderboardRow = ({
         borderColor: "rgb(var(--color-border))",
       }}
     >
-      <span
-        className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold shadow-sm"
-        style={medalCircleStyles[position] ?? undefined}
-      >
-        {position}
-      </span>
-      <div>
-        <p className="font-semibold text-container-foreground">{entry.full_name}</p>
-        <p className="text-xs text-muted">
-          {entry.team || "Unassigned"} • {entry.age_category || "N/A"}
-        </p>
+      <div className="flex items-center gap-2">
+        <div className="relative flex h-10 w-10 items-center justify-center rounded-full overflow-hidden bg-action-primary/10 text-sm font-semibold text-action-primary">
+          {avatarSrc ? (
+            <img src={avatarSrc} alt={entry.full_name} className="h-full w-full object-cover" />
+          ) : (
+            <span
+              className="flex h-10 w-10 items-center justify-center rounded-full text-xs font-semibold shadow-sm"
+              style={medalCircleStyles[position] ?? undefined}
+            >
+              {initials || position}
+            </span>
+          )}
+        </div>
+        <div>
+          <p className="font-semibold text-container-foreground leading-tight">{entry.full_name}</p>
+        </div>
       </div>
       <div className="text-right">
         <p className="text-lg font-bold text-action-primary">

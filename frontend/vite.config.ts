@@ -35,11 +35,12 @@ export default defineConfig(({ mode }) => {
         includeAssets: [
           "/media/statCatLogo2.png",
           "/media/statCatLogo2-black.png",
+          "/media/statCatLogo2-black.ico",
         ],
         manifest: {
-          name: "ELITE 1 ACADEMY",
-          short_name: "ELITE 1",
-          description: "ELITE 1 ACADEMY sports analytics platform",
+          name: "StatCat Sports Analysis",
+          short_name: "StatCat",
+          description: "StatCat Sports Analysis platform",
           theme_color: "#121212",
           background_color: "#000000",
           display: "standalone",

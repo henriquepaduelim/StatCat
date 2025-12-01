@@ -10,11 +10,11 @@ export type BrandingConfig = {
 };
 
 const brandingConfig: BrandingConfig = {
-  id: "statcat-sports-analytics",
-  name: "StatCat Sports Analytics",
+  id: "statcat-sports-analysis",
+  name: "StatCat Sports Analysis",
   assets: {
     logo: "/media/statCatLogo2.png",
-    favicon: "/pwa-192x192.png",
+    favicon: "/media/statCatLogo2-black.ico",
   },
 };
 

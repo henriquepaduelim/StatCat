@@ -45,7 +45,7 @@ const AppShell = ({ children }: PropsWithChildren) => {
     location.pathname === "/athletes" || location.pathname === "/athletes/";
   const isPlayerProfilePage = location.pathname.startsWith("/player-profile");
   const baseMainClasses =
-    "flex flex-1 min-h-0 w-full flex-col px-3 sm:px-6 pb-20 md:pb-8 pt-1 md:pt-3 md:[&>*:nth-child(n+3)]:mt-12";
+    "flex flex-1 min-h-0 w-full flex-col px-3 sm:px-6 pb-20 md:pb-8 pt-0 md:pt-0 md:[&>*:nth-child(n+3)]:mt-12";
   const mainClassName = `${baseMainClasses} ${
     isAthletesListPage || isPlayerProfilePage ? "max-w-none" : "mx-auto w-full md:max-w-6xl"
   }`;
@@ -62,13 +62,14 @@ const AppShell = ({ children }: PropsWithChildren) => {
           <img
             src={branding.assets.logo}
             alt={`${branding.name} logo`}
-            className="h-76 w-auto -translate-y-[30px] -mt-[1.5px]"
+            className="h-[170px] w-auto -translate-y-[1.5px]"
+            style={{ clipPath: "inset(4% 4% 4% 4%)" }}
           />
         </a>
       </div>
       <SideNav />
       <div className="md:pl-72 flex flex-col flex-1">
-        <header className="print-hidden md:hidden flex items-center justify-between px-2 pt-6 pb-4">
+        <header className="print-hidden md:hidden flex items-center justify-between px-2 pt-6 py-4">
           <img
             src={branding.assets.logo}
             alt={`${branding.name} logo`}
@@ -93,7 +94,6 @@ const AppShell = ({ children }: PropsWithChildren) => {
             </button>
           </div>
         </header>
-        <header className="print-hidden hidden md:flex items-center justify-start px-6 py-4" />
         <main className={mainClassName}>
           {children}
         </main>

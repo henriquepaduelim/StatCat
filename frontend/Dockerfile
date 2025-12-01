@@ -1,9 +1,9 @@
 FROM node:18-alpine as build
 
 ARG VITE_API_BASE_URL=http://localhost:8000
-ARG VITE_APP_BRAND_NAME=StatCat
-ARG VITE_BRAND_ID=default
-ARG VITE_BRAND_FAVICON="/media/Asset 1ELITE0LOGO.svg"
+ARG VITE_APP_BRAND_NAME="StatCat Sports Analysis"
+ARG VITE_BRAND_ID=statcat-sports-analysis
+ARG VITE_BRAND_FAVICON="/media/statCatLogo2-black.ico"
 
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV VITE_APP_BRAND_NAME=$VITE_APP_BRAND_NAME

@@ -1,9 +1,9 @@
 import type { ThemeDefinition } from "./themes";
 
 export const activeTheme: ThemeDefinition = {
-  id: "elite-1-academy",
-  name: "ELITE 1 ACADEMY",
-  description: "Default Elite 1 color palette",
+  id: "statcat-sports-analysis",
+  name: "StatCat Sports Analysis",
+  description: "Default StatCat color palette",
   colors: {
     page: {
       background: "#F5F5F5",
@@ -36,7 +36,7 @@ export const activeTheme: ThemeDefinition = {
     muted: "#000000",
   },
   logo: {
-    label: "ELITE 1",
+    label: "STATCAT",
     background: "#2191FB",
     color: "#FFFFFF",
   },

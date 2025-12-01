@@ -5,6 +5,7 @@ export type LeaderboardType = "scorers" | "clean_sheets";
 export interface LeaderboardEntry {
   athlete_id: number;
   full_name: string;
+  photo_url?: string | null;
   team?: string | null;
   age_category?: string | null;
   position?: string | null;
@@ -32,6 +33,7 @@ export type CombineLeaderboardDirection = "higher_is_better" | "lower_is_better"
 export interface CombineLeaderboardEntry {
   athlete_id: number;
   full_name: string;
+  photo_url?: string | null;
   team?: string | null;
   age_category?: string | null;
   value: number | null;
