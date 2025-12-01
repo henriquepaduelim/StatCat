@@ -45,7 +45,6 @@ def upgrade() -> None:
     sa.Column('player_registration_status', sa.Enum('new', 'transfer', 'return_player', 'guest', name='playerregistrationstatus'), nullable=True),
     sa.Column('preferred_position', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('desired_shirt_number', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.ForeignKeyConstraint(['team_id'], ['team.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('athlete', schema=None) as batch_op:
@@ -70,7 +69,6 @@ def upgrade() -> None:
     sa.Column('created_by_id', sa.Integer(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['created_by_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('team', schema=None) as batch_op:
@@ -102,7 +100,6 @@ def upgrade() -> None:
     sa.Column('must_change_password', sa.Boolean(), nullable=False),
     sa.Column('last_login_at', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['athlete_id'], ['athlete.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('user', schema=None) as batch_op:
@@ -413,6 +410,11 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['test_id'], ['testdefinition.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+
+    # Add foreign keys that were deferred to avoid creation-order cycles
+    op.create_foreign_key('fk_team_created_by_id', 'team', 'user', ['created_by_id'], ['id'])
+    op.create_foreign_key('fk_athlete_team_id', 'athlete', 'team', ['team_id'], ['id'])
+    op.create_foreign_key('fk_user_athlete_id', 'user', 'athlete', ['athlete_id'], ['id'])
     # ### end Alembic commands ###
 
 

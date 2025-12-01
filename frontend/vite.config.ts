@@ -33,9 +33,8 @@ export default defineConfig(({ mode }) => {
         injectRegister: null,
         registerType: "autoUpdate",
         includeAssets: [
-          "/media/1ELITE0LOGO.svg",
-          "/media/ELITE1-LOGO-transparent.png",
-          "/media/ELITE1-LOGO-black.png",
+          "/media/statCatLogo2.png",
+          "/media/statCatLogo2-black.png",
         ],
         manifest: {
           name: "ELITE 1 ACADEMY",
@@ -49,34 +48,16 @@ export default defineConfig(({ mode }) => {
           start_url: "/",
           icons: [
             {
-              src: "/media/ELITE1-LOGO-black.png",
-              sizes: "192x192",
+              src: "/media/statCatLogo2.png",
+              sizes: "500x500",
               type: "image/png",
               purpose: "any",
             },
             {
-              src: "/media/ELITE1-LOGO-black.png",
-              sizes: "512x512",
-              type: "image/png",
-              purpose: "any",
-            },
-            {
-              src: "/media/ELITE1-LOGO-black.png",
-              sizes: "192x192",
+              src: "/media/statCatLogo2.png",
+              sizes: "500x500",
               type: "image/png",
               purpose: "maskable",
-            },
-            {
-              src: "/media/ELITE1-LOGO-black.png",
-              sizes: "512x512",
-              type: "image/png",
-              purpose: "maskable",
-            },
-            {
-              src: "/media/ELITE1-LOGO-black.png",
-              sizes: "180x180",
-              type: "image/png",
-              purpose: "any",
             },
           ],
         },

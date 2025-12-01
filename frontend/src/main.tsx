@@ -11,13 +11,13 @@ import ThemeProvider from "./theme/ThemeProvider";
 
 const queryClient = new QueryClient();
 
-const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(
-  navigator.userAgent || ""
-);
-
-if (isMobile) {
-  registerSW({ immediate: true });
-}
+registerSW({
+  immediate: true,
+  onNeedRefresh: () => {
+    // Force reload so cached SW assets don't serve old UI
+    location.reload();
+  },
+});
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
