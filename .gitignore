@@ -63,5 +63,3 @@ backend/backend_startup.log
 frontend/.env.local
 frontend/src/theme/activeThemeDark.generated.ts
 
-DATABASE_URL="postgresql://neondb_owner:npg_uwimE0aN6bHk@ep-summer-recipe-ad4r2vh1-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require" alembic upgrade head
-psql "postgresql://neondb_owner:npg_klZsmd98AUzF@ep-orange-wildflower-adooa8ao-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
