@@ -9,6 +9,7 @@ __pycache__/
 .coverage*
 htmlcov/
 .env
+.env.gemini
 .venv/
 venv/
 

@@ -60,6 +60,7 @@ class GameLeaderboardResponse(BaseModel):
 class LeaderboardEntry(BaseModel):
     athlete_id: int
     full_name: str
+    photo_url: str | None = None
     team: str | None = None
     age_category: str | None = None
     position: str | None = None
@@ -77,6 +78,7 @@ class LeaderboardResponse(BaseModel):
 class CombineLeaderboardEntry(BaseModel):
     athlete_id: int
     full_name: str
+    photo_url: str | None = None
     team: str | None = None
     age_category: str | None = None
     value: float | None = None

@@ -19,7 +19,7 @@ class EmailService:
         self.smtp_user = settings.SMTP_USER or ""
         self.smtp_password = settings.SMTP_PASSWORD or ""
         self.from_email = settings.SMTP_FROM_EMAIL or self.smtp_user
-        self.from_name = settings.SMTP_FROM_NAME or "StatCat Sports Analytics"
+        self.from_name = settings.SMTP_FROM_NAME or "StatCat Sports Analysis"
 
         self.resend_api_key = settings.RESEND_API_KEY or None
         self.resend_from_email = settings.RESEND_FROM_EMAIL or self.from_email

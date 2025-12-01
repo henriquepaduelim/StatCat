@@ -102,6 +102,7 @@ def scoring_leaderboard(
                 Athlete.primary_position,
                 Team.name,
                 Team.age_category,
+                Athlete.photo_url,
                 func.count(MatchStat.id).label("games_played"),
                 func.sum(clean_sheet_case).label("clean_sheets"),
                 func.sum(MatchStat.goals_conceded).label("goals_conceded"),
@@ -126,6 +127,7 @@ def scoring_leaderboard(
             Athlete.primary_position,
             Team.name,
             Team.age_category,
+            Athlete.photo_url,
         )
 
         rows = session.exec(grouped).all()
@@ -139,6 +141,7 @@ def scoring_leaderboard(
                 primary_position,
                 team_name,
                 team_age_category,
+                photo_url,
                 games_played,
                 clean_sheets,
                 goals_conceded,
@@ -158,6 +161,7 @@ def scoring_leaderboard(
                     team=team_name,
                     age_category=team_age_category,
                     position=primary_position,
+                    photo_url=photo_url,
                     goals=0,
                     clean_sheets=clean_sheets,
                     games_played=games_played,
@@ -180,6 +184,7 @@ def scoring_leaderboard(
                 Athlete.primary_position,
                 Team.name,
                 Team.age_category,
+                Athlete.photo_url,
                 func.sum(MatchStat.goals).label("goals"),
             )
             .join(MatchStat, MatchStat.athlete_id == Athlete.id)
@@ -201,6 +206,7 @@ def scoring_leaderboard(
             Athlete.primary_position,
             Team.name,
             Team.age_category,
+            Athlete.photo_url,
         )
 
         rows = session.exec(grouped).all()
@@ -215,6 +221,7 @@ def scoring_leaderboard(
                 team_name,
                 team_age_category,
                 goals,
+                photo_url,
             ) = row
 
             goals = int(goals or 0)
@@ -228,6 +235,7 @@ def scoring_leaderboard(
                     team=team_name,
                     age_category=team_age_category,
                     position=primary_position,
+                    photo_url=photo_url,
                     goals=goals,
                     clean_sheets=0,
                 )
@@ -272,6 +280,7 @@ def combine_leaderboard(
             TeamCombineMetric.athlete_id,
             Athlete.first_name,
             Athlete.last_name,
+            Athlete.photo_url,
             Team.name,
             Team.age_category,
             value_expression.label("value"),
@@ -288,6 +297,7 @@ def combine_leaderboard(
         TeamCombineMetric.athlete_id,
         Athlete.first_name,
         Athlete.last_name,
+        Athlete.photo_url,
         Team.name,
         Team.age_category,
     )
@@ -305,7 +315,7 @@ def combine_leaderboard(
             "value": float(value) if value is not None else None,
             "unit": config["unit"],
         }
-        for athlete_id, first_name, last_name, team_name, age_category, value in rows
+        for athlete_id, first_name, last_name, photo_url, team_name, age_category, value in rows
         if athlete_id is not None
     ]
 
