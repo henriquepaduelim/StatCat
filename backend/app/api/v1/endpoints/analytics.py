@@ -12,15 +12,26 @@ from app.db.session import get_session
 from app.models.athlete import Athlete, AthleteStatus
 from app.models.match_stat import MatchStat
 from app.models.team import Team
+from app.models.team_combine_metric import TeamCombineMetric
 from app.models.user import User, UserRole
 from app.schemas.analytics import (
     AthleteMetricsResponse,
+    CombineLeaderboardResponse,
     LeaderboardEntry,
     LeaderboardResponse,
     MetricRankingResponse,
 )
 
 router = APIRouter()
+
+COMBINE_METRIC_CONFIG: dict[str, dict[str, str | None]] = {
+    "split_10m_s": {"direction": "lower_is_better", "unit": "s"},
+    "split_20m_s": {"direction": "lower_is_better", "unit": "s"},
+    "split_35m_s": {"direction": "lower_is_better", "unit": "s"},
+    "jump_cm": {"direction": "higher_is_better", "unit": "cm"},
+    "max_power_kmh": {"direction": "higher_is_better", "unit": "km/h"},
+    "yoyo_distance_m": {"direction": "higher_is_better", "unit": "m"},
+}
 
 @router.get("/athletes/{athlete_id}/metrics", response_model=AthleteMetricsResponse)
 def athlete_metrics(
@@ -228,3 +239,79 @@ def scoring_leaderboard(
         entries = entries[:limit]
 
     return LeaderboardResponse(leaderboard_type=leaderboard_type, entries=entries)
+
+
+@router.get(
+    "/leaderboards/combine",
+    response_model=CombineLeaderboardResponse,
+)
+def combine_leaderboard(
+    metric: Literal[
+        "split_10m_s",
+        "split_20m_s",
+        "split_35m_s",
+        "jump_cm",
+        "max_power_kmh",
+        "yoyo_distance_m",
+    ] = Query(default="split_35m_s"),
+    team_id: int | None = Query(default=None),
+    limit: int = Query(default=5, ge=1, le=50),
+    session: Session = Depends(get_session),
+    _current_user: User = Depends(get_current_active_user),
+) -> CombineLeaderboardResponse:
+    config = COMBINE_METRIC_CONFIG.get(metric)
+    if config is None:  # pragma: no cover - defensive
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid metric")
+
+    metric_column = getattr(TeamCombineMetric, metric)
+    aggregate_fn = func.min if config["direction"] == "lower_is_better" else func.max
+    value_expression = aggregate_fn(metric_column)
+
+    statement = (
+        select(
+            TeamCombineMetric.athlete_id,
+            Athlete.first_name,
+            Athlete.last_name,
+            Team.name,
+            Team.age_category,
+            value_expression.label("value"),
+        )
+        .join(Athlete, Athlete.id == TeamCombineMetric.athlete_id)
+        .outerjoin(Team, Team.id == TeamCombineMetric.team_id)
+        .where(metric_column.isnot(None))
+    )
+
+    if team_id is not None:
+        statement = statement.where(TeamCombineMetric.team_id == team_id)
+
+    grouped = statement.group_by(
+        TeamCombineMetric.athlete_id,
+        Athlete.first_name,
+        Athlete.last_name,
+        Team.name,
+        Team.age_category,
+    )
+
+    order_clause = value_expression.asc() if config["direction"] == "lower_is_better" else value_expression.desc()
+    ranked = grouped.order_by(order_clause).limit(limit)
+    rows = session.exec(ranked).all()
+
+    entries = [
+        {
+            "athlete_id": athlete_id,
+            "full_name": f"{first_name} {last_name}".strip(),
+            "team": team_name,
+            "age_category": age_category,
+            "value": float(value) if value is not None else None,
+            "unit": config["unit"],
+        }
+        for athlete_id, first_name, last_name, team_name, age_category, value in rows
+        if athlete_id is not None
+    ]
+
+    return CombineLeaderboardResponse(
+        metric=metric,
+        direction=config["direction"],  # type: ignore[arg-type]
+        unit=config["unit"],
+        entries=entries,
+    )

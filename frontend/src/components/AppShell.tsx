@@ -56,16 +56,24 @@ const AppShell = ({ children }: PropsWithChildren) => {
       <div className="hidden md:flex fixed left-0 top-0 z-20 w-72 flex-col items-center pt-0 pointer-events-none">
         <a
           href="/dashboard"
-          className="pointer-events-auto inline-flex items-center justify-center"
-          aria-label="Go to dashboard"
+          className="top-[-4px] pointer-events-auto inline-flex items-center justify-center"
+          aria-label="Go to Dashboard"
         >
-          <img src={branding.assets.logo} alt={`${branding.name} logo`} className="h-48 w-auto" />
+          <img
+            src={branding.assets.logo}
+            alt={`${branding.name} logo`}
+            className="h-76 w-auto -translate-y-[30px] -mt-[1.5px]"
+          />
         </a>
       </div>
       <SideNav />
       <div className="md:pl-72 flex flex-col flex-1">
         <header className="print-hidden md:hidden flex items-center justify-between px-2 pt-6 pb-4">
-          <img src={branding.assets.logo} alt={`${branding.name} logo`} className="h-16 w-auto" />
+          <img
+            src={branding.assets.logo}
+            alt={`${branding.name} logo`}
+            className="h-16 w-auto -translate-y-[1.5px] -mt-[1.5px]"
+          />
           <div className="flex items-center gap-3">
             <button
               type="button"

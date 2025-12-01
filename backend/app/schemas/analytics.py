@@ -72,3 +72,19 @@ class LeaderboardEntry(BaseModel):
 class LeaderboardResponse(BaseModel):
     leaderboard_type: Literal["scorers", "clean_sheets"]
     entries: list[LeaderboardEntry]
+
+
+class CombineLeaderboardEntry(BaseModel):
+    athlete_id: int
+    full_name: str
+    team: str | None = None
+    age_category: str | None = None
+    value: float | None = None
+    unit: str | None = None
+
+
+class CombineLeaderboardResponse(BaseModel):
+    metric: str
+    direction: Literal["higher_is_better", "lower_is_better"]
+    unit: str | None = None
+    entries: list[CombineLeaderboardEntry]

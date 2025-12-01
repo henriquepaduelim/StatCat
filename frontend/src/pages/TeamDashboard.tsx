@@ -20,6 +20,7 @@ import { useAthletes } from "../hooks/useAthletes";
 import { listTeamCombineMetrics } from "../api/teamMetrics";
 import { getTeamPosts } from "../api/teamPosts";
 import LeaderboardCard from "../components/dashboard/LeaderboardCard";
+import CombineLeaderboardCard from "../components/dashboard/CombineLeaderboardCard";
 import TeamFeedPreview from "../components/team-dashboard/TeamFeedPreview";
 import TeamEventsWidget from "../components/team-dashboard/TeamEventsWidget";
 import TeamCombineMetricsPanel from "../components/team-dashboard/TeamCombineMetricsPanel";
@@ -329,7 +330,7 @@ const TeamDashboard = () => {
               </button>
             </div>
           ) : null}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             <LeaderboardCard
               presetType="scorers"
               title={leaderboardLabels.scorersTitle}
@@ -337,6 +338,7 @@ const TeamDashboard = () => {
               limit={5}
               teamId={selectedTeamId ?? null}
             />
+            <CombineLeaderboardCard teamId={selectedTeamId ?? null} limit={5} />
             <LeaderboardCard
               presetType="clean_sheets"
               title={leaderboardLabels.cleanSheetsTitle}
