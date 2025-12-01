@@ -53,7 +53,7 @@ const AppShell = ({ children }: PropsWithChildren) => {
   return (
     <div className="relative min-h-screen bg-page text-page-foreground">
       {greeting}
-      <div className="hidden md:flex fixed left-0 top-0 z-20 w-72 flex-col items-center pt-0 pointer-events-none">
+      <div className="hidden md:flex fixed left-0 top-0 z-10 w-72 flex-col items-center pt-0 pointer-events-none">
         <a
           href="/dashboard"
           className="top-[-4px] pointer-events-auto inline-flex items-center justify-center"

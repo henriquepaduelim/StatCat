@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMedal } from "@fortawesome/free-solid-svg-icons";
 
-import type { CombineMetricId } from "../../api/leaderboards";
+import type { CombineMetricId, CombineLeaderboardEntry } from "../../api/leaderboards";
 import { useCombineLeaderboard } from "../../hooks/useCombineLeaderboard";
 import { chartPalette } from "../../theme/chartPalette";
 
@@ -47,7 +47,7 @@ const CombineLeaderboardCard = ({ limit = 5, teamId }: CombineLeaderboardCardPro
     team_id: teamId ?? undefined,
   });
 
-  const entries = leaderboardQuery.data?.entries ?? [];
+  const entries: CombineLeaderboardEntry[] = leaderboardQuery.data?.entries ?? [];
 
   return (
     <div className="w-full rounded-xl border border-action-primary/25 bg-container-gradient p-4 sm:p-6 shadow-xl backdrop-blur">
@@ -95,7 +95,7 @@ const CombineLeaderboardCard = ({ limit = 5, teamId }: CombineLeaderboardCardPro
             </div>
           ) : (
             <ul className="space-y-2">
-              {entries.map((entry, index) => (
+              {entries.map((entry: CombineLeaderboardEntry, index: number) => (
                 <li
                   key={`${entry.athlete_id}-${entry.full_name}-${activeMetric}`}
                   className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-lg border px-3 py-2 text-sm"
