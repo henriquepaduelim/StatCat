@@ -331,6 +331,21 @@ def assign_existing_coach(
     return coach
 
 
+@router.get("/coaches", response_model=list[UserRead])
+def list_coaches(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> list[UserRead]:
+    """List all coaches with their assigned teams."""
+    ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH})
+    coaches = session.exec(
+        select(User)
+        .where(User.role == UserRole.COACH)
+        .order_by(User.full_name)
+    ).all()
+    return coaches
+
+
 @router.put("/coaches/{coach_id}", response_model=UserRead)
 def update_coach(
     coach_id: int,

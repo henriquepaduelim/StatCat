@@ -53,12 +53,19 @@ const requiredFieldDefinitions: Array<{ name: keyof StepTwoFormState; label: str
 
 interface NewAthleteStepTwoFormProps {
   athlete: Athlete;
+  signupToken?: string | null;
   onSuccess?: () => void;
   onClose?: () => void;
   isEditMode?: boolean;
 }
 
-const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false }: NewAthleteStepTwoFormProps) => {
+const NewAthleteStepTwoForm = ({
+  athlete,
+  signupToken = null,
+  onSuccess,
+  onClose,
+  isEditMode = false,
+}: NewAthleteStepTwoFormProps) => {
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState<StepTwoFormState>({
@@ -128,6 +135,9 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
         physician_name: formData.physician_name.trim() || undefined,
         physician_phone: formData.physician_phone.trim() || undefined,
       };
+      if (signupToken) {
+        return completeAthleteRegistrationPublic(athlete.id, detailsPayload, signupToken);
+      }
       return completeAthleteRegistration(athlete.id, detailsPayload);
     },
     onSuccess: () => {
