@@ -109,6 +109,21 @@ def list_teams(
     ]
 
 
+@router.get("/coaches", response_model=list[UserRead])
+def list_coaches(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> list[UserRead]:
+    """List all coaches with their assigned teams."""
+    ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH})
+    coaches = session.exec(
+        select(User)
+        .where(User.role == UserRole.COACH)
+        .order_by(User.full_name)
+    ).all()
+    return coaches
+
+
 @router.get("/{team_id}", response_model=TeamRead)
 def get_team(
     team_id: int,
