@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { updateAthlete, completeAthleteRegistration } from "../api/athletes";
+import {
+  updateAthlete,
+  completeAthleteRegistration,
+  completeAthleteRegistrationPublic,
+} from "../api/athletes";
 import type {
   Athlete,
   AthletePayload,
