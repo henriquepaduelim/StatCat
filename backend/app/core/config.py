@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     ])
     MEDIA_ROOT: str = "media"
     AUTO_SEED_DATABASE: bool = False
+    LOG_LEVEL: str = "INFO"
     
     # Google OAuth settings
     GOOGLE_CLIENT_ID: str | None = None
@@ -71,6 +72,15 @@ class Settings(BaseSettings):
     USER_PHOTO_MAX_BYTES: int = 5 * 1024 * 1024
     USER_ALLOWED_PHOTO_EXTENSIONS: set[str] = {".png", ".jpg", ".jpeg"}
     USER_ALLOWED_PHOTO_MIME_TYPES: set[str] = {"image/png", "image/jpeg", "image/heic", "image/heif"}
+    
+    # Observability
+    SENTRY_DSN: str | None = None
+    SENTRY_TRACES_SAMPLE_RATE: float = 0.1
+    SENTRY_PROFILES_SAMPLE_RATE: float | None = None
+    OTEL_EXPORTER_OTLP_ENDPOINT: str | None = None
+    OTEL_EXPORTER_OTLP_HEADERS: str | None = None
+    OTEL_SERVICE_NAME: str | None = None
+    OTEL_TRACES_SAMPLER_RATIO: float = 0.2
 
     @model_validator(mode="after")
     def _validate_security_basics(self) -> "Settings":

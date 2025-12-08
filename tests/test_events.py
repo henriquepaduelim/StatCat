@@ -1,6 +1,8 @@
 """
 Tests for event participant management.
 """
+from datetime import date, time
+
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
@@ -27,8 +29,8 @@ def _create_coach(session: Session) -> User:
 def _create_event(session: Session, creator_id: int) -> Event:
     event = Event(
         name="Training Session",
-        date="2025-01-01",
-        time="10:00",
+        event_date=date(2025, 1, 1),
+        start_time=time(10, 0),
         location="Main Field",
         notes="Bring gear",
         created_by_id=creator_id,

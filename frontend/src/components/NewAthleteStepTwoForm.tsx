@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { completeAthleteRegistration, completeAthleteRegistrationPublic } from "../api/athletes";
+import { updateAthlete, completeAthleteRegistration } from "../api/athletes";
 import type {
   Athlete,
+  AthletePayload,
   AthleteRegistrationCompletionPayload,
 } from "../types/athlete";
 
 type StepTwoFormState = {
   email: string;
   phone: string;
+  birth_date: string;
+  gender: "male" | "female" | "";
   address_line1: string;
   address_line2: string;
   city: string;
@@ -33,9 +36,11 @@ type StepTwoFormState = {
   physician_phone: string;
 };
 
-type AthleteWithDetails = Athlete & Partial<Record<keyof StepTwoFormState, string | null>>;
+type AthleteWithDetails = Athlete & Partial<Record<keyof Omit<StepTwoFormState, "birth_date" | "gender">, string | null>>;
 
 const requiredFieldDefinitions: Array<{ name: keyof StepTwoFormState; label: string }> = [
+  { name: "birth_date", label: "Birth Date" },
+  { name: "gender", label: "Gender" },
   { name: "address_line1", label: "Address line 1" },
   { name: "city", label: "City" },
   { name: "province", label: "Province / State" },
@@ -51,15 +56,16 @@ interface NewAthleteStepTwoFormProps {
   onSuccess?: () => void;
   onClose?: () => void;
   isEditMode?: boolean;
-  signupToken?: string | null;
 }
 
-const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false, signupToken = null }: NewAthleteStepTwoFormProps) => {
+const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false }: NewAthleteStepTwoFormProps) => {
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState<StepTwoFormState>({
     email: "",
     phone: "",
+    birth_date: "",
+    gender: "",
     address_line1: "",
     address_line2: "",
     city: "",
@@ -88,11 +94,41 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
   const [formErrors, setFormErrors] = useState<string[]>([]);
 
   const mutation = useMutation({
-    mutationFn: (payload: AthleteRegistrationCompletionPayload) => {
-      if (signupToken) {
-        return completeAthleteRegistrationPublic(athlete.id, payload, signupToken);
-      }
-      return completeAthleteRegistration(athlete.id, payload);
+    mutationFn: async (formData: StepTwoFormState) => {
+      // Step 1: Update the core athlete details
+      const corePayload: Partial<AthletePayload> = {
+        email: formData.email.trim() || undefined,
+        phone: formData.phone.trim() || undefined,
+        birth_date: formData.birth_date,
+        gender: formData.gender || undefined,
+      };
+      await updateAthlete(athlete.id, corePayload);
+
+      // Step 2: Update the detailed athlete information
+      const detailsPayload: AthleteRegistrationCompletionPayload = {
+        address_line1: formData.address_line1.trim(),
+        address_line2: formData.address_line2.trim() || undefined,
+        city: formData.city.trim(),
+        province: formData.province.trim(),
+        postal_code: formData.postal_code.trim(),
+        country: formData.country.trim(),
+        guardian_name: formData.guardian_name.trim() || undefined,
+        guardian_relationship: formData.guardian_relationship.trim() || undefined,
+        guardian_email: formData.guardian_email.trim() || undefined,
+        guardian_phone: formData.guardian_phone.trim() || undefined,
+        secondary_guardian_name: showSecondaryGuardian ? formData.secondary_guardian_name.trim() || undefined : undefined,
+        secondary_guardian_relationship: showSecondaryGuardian ? formData.secondary_guardian_relationship.trim() || undefined : undefined,
+        secondary_guardian_email: showSecondaryGuardian ? formData.secondary_guardian_email.trim() || undefined : undefined,
+        secondary_guardian_phone: showSecondaryGuardian ? formData.secondary_guardian_phone.trim() || undefined : undefined,
+        emergency_contact_name: formData.emergency_contact_name.trim(),
+        emergency_contact_relationship: formData.emergency_contact_relationship.trim(),
+        emergency_contact_phone: formData.emergency_contact_phone.trim(),
+        medical_allergies: formData.medical_allergies.trim() || undefined,
+        medical_conditions: formData.medical_conditions.trim() || undefined,
+        physician_name: formData.physician_name.trim() || undefined,
+        physician_phone: formData.physician_phone.trim() || undefined,
+      };
+      return completeAthleteRegistration(athlete.id, detailsPayload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["athlete", athlete.id] });
@@ -111,6 +147,8 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
       ...prev,
       email: prev.email || details.email || "",
       phone: prev.phone || details.phone || "",
+      birth_date: prev.birth_date || details.birth_date?.split("T")[0] || "",
+      gender: prev.gender || details.gender || "",
       address_line1: prev.address_line1 || details.address_line1 || "",
       address_line2: prev.address_line2 || details.address_line2 || "",
       city: prev.city || details.city || "",
@@ -142,7 +180,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
   }, [athlete]);
 
   const handleFieldChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -158,7 +196,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
     event.preventDefault();
 
     const missingFields = requiredFieldDefinitions.filter(
-      ({ name }) => !form[name].trim()
+      ({ name }) => !form[name] || !String(form[name]).trim()
     );
 
     if (missingFields.length > 0) {
@@ -167,42 +205,8 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
       return;
     }
 
-    const payload: AthleteRegistrationCompletionPayload = {
-      email: form.email.trim() || undefined,
-      phone: form.phone.trim() || undefined,
-      address_line1: form.address_line1.trim(),
-      address_line2: form.address_line2.trim() || undefined,
-      city: form.city.trim(),
-      province: form.province.trim(),
-      postal_code: form.postal_code.trim(),
-      country: form.country.trim(),
-      guardian_name: form.guardian_name.trim() || undefined,
-      guardian_relationship: form.guardian_relationship.trim() || undefined,
-      guardian_email: form.guardian_email.trim() || undefined,
-      guardian_phone: form.guardian_phone.trim() || undefined,
-      secondary_guardian_name: showSecondaryGuardian
-        ? form.secondary_guardian_name.trim() || undefined
-        : undefined,
-      secondary_guardian_relationship: showSecondaryGuardian
-        ? form.secondary_guardian_relationship.trim() || undefined
-        : undefined,
-      secondary_guardian_email: showSecondaryGuardian
-        ? form.secondary_guardian_email.trim() || undefined
-        : undefined,
-      secondary_guardian_phone: showSecondaryGuardian
-        ? form.secondary_guardian_phone.trim() || undefined
-        : undefined,
-      emergency_contact_name: form.emergency_contact_name.trim(),
-      emergency_contact_relationship: form.emergency_contact_relationship.trim(),
-      emergency_contact_phone: form.emergency_contact_phone.trim(),
-      medical_allergies: form.medical_allergies.trim() || undefined,
-      medical_conditions: form.medical_conditions.trim() || undefined,
-      physician_name: form.physician_name.trim() || undefined,
-      physician_phone: form.physician_phone.trim() || undefined,
-    };
-
     setFormErrors([]);
-    mutation.mutate(payload);
+    mutation.mutate(form);
   };
 
   const athleteName = `${athlete.first_name} ${athlete.last_name}`.trim();
@@ -216,7 +220,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
         <p className="text-sm text-muted">
           {isEditMode 
             ? `Update additional details for ${athleteName} (all fields are optional)`
-            : `Additional information for ${athleteName} (all fields are optional)`
+            : `Additional information for ${athleteName}`
           }
         </p>
       </header>
@@ -241,7 +245,7 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
       {/* Contact Information */}
       <section className="space-y-4 rounded-lg border border-black/10 bg-container p-4 shadow-sm dark:border-white/10">
         <h3 className="text-sm font-semibold text-container-foreground">
-          Contact Information
+          Athlete Details
         </h3>
         <div className="grid gap-4 md:grid-cols-2">
           <label className="text-sm font-medium text-muted">
@@ -265,6 +269,33 @@ const NewAthleteStepTwoForm = ({ athlete, onSuccess, onClose, isEditMode = false
               onChange={handleFieldChange}
               className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
             />
+          </label>
+          <label className="text-sm font-medium text-muted">
+            Birth Date
+            <input
+              required
+              type="date"
+              id="birth_date"
+              name="birth_date"
+              value={form.birth_date}
+              onChange={handleFieldChange}
+              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+            />
+          </label>
+          <label className="text-sm font-medium text-muted">
+            Gender
+            <select
+              required
+              id="gender"
+              name="gender"
+              value={form.gender}
+              onChange={handleFieldChange}
+              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+            >
+              <option value="" disabled>Select gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
           </label>
         </div>
       </section>

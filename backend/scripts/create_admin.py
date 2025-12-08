@@ -2,7 +2,7 @@
 Utility to create an admin user in the target database.
 
 Usage:
-    python backend/scripts/create_admin.py --email admin@statcat.com --password 'StrongPass123!'
+    python scripts/create_admin.py --email admin@statcat.com --password 'AdM123'
 
 Reads DB settings from the same environment variables used by the app.
 """

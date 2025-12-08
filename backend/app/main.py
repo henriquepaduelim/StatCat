@@ -13,13 +13,23 @@ from starlette.requests import Request
 
 from app.api.v1.router import api_router
 from app.core.config import settings
-from app.db.session import init_db
+from app.core.observability import (
+    RequestContextMiddleware,
+    configure_logging,
+    setup_metrics,
+    setup_sentry,
+    setup_tracing,
+)
+from app.db.session import engine, init_db
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+configure_logging(settings.LOG_LEVEL)
+setup_sentry(settings)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION)
+app.add_middleware(RequestContextMiddleware)
+setup_metrics(app)
+setup_tracing(app, settings, engine=engine)
 
 # Global exception handlers
 @app.exception_handler(Exception)
@@ -68,6 +78,14 @@ app.mount("/media", StaticFiles(directory=media_path), name="media")
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
+
+
+@app.get("/sentry-debug", include_in_schema=False)
+async def trigger_sentry_error() -> None:
+    """Endpoint to generate a test error for Sentry/observability checks."""
+    if settings.ENVIRONMENT.lower() in {"dev", "development", "local"}:
+        1 / 0  # noqa: B018 - intentional crash for testing
+    raise RuntimeError("sentry-debug endpoint disabled in this environment")
 
 
 @app.get("/health", tags=["Health"])

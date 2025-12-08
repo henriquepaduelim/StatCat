@@ -23,16 +23,16 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
-        VITE_APP_BRAND_NAME: ${VITE_APP_BRAND_NAME:-StatCat}
-        VITE_BRAND_ID: ${VITE_BRAND_ID:-default}
-        VITE_BRAND_FAVICON: ${VITE_BRAND_FAVICON:-/media/Asset 1ELITE0LOGO.svg}
+        VITE_APP_BRAND_NAME: ${VITE_APP_BRAND_NAME:-StatCat Sports Analysis}
+        VITE_BRAND_ID: ${VITE_BRAND_ID:-statcat-sports-analysis}
+        VITE_BRAND_FAVICON: ${VITE_BRAND_FAVICON:-/media/statCatLogo2-black.ico}
     ports:
       - "3000:80"
     environment:
       VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
-      VITE_APP_BRAND_NAME: ${VITE_APP_BRAND_NAME:-StatCat}
-      VITE_BRAND_ID: ${VITE_BRAND_ID:-default}
-      VITE_BRAND_FAVICON: ${VITE_BRAND_FAVICON:-/media/Asset 1ELITE0LOGO.svg}
+      VITE_APP_BRAND_NAME: ${VITE_APP_BRAND_NAME:-StatCat Sports Analysis}
+      VITE_BRAND_ID: ${VITE_BRAND_ID:-statcat-sports-analysis}
+      VITE_BRAND_FAVICON: ${VITE_BRAND_FAVICON:-/media/statCatLogo2-black.ico}
     depends_on:
       - backend
     networks:

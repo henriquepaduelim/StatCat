@@ -87,7 +87,7 @@ source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install --upgrade pip
 pip install -e ".[dev]"
 cp .env.example .env
-# Edit .env and set SECRET_KEY, DATABASE_URL, BACKEND_CORS_ORIGINS, MEDIA_ROOT
+# Edit your local .env file for development settings (database, keys, etc.)
 uvicorn app.main:app --reload
 ```
 
@@ -131,6 +131,14 @@ ACCESS_TOKEN_EXPIRE_MINUTES=10080
 BACKEND_CORS_ORIGINS=["http://localhost:5173"]
 MEDIA_ROOT=media
 DATABASE_URL=sqlite:///./data/combine.db  # or PostgreSQL DSN
+LOG_LEVEL=INFO
+SENTRY_DSN=
+SENTRY_TRACES_SAMPLE_RATE=0.1
+SENTRY_PROFILES_SAMPLE_RATE=
+OTEL_EXPORTER_OTLP_ENDPOINT=
+OTEL_EXPORTER_OTLP_HEADERS=
+OTEL_SERVICE_NAME=StatCat
+OTEL_TRACES_SAMPLER_RATIO=0.2
 ```
 
 For PostgreSQL testing, create a second `.env` (for example `env.test`) pointing to `postgresql://.../statcat_test`.
@@ -140,6 +148,8 @@ For PostgreSQL testing, create a second `.env` (for example `env.test`) pointing
 VITE_API_BASE_URL=http://localhost:8000
 VITE_MEDIA_BASE_URL=http://localhost:8000/media
 VITE_ENABLE_PWA_BUILD=false
+VITE_TERMS_OF_SERVICE_URL=https://example.com/terms
+VITE_PRIVACY_POLICY_URL=https://example.com/privacy
 ```
 
 ## Useful Commands
@@ -149,6 +159,7 @@ VITE_ENABLE_PWA_BUILD=false
 - Tests: `PYTHONPATH=backend .venv/bin/python -m pytest`
 - Lint: `ruff check app`
 - Types: `mypy app`
+- Audit Security: `pip-audit -r requirements.txt`
 - Seed/reset DB: use scripts in `backend/scripts/`
 
 ### Frontend

@@ -194,28 +194,23 @@ const Login = () => {
           return;
         }
 
-        const signupResponse = await signupAthlete({
-          full_name: `${trimmedFirst} ${trimmedLast}`,
-          first_name: trimmedFirst,
-          last_name: trimmedLast,
-          email: trimmedEmail,
-          password,
-          birth_date: new Date().toISOString().slice(0, 10),
-          gender: "male",
-          phone: "",
-        });
+        const signupResponse = await registerAccount(
+          `${trimmedFirst} ${trimmedLast}`,
+          trimmedEmail,
+          password
+        );
         setCreatedAthlete({
           id: signupResponse.athlete_id,
-          user_id: signupResponse.user_id,
-          full_name: `${trimmedFirst} ${trimmedLast}`,
+          user_id: signupResponse.id,
+          full_name: signupResponse.full_name,
           first_name: trimmedFirst,
           last_name: trimmedLast,
-          email: trimmedEmail,
+          email: signupResponse.email,
         });
-        setSignupToken(signupResponse.signup_token);
+        setSignupToken(null); // No longer using signup token flow for this
         setOnboardingStep(2);
         setError(null);
-        setSuccessMessage("Account created. Complete onboarding to submit for approval.");
+        setSuccessMessage("Account created. Complete your profile to submit for approval.");
         setInitialized(true);
       } else {
         const { user, token } = await login(email.trim(), password, true);
@@ -442,13 +437,23 @@ const handlePendingReviewClose = () => {
 
           <p className="mt-4 text-center text-xs text-muted">
             By signing in, you agree to our
-            <span className="mx-1 underline underline-offset-4">
+            <a
+              href={import.meta.env.VITE_TERMS_OF_SERVICE_URL || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mx-1 underline underline-offset-4"
+            >
               terms of service
-            </span>
+            </a>
             and
-            <span className="mx-1 underline underline-offset-4">
+            <a
+              href={import.meta.env.VITE_PRIVACY_POLICY_URL || "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mx-1 underline underline-offset-4"
+            >
               privacy policy
-            </span>
+            </a>
             .
           </p>
         </div>

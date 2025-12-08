@@ -23,8 +23,9 @@ def test_create_athlete(client: TestClient, admin_user: User):
             "first_name": "John",
             "last_name": "Doe",
             "email": "john.doe@example.com",
-            "date_of_birth": "2000-01-15",
+            "birth_date": "2000-01-15",
             "gender": "male",
+            "primary_position": "forward",
         },
     )
     assert response.status_code == 201
@@ -58,12 +59,14 @@ def test_list_athletes(client: TestClient, session: Session, test_user: User):
         last_name="Smith",
         email="alice@example.com",
         gender=AthleteGender.female,
+        birth_date=date(2000, 1, 1),
     )
     athlete2 = Athlete(
         first_name="Bob",
         last_name="Jones",
         email="bob@example.com",
         gender=AthleteGender.male,
+        birth_date=date(2000, 1, 2),
     )
     session.add(athlete1)
     session.add(athlete2)
@@ -77,8 +80,8 @@ def test_list_athletes(client: TestClient, session: Session, test_user: User):
     )
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
-    assert len(data) >= 2
+    assert "items" in data
+    assert len(data["items"]) >= 2
 
 
 def test_list_athletes_with_pagination(client: TestClient, session: Session, test_user: User):
@@ -90,6 +93,7 @@ def test_list_athletes_with_pagination(client: TestClient, session: Session, tes
             last_name=f"Test{i}",
             email=f"athlete{i}@example.com",
             gender=AthleteGender.male,
+            birth_date=date(2001, 1, i + 1),
         )
         session.add(athlete)
     session.commit()
@@ -103,8 +107,8 @@ def test_list_athletes_with_pagination(client: TestClient, session: Session, tes
     )
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
-    assert len(data) <= 3
+    assert "items" in data
+    assert len(data["items"]) <= 3
 
 
 def test_get_athlete(client: TestClient, session: Session, test_user: User):
@@ -114,6 +118,7 @@ def test_get_athlete(client: TestClient, session: Session, test_user: User):
         last_name="Doe",
         email="jane@example.com",
         gender=AthleteGender.female,
+        birth_date=date(2000, 5, 5),
     )
     session.add(athlete)
     session.commit()
@@ -150,6 +155,7 @@ def test_update_athlete(client: TestClient, session: Session, admin_user: User):
         last_name="Name",
         email="original@example.com",
         gender=AthleteGender.male,
+        birth_date=date(1999, 9, 9),
     )
     session.add(athlete)
     session.commit()
@@ -157,7 +163,7 @@ def test_update_athlete(client: TestClient, session: Session, admin_user: User):
     
     token = get_auth_token(client, admin_user.email, "adminpass123")
     
-    response = client.put(
+    response = client.patch(
         f"/api/v1/athletes/{athlete.id}",
         headers={"Authorization": f"Bearer {token}"},
         json={
@@ -165,6 +171,7 @@ def test_update_athlete(client: TestClient, session: Session, admin_user: User):
             "last_name": "Name",
             "email": "updated@example.com",
             "gender": "male",
+            "primary_position": "forward",
         },
     )
     assert response.status_code == 200
@@ -180,6 +187,7 @@ def test_delete_athlete(client: TestClient, session: Session, admin_user: User):
         last_name="User",
         email="delete@example.com",
         gender=AthleteGender.male,
+        birth_date=date(1998, 8, 8),
     )
     session.add(athlete)
     session.commit()
@@ -203,6 +211,8 @@ def test_delete_athlete(client: TestClient, session: Session, admin_user: User):
 
     token = get_auth_token(client, admin_user.email, "adminpass123")
 
+    linked_id = linked_user.id
+
     response = client.delete(
         f"/api/v1/athletes/{athlete.id}",
         headers={"Authorization": f"Bearer {token}"},
@@ -216,7 +226,7 @@ def test_delete_athlete(client: TestClient, session: Session, admin_user: User):
     )
     assert response.status_code == 404
     assert session.get(Athlete, athlete.id) is None
-    assert session.exec(select(User).where(User.id == linked_user.id)).first() is None
+    assert session.exec(select(User).where(User.id == linked_id)).first() is None
 
 
 def test_delete_athlete_forbidden(client: TestClient, session: Session, athlete_user: User):
@@ -226,6 +236,7 @@ def test_delete_athlete_forbidden(client: TestClient, session: Session, athlete_
         last_name="User",
         email="protected@example.com",
         gender=AthleteGender.male,
+        birth_date=date(2000, 1, 1),
     )
     session.add(athlete)
     session.commit()

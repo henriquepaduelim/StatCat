@@ -11,7 +11,7 @@ from app.models.assessment_session import AssessmentSession
 from app.models.session_result import SessionResult
 from app.models.test_definition import TestDefinition
 
-CLIENT_ID = 2  # Default Elite 1 Academy demo club
+CLIENT_ID = 2  # Default StatCat demo club
 ATHLETE_COUNT = 5
 SESSIONS_PER_ATHLETE = 5
 
@@ -83,7 +83,7 @@ def main() -> None:
                 first_name=first_name,
                 last_name=last_name,
                 email=email,
-                club_affiliation="ELITE 1 ACADEMY",
+                club_affiliation="StatCat Sports Analysis",
                 dominant_foot="right" if index % 2 == 0 else "left",
                 height_cm=170 + random.uniform(-5, 6),
                 weight_kg=65 + random.uniform(-4, 5),

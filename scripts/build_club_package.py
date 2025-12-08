@@ -23,8 +23,8 @@ THEME_DARK_FILE = FRONTEND_DIR / "src" / "theme" / "activeThemeDark.generated.ts
 BRANDING_CONFIG_FILE = FRONTEND_DIR / "src" / "theme" / "branding.generated.ts"
 PUBLIC_BRANDING_ROOT = FRONTEND_DIR / "public" / "branding"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "packages"
-DEFAULT_LOGO = "/media/1ELITE0LOGO.svg"
-DEFAULT_FAVICON = "/media/Asset 1ELITE0LOGO.svg"
+DEFAULT_LOGO = "/media/statCatLogo2.png"
+DEFAULT_FAVICON = "/media/statCatLogo2-black.ico"
 LOCAL_DEV_ORIGINS = ("http://localhost:3000", "http://localhost:5173")
 
 
@@ -155,7 +155,7 @@ def write_branding_config(metadata: Dict[str, str]) -> str:
     original = BRANDING_CONFIG_FILE.read_text(encoding="utf-8")
     payload = {
         "id": metadata.get("id", "default"),
-        "name": metadata.get("name", "StatCat"),
+        "name": metadata.get("name", "StatCat Sports Analysis"),
         "assets": {
             "logo": metadata.get("logo", DEFAULT_LOGO),
             "favicon": metadata.get("favicon", DEFAULT_FAVICON),

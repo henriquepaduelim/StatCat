@@ -311,6 +311,9 @@ export type TranslationDictionary = {
     error: string;
     empty: string;
     noTeams: string;
+    messages?: string;
+    addMedia?: string;
+    hint?: string;
   };
   teamDashboard?: {
     title: string;
@@ -963,6 +966,9 @@ export const translations: Record<Locale, TranslationDictionary> = {
       error: "Unable to load posts right now.",
       empty: "No posts yet.",
       noTeams: "No teams available",
+      messages: "messages",
+      addMedia: "Media",
+      hint: "Press Enter to send. Attach images if needed.",
     },
     teamDashboard: {
       title: "Team Hub",

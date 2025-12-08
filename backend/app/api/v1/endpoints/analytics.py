@@ -220,8 +220,8 @@ def scoring_leaderboard(
                 primary_position,
                 team_name,
                 team_age_category,
-                goals,
                 photo_url,
+                goals,
             ) = row
 
             goals = int(goals or 0)

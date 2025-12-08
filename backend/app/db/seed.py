@@ -105,7 +105,7 @@ def _combine_payload(team_id: int, athlete_id: int, recorded_at: datetime) -> Te
         recorded_at=recorded_at,
         recorded_by_id=1,  # admin (seeded user)
         sitting_height_cm=_test_value("sitting height"),
-        standing_height_cm=_test_value("standing height"),
+        standing_height_cm=_test_value("standing hesight"),
         weight_kg=_test_value("weight"),
         split_10m_s=_test_value("10m sprint"),
         split_20m_s=_test_value("20m sprint"),

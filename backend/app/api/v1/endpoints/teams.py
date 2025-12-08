@@ -18,6 +18,7 @@ from app.models.event_team_link import EventTeamLink
 from sqlalchemy import text
 
 from app.models.team import CoachTeamLink, Team
+from app.models.team_post import TeamPost
 from app.models.user import User, UserRole
 from app.services.email_service import email_service
 from app.schemas.team import TeamCoachCreate, TeamCreate, TeamRead
@@ -106,6 +107,29 @@ def list_teams(
         )
         for team in teams
     ]
+
+
+@router.get("/{team_id}", response_model=TeamRead)
+def get_team(
+    team_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> TeamRead:
+    """Retrieve a single team."""
+    ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH})
+    team = _get_team_or_404(session, team_id)
+    roster_counts = _load_roster_counts(session, [team.id])
+    return TeamRead(
+        id=team.id,
+        name=team.name,
+        age_category=team.age_category,
+        description=team.description,
+        coach_name=team.coach_name,
+        created_by_id=team.created_by_id,
+        created_at=team.created_at,
+        updated_at=team.updated_at,
+        athlete_count=roster_counts.get(team.id, 0),
+    )
 
 
 @router.post("/", response_model=TeamRead, status_code=status.HTTP_201_CREATED)
@@ -394,8 +418,13 @@ def get_coach_teams(
     current_user: User = Depends(get_current_active_user),
 ) -> list[TeamRead]:
     """Get all teams assigned to a specific coach."""
-    ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF})
-    
+    if current_user.role not in {UserRole.ADMIN, UserRole.STAFF}:
+        if current_user.role == UserRole.COACH and current_user.id == coach_id:
+            # Coaches can see teams they are assigned to
+            pass
+        else:
+            ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF})
+
     coach = session.get(User, coach_id)
     if not coach or coach.role != UserRole.COACH:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Coach not found")
@@ -472,7 +501,7 @@ def delete_team(
     team = _get_team_or_404(session, team_id)
 
     # Unassign athletes from the team
-    athletes = session.exec(select(Athlete).where(Athlete.team_id == team_id)).all()
+    athletes = session.exec(select(Athlete).where(Athlete.team_id == team_id)).scalars().all()
     for athlete in athletes:
         athlete.team_id = None
         session.add(athlete)
@@ -481,8 +510,11 @@ def delete_team(
     session.exec(delete(CoachTeamLink).where(CoachTeamLink.team_id == team_id))
     session.exec(delete(EventTeamLink).where(EventTeamLink.team_id == team_id))
 
+    # Delete team feed posts to satisfy FK constraints
+    session.exec(delete(TeamPost).where(TeamPost.team_id == team_id))
+
     # Detach events referencing this team so FK constraints don't fail
-    events = session.exec(select(Event).where(Event.team_id == team_id)).all()
+    events = session.exec(select(Event).where(Event.team_id == team_id)).scalars().all()
     for event in events:
         event.team_id = None
         session.add(event)
