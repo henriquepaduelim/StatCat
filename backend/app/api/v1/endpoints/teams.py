@@ -120,7 +120,7 @@ def list_coaches(
         select(User)
         .where(User.role == UserRole.COACH)
         .order_by(User.full_name)
-    ).all()
+    ).scalars().all()
     return coaches
 
 
