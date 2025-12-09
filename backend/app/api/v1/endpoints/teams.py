@@ -17,6 +17,7 @@ from app.models.event import Event
 from app.models.event_team_link import EventTeamLink
 from sqlalchemy import text
 
+from app.models.report_submission import ReportSubmission
 from app.models.team import CoachTeamLink, Team
 from app.models.team_post import TeamPost
 from app.models.user import User, UserRole
@@ -529,6 +530,17 @@ def delete_team(
     """Delete a team and detach associated athletes/coaches."""
     ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF})
     team = _get_team_or_404(session, team_id)
+
+    # Block deletion if there are report submissions linked to this team
+    submissions_count_result = session.exec(
+        select(func.count()).select_from(ReportSubmission).where(ReportSubmission.team_id == team_id)
+    ).one()
+    submissions_count = submissions_count_result[0] if isinstance(submissions_count_result, tuple) else submissions_count_result
+    if submissions_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Team has report submissions; remove or reassign them before deleting the team.",
+        )
 
     # Unassign athletes from the team
     athletes = session.exec(select(Athlete).where(Athlete.team_id == team_id)).scalars().all()
