@@ -11,13 +11,6 @@ type TeamFeedPreviewProps = {
   teamName?: string;
 };
 
-const resolveMediaUrl = (url?: string | null) => {
-  if (!url) return null;
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  const base = import.meta.env.VITE_API_BASE_URL ?? "";
-  return `${base.replace(/\/$/, "")}${url.startsWith("/") ? url : `/${url}`}`;
-};
-
 const truncate = (value: string, max = 140) => {
   if (value.length <= max) return value;
   return `${value.slice(0, max - 1)}…`;

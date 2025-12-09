@@ -66,7 +66,8 @@ const TeamFeed = () => {
     },
   });
 
-  const submitMessage = () => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (!selectedTeamId) {
       return;
     }
@@ -79,11 +80,6 @@ const TeamFeed = () => {
       formData.append("media", mediaFile);
     }
     createPostMutation.mutate(formData);
-  };
-
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    submitMessage();
   };
 
   const formDisabled = !selectedTeamId || createPostMutation.isPending;
@@ -124,7 +120,7 @@ const TeamFeed = () => {
   }, [mediaFile]);
 
   return (
-    <div className="flex flex-col gap-4 pb-2">
+    <div className="flex h-[calc(100vh-7rem)] flex-col gap-4">
       <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <PageTitle
           title={t.teamFeed?.title ?? "Team Feed"}
@@ -173,7 +169,7 @@ const TeamFeed = () => {
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-black/5 bg-container shadow-sm">
+      <div className="flex-1 overflow-hidden rounded-2xl border border-black/5 bg-container shadow-sm">
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-black/5 px-4 py-3 text-sm text-muted">
             <span>{availableTeams.find((team) => team.id === selectedTeamId)?.name ?? t.teamFeed?.title ?? "Team Feed"}</span>
@@ -184,7 +180,7 @@ const TeamFeed = () => {
 
           <section
             ref={messagesRef}
-            className="space-y-3 overflow-y-auto bg-gradient-to-b from-container/60 to-container px-4 py-3 max-h-[60vh]"
+            className="flex-1 space-y-3 overflow-y-auto bg-gradient-to-b from-container/60 to-container px-4 py-3"
           >
             {postsQuery.isLoading && (
               <p className="text-sm text-muted">{t.teamFeed?.loading ?? "Loading posts..."}</p>
@@ -211,18 +207,12 @@ const TeamFeed = () => {
             ))}
           </section>
 
-          <div className="border-t border-black/5 bg-container/95 px-4 py-4 backdrop-blur">
+          <div className="border-t border-black/5 bg-container/95 px-4 py-1 backdrop-blur">
             <form onSubmit={handleSubmit} className="space-y-2">
               <div className="flex gap-2">
                 <textarea
                   value={content}
                   onChange={(event) => setContent(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" && !event.shiftKey) {
-                      event.preventDefault();
-                      submitMessage();
-                    }
-                  }}
                   placeholder={t.teamFeed?.placeholder ?? "Type a message..."}
                   rows={2}
                   className="min-h-[64px] flex-1 rounded-xl border border-black/10 bg-container px-3 py-2 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"

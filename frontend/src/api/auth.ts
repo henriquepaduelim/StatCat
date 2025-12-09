@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import api from "./client";
 import type { AuthUser } from "../stores/useAuthStore";
 import { logger } from "../utils/logger";
-import type { Athlete } from "../types/athlete";
 
 export type AuthResponse = {
   user: AuthUser;

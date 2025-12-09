@@ -5,8 +5,10 @@ import { submitGameReport } from "../api/matchReports";
 import { submitReportCardRequest } from "../api/reportSubmissions";
 import { useReportSubmissionWorkflow } from "./useReportSubmissionWorkflow";
 import { formatDateKey } from "../lib/dashboardDateUtils";
+import { createEmptyReportCardCategories, countFilledScores } from "../lib/reportCard";
 import type { Athlete } from "../types/athlete";
 import type { GameReportFormState, NoticeState } from "../types/dashboard";
+import type { ReportCardCategory } from "../types/reportCard";
 import type { Team } from "../types/team";
 
 type ApiErrorResponse = {
@@ -75,13 +77,10 @@ export const useDashboardReports = ({
   const [isReportCardModalOpen, setReportCardModalOpen] = useState(false);
   const [reportCardAthleteId, setReportCardAthleteId] = useState<number | null>(null);
   const [reportCardTeamId, setReportCardTeamId] = useState<number | null>(null);
-  const [reportCardNotes, setReportCardNotes] = useState("");
-  const [reportCardRatings, setReportCardRatings] = useState({
-    technical: 3,
-    physical: 3,
-    training: 3,
-    match: 3,
-  });
+  const [reportCardCoachReport, setReportCardCoachReport] = useState("");
+  const [reportCardCategories, setReportCardCategories] = useState<ReportCardCategory[]>(
+    () => createEmptyReportCardCategories()
+  );
   const [reportCardError, setReportCardError] = useState<string | null>(null);
   const [isCombineMetricModalOpen, setCombineMetricModalOpen] = useState(false);
   const [combineMetricTeamId, setCombineMetricTeamId] = useState<number | null>(null);
@@ -125,7 +124,8 @@ export const useDashboardReports = ({
       setReportCardModalOpen(false);
       setReportCardAthleteId(null);
       setReportCardTeamId(null);
-      setReportCardNotes("");
+      setReportCardCoachReport("");
+      setReportCardCategories(createEmptyReportCardCategories());
       refetchReportSubmissions();
     },
     onError: (error: unknown) => {
@@ -153,10 +153,11 @@ export const useDashboardReports = ({
   };
 
   const openReportCardModal = () => {
-    setReportCardAthleteId(athletes[0]?.id ?? null);
-    setReportCardTeamId(selectedTeamId ?? null);
-    setReportCardNotes("");
-    setReportCardRatings({ technical: 3, physical: 3, training: 3, match: 3 });
+    setReportCardAthleteId((prev) => prev ?? athletes[0]?.id ?? null);
+    setReportCardTeamId((prev) => prev ?? selectedTeamId ?? null);
+    if (!reportCardCategories.length) {
+      setReportCardCategories(createEmptyReportCardCategories());
+    }
     setReportCardError(null);
     setReportCardModalOpen(true);
   };
@@ -305,12 +306,27 @@ export const useDashboardReports = ({
     setGameReportError(null);
   };
 
-  const handleReportCardRatingChange = (
-    field: keyof typeof reportCardRatings,
-    value: number,
+  const handleReportCardMetricChange = (
+    categoryName: string,
+    metricName: string,
+    value: number | null,
   ) => {
-    const clamped = Math.min(5, Math.max(1, value));
-    setReportCardRatings((prev) => ({ ...prev, [field]: clamped }));
+    setReportCardCategories((prev) =>
+      prev.map((category) => {
+        if (category.name !== categoryName) return category;
+        return {
+          ...category,
+          metrics: category.metrics.map((metric) => {
+            if (metric.name !== metricName) return metric;
+            if (value === null || Number.isNaN(value) || value <= 0) {
+              return { ...metric, score: null };
+            }
+            const clamped = Math.min(100, Math.max(1, Math.round(value)));
+            return { ...metric, score: clamped };
+          }),
+        };
+      }),
+    );
   };
 
   const handleReportCardSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -319,24 +335,43 @@ export const useDashboardReports = ({
       setReportCardError("Select an athlete before submitting.");
       return;
     }
-    submitReportCardMutation.mutate({
+    const trimmedReport = reportCardCoachReport.trim();
+    if (!trimmedReport) {
+      setReportCardError("Coach report is required.");
+      return;
+    }
+
+    const filled = countFilledScores(reportCardCategories);
+    if (filled === 0) {
+      setReportCardError("Add at least one score before submitting.");
+      return;
+    }
+
+    const payload = {
       athlete_id: reportCardAthleteId,
       team_id: reportCardTeamId,
-      technical_rating: reportCardRatings.technical,
-      physical_rating: reportCardRatings.physical,
-      training_rating: reportCardRatings.training,
-      match_rating: reportCardRatings.match,
-      general_notes: reportCardNotes.trim() ? reportCardNotes.trim() : null,
-    });
+      coach_report: trimmedReport,
+      categories: reportCardCategories.map((category) => ({
+        name: category.name,
+        metrics: category.metrics.map((metric) => ({
+          name: metric.name,
+          score: metric.score,
+        })),
+      })),
+    };
+
+    setReportCardError(null);
+    submitReportCardMutation.mutate(payload);
   };
 
   const handleReportCardCancel = () => {
     setReportCardModalOpen(false);
-    setReportCardAthleteId(null);
-    setReportCardTeamId(null);
-    setReportCardNotes("");
-    setReportCardRatings({ technical: 3, physical: 3, training: 3, match: 3 });
     setReportCardError(null);
+  };
+
+  const handleReportCardClear = () => {
+    setReportCardCoachReport("");
+    setReportCardCategories(createEmptyReportCardCategories());
   };
 
   const handleNewReportCard = () => {
@@ -412,14 +447,15 @@ export const useDashboardReports = ({
       teams,
       selectedAthleteId: reportCardAthleteId,
       selectedTeamId: reportCardTeamId,
-      notes: reportCardNotes,
-      ratings: reportCardRatings,
+      coachReport: reportCardCoachReport,
+      categories: reportCardCategories,
       isSubmitting: submitReportCardMutation.isPending,
       errorMessage: reportCardError,
       onAthleteSelect: setReportCardAthleteId,
       onTeamSelect: setReportCardTeamId,
-      onNotesChange: setReportCardNotes,
-      onRatingChange: handleReportCardRatingChange,
+      onCoachReportChange: setReportCardCoachReport,
+      onMetricChange: handleReportCardMetricChange,
+      onClear: handleReportCardClear,
       onSubmit: handleReportCardSubmit,
       onCancel: handleReportCardCancel,
     },

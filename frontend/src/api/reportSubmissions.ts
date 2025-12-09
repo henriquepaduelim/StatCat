@@ -1,9 +1,14 @@
 import api from "./client";
+import type {
+  ReportCardCategory,
+  ReportCardPayload,
+  ReportSubmissionStatus,
+} from "../types/reportCard";
 
 export type ReportSubmissionSummary = {
   id: number;
   report_type: "game_report" | "report_card";
-  status: "pending" | "approved" | "rejected";
+  status: ReportSubmissionStatus;
   team_name: string | null;
   opponent: string | null;
   athlete_name: string | null;
@@ -15,19 +20,12 @@ export type ReportSubmissionSummary = {
   training_rating: number | null;
   match_rating: number | null;
   general_notes: string | null;
+  coach_report: string | null;
+  categories: ReportCardCategory[] | null;
+  overall_average: number | null;
   review_notes: string | null;
   submitted_by: string;
   created_at: string;
-};
-
-export type ReportCardPayload = {
-  athlete_id: number;
-  team_id: number | null;
-  technical_rating: number;
-  physical_rating: number;
-  training_rating: number;
-  match_rating: number;
-  general_notes: string | null;
 };
 
 export const fetchPendingReportSubmissions = async (): Promise<ReportSubmissionSummary[]> => {
@@ -61,5 +59,15 @@ export const rejectReportSubmission = async (submissionId: number, notes: string
 
 export const submitReportCardRequest = async (payload: ReportCardPayload) => {
   const { data } = await api.post("/report-submissions/report-card", payload);
+  return data;
+};
+
+export const reopenReportSubmission = async (submissionId: number) => {
+  const { data } = await api.post(`/report-submissions/${submissionId}/reopen`);
+  return data;
+};
+
+export const updateReportCard = async (submissionId: number, payload: ReportCardPayload) => {
+  const { data } = await api.put(`/report-submissions/${submissionId}`, payload);
   return data;
 };

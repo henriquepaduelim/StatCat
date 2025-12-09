@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import type { ReportSubmissionSummary } from "../../api/reportSubmissions";
+import { getScoreBand, type ScoreBand } from "../../lib/reportCard";
 
 type ReportSubmissionReviewModalProps = {
   submission: ReportSubmissionSummary | null;
@@ -13,13 +14,17 @@ type ReportSubmissionReviewModalProps = {
   isRejectPending: boolean;
 };
 
-const ratingFields: Array<{ key: "technical_rating" | "physical_rating" | "training_rating" | "match_rating"; label: string }> =
-  [
-    { key: "technical_rating", label: "Technical" },
-    { key: "physical_rating", label: "Physical" },
-    { key: "training_rating", label: "Training performance" },
-    { key: "match_rating", label: "Match performance" },
-  ];
+const bandClasses: Record<ScoreBand, string> = {
+  low: "text-orange-600",
+  medium: "text-amber-600",
+  high: "text-emerald-600",
+};
+
+const bandBgClasses: Record<ScoreBand, string> = {
+  low: "bg-orange-400",
+  medium: "bg-amber-500",
+  high: "bg-emerald-500",
+};
 
 const formatDateTime = (value?: string | null) => {
   if (!value) return "—";
@@ -65,6 +70,10 @@ const statusStyles: Record<
     text: "Returned",
     badgeClass: "bg-rose-100 text-rose-700 border border-rose-200",
   },
+  reopened: {
+    text: "Reopened",
+    badgeClass: "bg-blue-100 text-blue-700 border border-blue-200",
+  },
 };
 
 const ReportSubmissionReviewModal = ({
@@ -93,7 +102,7 @@ const ReportSubmissionReviewModal = ({
 
   const headerLabel = useMemo(() => {
     if (!submission) return "";
-    return submission.report_type === "game_report" ? "Game report" : "Report card";
+    return submission.report_type === "game_report" ? "Game Report" : "Report Card";
   }, [submission]);
 
   if (!isOpen || !submission) {
@@ -104,12 +113,12 @@ const ReportSubmissionReviewModal = ({
 
   return (
     <div className="fixed inset-0 z-50 modal-overlay backdrop-blur-sm" role="dialog" aria-modal="true">
-      <div className="flex min-h-full items-start justify-center px-3 py-4 sm:items-center sm:px-6 sm:py-8" onClick={onClose}>
+      <div className="flex min-h-full items-start justify-center px-2 py-2 sm:items-center sm:px-4 sm:py-3" onClick={onClose}>
         <div
-          className="modal-surface relative w-full max-w-3xl max-h-[95vh] overflow-y-auto rounded-2xl p-0 sm:p-0"
+          className="modal-surface relative w-full max-w-6xl max-h-[90vh] overflow-hidden rounded-2xl p-0 sm:p-0"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="flex items-center justify-between border-b border-black/10 px-6 py-4">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-black/10 bg-white px-4 py-3 sm:px-5 sm:py-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">{headerLabel}</p>
               <h2 className="text-xl font-semibold text-container-foreground">Submission details</h2>
@@ -129,7 +138,7 @@ const ReportSubmissionReviewModal = ({
             </div>
           </div>
 
-          <div className="max-h-[75vh] space-y-6 overflow-y-auto px-6 py-5">
+          <div className="max-h-[78vh] space-y-6 overflow-y-auto px-4 pb-6 sm:px-5">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="modal-card rounded-xl bg-container/80 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">Submitted by</p>
@@ -152,27 +161,67 @@ const ReportSubmissionReviewModal = ({
             </div>
 
             {isReportCard ? (
-              <>
+              <div className="space-y-4">
                 <div className="modal-card rounded-2xl bg-container/80 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">Rating summary</p>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    {ratingFields.map((field) => (
-                      <div key={field.key} className="modal-card rounded-xl bg-white/80 px-4 py-3">
-                        <p className="text-xs uppercase tracking-wide text-muted">{field.label}</p>
-                        <p className="text-2xl font-semibold text-container-foreground">
-                          {submission[field.key] ?? "—"}
-                        </p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">Coach report</p>
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-container-foreground">
+                    {submission.coach_report?.trim() || "No coach report provided."}
+                  </p>
+                </div>
+
+                {typeof submission.overall_average === "number" ? (
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="modal-card rounded-xl bg-white/80 px-4 py-3 shadow-sm">
+                      <p className="text-xs uppercase tracking-wide text-muted">Overall average</p>
+                      <p className="text-2xl font-semibold text-container-foreground">
+                        {submission.overall_average.toFixed(1)}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+
+                {(submission.categories ?? []).length ? (
+                  <div className="space-y-3">
+                    {(submission.categories ?? []).map((category) => (
+                      <div key={category.name} className="modal-card rounded-2xl bg-container/80 p-4">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-semibold text-container-foreground">{category.name}</p>
+                          <p className="text-xs font-semibold text-muted">
+                            {typeof category.group_average === "number"
+                              ? `Avg ${category.group_average?.toFixed(1)}`
+                              : "No scores"}
+                          </p>
+                        </div>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          {category.metrics.map((metric) => {
+                            const band = getScoreBand(metric.score);
+                            const bandClass = band ? bandClasses[band] : "text-muted";
+                            const barClass = band ? bandBgClasses[band] : "bg-slate-300";
+                            return (
+                              <div key={`${category.name}-${metric.name}`} className="rounded-xl bg-white/90 px-4 py-3 shadow-sm">
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="font-semibold text-container-foreground">{metric.name}</span>
+                                  <span className={`text-xs font-semibold ${bandClass}`}>
+                                    {typeof metric.score === "number" ? metric.score : "—"}
+                                  </span>
+                                </div>
+                                <div className="mt-2 h-2 rounded-full bg-slate-200">
+                                  {typeof metric.score === "number" ? (
+                                    <div
+                                      className={`h-2 rounded-full ${barClass}`}
+                                      style={{ width: `${Math.min(100, Math.max(0, metric.score))}%` }}
+                                    />
+                                  ) : null}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     ))}
                   </div>
-                </div>
-                <div className="modal-card rounded-2xl bg-container/80 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">General notes</p>
-                  <p className="mt-2 whitespace-pre-wrap text-sm text-container-foreground">
-                    {submission.general_notes?.trim() ? submission.general_notes : "No notes were provided."}
-                  </p>
-                </div>
-              </>
+                ) : null}
+              </div>
             ) : (
               <div className="modal-card rounded-2xl bg-container/80 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">Match summary</p>

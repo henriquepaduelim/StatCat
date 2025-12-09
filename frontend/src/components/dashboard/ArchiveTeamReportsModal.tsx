@@ -110,7 +110,7 @@ export const ArchiveTeamReportsModal = ({
         return (
           <div className="text-center space-y-4">
             <h3 className="text-lg font-semibold text-emerald-600">Success!</h3>
-            <p className="text-muted">Team '{teamName}' and all its associated reports have been deleted.</p>
+            <p className="text-muted">Team &quot;{teamName}&quot; and all its associated reports have been deleted.</p>
             <button
               onClick={onClose}
               className="w-full rounded-lg bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground hover:bg-action-primary/90"
@@ -122,7 +122,7 @@ export const ArchiveTeamReportsModal = ({
       case "deleting":
         return (
           <div className="text-center space-y-4">
-            <p className="text-muted">Deleting {reports.length} reports and team '{teamName}'...</p>
+            <p className="text-muted">Deleting {reports.length} reports and team &quot;{teamName}&quot;...</p>
             <div className="h-4 w-4 mx-auto animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
           </div>
         );
@@ -131,7 +131,7 @@ export const ArchiveTeamReportsModal = ({
           <div className="text-center space-y-4">
             <h3 className="text-lg font-semibold text-destructive">Are you absolutely sure?</h3>
             <p className="text-sm text-muted">
-              This will permanently delete <strong>{reports.length} report submissions</strong> and the team <strong>'{teamName}'</strong>. This action cannot be undone.
+              This will permanently delete <strong>{reports.length} report submissions</strong> and the team <strong>&quot;{teamName}&quot;</strong>. This action cannot be undone.
             </p>
             {error && <p className="text-sm text-red-500">{error}</p>}
             <div className="flex justify-center gap-4">
@@ -158,7 +158,7 @@ export const ArchiveTeamReportsModal = ({
             <div className="text-center space-y-2">
                <h3 className="text-lg font-semibold text-container-foreground">Archive and Delete Team</h3>
                <p className="text-sm text-muted">
-                Team '{teamName}' cannot be deleted because it is associated with <strong>{reports.length} report submissions</strong>.
+                Team &quot;{teamName}&quot; cannot be deleted because it is associated with <strong>{reports.length} report submissions</strong>.
               </p>
             </div>
             <div className="space-y-4 rounded-lg border border-border bg-background p-4">

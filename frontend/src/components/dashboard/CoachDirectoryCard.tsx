@@ -74,50 +74,43 @@ const CoachDirectoryCard = ({
                   borderColor: "rgb(var(--color-border))",
                 }}
               >
-                <div className="hidden grid-cols-[auto_1fr_120px_minmax(60px,110px)] gap-3 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted sm:grid">
-                  <FontAwesomeIcon icon={faUserTie} className="self-center text-action-primary" />
+                <div className="hidden items-center gap-4 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted sm:grid sm:grid-cols-[minmax(0,1.8fr)_220px_140px]">
                   <span>Coach Name</span>
-                  <span className="text-center">Contact</span>
-                  <span className="text-center">Actions</span>
+                  <span className="text-right">Contact</span>
+                  <span className="text-right">Actions</span>
                 </div>
                 {coaches.map((coach) => (
                   <div
                     key={coach.id}
-                    className="grid grid-cols-1 items-start gap-3 border-b border-black/5 px-3 py-3 text-sm last:border-b-0 sm:grid-cols-[auto_1fr_120px_minmax(60px,110px)] sm:items-center sm:px-4"
+                    className="grid grid-cols-1 items-start gap-3 border-b border-black/5 px-3 py-3 text-sm last:border-b-0 sm:grid-cols-[minmax(0,1.8fr)_220px_140px] sm:items-center sm:px-4 sm:gap-4"
                     style={{ backgroundColor: "rgb(var(--color-container-background))" }}
                   >
-                    <div className="flex items-center gap-3 sm:contents">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-action-primary/10">
-                        <FontAwesomeIcon icon={faUserTie} className="text-xs text-action-primary" />
-                      </div>
+                    <div className="flex items-center gap-3">
                       <div className="flex-1">
                         <p className="font-semibold text-container-foreground">{coach.full_name}</p>
                         <p className="truncate text-xs text-muted">{coach.email}</p>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-muted sm:contents">
-                      <span className="sm:hidden">Phone: {coach.phone ?? "Not set"}</span>
-                      <span className="hidden text-center sm:block">
-                        {coach.phone ?? "Not set"}
-                      </span>
-                      <div className="flex items-center gap-[0.275rem] sm:justify-center">
-                        <button
-                          type="button"
-                          onClick={() => onEditCoach(coach)}
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition hover:bg-action-primary/10 hover:text-action-primary"
-                          aria-label={`Edit ${coach.full_name}`}
-                        >
-                          <FontAwesomeIcon icon={faPenToSquare} className="text-base" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDeleteCoach(coach.id, coach.full_name)}
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-red-500 transition hover:bg-rose-100"
-                          aria-label={`Delete ${coach.full_name}`}
-                        >
-                          <FontAwesomeIcon icon={faUserXmark} className="text-sm" />
-                        </button>
-                      </div>
+                    <div className="text-xs text-muted tabular-nums sm:text-right">
+                      {coach.phone ?? "Not set"}
+                    </div>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onEditCoach(coach)}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-muted transition hover:bg-action-primary/10 hover:text-action-primary"
+                        aria-label={`Edit ${coach.full_name}`}
+                      >
+                        <FontAwesomeIcon icon={faPenToSquare} className="text-base" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteCoach(coach.id, coach.full_name)}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-red-500 transition hover:bg-rose-100"
+                        aria-label={`Delete ${coach.full_name}`}
+                      >
+                        <FontAwesomeIcon icon={faUserXmark} className="text-sm" />
+                      </button>
                     </div>
                   </div>
                 ))}

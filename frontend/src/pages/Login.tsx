@@ -7,7 +7,6 @@ import { faCat } from "@fortawesome/free-solid-svg-icons";
 import {
   login,
   registerAccount,
-  signupAthlete,
 } from "../api/auth";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useTranslation } from "../i18n/useTranslation";
@@ -443,7 +442,7 @@ const handlePendingReviewClose = () => {
               rel="noopener noreferrer"
               className="mx-1 underline underline-offset-4"
             >
-              terms of service
+              Terms of Service
             </a>
             and
             <a
@@ -452,7 +451,7 @@ const handlePendingReviewClose = () => {
               rel="noopener noreferrer"
               className="mx-1 underline underline-offset-4"
             >
-              privacy policy
+              Privacy Policy
             </a>
             .
           </p>

@@ -3,6 +3,7 @@ from __future__ import annotations
 import enum
 from datetime import datetime
 
+from sqlalchemy import JSON
 from sqlmodel import Column, Enum, Field, SQLModel
 
 
@@ -15,6 +16,7 @@ class ReportSubmissionStatus(str, enum.Enum):
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
+    REOPENED = "reopened"
 
 
 class ReportSubmission(SQLModel, table=True):
@@ -40,6 +42,11 @@ class ReportSubmission(SQLModel, table=True):
     training_rating: int | None = Field(default=None)
     match_rating: int | None = Field(default=None)
     general_notes: str | None = Field(default=None)
+    coach_report: str | None = Field(default=None)
+    report_card_categories: list[dict] | None = Field(
+        default=None, sa_column=Column(JSON, nullable=True)
+    )
+    overall_average: float | None = Field(default=None)
     review_notes: str | None = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
     approved_at: datetime | None = None

@@ -1,7 +1,9 @@
+import type { ReportCardCategory, ReportSubmissionStatus } from "./reportCard";
+
 export interface ReportSubmissionItem {
   id: number;
   report_type: "game_report" | "report_card";
-  status: "pending" | "approved" | "rejected";
+  status: ReportSubmissionStatus;
   team_name: string | null;
   opponent: string | null;
   athlete_name: string | null;
@@ -13,6 +15,9 @@ export interface ReportSubmissionItem {
   training_rating: number | null;
   match_rating: number | null;
   general_notes: string | null;
+  coach_report: string | null;
+  categories: ReportCardCategory[] | null;
+  overall_average: number | null;
   review_notes: string | null;
   submitted_by: string | null;
   created_at: string;
