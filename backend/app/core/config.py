@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Combine Backend"
     VERSION: str = "0.1.0"
     API_V1_PREFIX: str = "/api/v1"
+    FRONTEND_URL: str | None = None
     DATABASE_URL: str = "sqlite:///./data/combine.db"
     DATABASE_FORCE_IPV4: bool = False
     DATABASE_HOSTADDR: str | None = None

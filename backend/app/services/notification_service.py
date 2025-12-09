@@ -41,9 +41,12 @@ class NotificationService:
                     event_name=event.name,
                     event_date=event.event_date,
                     event_time=event.start_time,
+                    event_end_date=getattr(event, "end_date", None),
+                    event_end_time=getattr(event, "end_time", None),
                     event_location=event.location,
                     event_notes=event.notes,
                     organizer_name=organizer.full_name,
+                    event_id=event.id
                 )
                 
                 # Log notification
@@ -90,6 +93,7 @@ class NotificationService:
             if not user or not user.email:
                 continue
             
+            # NOTE: Assumes send_event_update has a similar updated signature
             success = await email_service.send_event_update(
                 to_email=user.email,
                 to_name=user.full_name,
@@ -98,6 +102,7 @@ class NotificationService:
                 event_time=event.start_time,
                 event_location=event.location,
                 changes=changes,
+                event_id=event.id,
             )
             
             # Log notification
@@ -136,6 +141,8 @@ class NotificationService:
             user = db.get(User, participant.user_id)
             if not user or not user.email:
                 continue
+                
+            # NOTE: Assumes send_event_reminder has a similar updated signature
             success = await email_service.send_event_reminder(
                 to_email=user.email,
                 to_name=user.full_name,
@@ -144,6 +151,7 @@ class NotificationService:
                 event_time=event.start_time,
                 event_location=event.location,
                 hours_until=hours_until,
+                event_id=event.id,
             )
             if success:
                 sent += 1
@@ -182,6 +190,7 @@ class NotificationService:
             participant_name=participant_user.full_name,
             event_name=event.name,
             status=status,
+            event_id=event.id,
         )
         
         # Log notification
