@@ -8,6 +8,7 @@ import { useDashboardEvents } from "../hooks/useDashboardEvents";
 import { useDashboardReports } from "../hooks/useDashboardReports";
 import { createTeamLabels, teamAgeOptions } from "../constants/dashboard";
 import { useDashboardTeamManagement } from "../hooks/useDashboardTeamManagement";
+import { ArchiveTeamReportsModal } from "../components/dashboard/ArchiveTeamReportsModal";
 
 
 const DashboardTeamManagementContainer = lazy(
@@ -60,6 +61,9 @@ const Dashboard = () => {
     teamFormModalProps,
     coachFormModalProps,
     setTeamNotice,
+    archiveModalTeam,
+    handleCloseArchiveModal,
+    handleTeamArchiveAndDeleted,
   } = useDashboardTeamManagement({
     permissions,
     athletes,
@@ -152,6 +156,17 @@ const Dashboard = () => {
       <Suspense fallback={null}>
         <DashboardReportModals {...reportModalsProps} />
       </Suspense>
+
+      {archiveModalTeam && (
+        <Suspense fallback={null}>
+          <ArchiveTeamReportsModal
+            teamId={archiveModalTeam.id}
+            teamName={archiveModalTeam.name}
+            onClose={handleCloseArchiveModal}
+            onTeamDeleted={handleTeamArchiveAndDeleted}
+          />
+        </Suspense>
+      )}
     </>
   );
 };

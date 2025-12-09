@@ -22,6 +22,7 @@ from app.models.team import CoachTeamLink, Team
 from app.models.team_post import TeamPost
 from app.models.user import User, UserRole
 from app.services.email_service import email_service
+from app.schemas.report_submission import ReportSubmissionItem
 from app.schemas.team import TeamCoachCreate, TeamCreate, TeamRead
 from app.schemas.user import UserRead
 
@@ -146,6 +147,56 @@ def get_team(
         updated_at=team.updated_at,
         athlete_count=roster_counts.get(team.id, 0),
     )
+
+
+@router.get("/{team_id}/report-submissions", response_model=list[ReportSubmissionItem])
+def get_team_report_submissions(
+    team_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> list[ReportSubmissionItem]:
+    """Get all report submissions for a specific team for archival purposes."""
+    ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF})
+    team = _get_team_or_404(session, team_id)
+
+    statement = (
+        select(ReportSubmission, User.full_name)
+        .join(User, User.id == ReportSubmission.submitted_by_id)
+        .where(ReportSubmission.team_id == team_id)
+        .order_by(ReportSubmission.created_at.desc())
+    )
+    results = session.exec(statement).all()
+
+    items: list[ReportSubmissionItem] = []
+    for submission, submitter_name in results:
+        athlete_name = None
+        if submission.athlete_id:
+            athlete = session.get(Athlete, submission.athlete_id)
+            if athlete:
+                athlete_name = f"{athlete.first_name} {athlete.last_name}".strip()
+        
+        items.append(
+            ReportSubmissionItem(
+                id=submission.id,
+                report_type=submission.report_type.value,
+                status=submission.status.value,
+                team_name=team.name,
+                opponent=submission.opponent,
+                athlete_name=athlete_name,
+                match_date=submission.match_date,
+                goals_for=submission.goals_for,
+                goals_against=submission.goals_against,
+                technical_rating=submission.technical_rating,
+                physical_rating=submission.physical_rating,
+                training_rating=submission.training_rating,
+                match_rating=submission.match_rating,
+                general_notes=submission.general_notes,
+                review_notes=submission.review_notes,
+                submitted_by=submitter_name,
+                created_at=submission.created_at,
+            )
+        )
+    return items
 
 
 @router.post("/", response_model=TeamRead, status_code=status.HTTP_201_CREATED)
@@ -532,11 +583,11 @@ def delete_team(
     team = _get_team_or_404(session, team_id)
 
     # Block deletion if there are report submissions linked to this team
-    submissions_count_result = session.exec(
-        select(func.count()).select_from(ReportSubmission).where(ReportSubmission.team_id == team_id)
-    ).one()
-    submissions_count = submissions_count_result[0] if isinstance(submissions_count_result, tuple) else submissions_count_result
-    if submissions_count > 0:
+    # More robust check for existence instead of counting
+    first_submission = session.exec(
+        select(ReportSubmission).where(ReportSubmission.team_id == team_id)
+    ).first()
+    if first_submission: # If any submission exists, it's not None
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Team has report submissions; remove or reassign them before deleting the team.",

@@ -363,3 +363,23 @@ def reject_submission(
         submitted_by=current_user.full_name,
         created_at=submission.created_at,
     )
+
+@router.delete("/{submission_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_submission(
+    submission_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> None:
+    """Delete a report submission. Only available to admins and staff."""
+    if current_user.role not in APPROVAL_ROLES:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+
+    submission = session.get(ReportSubmission, submission_id)
+    if not submission:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found"
+        )
+
+    session.delete(submission)
+    session.commit()
+    return None

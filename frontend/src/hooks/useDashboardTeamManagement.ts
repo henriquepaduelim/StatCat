@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 
 import {
   assignCoachToTeam,
@@ -122,6 +123,7 @@ export const useDashboardTeamManagement = ({
   const [teamFormError, setTeamFormError] = useState<string | null>(null);
   const [teamNotice, setTeamNotice] = useState<NoticeState>(null);
   const [coachNotice, setCoachNotice] = useState<NoticeState>(null);
+  const [archiveModalTeam, setArchiveModalTeam] = useState<{ id: number; name: string } | null>(null);
 
   const { candidates: teamBuilderCandidates, remainingAthleteCount } =
     useTeamBuilderData({
@@ -170,6 +172,21 @@ export const useDashboardTeamManagement = ({
     setCoachFormSuccess(null);
     setEditingCoach(null);
     setCoachTeams([]);
+  };
+
+  const handleCloseArchiveModal = () => {
+    setArchiveModalTeam(null);
+  };
+
+  const handleTeamArchiveAndDeleted = () => {
+    handleCloseArchiveModal();
+    setTeamNotice({
+      variant: "success",
+      message: "Team and all its reports have been deleted.",
+    });
+    if (selectedTeamId === archiveModalTeam?.id) {
+      setSelectedTeamId(null);
+    }
   };
 
   const createTeamMutation = useMutation({
@@ -242,9 +259,9 @@ export const useDashboardTeamManagement = ({
     },
   });
 
-  const deleteTeamMutation = useMutation<void, Error, number>({
-    mutationFn: deleteTeamApi,
-    onSuccess: (_data, teamId) => {
+  const deleteTeamMutation = useMutation<void, Error, { teamId: number; teamName: string }>({
+    mutationFn: ({ teamId }) => deleteTeamApi(teamId),
+    onSuccess: (_data, { teamId }) => {
       queryClient.invalidateQueries({ queryKey: ["teams"] });
       queryClient.invalidateQueries({ queryKey: ["athletes"] });
       queryClient.invalidateQueries({ queryKey: ["team-coaches"] });
@@ -259,10 +276,13 @@ export const useDashboardTeamManagement = ({
         closeTeamFormModal();
       }
     },
-    onError: (error) => {
-      const message =
-        error instanceof Error ? error.message : "Unable to remove team.";
-      setTeamNotice({ variant: "error", message });
+    onError: (error, { teamId, teamName }) => {
+      if (axios.isAxiosError(error) && error.response?.status === 409) {
+        setArchiveModalTeam({ id: teamId, name: teamName });
+      } else {
+        const message = error instanceof Error ? error.message : "Unable to remove team.";
+        setTeamNotice({ variant: "error", message });
+      }
     },
   });
 
@@ -513,7 +533,7 @@ export const useDashboardTeamManagement = ({
       return;
     }
     setTeamNotice(null);
-    deleteTeamMutation.mutate(teamId);
+    deleteTeamMutation.mutate({ teamId, teamName });
   };
 
   const handleTeamFormSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -617,5 +637,8 @@ export const useDashboardTeamManagement = ({
     coachNotice,
     setCoachNotice,
     isAthleteView,
+    archiveModalTeam,
+    handleCloseArchiveModal,
+    handleTeamArchiveAndDeleted,
   };
 };

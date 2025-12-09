@@ -1,5 +1,6 @@
 import api from "./client";
 import type { Team } from "../types/team";
+import type { ReportSubmissionItem } from "../types/report_submission";
 
 export const listTeams = async (ageCategory?: string) => {
   const params = ageCategory ? { age_category: ageCategory } : undefined;
@@ -26,6 +27,11 @@ export const updateTeam = async (teamId: number, payload: TeamPayload) => {
 
 export const deleteTeam = async (teamId: number) => {
   await api.delete(`/teams/${teamId}`);
+};
+
+export const getTeamReportSubmissions = async (teamId: number): Promise<ReportSubmissionItem[]> => {
+  const { data } = await api.get<ReportSubmissionItem[]>(`/teams/${teamId}/report-submissions`);
+  return data;
 };
 
 export interface TeamCoach {
