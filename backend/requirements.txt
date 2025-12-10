@@ -23,3 +23,4 @@ opentelemetry-instrumentation-sqlalchemy>=0.45b0
 opentelemetry-instrumentation-httpx>=0.45b0
 ics==0.7.2
 itsdangerous>=2.1
+cairosvg>=2.7

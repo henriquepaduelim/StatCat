@@ -18,6 +18,7 @@ const templateCategories: ReportCardCategory[] = [
       { name: "Self-Awareness", score: null },
       { name: "Regulation", score: null },
       { name: "Self-Confidence", score: null },
+      { name: "Leadership", score: null },
       { name: "Resilience", score: null },
       { name: "Motivation", score: null },
     ],

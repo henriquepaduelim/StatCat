@@ -37,7 +37,8 @@ class EmailService:
         self.resend_from_email = settings.RESEND_FROM_EMAIL or self.from_email
         self.use_resend = bool(self.resend_api_key and self.resend_from_email)
 
-        self.frontend_url = str(settings.FRONTEND_URL).rstrip("/") or "http://localhost:3000"
+        raw_frontend = settings.FRONTEND_URL
+        self.frontend_url = raw_frontend.rstrip("/") if raw_frontend else "http://localhost:3000"
         self.api_url = f"{self.frontend_url}/api/v1"
 
         self.is_configured = self.use_resend or bool(self.smtp_user and self.smtp_password)

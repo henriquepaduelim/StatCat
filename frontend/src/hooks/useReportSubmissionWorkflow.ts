@@ -6,6 +6,7 @@ import {
   rejectReportSubmission,
   type ReportSubmissionSummary,
 } from "../api/reportSubmissions";
+import { useApprovedReportSubmissions } from "./useApprovedReportSubmissions";
 import { usePendingReportSubmissions } from "./usePendingReportSubmissions";
 import { useMyReportSubmissions } from "./useMyReportSubmissions";
 
@@ -19,6 +20,7 @@ export const useReportSubmissionWorkflow = ({
   onError,
 }: UseReportSubmissionWorkflowOptions) => {
   const pendingReportsQuery = usePendingReportSubmissions({ enabled: canApproveReports });
+  const approvedReportsQuery = useApprovedReportSubmissions({ enabled: canApproveReports });
   const myReportsQuery = useMyReportSubmissions();
   const [selectedSubmission, setSelectedSubmission] = useState<ReportSubmissionSummary | null>(null);
   const [isModalOpen, setModalOpen] = useState(false);
@@ -26,6 +28,7 @@ export const useReportSubmissionWorkflow = ({
   const [rejectingSubmissionId, setRejectingSubmissionId] = useState<number | null>(null);
 
   const pendingReports = pendingReportsQuery.data ?? [];
+  const approvedReports = approvedReportsQuery.data ?? [];
   const myReports = myReportsQuery.data ?? [];
 
   const handleWorkflowError = useCallback(
@@ -51,8 +54,9 @@ export const useReportSubmissionWorkflow = ({
 
   const refetchSubmissions = useCallback(() => {
     pendingReportsQuery.refetch();
+    approvedReportsQuery.refetch();
     myReportsQuery.refetch();
-  }, [pendingReportsQuery, myReportsQuery]);
+  }, [pendingReportsQuery, approvedReportsQuery, myReportsQuery]);
 
   const approveMutation = useMutation({
     mutationFn: approveReportSubmission,
@@ -117,6 +121,7 @@ export const useReportSubmissionWorkflow = ({
 
   return {
     pendingReports,
+    approvedReports,
     myReports,
     selectedSubmission,
     isSubmissionModalOpen: isModalOpen,

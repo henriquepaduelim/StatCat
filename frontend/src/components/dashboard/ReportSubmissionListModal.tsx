@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
 
-import type { ReportSubmissionSummary } from "../../api/reportSubmissions";
+import api from "../../api/client";
+import { downloadReportSubmissionPdf, type ReportSubmissionSummary } from "../../api/reportSubmissions";
 
 type ReportSubmissionListModalProps = {
   isOpen: boolean;
   pendingReports: ReportSubmissionSummary[];
+  approvedReports: ReportSubmissionSummary[];
   mySubmissions: ReportSubmissionSummary[];
   canApproveReports: boolean;
   onClose: () => void;
@@ -21,6 +23,7 @@ const tabs: Array<{ id: "report_card" | "game_report"; label: string }> = [
 const ReportSubmissionListModal = ({
   isOpen,
   pendingReports,
+  approvedReports,
   mySubmissions,
   canApproveReports,
   onClose,
@@ -29,17 +32,24 @@ const ReportSubmissionListModal = ({
   onApproveReport,
 }: ReportSubmissionListModalProps) => {
   const [activeTab, setActiveTab] = useState<"report_card" | "game_report">("report_card");
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
+
+  const safePendingReports = pendingReports ?? [];
+  const safeApprovedReports = approvedReports ?? [];
+  const safeMySubmissions = mySubmissions ?? [];
 
   const filteredPending = useMemo(
-    () => pendingReports.filter((report) => report.report_type === activeTab),
-    [pendingReports, activeTab],
+    () => safePendingReports.filter((report) => report.report_type === activeTab),
+    [safePendingReports, activeTab],
   );
   const filteredApproved = useMemo(
-    () =>
-      mySubmissions.filter(
+    () => {
+      const source = canApproveReports ? safeApprovedReports : safeMySubmissions;
+      return source.filter(
         (submission) => submission.report_type === activeTab && submission.status === "approved",
-      ),
-    [mySubmissions, activeTab],
+      );
+    },
+    [safeApprovedReports, safeMySubmissions, activeTab, canApproveReports],
   );
 
   const totalByTab = useMemo(() => {
@@ -51,6 +61,26 @@ const ReportSubmissionListModal = ({
   if (!isOpen) {
     return null;
   }
+
+  const handleDownload = async (submissionId: number) => {
+    try {
+      setDownloadingId(submissionId);
+      const response = await downloadReportSubmissionPdf(submissionId);
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `report_card_${submissionId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download report card PDF", error);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   return (
     <div
@@ -90,8 +120,8 @@ const ReportSubmissionListModal = ({
           </div>
           <div className="flex gap-2 border-t border-black/10 px-4 py-2 text-xs font-semibold text-muted sm:px-6">
             {tabs.map((tab) => {
-              const pendingCount = pendingReports.filter((r) => r.report_type === tab.id).length;
-              const approvedCount = mySubmissions.filter(
+              const pendingCount = safePendingReports.filter((r) => r.report_type === tab.id).length;
+              const approvedCount = (canApproveReports ? safeApprovedReports : safeMySubmissions).filter(
                 (r) => r.report_type === tab.id && r.status === "approved",
               ).length;
               const total = pendingCount + approvedCount;
@@ -214,13 +244,25 @@ const ReportSubmissionListModal = ({
                         Approved
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => onViewMySubmission(submission)}
-                      className="mt-2 inline-flex w-full items-center justify-center rounded-full border border-black/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-container-foreground transition hover:bg-container/70"
-                    >
-                      View submission
-                    </button>
+                    <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                      <button
+                        type="button"
+                        onClick={() => onViewMySubmission(submission)}
+                        className="w-full rounded-full border border-black/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-container-foreground transition hover:bg-container/70"
+                      >
+                        View submission
+                      </button>
+                      {submission.report_type === "report_card" && submission.report_card_pdf_url ? (
+                        <button
+                          type="button"
+                          onClick={() => handleDownload(submission.id)}
+                          disabled={downloadingId === submission.id}
+                          className="w-full rounded-full border border-black/10 px-3 py-1.5 text-center text-xs font-semibold uppercase tracking-wide text-action-primary transition hover:bg-action-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {downloadingId === submission.id ? "Downloading..." : "Download PDF"}
+                        </button>
+                      ) : null}
+                    </div>
                   </article>
                 ))
               ) : (

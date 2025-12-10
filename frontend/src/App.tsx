@@ -27,6 +27,7 @@ const PlayerScheduling = lazy(() => import("./pages/player-profile/SchedulingPag
 const TeamFeed = lazy(() => import("./pages/TeamFeed"));
 const TeamDashboard = lazy(() => import("./pages/TeamDashboard"));
 const Settings = lazy(() => import("./pages/Settings"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 // Loading fallback component
 const LoadingFallback = () => (
@@ -85,6 +86,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<RedirectToDashboardOrPlayerProfile />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route element={<ProtectedLayout />}>
           <Route
             path="/dashboard"

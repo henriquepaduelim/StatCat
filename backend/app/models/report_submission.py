@@ -48,5 +48,6 @@ class ReportSubmission(SQLModel, table=True):
     )
     overall_average: float | None = Field(default=None)
     review_notes: str | None = Field(default=None)
+    report_card_pdf_path: str | None = Field(default=None)
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
     approved_at: datetime | None = None

@@ -109,6 +109,47 @@ const initialContactState: ContactFormState = {
   physicianPhone: "",
 };
 
+type CollapsibleCardProps = {
+  title: string;
+  description?: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+  className?: string;
+};
+
+const CollapsibleCard = ({
+  title,
+  description,
+  isOpen,
+  onToggle,
+  children,
+  className = "",
+}: CollapsibleCardProps) => (
+  <section className={`rounded-2xl border border-black/5 bg-container-gradient p-6 shadow-sm ${className}`}>
+    <div className="flex items-center justify-between gap-3">
+      <div>
+        <h2 className="text-lg font-semibold text-container-foreground">{title}</h2>
+        {description ? <p className="text-sm text-muted">{description}</p> : null}
+      </div>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex items-center gap-2 rounded-full border border-black/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-container-foreground transition hover:border-action-primary"
+        aria-expanded={isOpen}
+      >
+        <span className="sr-only">{isOpen ? "Collapse" : "Expand"}</span>
+        <FontAwesomeIcon
+          icon={faChevronDown}
+          aria-hidden="true"
+          className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+    </div>
+    {isOpen ? <div className="mt-4 space-y-4">{children}</div> : null}
+  </section>
+);
+
 const Settings = () => {
   const user = useAuthStore((state) => state.user);
   const token = useAuthStore((state) => state.token);
@@ -129,6 +170,14 @@ const Settings = () => {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingAthlete, setIsSavingAthlete] = useState(false);
   const [isSavingContact, setIsSavingContact] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passwordFeedback, setPasswordFeedback] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [showSecondaryGuardian, setShowSecondaryGuardian] = useState(false);
   const [maintenanceTeamId, setMaintenanceTeamId] = useState<number | null>(null);
@@ -137,6 +186,7 @@ const Settings = () => {
   const [maintenanceFeedback, setMaintenanceFeedback] = useState<string | null>(null);
   const [isMaintenanceOpen, setMaintenanceOpen] = useState(false);
   const [isPhotoOpen, setPhotoOpen] = useState(false);
+  const [isPasswordOpen, setPasswordOpen] = useState(false);
   const [isThemeOpen, setThemeOpen] = useState(false);
   const { themeId, setThemeId } = useTheme();
   const teamsQuery = useTeams();
@@ -223,6 +273,52 @@ const Settings = () => {
   ) => {
     const { name, value } = event.target;
     setContactForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePasswordFieldChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
+    setPasswordForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePasswordChangeSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPasswordError(null);
+    setPasswordFeedback(null);
+    const trimmedNew = passwordForm.newPassword.trim();
+    const trimmedConfirm = passwordForm.confirmPassword.trim();
+    const trimmedCurrent = passwordForm.currentPassword.trim();
+
+    if (!trimmedCurrent) {
+      setPasswordError("Enter your current password.");
+      return;
+    }
+
+    if (trimmedNew.length < 8) {
+      setPasswordError("Choose a password with at least 8 characters.");
+      return;
+    }
+
+    if (trimmedNew !== trimmedConfirm) {
+      setPasswordError("Passwords do not match.");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    try {
+      await updateSelf({
+        current_password: trimmedCurrent,
+        new_password: trimmedNew,
+      });
+      setPasswordFeedback("Password updated. Sign in again on other devices to refresh your session.");
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (error) {
+      const detail =
+        (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
+        "Unable to update password right now. Please try again.";
+      setPasswordError(detail);
+    } finally {
+      setIsUpdatingPassword(false);
+    }
   };
 
   const handlePhotoUpload = async () => {
@@ -431,45 +527,6 @@ const Settings = () => {
     }
   };
 
-  const CollapsibleCard = ({
-    title,
-    description,
-    isOpen,
-    onToggle,
-    children,
-    className = "",
-  }: {
-    title: string;
-    description?: string;
-    isOpen: boolean;
-    onToggle: () => void;
-    children: ReactNode;
-    className?: string;
-  }) => (
-    <section className={`rounded-2xl border border-black/5 bg-container-gradient p-6 shadow-sm ${className}`}>
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-container-foreground">{title}</h2>
-          {description ? <p className="text-sm text-muted">{description}</p> : null}
-        </div>
-        <button
-          type="button"
-          onClick={onToggle}
-          className="flex items-center gap-2 rounded-full border border-black/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-container-foreground transition hover:border-action-primary"
-          aria-expanded={isOpen}
-        >
-          <span className="sr-only">{isOpen ? "Collapse" : "Expand"}</span>
-          <FontAwesomeIcon
-            icon={faChevronDown}
-            aria-hidden="true"
-            className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
-          />
-        </button>
-      </div>
-      {isOpen ? <div className="mt-4 space-y-4">{children}</div> : null}
-    </section>
-  );
-
   return (
     <div className="space-y-8 settings-page">
       <section className="rounded-2xl border border-black/5 bg-container-gradient p-6 shadow-sm">
@@ -564,6 +621,63 @@ const Settings = () => {
               </button>
             ))}
           </div>
+        </CollapsibleCard>
+
+        <CollapsibleCard
+          title="Password & security"
+          description="Update your password without leaving the app. Works for every role, including coaches."
+          isOpen={isPasswordOpen}
+          onToggle={() => setPasswordOpen((open) => !open)}
+        >
+          <form className="space-y-3" onSubmit={handlePasswordChangeSubmit}>
+            <label className="flex flex-col gap-1 text-sm font-medium text-container-foreground">
+              Current password
+              <input
+                type="password"
+                name="currentPassword"
+                autoComplete="current-password"
+                value={passwordForm.currentPassword}
+                onChange={handlePasswordFieldChange}
+                required
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-medium text-container-foreground">
+              New password
+              <input
+                type="password"
+                name="newPassword"
+                autoComplete="new-password"
+                value={passwordForm.newPassword}
+                onChange={handlePasswordFieldChange}
+                minLength={8}
+                required
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm font-medium text-container-foreground">
+              Confirm new password
+              <input
+                type="password"
+                name="confirmPassword"
+                autoComplete="new-password"
+                value={passwordForm.confirmPassword}
+                onChange={handlePasswordFieldChange}
+                minLength={8}
+                required
+              />
+            </label>
+            {passwordError ? <p className="text-sm text-red-500">{passwordError}</p> : null}
+            {passwordFeedback ? <p className="text-sm text-emerald-500">{passwordFeedback}</p> : null}
+            <button
+              type="submit"
+              className="inline-flex w-full items-center justify-center rounded-full bg-action-primary px-4 py-2 text-sm font-semibold text-action-primary-foreground shadow-md transition hover:bg-action-primary/90 disabled:opacity-70"
+              disabled={isUpdatingPassword}
+            >
+              {isUpdatingPassword ? "Updating..." : "Update password"}
+            </button>
+            <p className="text-xs text-muted">
+              After changing your password, log back in on other devices to refresh your session.
+            </p>
+          </form>
         </CollapsibleCard>
       </div>
 

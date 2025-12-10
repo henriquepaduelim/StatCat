@@ -165,7 +165,7 @@ const PasswordRecoveryDialog = ({
     passwordResetRequestMutation.mutate(email.trim(), {
       onSuccess: () => {
         setMessage(
-          "If the email belongs to an admin or athlete account, a reset code is on its way. The code expires in 30 minutes."
+          "If the email exists, a reset link is on its way. It works for every role and expires in 30 minutes."
         );
       },
       onError: (mutationError: unknown) => {
@@ -206,7 +206,7 @@ const PasswordRecoveryDialog = ({
         onError: (mutationError: unknown) => {
           const detail =
             (mutationError as ApiErrorResponse)?.response?.data?.detail ??
-            "We could not verify that reset code. Please request a new one.";
+            "We could not verify that reset token. Please request a new one.";
           setError(detail);
         },
       }
@@ -214,7 +214,7 @@ const PasswordRecoveryDialog = ({
   };
 
   const dialogTitle = useMemo(
-    () => (step === "request" ? "Request reset instructions" : "Use your reset code"),
+    () => (step === "request" ? "Request reset instructions" : "Use your reset token"),
     [step]
   );
 
@@ -246,7 +246,7 @@ const PasswordRecoveryDialog = ({
               {dialogTitle}
             </h2>
             <p className="mt-1 text-xs text-muted">
-              Only administrators and athletes can reset passwords here. Coach recovery will be available soon.
+              Any StatCat account can reset the password here. Use the link from your email or paste the token below.
             </p>
           </div>
           <button
@@ -270,7 +270,7 @@ const PasswordRecoveryDialog = ({
             }`}
           >
             <FontAwesomeIcon icon={faEnvelope} className="mr-2 h-4 w-4" />
-            Request code
+            Request reset link
           </button>
           <button
             type="button"
@@ -282,7 +282,7 @@ const PasswordRecoveryDialog = ({
             }`}
           >
             <FontAwesomeIcon icon={faKey} className="mr-2 h-4 w-4" />
-            Use reset code
+            Use reset token
           </button>
         </div>
 
@@ -317,18 +317,18 @@ const PasswordRecoveryDialog = ({
           <form className="mt-6 space-y-4" onSubmit={handlePasswordResetConfirm}>
             <div>
               <label className="text-sm font-medium text-muted" htmlFor="recovery-token">
-                Reset code
+                Reset token
               </label>
               <textarea
                 id="recovery-token"
                 value={token}
                 onChange={(event) => setToken(event.target.value)}
                 className="mt-2 h-24 w-full rounded-md border border-black/10 px-3 py-2 text-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                placeholder="Paste the code from your email"
+                placeholder="Paste the token from your email link (after token=)"
                 required
               />
               <p className="mt-1 text-xs text-muted">
-                Codes expire in 30 minutes. We will never ask you to share this code outside this screen.
+                Tokens expire in 30 minutes. We will never ask you to share this token outside this screen.
               </p>
             </div>
             <div>

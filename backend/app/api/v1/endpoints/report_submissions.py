@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
 from datetime import datetime
+from pathlib import Path
 from typing import List, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlmodel import Session
 
@@ -25,11 +28,14 @@ from app.schemas.report_submission import (
     ReportSubmissionReview,
 )
 from app.services.email_service import email_service
+from app.services.report_card_pdf import generate_report_card_pdf
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 CREATION_ROLES = {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH}
 APPROVAL_ROLES = {UserRole.ADMIN}
+VIEW_APPROVED_ROLES = {UserRole.ADMIN, UserRole.STAFF}
 
 
 def _clean_text(value: str | None) -> str | None:
@@ -110,6 +116,7 @@ def _to_submission_item(
         review_notes=submission.review_notes,
         submitted_by=submitter_name,
         created_at=submission.created_at,
+        report_card_pdf_url=submission.report_card_pdf_path,
     )
 
 
@@ -133,6 +140,47 @@ def list_pending_submissions(
         .outerjoin(Athlete, Athlete.id == ReportSubmission.athlete_id)
         .join(User, User.id == ReportSubmission.submitted_by_id)
         .where(ReportSubmission.status == ReportSubmissionStatus.PENDING)
+        .order_by(ReportSubmission.created_at.desc())
+    )
+
+    items: list[ReportSubmissionItem] = []
+    for submission, team_name, athlete_first, athlete_last, submitter_name in session.exec(statement):
+        athlete_name = (
+            f"{athlete_first} {athlete_last}".strip()
+            if athlete_first or athlete_last
+            else None
+        )
+        items.append(
+            _to_submission_item(
+                submission=submission,
+                team_name=team_name,
+                athlete_name=athlete_name,
+                submitter_name=submitter_name,
+            )
+        )
+    return items
+
+
+@router.get("/approved", response_model=List[ReportSubmissionItem])
+def list_approved_submissions(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> List[ReportSubmissionItem]:
+    if current_user.role not in VIEW_APPROVED_ROLES:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+
+    statement = (
+        select(
+            ReportSubmission,
+            Team.name,
+            Athlete.first_name,
+            Athlete.last_name,
+            User.full_name,
+        )
+        .outerjoin(Team, Team.id == ReportSubmission.team_id)
+        .outerjoin(Athlete, Athlete.id == ReportSubmission.athlete_id)
+        .join(User, User.id == ReportSubmission.submitted_by_id)
+        .where(ReportSubmission.status == ReportSubmissionStatus.APPROVED)
         .order_by(ReportSubmission.created_at.desc())
     )
 
@@ -355,6 +403,7 @@ def update_report_card(
     submission.review_notes = None
     submission.approved_by_id = None
     submission.approved_at = None
+    submission.report_card_pdf_path = None
 
     session.add(submission)
     session.commit()
@@ -386,16 +435,10 @@ async def approve_submission(
     if submission.status != ReportSubmissionStatus.PENDING:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Already resolved")
 
-    submission.status = ReportSubmissionStatus.APPROVED
-    submission.approved_by_id = current_user.id
-    submission.approved_at = datetime.utcnow()
-    session.add(submission)
-    session.commit()
-    session.refresh(submission)
-
     team_name = None
     athlete_name = None
     athlete_email = None
+    athlete: Athlete | None = None
     if submission.team_id:
         team = session.get(Team, submission.team_id)
         team_name = team.name if team else None
@@ -404,6 +447,21 @@ async def approve_submission(
         if athlete:
             athlete_name = f"{athlete.first_name} {athlete.last_name}".strip()
             athlete_email = athlete.email
+
+    submission.status = ReportSubmissionStatus.APPROVED
+    submission.approved_by_id = current_user.id
+    submission.approved_at = datetime.utcnow()
+
+    if submission.report_type == ReportSubmissionType.REPORT_CARD:
+        try:
+            pdf_path = generate_report_card_pdf(submission=submission, athlete=athlete)
+            submission.report_card_pdf_path = str(pdf_path) if pdf_path else None
+        except Exception as exc:  # pragma: no cover - best effort rendering
+            logger.error("Failed to generate report card PDF for submission %s: %s", submission.id, exc)
+
+    session.add(submission)
+    session.commit()
+    session.refresh(submission)
 
     submitter = session.get(User, submission.submitted_by_id)
     submitter_name = submitter.full_name if submitter else ""
@@ -421,6 +479,42 @@ async def approve_submission(
         athlete_name=athlete_name,
         submitter_name=submitter_name,
     )
+
+
+@router.get("/{submission_id}/pdf")
+def download_report_card_pdf(
+    submission_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> FileResponse:
+    submission = session.get(ReportSubmission, submission_id)
+    if not submission:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found")
+    if submission.report_type != ReportSubmissionType.REPORT_CARD:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="PDF available only for report cards.")
+    if submission.status != ReportSubmissionStatus.APPROVED:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Report card must be approved to download PDF.")
+
+    is_admin_or_staff = current_user.role in {UserRole.ADMIN, UserRole.STAFF}
+    is_submitter = submission.submitted_by_id == current_user.id
+    is_athlete_owner = submission.athlete_id and current_user.athlete_id == submission.athlete_id
+    if not (is_admin_or_staff or is_submitter or is_athlete_owner):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+
+    if not submission.report_card_pdf_path:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="PDF not generated for this submission.")
+
+    pdf_path = Path(submission.report_card_pdf_path)
+    if not pdf_path.is_absolute():
+        # Align with the base_dir used when generating the PDF (backend root)
+        base_dir = Path(__file__).resolve().parents[4]
+        pdf_path = base_dir / pdf_path
+
+    if not pdf_path.exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="PDF file not found on server.")
+
+    filename = f"report_card_{submission.id}.pdf"
+    return FileResponse(path=pdf_path, media_type="application/pdf", filename=filename)
 
 
 @router.post("/{submission_id}/reject", response_model=ReportSubmissionItem)

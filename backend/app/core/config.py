@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Combine Backend"
     VERSION: str = "0.1.0"
     API_V1_PREFIX: str = "/api/v1"
-    FRONTEND_URL: str | None = None
+    FRONTEND_URL: str | None = "http://localhost:5173"
     DATABASE_URL: str = "sqlite:///./data/combine.db"
     DATABASE_FORCE_IPV4: bool = False
     DATABASE_HOSTADDR: str | None = None
@@ -58,6 +58,7 @@ class Settings(BaseSettings):
     RESEND_API_KEY: str | None = None
     RESEND_FROM_EMAIL: str | None = None
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 30
+    PASSWORD_RESET_TOKEN_SALT: str = "password-reset"
     ENCRYPTION_KEY_CURRENT: str | None = None
     ENCRYPTION_KEY_PREVIOUS: str | None = None
     ATHLETE_PHOTO_MAX_BYTES: int = 5 * 1024 * 1024
@@ -82,6 +83,9 @@ class Settings(BaseSettings):
     OTEL_EXPORTER_OTLP_HEADERS: str | None = None
     OTEL_SERVICE_NAME: str | None = None
     OTEL_TRACES_SAMPLER_RATIO: float = 0.2
+    REPORT_CARD_TEMPLATE_DIR: str = "templates/report_cards"
+    REPORT_CARD_TEMPLATE_FILE: str = "page1.svg"
+    REPORT_CARD_OUTPUT_DIR: str = "media/report_cards"
 
     @model_validator(mode="after")
     def _validate_security_basics(self) -> "Settings":

@@ -19,6 +19,7 @@ export interface ReportSubmissionItem {
   categories: ReportCardCategory[] | null;
   overall_average: number | null;
   review_notes: string | null;
+  report_card_pdf_url?: string | null;
   submitted_by: string | null;
   created_at: string;
 }

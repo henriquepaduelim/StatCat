@@ -1,7 +1,10 @@
+import { useState } from "react";
 import CollapsibleSection from "../../components/CollapsibleSection";
 import { usePlayerProfileContext } from "./context";
 import { useTranslation } from "../../i18n/useTranslation";
 import { getScoreBand, type ScoreBand } from "../../lib/reportCard";
+import api from "../../api/client";
+import { downloadReportSubmissionPdf } from "../../api/reportSubmissions";
 
 const bandClasses: Record<ScoreBand, string> = {
   low: "text-orange-600",
@@ -25,6 +28,27 @@ const ReportCardsPage = () => {
   const { currentAthlete, reportCards, reportCardsLoading, reportCardsError } =
     usePlayerProfileContext();
   const t = useTranslation();
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
+
+  const handleDownload = async (submissionId: number) => {
+    try {
+      setDownloadingId(submissionId);
+      const response = await downloadReportSubmissionPdf(submissionId);
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `report_card_${submissionId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Failed to download report card PDF", error);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   return (
     <CollapsibleSection
@@ -66,6 +90,16 @@ const ReportCardsPage = () => {
                       )}
                     </p>
                   </div>
+                  {submission.report_type === "report_card" && submission.report_card_pdf_url ? (
+                    <button
+                      type="button"
+                      onClick={() => handleDownload(submission.id)}
+                      disabled={downloadingId === submission.id}
+                      className="inline-flex items-center justify-center rounded-full border border-black/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-action-primary transition hover:bg-action-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {downloadingId === submission.id ? "Downloading..." : "Download PDF"}
+                    </button>
+                  ) : null}
                 </div>
 
                 <div className="mt-3 space-y-3">

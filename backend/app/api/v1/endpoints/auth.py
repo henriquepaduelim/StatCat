@@ -1,15 +1,15 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import anyio
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
-from jose import JWTError, jwt
 from sqlmodel import Session, select
 
 from app.api.deps import authenticate_user, get_current_active_user
 from app.core.config import settings  # Import settings to get origins
 from app.core.security import create_access_token, create_signup_token, get_password_hash
+from app.core.security_token import security_token_manager
 from app.db.session import get_session
 from app.models.athlete import Athlete, AthleteGender
 from app.models.user import User, UserRole, UserAthleteApprovalStatus
@@ -30,20 +30,14 @@ from app.services.email_service import EmailService
 
 router = APIRouter()
 email_service = EmailService()
-PASSWORD_RESET_ALLOWED_ROLES = {UserRole.ADMIN, UserRole.ATHLETE, UserRole.COACH}
+PASSWORD_RESET_ALLOWED_ROLES = set(UserRole)
 user_media_root = Path(settings.MEDIA_ROOT) / "users"
 user_media_root.mkdir(parents=True, exist_ok=True)
 
 
 def _generate_password_reset_token(user_id: int) -> str:
-    expires_minutes = settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES
-    expire = datetime.utcnow() + timedelta(minutes=expires_minutes)
-    payload = {
-        "sub": str(user_id),
-        "scope": "password_reset",
-        "exp": expire,
-    }
-    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.SECURITY_ALGORITHM)
+    payload = {"sub": user_id, "scope": "password_reset"}
+    return security_token_manager.generate_token(payload, salt=settings.PASSWORD_RESET_TOKEN_SALT)
 
 
 async def _handle_first_login(session: Session, user: User) -> None:
@@ -69,16 +63,13 @@ def _validate_user_photo(file: UploadFile) -> str:
 
 
 def _decode_password_reset_token(token: str) -> int:
-    try:
-        decoded = jwt.decode(
-            token,
-            settings.SECRET_KEY,
-            algorithms=[settings.SECURITY_ALGORITHM],
-        )
-    except JWTError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired reset token") from exc
-    if decoded.get("scope") != "password_reset":
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token")
+    decoded = security_token_manager.verify_token(
+        token,
+        salt=settings.PASSWORD_RESET_TOKEN_SALT,
+        max_age_seconds=settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    if not decoded or decoded.get("scope") != "password_reset":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired reset token")
     sub = decoded.get("sub")
     if not sub:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token")
@@ -450,7 +441,7 @@ async def request_password_reset(
     payload: PasswordResetRequest,
     session: Session = Depends(get_session),
 ) -> PasswordResetResponse:
-    """Send password reset instructions to admins and athletes."""
+    """Send password reset instructions to any registered user (all roles)."""
     normalized_email = payload.email.strip()
     user = session.exec(select(User).where(User.email == normalized_email)).first()
     generic_detail = "If the email is registered to an eligible account, you'll receive reset instructions shortly."
@@ -461,7 +452,7 @@ async def request_password_reset(
     if user.role not in PASSWORD_RESET_ALLOWED_ROLES:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Password recovery is currently available for administrators and athletes only.",
+            detail="Password recovery is not enabled for this account.",
         )
 
     token = _generate_password_reset_token(user.id)
@@ -483,7 +474,7 @@ async def confirm_password_reset(
     payload: PasswordResetConfirm,
     session: Session = Depends(get_session),
 ) -> PasswordResetResponse:
-    """Confirm password reset using a valid reset token."""
+    """Confirm password reset using a valid reset token (all roles supported)."""
     user_id = _decode_password_reset_token(payload.token)
     user = session.get(User, user_id)
 
@@ -493,7 +484,7 @@ async def confirm_password_reset(
     if user.role not in PASSWORD_RESET_ALLOWED_ROLES:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Password recovery is currently available for administrators and athletes only.",
+            detail="Password recovery is not enabled for this account.",
         )
 
     user.hashed_password = get_password_hash(payload.new_password)

@@ -54,6 +54,7 @@ export const useDashboardReports = ({
   const queryClient = useQueryClient();
   const {
     pendingReports,
+    approvedReports,
     myReports,
     selectedSubmission,
     isSubmissionModalOpen,
@@ -470,6 +471,7 @@ export const useDashboardReports = ({
     submissionListProps: {
       isOpen: isSubmissionListModalOpen,
       pendingReports: canApproveReports ? pendingReports : [],
+      approvedReports: canApproveReports ? approvedReports : [],
       mySubmissions: myReports,
       canApproveReports,
       onClose: () => setSubmissionListModalOpen(false),

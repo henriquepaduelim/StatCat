@@ -195,30 +195,34 @@ const ReportCardModal = ({
                                 {typeof metric.score === "number" ? ` • ${metric.score}` : ""}
                               </span>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <input
-                                type="range"
-                                min={0}
-                                max={100}
-                                step={1}
-                                value={sliderValue}
-                                onChange={(event) => onMetricChange(category.name, metric.name, Number(event.target.value))}
-                                className="h-2 w-full cursor-pointer accent-action-primary"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => onMetricChange(category.name, metric.name, null)}
-                                className="text-xs font-semibold text-muted hover:text-container-foreground"
-                                aria-label={`Clear ${metric.name}`}
-                              >
-                                Clear
-                              </button>
-                            </div>
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-3">
+                                  <input
+                                    type="range"
+                                    min={0}
+                                    max={100}
+                                    step={5}
+                                    value={sliderValue}
+                                    onChange={(event) =>
+                                      onMetricChange(category.name, metric.name, Number(event.target.value))
+                                    }
+                                    className="h-2 w-full cursor-pointer accent-action-primary"
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => onMetricChange(category.name, metric.name, null)}
+                                    className="text-xs font-semibold text-muted hover:text-container-foreground"
+                                    aria-label={`Clear ${metric.name}`}
+                            >
+                              Clear
+                            </button>
                           </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
                 );
               })}
             </div>
