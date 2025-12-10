@@ -46,6 +46,7 @@ class NotificationService:
                     event_location=event.location,
                     event_notes=event.notes,
                     organizer_name=organizer.full_name,
+                    user_id=user.id,
                     event_id=event.id
                 )
                 

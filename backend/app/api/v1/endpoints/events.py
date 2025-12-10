@@ -3,10 +3,13 @@ from datetime import date as date_type, datetime, time as time_type
 from typing import Iterable, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import RedirectResponse
 from sqlalchemy import delete, or_
 from sqlmodel import Session, select
 
 from app.api.deps import SessionDep, ensure_roles, get_current_active_user
+from app.core.config import settings
+from app.core.security_token import security_token_manager
 from app.models.event import Event, EventParticipant, Notification, ParticipantStatus
 from app.models.event_team_link import EventTeamLink
 from app.models.team import CoachTeamLink
@@ -254,6 +257,74 @@ def get_event(
         raise HTTPException(status_code=404, detail="Event not found")
     attach_team_ids(db, [event])
     return event
+
+
+@router.get("/rsvp")
+async def handle_rsvp_from_token(
+    token: str,
+    db: SessionDep,
+) -> RedirectResponse:
+    """
+    Handles one-click RSVP confirmation from email links.
+    Verifies the token, updates participant status, and redirects to frontend.
+    """
+    data = security_token_manager.verify_token(token, salt='rsvp-event')
+    if not data:
+        # Redirect to a frontend error page or a generic RSVP page
+        return RedirectResponse(url=f"{settings.FRONTEND_URL}/rsvp-error?message=invalid_or_expired_link", status_code=status.HTTP_302_FOUND)
+
+    user_id = data.get('user_id')
+    event_id = data.get('event_id')
+    status_str = data.get('status') # This will be 'confirmed' or 'declined'
+
+    if not all([user_id, event_id, status_str]):
+        return RedirectResponse(url=f"{settings.FRONTEND_URL}/rsvp-error?message=missing_info", status_code=status.HTTP_302_FOUND)
+    
+    # Validate status_str against ParticipantStatus enum
+    try:
+        new_status = ParticipantStatus(status_str)
+    except ValueError:
+        return RedirectResponse(url=f"{settings.FRONTEND_URL}/rsvp-error?message=invalid_status", status_code=status.HTTP_302_FOUND)
+
+    event = db.get(Event, event_id)
+    user = db.get(User, user_id)
+
+    if not event or not user:
+        return RedirectResponse(url=f"{settings.FRONTEND_URL}/rsvp-error?message=event_or_user_not_found", status_code=status.HTTP_302_FOUND)
+
+    participant = db.exec(
+        select(EventParticipant).where(
+            EventParticipant.event_id == event_id,
+            EventParticipant.user_id == user_id,
+        )
+    ).first()
+
+    if not participant:
+        # Create participant if not already existing (e.g., direct RSVP link)
+        participant = EventParticipant(
+            event_id=event_id,
+            user_id=user_id,
+            status=new_status,
+            responded_at=datetime.utcnow(),
+        )
+        db.add(participant)
+    else:
+        participant.status = new_status
+        participant.responded_at = datetime.utcnow()
+        db.add(participant)
+    
+    db.commit()
+    db.refresh(participant)
+
+    # Notify organizer about the change
+    await notification_service.notify_confirmation_received(
+        db=db,
+        event=event,
+        participant=participant,
+        status=new_status.value, # Pass the enum value
+    )
+
+    return RedirectResponse(url=f"{settings.FRONTEND_URL}/rsvp-confirmation?status={new_status.value}&event_id={event_id}", status_code=status.HTTP_302_FOUND)
 
 
 @router.put("/{event_id}", response_model=EventResponse)
