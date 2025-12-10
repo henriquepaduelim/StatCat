@@ -27,6 +27,7 @@ dependencies = [
     "opentelemetry-instrumentation-fastapi>=0.45b0",
     "opentelemetry-instrumentation-sqlalchemy>=0.45b0",
     "opentelemetry-instrumentation-httpx>=0.45b0",
+    "itsdangerous>=2.1",
 ]
 
 [project.optional-dependencies]
