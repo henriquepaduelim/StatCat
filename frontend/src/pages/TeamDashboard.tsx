@@ -35,6 +35,7 @@ import TeamFormModal from "../components/dashboard/TeamFormModal";
 import { createTeamLabels, teamAgeOptions } from "../constants/dashboard";
 import { getMediaUrl } from "../utils/media";
 import PageTitle from "../components/PageTitle";
+import Spinner from "../components/Spinner";
 
 const roleCanRecordMetrics = (role: string | null) =>
   role === "admin" || role === "staff" || role === "coach";
@@ -317,7 +318,9 @@ const TeamDashboard = () => {
         ) : null}
       </header>
 
-      {selectedTeam ? (
+      {isLoading ? (
+        <Spinner />
+      ) : selectedTeam ? (
         <div className="space-y-6">
           {loadErrorMessage ? (
             <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">

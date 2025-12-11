@@ -4,6 +4,7 @@ import { usePlayerProfileContext } from "./context";
 import { useTranslation } from "../../i18n/useTranslation";
 import { getScoreBand, type ScoreBand } from "../../lib/reportCard";
 import ReportCardBadge from "../../components/ReportCardBadge";
+import Spinner from "../../components/Spinner";
 
 const bandClasses: Record<ScoreBand, string> = {
   low: "text-orange-600",
@@ -116,9 +117,7 @@ const ReportCardsPage = () => {
 
       {!currentAthlete && <p className="mt-4 text-sm text-muted">{t.playerProfile.noAthlete}</p>}
 
-      {currentAthlete && reportCardsLoading && (
-        <p className="mt-4 text-sm text-muted">{t.playerProfile.reportCardsLoading}</p>
-      )}
+      {currentAthlete && reportCardsLoading ? <Spinner className="py-6" /> : null}
 
       {currentAthlete && reportCardsError && (
         <p className="mt-4 text-sm text-red-500">{t.playerProfile.error}</p>

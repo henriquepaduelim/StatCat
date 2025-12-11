@@ -7,6 +7,7 @@ import { useEvents, useConfirmEventAttendance } from "../../hooks/useEvents";
 import { usePlayerProfileContext } from "./context";
 import type { EventConfirmationPayload } from "../../types/event";
 import { useAuthStore } from "../../stores/useAuthStore";
+import Spinner from "../../components/Spinner";
 
 const SchedulingPage = () => {
   const t = useTranslation();
@@ -46,7 +47,7 @@ const SchedulingPage = () => {
   }
 
   if (eventsQuery.isLoading) {
-    return <p className="text-sm text-muted">{t.common.loading}...</p>;
+    return <Spinner className="py-10" />;
   }
 
   if (eventsQuery.isError) {

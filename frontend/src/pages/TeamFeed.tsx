@@ -9,6 +9,7 @@ import type { TeamPost } from "../types/teamPost";
 import TeamPostCard from "../components/team-feed/TeamPostCard";
 import type { Team } from "../types/team";
 import PageTitle from "../components/PageTitle";
+import Spinner from "../components/Spinner";
 
 const TeamFeed = () => {
   const t = useTranslation();
@@ -180,11 +181,9 @@ const TeamFeed = () => {
 
           <section
             ref={messagesRef}
-            className="flex-1 space-y-3 overflow-y-auto bg-gradient-to-b from-container/60 to-container px-4 py-3"
-          >
-            {postsQuery.isLoading && (
-              <p className="text-sm text-muted">{t.teamFeed?.loading ?? "Loading posts..."}</p>
-            )}
+          className="flex-1 space-y-3 overflow-y-auto bg-gradient-to-b from-container/60 to-container px-4 py-3"
+        >
+          {postsQuery.isLoading && <Spinner />}
             {postsQuery.isError && (
               <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                 {t.teamFeed?.error ?? "Unable to load posts."}

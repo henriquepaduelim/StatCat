@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import type { Athlete } from "../../types/athlete";
 import { useTranslation } from "../../i18n/useTranslation";
 import { useAthletes } from "../../hooks/useAthletes";
+import Spinner from "../Spinner";
 
 type TeamMeta = Map<number, { name: string; coach: string | null }>;
 
@@ -29,7 +30,7 @@ const ReadOnlyAthleteTable = ({ athletes, teamsById, isLoading, isError, athlete
   }, [athletes, query]);
 
   if (isLoading && !athletes.length) {
-    return <p className="text-sm text-muted">{t.common.loading}...</p>;
+    return <Spinner className="py-8" />;
   }
 
   if (isError) {

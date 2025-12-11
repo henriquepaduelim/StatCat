@@ -5,6 +5,7 @@ import { usePlayerProfileContext } from "./context";
 import { useAthleteCombineMetrics } from "../../hooks/useAthleteCombineMetrics";
 import type { TeamCombineMetric } from "../../api/teamMetrics";
 import { useTranslation } from "../../i18n/useTranslation";
+import Spinner from "../../components/Spinner";
 
 const CombineResultsPage = () => {
   const { report, currentAthleteId } = usePlayerProfileContext();
@@ -16,9 +17,12 @@ const CombineResultsPage = () => {
   const hasCombineData = combineMetrics.length > 0;
 
   if (!report && !hasCombineData) {
+    if (combineQuery.isLoading) {
+      return <Spinner className="py-8" />;
+    }
     return (
       <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-        {combineQuery.isLoading ? t.common.loading : t.playerProfile.noReportData}
+        {t.playerProfile.noReportData}
       </div>
     );
   }

@@ -12,6 +12,7 @@ import type {
   AthleteDocumentMetadata,
   AthleteRegistrationCompletionPayload,
 } from "../types/athlete";
+import Spinner from "../components/Spinner";
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
@@ -263,7 +264,7 @@ const NewAthlete = () => {
   }
 
   if (athleteQuery.isLoading) {
-    return <p className="text-sm text-muted">{t.common.loading}...</p>;
+    return <Spinner className="py-10" />;
   }
 
   if (athleteQuery.isError) {

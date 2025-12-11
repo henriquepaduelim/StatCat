@@ -10,6 +10,7 @@ import { useTranslation } from "../i18n/useTranslation";
 import type { AthletePayload } from "../types/athlete";
 import { getMediaUrl } from "../utils/media";
 import PageTitle from "../components/PageTitle";
+import Spinner from "../components/Spinner";
 
 const AthleteEdit = () => {
   const params = useParams<{ id: string }>();
@@ -94,7 +95,7 @@ const AthleteEdit = () => {
   }
 
   if (isLoading) {
-    return <p className="text-sm text-muted">{t.common.loading}...</p>;
+    return <Spinner className="py-12" />;
   }
 
   if (isError || !athlete) {

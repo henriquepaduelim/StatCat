@@ -10,6 +10,7 @@ import { activeTheme } from "../theme/themes";
 import { useTranslation } from "../i18n/useTranslation";
 import type { AthleteReportSession } from "../types/athlete";
 import PageTitle from "../components/PageTitle";
+import Spinner from "../components/Spinner";
 
 const AthleteReport = () => {
   const params = useParams<{ id: string }>();
@@ -56,7 +57,7 @@ const AthleteReport = () => {
   }
 
   if (isLoading || reportQuery.isLoading) {
-    return <p className="text-sm text-muted">{t.common.loading}...</p>;
+    return <Spinner className="py-12" />;
   }
 
   if (isError || reportQuery.isError || !athlete) {
@@ -124,9 +125,7 @@ const AthleteReport = () => {
           <h2 className="text-lg font-semibold text-container-foreground">
             {t.dashboard.athleteReport.metricsTitle}
           </h2>
-          {metricsQuery.isFetching ? (
-            <span className="text-xs text-muted">{t.common.loading}...</span>
-          ) : null}
+          {metricsQuery.isFetching ? <Spinner size="sm" className="py-1" /> : null}
         </div>
         {metricsQuery.isError ? (
           <p className="text-sm text-red-500">{t.athletes.error}</p>

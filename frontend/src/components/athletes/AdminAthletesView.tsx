@@ -11,6 +11,7 @@ import { deleteAthlete } from "../../api/athletes";
 import type { Athlete } from "../../types/athlete";
 import AthleteModals from "./AthleteModals";
 import AthletesHeader from "./AthletesHeader";
+import Spinner from "../Spinner";
 
 const normalizeText = (value: string) =>
   value
@@ -1100,8 +1101,8 @@ const AdminAthletesView = () => {
               <tbody className="divide-y divide-black/5">
             {isLoading && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-sm text-muted">
-                  {t.athletes.loading}
+                <td colSpan={7} className="px-4 py-6 text-center">
+                  <Spinner />
                 </td>
               </tr>
             )}

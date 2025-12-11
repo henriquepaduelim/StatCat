@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import type { ReportSubmissionSummary } from "../api/reportSubmissions";
 import type { Athlete } from "../types/athlete";
 
@@ -144,24 +145,35 @@ export const ReportCardBadge = ({ submission, athlete }: ReportCardBadgeProps) =
         <span className="text-lg font-bold">{leadershipScore ?? "—"}</span>
       </div>
 
-      <div className="grid grid-cols-2 gap-1 px-3 py-3">
-        {(
-          [
-            ["SRS", "LRS", "DIS"],
-            ["TEC", "MIN", "PHY"],
-          ] as MetricKey[][]
-        ).map((column, index) => (
-          <div
-            key={index}
-            className="space-y-1.5 border-l border-white/10 pl-3 first:border-none first:pl-0"
-          >
-            {column.map((key) => (
-              <div key={key} className="flex items-baseline justify-between text-sm">
-                <span className="text-[1.1rem] font-extrabold">{metricScores[key] ?? "—"}</span>
-                <span className="text-[0.82rem] font-semibold tracking-wide">{key}</span>
-              </div>
-            ))}
-          </div>
+      <div className="relative grid grid-cols-[1fr,auto,auto,1fr] gap-y-2 px-3 py-3">
+        <div className="pointer-events-none absolute inset-y-2 left-1/2 w-px bg-white/15" aria-hidden="true" />
+        {([
+          ["SRS", "TEC"],
+          ["LRS", "MIN"],
+          ["DIS", "PHY"],
+        ] as [MetricKey, MetricKey][]).map(([leftKey, rightKey]) => (
+          <Fragment key={`${leftKey}-${rightKey}`}>
+            <div className="flex items-baseline justify-start text-sm pr-2">
+              <span className="text-[1.1rem] font-extrabold leading-none">
+                {metricScores[leftKey] ?? "—"}
+              </span>
+            </div>
+            <div className="flex items-baseline justify-start text-sm pr-2">
+              <span className="text-[0.82rem] font-semibold tracking-wide leading-none">
+                {leftKey}
+              </span>
+            </div>
+            <div className="flex items-baseline justify-end text-sm pl-2">
+              <span className="text-[0.82rem] font-semibold tracking-wide leading-none">
+                {rightKey}
+              </span>
+            </div>
+            <div className="flex items-baseline justify-end text-sm pl-2">
+              <span className="text-[1.1rem] font-extrabold leading-none">
+                {metricScores[rightKey] ?? "—"}
+              </span>
+            </div>
+          </Fragment>
         ))}
       </div>
     </div>

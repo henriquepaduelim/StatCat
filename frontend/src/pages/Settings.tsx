@@ -11,6 +11,7 @@ import type { PlayerRegistrationStatus, RegistrationCategory } from "../types/at
 import { completeAthleteRegistration, updateAthlete, uploadAthletePhoto } from "../api/athletes";
 import { updateSelf, uploadUserPhoto } from "../api/auth";
 import { exportTeamPostsArchive } from "../api/teamPosts";
+import Spinner from "../components/Spinner";
 
 const registrationCategories: Array<{ value: RegistrationCategory; label: string }> = [
   { value: "youth", label: "Youth" },
@@ -1210,9 +1211,7 @@ const Settings = () => {
               {maintenanceFeedback ? (
                 <p className="text-sm text-muted">{maintenanceFeedback}</p>
               ) : null}
-              {teamsQuery.isLoading ? (
-                <p className="text-xs text-muted">Loading teams...</p>
-              ) : null}
+              {teamsQuery.isLoading ? <Spinner size="sm" className="py-2" /> : null}
               {!teamsQuery.isLoading && (teamsQuery.data?.length ?? 0) === 0 ? (
                 <p className="text-xs text-muted">No teams available to export.</p>
               ) : null}
