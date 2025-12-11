@@ -15,7 +15,7 @@ import {
 } from "../api/teams";
 import type { Team } from "../types/team";
 import { updateAthlete } from "../api/athletes";
-import { useEvents } from "../hooks/useEvents";
+import { useEvents, useMyEvents } from "../hooks/useEvents";
 import { useAthletes } from "../hooks/useAthletes";
 import { listTeamCombineMetrics } from "../api/teamMetrics";
 import { getTeamPosts } from "../api/teamPosts";
@@ -140,9 +140,9 @@ const TeamDashboard = () => {
   const events = selectedTeamId ? eventsQuery.data ?? [] : myEventsQuery.data ?? [];
   const upcomingEvents = useMemo(() => {
     return events
-      .filter((event) => new Date(`${event.event_date}T${event.start_time ?? "00:00"}`) >= new Date())
+      .filter((event: Event) => new Date(`${event.event_date}T${event.start_time ?? "00:00"}`) >= new Date())
       .sort(
-        (a, b) =>
+        (a: Event, b: Event) =>
           new Date(`${a.event_date}T${a.start_time ?? "00:00"}`).getTime() -
           new Date(`${b.event_date}T${b.start_time ?? "00:00"}`).getTime(),
       )

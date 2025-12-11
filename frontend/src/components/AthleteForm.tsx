@@ -141,7 +141,8 @@ const AthleteForm = ({
       dominant_foot: initialValues?.dominant_foot,
       club_affiliation: initialValues?.club_affiliation,
       team_id: formState.team_id ? Number(formState.team_id) : undefined,
-      primary_position: formState.primary_position || undefined,
+      // primary_position is required by the API; keep empty string if not selected to satisfy type
+      primary_position: formState.primary_position || "",
       secondary_position: formState.secondary_position ? formState.secondary_position : undefined,
       photo_url: initialValues?.photo_url,
     };
