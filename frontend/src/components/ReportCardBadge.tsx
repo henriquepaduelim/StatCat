@@ -99,7 +99,8 @@ export const ReportCardBadge = ({ submission, athlete }: ReportCardBadgeProps) =
       ? athlete.photo_url
       : `${apiBase.replace(/\/$/, "")}/${athlete.photo_url.replace(/^\//, "")}`
     : null;
-  const flagUrl = `${apiBase.replace(/\/$/, "")}/media/flags/ca.svg`;
+  // Flag now served from frontend public assets
+  const flagUrl = "/media/flags/ca.svg";
 
   const positionLabel = (() => {
     const raw = athlete?.primary_position?.toLowerCase().trim();
