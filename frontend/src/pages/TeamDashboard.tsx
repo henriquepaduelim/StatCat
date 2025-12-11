@@ -14,6 +14,7 @@ import {
   updateTeam,
 } from "../api/teams";
 import type { Team } from "../types/team";
+import type { Event as ApiEvent } from "../types/event";
 import { updateAthlete } from "../api/athletes";
 import { useEvents, useMyEvents } from "../hooks/useEvents";
 import { useAthletes } from "../hooks/useAthletes";
@@ -137,12 +138,15 @@ const TeamDashboard = () => {
     { enabled: Boolean(selectedTeamId) },
   );
   const myEventsQuery = useMyEvents({ enabled: !selectedTeamId });
-  const events = selectedTeamId ? eventsQuery.data ?? [] : myEventsQuery.data ?? [];
+  const events: ApiEvent[] = selectedTeamId ? eventsQuery.data ?? [] : myEventsQuery.data ?? [];
   const upcomingEvents = useMemo(() => {
     return events
-      .filter((event: Event) => new Date(`${event.event_date}T${event.start_time ?? "00:00"}`) >= new Date())
+      .filter(
+        (event: ApiEvent) =>
+          new Date(`${event.event_date}T${event.start_time ?? "00:00"}`) >= new Date(),
+      )
       .sort(
-        (a: Event, b: Event) =>
+        (a: ApiEvent, b: ApiEvent) =>
           new Date(`${a.event_date}T${a.start_time ?? "00:00"}`).getTime() -
           new Date(`${b.event_date}T${b.start_time ?? "00:00"}`).getTime(),
       )
