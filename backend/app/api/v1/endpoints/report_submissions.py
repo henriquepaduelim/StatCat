@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import logging
 from datetime import datetime
-from pathlib import Path
 from typing import List, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlmodel import Session
 
@@ -28,10 +25,8 @@ from app.schemas.report_submission import (
     ReportSubmissionReview,
 )
 from app.services.email_service import email_service
-from app.services.report_card_pdf import generate_report_card_pdf
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
 
 CREATION_ROLES = {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH}
 APPROVAL_ROLES = {UserRole.ADMIN}
@@ -116,7 +111,6 @@ def _to_submission_item(
         review_notes=submission.review_notes,
         submitted_by=submitter_name,
         created_at=submission.created_at,
-        report_card_pdf_url=submission.report_card_pdf_path,
     )
 
 
@@ -403,7 +397,6 @@ def update_report_card(
     submission.review_notes = None
     submission.approved_by_id = None
     submission.approved_at = None
-    submission.report_card_pdf_path = None
 
     session.add(submission)
     session.commit()
@@ -452,13 +445,6 @@ async def approve_submission(
     submission.approved_by_id = current_user.id
     submission.approved_at = datetime.utcnow()
 
-    if submission.report_type == ReportSubmissionType.REPORT_CARD:
-        try:
-            pdf_path = generate_report_card_pdf(submission=submission, athlete=athlete)
-            submission.report_card_pdf_path = str(pdf_path) if pdf_path else None
-        except Exception as exc:  # pragma: no cover - best effort rendering
-            logger.error("Failed to generate report card PDF for submission %s: %s", submission.id, exc)
-
     session.add(submission)
     session.commit()
     session.refresh(submission)
@@ -480,41 +466,6 @@ async def approve_submission(
         submitter_name=submitter_name,
     )
 
-
-@router.get("/{submission_id}/pdf")
-def download_report_card_pdf(
-    submission_id: int,
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_active_user),
-) -> FileResponse:
-    submission = session.get(ReportSubmission, submission_id)
-    if not submission:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found")
-    if submission.report_type != ReportSubmissionType.REPORT_CARD:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="PDF available only for report cards.")
-    if submission.status != ReportSubmissionStatus.APPROVED:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Report card must be approved to download PDF.")
-
-    is_admin_or_staff = current_user.role in {UserRole.ADMIN, UserRole.STAFF}
-    is_submitter = submission.submitted_by_id == current_user.id
-    is_athlete_owner = submission.athlete_id and current_user.athlete_id == submission.athlete_id
-    if not (is_admin_or_staff or is_submitter or is_athlete_owner):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
-
-    if not submission.report_card_pdf_path:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="PDF not generated for this submission.")
-
-    pdf_path = Path(submission.report_card_pdf_path)
-    if not pdf_path.is_absolute():
-        # Align with the base_dir used when generating the PDF (backend root)
-        base_dir = Path(__file__).resolve().parents[4]
-        pdf_path = base_dir / pdf_path
-
-    if not pdf_path.exists():
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="PDF file not found on server.")
-
-    filename = f"report_card_{submission.id}.pdf"
-    return FileResponse(path=pdf_path, media_type="application/pdf", filename=filename)
 
 
 @router.post("/{submission_id}/reject", response_model=ReportSubmissionItem)

@@ -36,6 +36,9 @@ const templateCategories: ReportCardCategory[] = [
   {
     name: "Technical Foundation",
     metrics: [
+      { name: "Short-Range Saves", score: null },
+      { name: "Long-Range Saves", score: null },
+      { name: "Distribution", score: null },
       { name: "Footwork + Positioning", score: null },
       { name: "First Touch + Ball Mastery", score: null },
       { name: "Short-Range Passing", score: null },

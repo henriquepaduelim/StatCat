@@ -83,9 +83,6 @@ class Settings(BaseSettings):
     OTEL_EXPORTER_OTLP_HEADERS: str | None = None
     OTEL_SERVICE_NAME: str | None = None
     OTEL_TRACES_SAMPLER_RATIO: float = 0.2
-    REPORT_CARD_TEMPLATE_DIR: str = "templates/report_cards"
-    REPORT_CARD_TEMPLATE_FILE: str = "page1.svg"
-    REPORT_CARD_OUTPUT_DIR: str = "media/report_cards"
 
     @model_validator(mode="after")
     def _validate_security_basics(self) -> "Settings":

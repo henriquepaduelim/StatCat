@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 
-import api from "../../api/client";
-import { downloadReportSubmissionPdf, type ReportSubmissionSummary } from "../../api/reportSubmissions";
+import type { ReportSubmissionSummary } from "../../api/reportSubmissions";
 
 type ReportSubmissionListModalProps = {
   isOpen: boolean;
@@ -32,7 +31,6 @@ const ReportSubmissionListModal = ({
   onApproveReport,
 }: ReportSubmissionListModalProps) => {
   const [activeTab, setActiveTab] = useState<"report_card" | "game_report">("report_card");
-  const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
   const safePendingReports = pendingReports ?? [];
   const safeApprovedReports = approvedReports ?? [];
@@ -61,26 +59,6 @@ const ReportSubmissionListModal = ({
   if (!isOpen) {
     return null;
   }
-
-  const handleDownload = async (submissionId: number) => {
-    try {
-      setDownloadingId(submissionId);
-      const response = await downloadReportSubmissionPdf(submissionId);
-      const blob = new Blob([response.data], { type: "application/pdf" });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `report_card_${submissionId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Failed to download report card PDF", error);
-    } finally {
-      setDownloadingId(null);
-    }
-  };
 
   return (
     <div
@@ -252,16 +230,6 @@ const ReportSubmissionListModal = ({
                       >
                         View submission
                       </button>
-                      {submission.report_type === "report_card" && submission.report_card_pdf_url ? (
-                        <button
-                          type="button"
-                          onClick={() => handleDownload(submission.id)}
-                          disabled={downloadingId === submission.id}
-                          className="w-full rounded-full border border-black/10 px-3 py-1.5 text-center text-xs font-semibold uppercase tracking-wide text-action-primary transition hover:bg-action-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {downloadingId === submission.id ? "Downloading..." : "Download PDF"}
-                        </button>
-                      ) : null}
                     </div>
                   </article>
                 ))

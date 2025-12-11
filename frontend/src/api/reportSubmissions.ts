@@ -24,7 +24,6 @@ export type ReportSubmissionSummary = {
   categories: ReportCardCategory[] | null;
   overall_average: number | null;
   review_notes: string | null;
-  report_card_pdf_url?: string | null;
   submitted_by: string;
   created_at: string;
 };
@@ -76,10 +75,4 @@ export const reopenReportSubmission = async (submissionId: number) => {
 export const updateReportCard = async (submissionId: number, payload: ReportCardPayload) => {
   const { data } = await api.put(`/report-submissions/${submissionId}`, payload);
   return data;
-};
-
-export const downloadReportSubmissionPdf = async (submissionId: number) => {
-  return api.get<Blob>(`/report-submissions/${submissionId}/pdf`, {
-    responseType: "blob",
-  });
 };

@@ -43,7 +43,6 @@ class ReportSubmissionItem(BaseModel):
     categories: list[ReportCardCategory] | None = None
     overall_average: float | None = None
     review_notes: str | None = None
-    report_card_pdf_url: str | None = None
     submitted_by: str
     created_at: datetime
 

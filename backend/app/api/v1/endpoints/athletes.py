@@ -280,7 +280,8 @@ def register_athlete(
     team_id = data.get("team_id")
     _validate_team(session, team_id)
 
-    preferred_position = data.get("preferred_position")
+    preferred_position_raw = data.get("preferred_position")
+    preferred_position = preferred_position_raw.strip() if preferred_position_raw else None
 
     email_value = data.get("email")
     phone_value = data.get("phone")
@@ -308,7 +309,7 @@ def register_athlete(
         registration_year=data.get("registration_year"),
         registration_category=data.get("registration_category"),
         player_registration_status=data.get("player_registration_status"),
-        primary_position=preferred_position or "unknown",
+        primary_position=preferred_position,
         preferred_position=preferred_position,
         desired_shirt_number=data.get("desired_shirt_number"),
     )

@@ -48,7 +48,7 @@ const INITIAL_STATE: FormState = {
   height_cm: "",
   weight_kg: "",
   team_id: "",
-  primary_position: POSITION_OPTIONS[0],
+  primary_position: "",
   secondary_position: "",
 };
 
@@ -137,8 +137,8 @@ const AthleteForm = ({
       status: initialValues?.status ?? "active",
       dominant_foot: initialValues?.dominant_foot,
       club_affiliation: initialValues?.club_affiliation,
-      team_id: formState.team_id ? Number(formState.team_id) : initialValues?.team_id,
-      primary_position: formState.primary_position,
+      team_id: formState.team_id ? Number(formState.team_id) : undefined,
+      primary_position: formState.primary_position || undefined,
       secondary_position: formState.secondary_position ? formState.secondary_position : undefined,
       photo_url: initialValues?.photo_url,
     };
@@ -166,7 +166,7 @@ const AthleteForm = ({
 
             <div className="grid gap-4 md:grid-cols-2">
               <label className="block text-sm font-medium text-muted">
-                {t.newAthlete.firstName}
+                {t.newAthlete.firstName}*
                 <input
                   required
                   type="text"
@@ -177,7 +177,7 @@ const AthleteForm = ({
                 />
               </label>
               <label className="block text-sm font-medium text-muted">
-                {t.newAthlete.lastName}
+                {t.newAthlete.lastName}*
                 <input
                   required
                   type="text"
@@ -193,7 +193,6 @@ const AthleteForm = ({
               <label className="block text-sm font-medium text-muted">
                 {t.newAthlete.team}
                 <select
-                  required
                   name="team_id"
                   value={formState.team_id}
                   onChange={handleChange}
@@ -212,14 +211,14 @@ const AthleteForm = ({
                 ) : null}
               </label>
               <label className="block text-sm font-medium text-muted">
-                {t.newAthlete.primaryPosition}
+                {t.newAthlete.primaryPosition}*
                 <select
-                  required
                   name="primary_position"
                   value={formState.primary_position}
                   onChange={handleChange}
                   className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))] shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                 >
+                  <option value="">{t.common.select}</option>
                   {POSITION_OPTIONS.map((position) => (
                     <option key={position} value={position}>
                       {position}
@@ -251,7 +250,7 @@ const AthleteForm = ({
           <section className="space-y-4 rounded-lg border border-black/10 bg-container p-4 shadow-sm dark:border-white/10">
             <div className="grid gap-4 md:grid-cols-2">
               <label className="block text-sm font-medium text-muted">
-                {t.newAthlete.gender}
+                {t.newAthlete.gender}*
                 <select
                   required
                   name="gender"
@@ -264,7 +263,7 @@ const AthleteForm = ({
                 </select>
               </label>
               <label className="block text-sm font-medium text-muted">
-                {t.newAthlete.email}
+                {t.newAthlete.email}*
                 <input
                   required
                   type="email"
@@ -278,7 +277,7 @@ const AthleteForm = ({
 
             <div className="grid gap-4 md:grid-cols-3">
               <label className="block text-sm font-medium text-muted">
-                {t.newAthlete.birthDate}
+                {t.newAthlete.birthDate}*
                 <input
                   required
                   type="date"
@@ -373,8 +372,7 @@ const populateState = (
     weight_kg:
       initialValues.weight_kg != null ? String(initialValues.weight_kg) : "",
     team_id: initialValues.team_id != null ? String(initialValues.team_id) : "",
-    primary_position:
-      initialValues.primary_position ?? POSITION_OPTIONS[0],
+    primary_position: initialValues.primary_position ?? "",
     secondary_position: initialValues.secondary_position ?? "",
   };
 };

@@ -119,6 +119,9 @@ const AthleteEdit = () => {
     club_affiliation: athlete.club_affiliation ?? undefined,
     height_cm: athlete.height_cm ?? undefined,
     weight_kg: athlete.weight_kg ?? undefined,
+    primary_position: athlete.primary_position ?? undefined,
+    secondary_position: athlete.secondary_position ?? undefined,
+    gender: athlete.gender ?? undefined,
     status: athlete.status,
   };
 
