@@ -136,8 +136,9 @@ const TeamDashboard = () => {
     selectedTeamId ? { team_id: selectedTeamId } : undefined,
     { enabled: Boolean(selectedTeamId) },
   );
+  const myEventsQuery = useMyEvents({ enabled: !selectedTeamId });
+  const events = selectedTeamId ? eventsQuery.data ?? [] : myEventsQuery.data ?? [];
   const upcomingEvents = useMemo(() => {
-    const events = eventsQuery.data ?? [];
     return events
       .filter((event) => new Date(`${event.event_date}T${event.start_time ?? "00:00"}`) >= new Date())
       .sort(
@@ -146,7 +147,7 @@ const TeamDashboard = () => {
           new Date(`${b.event_date}T${b.start_time ?? "00:00"}`).getTime(),
       )
       .slice(0, 4);
-  }, [eventsQuery.data]);
+  }, [events]);
 
   const combineMetricsQuery = useQuery({
     queryKey: ["team-combine-metrics", selectedTeamId],

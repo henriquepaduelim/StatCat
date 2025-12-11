@@ -30,13 +30,16 @@ type AthleteFormProps = {
 const DEFAULT_BIRTH_DATE = "2000-01-01";
 const POSITION_OPTIONS = [
   "Goalkeeper",
+  "Right Back",
   "Center Back",
-  "Full Back",
+  "Left Back",
   "Defensive Midfielder",
   "Central Midfielder",
   "Attacking Midfielder",
-  "Winger",
+  "Right Winger",
+  "Left Winger",
   "Striker",
+  "Center Forward",
 ];
 
 const INITIAL_STATE: FormState = {

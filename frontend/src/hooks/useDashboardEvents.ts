@@ -460,8 +460,8 @@ export const useDashboardEvents = ({
     }
 
     const timeValue = eventForm.startTime.trim() ? eventForm.startTime.trim() : null;
-    const dateValue = eventForm.date
-      ? formatDateKey(new Date(eventForm.date))
+    const dateValue = eventForm.date && eventForm.date.trim().length
+      ? eventForm.date.trim()
       : formatDateKey(new Date());
     
     let notesWithTime = eventForm.notes || "";

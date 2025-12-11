@@ -237,7 +237,7 @@ def list_my_events(
     # Sort by date
     events = sorted(
         all_events.values(),
-        key=lambda e: (e.date or date_type.min, e.start_time or time_type.min),
+        key=lambda e: (e.event_date or date_type.min, e.start_time or time_type.min),
         reverse=True,
     )
     attach_team_ids(db, events)

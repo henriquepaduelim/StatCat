@@ -16,24 +16,31 @@ const POSITION_MAP: Record<string, string> = {
   goalkeeper: "GK",
   gk: "GK",
 
+  "right back": "RB",
+  rb: "RB",
   "center back": "CB",
   "centre back": "CB",
   cb: "CB",
+  "left back": "LB",
+  lb: "LB",
 
-  "full back": "FB",
-  fb: "FB",
-  fullback: "FB",
-
-  "defensive midfielder": "DM",
+  "defensive midfielder": "CDM",
+  cdm: "CDM",
   "central midfielder": "CM",
-  "attacking midfielder": "AM",
-  midfielder: "MID",
-  mid: "MID",
+  cm: "CM",
+  "attacking midfielder": "CAM",
+  cam: "CAM",
 
-  winger: "WNG",
-  forward: "FWD",
+  "right winger": "RW",
+  rw: "RW",
+  "left winger": "LW",
+  lw: "LW",
+
   striker: "ST",
   st: "ST",
+  "center forward": "CF",
+  "centre forward": "CF",
+  cf: "CF",
 };
 
 type ReportCardBadgeProps = {
@@ -106,11 +113,14 @@ export const ReportCardBadge = ({ submission, athlete }: ReportCardBadgeProps) =
   return (
     <div className="w-full max-w-[17.25rem] rounded-2xl bg-[#22232f] text-white shadow-md">
       <div className="flex h-64 overflow-hidden rounded-t-2xl">
-        <div className="flex w-[20%] flex-col items-center justify-between py-4">
+        <div className="flex w-[20%] flex-col items-center justify-center gap-3 py-4">
           <div className="text-4xl font-extrabold leading-none">{overall ?? "—"}</div>
-          <div className="text-sm font-semibold uppercase tracking-wide">{positionLabel}</div>
-          <div className="w-10 overflow-hidden rounded-[3px]">
-            <img src={flagUrl} alt="Canada flag" className="block h-full w-full" />
+          <div className="w-full text-center text-lg font-semibold uppercase tracking-[0.2em] leading-none">
+            {positionLabel}
+          </div>
+          <div className="h-px w-10 bg-white/70" />
+          <div className="w-12">
+            <img src={flagUrl} alt="Canada flag" className="block h-auto w-full" />
           </div>
         </div>
         <div className="flex w-[80%] items-center justify-center bg-[#d9d9d9]">
@@ -146,8 +156,8 @@ export const ReportCardBadge = ({ submission, athlete }: ReportCardBadgeProps) =
           >
             {column.map((key) => (
               <div key={key} className="flex items-baseline justify-between text-sm">
-                <span className="text-base font-extrabold">{metricScores[key] ?? "—"}</span>
-                <span className="text-xs font-semibold tracking-wide">{key}</span>
+                <span className="text-[1.1rem] font-extrabold">{metricScores[key] ?? "—"}</span>
+                <span className="text-[0.82rem] font-semibold tracking-wide">{key}</span>
               </div>
             ))}
           </div>

@@ -42,7 +42,10 @@ export const useDashboardEventData = ({
       const [hh = 0, mm = 0] = (startTime || "00:00").split(":").map(Number);
       return new Date((y || 0), (m || 1) - 1, (d || 1), hh, mm).getTime();
     };
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
     return [...events]
+      .filter((event) => toLocalTs(event.event_date, event.start_time) >= now.getTime())
       .sort((a, b) => toLocalTs(a.event_date, a.start_time) - toLocalTs(b.event_date, b.start_time))
       .slice(0, 4);
   }, [events]);
