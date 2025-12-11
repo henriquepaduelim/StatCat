@@ -62,51 +62,22 @@ const ReportCardsPage = () => {
         )}`
       : t.playerProfile.reportCardsSubtitle;
 
-  const apiBaseUrl =
-    (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE_URL) ||
-    (typeof window !== "undefined" ? window.location.origin : "");
-
+  const baseAthlete = athleteDetail ?? currentAthlete;
   const athleteForBadge =
-    athleteDetail || currentAthlete
-      ? (() => {
-          const primary =
-            athleteDetail?.primary_position &&
-            !["unknown", "unk", "n/a", "na"].includes(
-              athleteDetail.primary_position.toLowerCase().trim(),
-            )
-              ? athleteDetail.primary_position
-              : currentAthlete?.primary_position;
-          return {
-            ...currentAthlete,
-            ...athleteDetail,
-            primary_position: primary ?? undefined,
-          };
-        })()
-      : undefined;
-
-  const renderPhoto = () => {
-    const photoUrl = athleteForBadge?.photo_url;
-    const resolvedSrc =
-      photoUrl &&
-      (photoUrl.startsWith("http")
-        ? photoUrl
-        : `${apiBaseUrl.replace(/\/$/, "")}/${photoUrl.replace(/^\//, "")}`);
-
-    if (!resolvedSrc) {
-      return (
-        <div className="flex h-72 w-48 items-center justify-center rounded-2xl bg-black/5 text-sm text-muted">
-          No photo
-        </div>
-      );
-    }
-    return (
-      <img
-        src={resolvedSrc}
-        alt={`${currentAthlete?.first_name ?? "Athlete"} photo`}
-        className="h-72 w-48 rounded-2xl object-cover shadow-sm"
-      />
-    );
-  };
+    baseAthlete &&
+    (() => {
+      const primary =
+        athleteDetail?.primary_position &&
+        !["unknown", "unk", "n/a", "na"].includes(
+          athleteDetail.primary_position.toLowerCase().trim(),
+        )
+          ? athleteDetail.primary_position
+          : currentAthlete?.primary_position;
+      return {
+        ...baseAthlete,
+        primary_position: primary ?? baseAthlete.primary_position,
+      };
+    })();
 
   return (
     <section className="rounded-xl border border-black/10 bg-container/80 p-4 shadow-sm">
@@ -161,35 +132,34 @@ const ReportCardsPage = () => {
         <div className="mt-2 space-y-4">
           {selectedSubmission ? (
             <article className="rounded-lg border border-black/10 bg-container/80 p-4 shadow-sm">
-              <div className="mb-4">
-                <ReportCardBadge submission={selectedSubmission} athlete={athleteForBadge} />
-              </div>
-
-              <div className="grid gap-4 lg:grid-cols-[360px,1fr]">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-center rounded-lg bg-container px-4 py-4 shadow-sm">
-                    {renderPhoto()}
+              <div className="grid gap-4 lg:grid-cols-[17.25rem,1fr] lg:items-stretch">
+                <ReportCardBadge
+                  submission={selectedSubmission}
+                  athlete={athleteForBadge}
+                />
+                <div className="flex h-full flex-col rounded-lg bg-container px-4 py-3 shadow-sm">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-container-foreground">
+                      {athleteForBadge?.first_name} {athleteForBadge?.last_name}
+                    </p>
+                    <p className="text-xs text-muted">
+                      {athleteForBadge?.birth_date
+                        ? new Date(athleteForBadge.birth_date).toLocaleDateString()
+                        : t.playerProfile.noAthlete}
+                      {" · "}
+                      {athleteForBadge?.club_affiliation ||
+                        selectedSubmission.team_name ||
+                        t.common.select}
+                    </p>
                   </div>
-
-                  {typeof selectedSubmission.overall_average === "number" ? (
-                    <div className="rounded-lg bg-container px-4 py-3 shadow-sm">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                        Overall average
-                      </p>
-                      <p className="mt-1 text-3xl font-semibold text-container-foreground">
-                        {selectedSubmission.overall_average.toFixed(1)}
-                      </p>
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="rounded-lg bg-container px-4 py-3 shadow-sm">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                    Coach report
-                  </p>
-                  <p className="mt-3 whitespace-pre-wrap text-sm text-container-foreground leading-relaxed">
-                    {selectedSubmission.coach_report?.trim() || t.playerProfile.reportCardNoNotes}
-                  </p>
+                  <div className="mt-3 flex flex-1 flex-col rounded-md bg-container px-3 py-3 shadow-inner">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                      Coach report
+                    </p>
+                    <p className="mt-3 whitespace-pre-wrap text-sm text-container-foreground leading-relaxed overflow-hidden flex-1">
+                      {selectedSubmission.coach_report?.trim() || t.playerProfile.reportCardNoNotes}
+                    </p>
+                  </div>
                 </div>
               </div>
 
