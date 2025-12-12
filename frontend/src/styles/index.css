@@ -366,6 +366,19 @@ textarea::placeholder {
 }
 }
 
+.category-icon {
+  width: 20px;
+  height: 20px;
+}
+
+:root .category-icon {
+  filter: brightness(0) saturate(100%);
+}
+
+.theme-dark .category-icon {
+  filter: none;
+}
+
 .report-card-radar {
   --radar-bg: transparent;
   --radar-grid: rgb(0, 0, 0, 0.10);

@@ -191,7 +191,7 @@ const ReportCardsPage = () => {
                               <img
                                 src={iconSrc}
                                 alt={`${category.name} icon`}
-                                className="h-5 w-5 object-contain"
+                                className="h-5 w-5 category-icon"
                               />
                             ) : null}
                             <p className="text-sm font-semibold text-container-foreground">
