@@ -31,51 +31,79 @@ const ReportCardRadar = ({ submission, className = "", heightClass }: ReportCard
 
   const hasAnyValue = data.some((point) => typeof point.value === "number" && point.value > 0);
 
+  const radarColors = {
+    background: "var(--radar-bg, transparent)",
+    grid: "var(--radar-grid, #ffffff1f)",
+    axis: "var(--radar-axis, #e5e7eb)",
+    radius: "var(--radar-radius, #9ca3af)",
+    stroke: "var(--radar-stroke, #c9184a)",
+    fill: "var(--radar-fill, #c9184a)",
+    dot: "var(--radar-dot, #7af7b4)",
+    tooltipBg: "var(--radar-tooltip-bg, #111118)",
+    tooltipBorder: "var(--radar-tooltip-border, #1f1f27)",
+    tooltipText: "var(--radar-tooltip-text, #e5e7eb)",
+    title: "var(--radar-title, #ffffff)",
+    subtitle: "var(--radar-subtitle, #e5e7eb)",
+  };
+
   if (!hasAnyValue) {
     return (
-      <div className="mx-auto w-full max-w-xl rounded-xl border border-black/10 bg-[#1f1f27] px-4 py-6 text-center shadow-sm">
-        <p className="text-sm font-semibold text-white/80">Radar</p>
-        <p className="text-xs text-white/60">No radar data available yet.</p>
+      <div
+        className="report-card-radar mx-auto w-full max-w-xl rounded-xl border border-black/10 px-4 py-6 text-center shadow-sm"
+        style={{ backgroundColor: radarColors.background }}
+      >
+        <p className="text-sm font-semibold" style={{ color: radarColors.title }}>
+          Radar
+        </p>
+        <p className="text-xs" style={{ color: radarColors.subtitle }}>
+          No radar data available yet.
+        </p>
       </div>
     );
   }
 
   return (
     <div
-      className={`mx-auto w-full max-w-xl rounded-xl border border-black/10 px-4 pb-4 pt-3 shadow-sm ${className}`}
+      className={`report-card-radar mx-auto w-full max-w-xl rounded-xl border border-black/10 px-4 pb-4 pt-3 shadow-sm ${className}`}
+      style={{ backgroundColor: radarColors.background }}
     >
       <div className="flex items-center justify-between pb-2">
-        <p className="text-sm font-semibold text-white">Radar</p>
+        <p className="text-sm font-semibold" style={{ color: radarColors.title }}>
+          Radar
+        </p>
       </div>
       <div className={heightClass ?? "h-64 w-full"}>
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart data={data}>
-            <PolarGrid stroke="#ffffff1f" />
+            <PolarGrid stroke={radarColors.grid} />
             <PolarAngleAxis
               dataKey="label"
-              tick={{ fill: "#e5e7eb", fontSize: 12, fontWeight: 500 }}
+              tick={{ fill: radarColors.axis, fontSize: 12, fontWeight: 500 }}
             />
             <PolarRadiusAxis
-              angle={22.5}
+              angle={67.5}
               domain={[0, 100]}
-              tick={{ fill: "#9ca3af", fontSize: 10 }}
+              tick={{ fill: radarColors.radius, fontSize: 10 }}
               tickLine={false}
               axisLine={false}
-              stroke="#ffffff1f"
+              stroke={radarColors.grid}
               tickCount={6}
             />
             <Radar
               name="Scores"
               dataKey="value"
-              stroke="#c9184a"
-              fill="#c9184a"
+              stroke={radarColors.stroke}
+              fill={radarColors.fill}
               fillOpacity={0.25}
               strokeWidth={2}
-              dot={{ r: 2, fill: "#7af7b4", strokeWidth: 0 }}
+              dot={{ r: 2, fill: radarColors.dot, strokeWidth: 0 }}
             />
             <Tooltip
-              contentStyle={{ backgroundColor: "#111118", border: "1px  #1f1f27" }}
-              itemStyle={{ color: "#e5e7eb" }}
+              contentStyle={{
+                backgroundColor: radarColors.tooltipBg,
+                border: `1px solid ${radarColors.tooltipBorder}`,
+              }}
+              itemStyle={{ color: radarColors.tooltipText }}
               formatter={(val: number, name: string) => [`${val}`, name]}
             />
           </RadarChart>

@@ -361,9 +361,39 @@ textarea::placeholder {
   }
 
   .theme-dark .bg-container,
-  .theme-dark [class*="bg-container/"] {
-    border: 1.5px solid rgb(var(--color-border) / 0.65);
-  }
+.theme-dark [class*="bg-container/"] {
+  border: 1.5px solid rgb(var(--color-border) / 0.65);
+}
+}
+
+.report-card-radar {
+  --radar-bg: transparent;
+  --radar-grid: rgb(0, 0, 0, 0.10);
+  --radar-axis: #111827;
+  --radar-radius: #4b5563;
+  --radar-stroke: #c9184a;
+  --radar-fill: #c9184a;
+  --radar-dot: #c9184a;
+  --radar-tooltip-bg: #ffffff86;
+  --radar-tooltip-border: #d1d5db;
+  --radar-tooltip-text: #111827;
+  --radar-title: #111827;
+  --radar-subtitle: #c9d4e4;
+}
+
+.theme-dark .report-card-radar {
+  --radar-bg: #1f1f272f;
+  --radar-grid: #ffffff1f;
+  --radar-axis: #e5e7eb;
+  --radar-radius: #9ca3af;
+  --radar-stroke: #c9184a;
+  --radar-fill: #c9184a;
+  --radar-dot: #7af7b4;
+  --radar-tooltip-bg: #11111886;
+  --radar-tooltip-border: #1f1f27;
+  --radar-tooltip-text: #e5e7eb;
+  --radar-title: #ffffff;
+  --radar-subtitle: #e5e7eb;
 }
 
 
@@ -400,6 +430,21 @@ textarea::placeholder {
 
   #athlete-report-card * {
     color: var(--print-fg) !important;
+  }
+
+  .report-card-radar {
+    --radar-bg: transparent;
+    --radar-grid: rgba(0, 0, 0, 0.1);
+    --radar-axis: #111827;
+    --radar-radius: #4b5563;
+    --radar-stroke: #c9184a;
+    --radar-fill: #c9184a;
+    --radar-dot: #c9184a;
+    --radar-tooltip-bg: #ffffff;
+    --radar-tooltip-border: #cbd5e1;
+    --radar-tooltip-text: #111827;
+    --radar-title: #111827;
+    --radar-subtitle: #374151;
   }
 }
 .placeholder-muted::placeholder {
