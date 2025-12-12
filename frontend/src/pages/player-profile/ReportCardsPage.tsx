@@ -5,6 +5,7 @@ import { useTranslation } from "../../i18n/useTranslation";
 import { getScoreBand, type ScoreBand } from "../../lib/reportCard";
 import ReportCardBadge from "../../components/ReportCardBadge";
 import Spinner from "../../components/Spinner";
+import ReportCardRadar from "../../components/ReportCardRadar";
 
 const bandClasses: Record<ScoreBand, string> = {
   low: "text-orange-600",
@@ -132,33 +133,49 @@ const ReportCardsPage = () => {
           {selectedSubmission ? (
             <article className="rounded-lg border border-black/10 bg-container/80 p-4 shadow-sm">
               <div className="grid gap-4 lg:grid-cols-[17.25rem,1fr] lg:items-stretch">
-                <ReportCardBadge
-                  submission={selectedSubmission}
-                  athlete={athleteForBadge}
-                />
-                <div className="flex h-full flex-col rounded-lg bg-container px-4 py-3 shadow-sm">
-                  <div className="space-y-1">
-                    <p className="text-sm font-semibold text-container-foreground">
-                      {athleteForBadge?.first_name} {athleteForBadge?.last_name}
-                    </p>
-                    <p className="text-xs text-muted">
-                      {athleteForBadge?.birth_date
-                        ? new Date(athleteForBadge.birth_date).toLocaleDateString()
-                        : t.playerProfile.noAthlete}
-                      {" · "}
-                      {athleteForBadge?.club_affiliation ||
-                        selectedSubmission.team_name ||
-                        t.common.select}
-                    </p>
-                  </div>
-                  <div className="mt-3 flex flex-1 flex-col rounded-md bg-container px-3 py-3 shadow-inner">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-                      Coach report
-                    </p>
-                    <p className="mt-3 whitespace-pre-wrap text-sm text-container-foreground leading-relaxed overflow-hidden flex-1">
-                      {selectedSubmission.coach_report?.trim() || t.playerProfile.reportCardNoNotes}
-                    </p>
-                  </div>
+                <div className="flex flex-col items-center lg:items-start">
+                  <ReportCardBadge submission={selectedSubmission} athlete={athleteForBadge} />
+                </div>
+                <div className="flex">
+                  <ReportCardRadar
+                    submission={selectedSubmission}
+                    className="h-full min-h-[24rem] w-full"
+                    heightClass="h-full"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center gap-x-3 overflow-x-auto whitespace-nowrap text-xs font-semibold tracking-[0.12em]">
+                <span>SRS = Short-Range Saves</span>
+                <span>LRS = Long-Range Saves</span>
+                <span>DIS = Distribution</span>
+                <span>TEC = Technical Foundation</span>
+                <span>MIN = Mindset</span>
+                <span>PHY = Physicality</span>
+              </div>
+
+              <div className="mt-4 flex h-full flex-col rounded-lg bg-container px-4 py-3 shadow-sm border border-black/10">
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-container-foreground">
+                    {athleteForBadge?.first_name} {athleteForBadge?.last_name}
+                  </p>
+                  <p className="text-xs text-muted">
+                    {athleteForBadge?.birth_date
+                      ? new Date(athleteForBadge.birth_date).toLocaleDateString()
+                      : t.playerProfile.noAthlete}
+                    {" · "}
+                    {athleteForBadge?.club_affiliation ||
+                      selectedSubmission.team_name ||
+                      t.common.select}
+                  </p>
+                </div>
+                <div className="mt-3 flex flex-1 flex-col rounded-md bg-container px-3 py-3 shadow-inner">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+                    Coach report
+                  </p>
+                  <p className="mt-3 whitespace-pre-wrap text-sm text-container-foreground leading-relaxed overflow-hidden flex-1">
+                    {selectedSubmission.coach_report?.trim() || t.playerProfile.reportCardNoNotes}
+                  </p>
                 </div>
               </div>
 
