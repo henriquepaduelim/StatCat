@@ -9,6 +9,7 @@ import { useDashboardReports } from "../hooks/useDashboardReports";
 import { createTeamLabels, teamAgeOptions } from "../constants/dashboard";
 import { useDashboardTeamManagement } from "../hooks/useDashboardTeamManagement";
 import { ArchiveTeamReportsModal } from "../components/dashboard/ArchiveTeamReportsModal";
+import Spinner from "../components/Spinner";
 
 
 const DashboardTeamManagementContainer = lazy(
@@ -113,11 +114,18 @@ const Dashboard = () => {
     setTeamNotice,
   });
 
+  const isBaseLoading = athletesQuery.isLoading || teamsQuery.isLoading;
+
 
 
   return (
     <>
       <div className="space-y-8">
+        {isBaseLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Spinner />
+          </div>
+        ) : null}
         <DashboardSummarySection title={t.dashboard.title} description={t.dashboard.description} />
 
         {loadErrorMessage ? (

@@ -182,6 +182,20 @@ const TeamDashboard = () => {
     athleteFilter,
   });
 
+  const isInitialLoading =
+    teamsQuery.isLoading ||
+    coachTeamsQuery.isLoading ||
+    athletesQuery.isLoading ||
+    allCoachesQuery.isLoading;
+
+  if (isInitialLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
+
   const openTeamFormModal = async () => {
     if (!selectedTeam) return;
     setTeamFormError(null);
@@ -319,7 +333,9 @@ const TeamDashboard = () => {
       </header>
 
       {isLoading ? (
-        <Spinner />
+        <div className="flex items-center justify-center py-8">
+          <Spinner />
+        </div>
       ) : selectedTeam ? (
         <div className="space-y-6">
           {loadErrorMessage ? (

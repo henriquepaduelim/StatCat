@@ -6,6 +6,7 @@ import { getTeamReportSubmissions } from "../../api/teams";
 import { deleteReportSubmission } from "../../api/report_submissions";
 import { deleteTeam } from "../../api/teams";
 import type { ReportSubmissionItem } from "../../types/report_submission";
+import Spinner from "../Spinner";
 
 interface ArchiveTeamReportsModalProps {
   teamId: number;
@@ -86,7 +87,12 @@ export const ArchiveTeamReportsModal = ({
 
   const renderContent = () => {
     if (isLoading) {
-      return <p className="text-center text-muted">Loading team reports...</p>;
+      return (
+        <div className="flex flex-col items-center justify-center py-6">
+          <Spinner />
+          <p className="mt-2 text-xs text-muted">Loading team reports...</p>
+        </div>
+      );
     }
     if (isError) {
       return <p className="text-center text-red-500">Error loading reports. Please try again.</p>;

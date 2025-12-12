@@ -4,6 +4,7 @@ import { usePermissions, type UserRole } from "../hooks/usePermissions";
 import { useAuthStore } from "../stores/useAuthStore";
 import { useAuthBootstrap } from "../hooks/useAuthBootstrap";
 import { useTranslation } from "../i18n/useTranslation";
+import Spinner from "./Spinner";
 
 interface ProtectedRouteProps extends PropsWithChildren {
   /**
@@ -49,7 +50,8 @@ const ProtectedRoute = ({
   if (!isInitialized) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-page text-muted">
-        {t.common.loading}...
+        <Spinner />
+        <span className="sr-only">{t.common.loading}</span>
       </div>
     );
   }

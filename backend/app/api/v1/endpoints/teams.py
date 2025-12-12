@@ -84,7 +84,12 @@ def list_teams(
     if size > 100:
         size = 100
         
-    statement = select(Team).order_by(Team.name)
+    statement = (
+        select(Team, func.count(Athlete.id).label("athlete_count"))
+        .outerjoin(Athlete, Athlete.team_id == Team.id)
+        .group_by(Team.id)
+        .order_by(Team.name)
+    )
     if age_category:
         statement = statement.where(Team.age_category == age_category)
     
@@ -92,9 +97,7 @@ def list_teams(
     offset = (page - 1) * size
     statement = statement.offset(offset).limit(size)
 
-    teams = session.exec(statement).scalars().all()
-    roster_counts = _load_roster_counts(session, [team.id for team in teams])
-
+    rows = session.exec(statement).all()
     return [
         TeamRead(
             id=team.id,
@@ -105,9 +108,9 @@ def list_teams(
             created_by_id=team.created_by_id,
             created_at=team.created_at,
             updated_at=team.updated_at,
-            athlete_count=roster_counts.get(team.id, 0),
+            athlete_count=athlete_count or 0,
         )
-        for team in teams
+        for team, athlete_count in rows
     ]
 
 
