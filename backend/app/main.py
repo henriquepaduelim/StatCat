@@ -77,7 +77,9 @@ app.mount("/media", StaticFiles(directory=media_path), name="media")
 
 @app.on_event("startup")
 def on_startup() -> None:
-    init_db()
+    # Evite criar/migrar DB automaticamente em produção; use alembic upgrade no deploy.
+    if settings.AUTO_SEED_DATABASE:
+        init_db()
 
 
 @app.get("/sentry-debug", include_in_schema=False)

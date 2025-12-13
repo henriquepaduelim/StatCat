@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from enum import Enum
 
@@ -78,8 +78,8 @@ class AthleteDetail(SQLModel, table=True):
     medical_conditions_encrypted: str | None = None
     physician_name_encrypted: str | None = None
     physician_phone_encrypted: str | None = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class AthleteDocument(SQLModel, table=True):
@@ -87,7 +87,7 @@ class AthleteDocument(SQLModel, table=True):
     athlete_id: int = Field(foreign_key="athlete.id", index=True)
     label: str
     file_url: str
-    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class AthletePayment(SQLModel, table=True):
@@ -99,4 +99,4 @@ class AthletePayment(SQLModel, table=True):
     reference: str | None = None
     receipt_url: str | None = None
     paid_at: datetime | None = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

@@ -1,257 +1,182 @@
----
-
 # StatCat Football Platform
 
-StatCat centralizes combine data, athlete onboarding, and team collaboration for grassroots and academy programs. The stack pairs a FastAPI/SQLModel backend with a Vite React frontend so clubs can share testtings, content, and schedules with RSVP, manage teams, coaches, schedulling and athletes through one channel.
+## 1. Overview
 
-## Deployment (Render backend + Vercel frontend + Neon DB)
+StatCat is a comprehensive platform designed for grassroots and academy football programs to centralize combine data, streamline athlete onboarding, and enhance team collaboration. It provides a unified solution for managing teams, coaches, and athletes, sharing testing results, and coordinating schedules.
 
-- Backend (Render)
-  - Env vars: `ENVIRONMENT=production`, `AUTO_SEED_DATABASE=false`, strong `SECRET_KEY`, `DATABASE_URL` (Neon), `BACKEND_CORS_ORIGINS=["https://<frontend-domain>"]`, SMTP creds (rotated), `MEDIA_ROOT=/app/media`.
-  - Storage: attach a persistent disk/volume and mount to `/app/media` for uploads. If you move to S3 later, point MEDIA_ROOT accordingly and set bucket/region/creds.
-  - Health check: `/health`. Run with Render’s native Python environment or the provided Dockerfile.
+The platform is a multi-tenant system, designed to be branded and deployed for individual football clubs, with a flexible architecture that supports custom themes and configurations.
 
-- Frontend (Vercel)
-  - Env vars: `VITE_API_BASE_URL=https://<render-backend-url>` plus `VITE_APP_BRAND_NAME`, `VITE_BRAND_ID`, `VITE_BRAND_FAVICON`.
-  - Build command: `npm run build`.
+## 2. Architecture
 
-- Database (Neon)
-  - Migrations applied (`alembic upgrade head`). Keep the Neon URL only in platform secrets.
+The project is structured as a monorepo with a decoupled frontend and backend.
 
-- Smoke tests post-deploy
-  - `/health`, login/signup, password reset email, upload/download media, dashboard pages.
+*   **Backend:** A robust API built with **FastAPI** and **Python**. It handles all business logic, data processing, and authentication.
+*   **Frontend:** A modern single-page application (SPA) built with **React** and **TypeScript**, using **Vite** for fast development and builds.
+*   **Database:** The application uses **SQLModel** as an ORM and is designed to work with **PostgreSQL** in production and **SQLite** for development. Database schema changes are managed by **Alembic**.
 
-## Project Layout
+## 3. Technology Stack
+
+**Backend:**
+*   **Framework:** FastAPI
+*   **Database:** PostgreSQL (production), SQLite (development)
+*   **ORM:** SQLModel
+*   **Migrations:** Alembic
+*   **Authentication:** JWT (via `python-jose`), Passlib (for password hashing)
+*   **Data Validation:** Pydantic
+*   **Testing:** Pytest
+*   **Linting/Formatting:** Ruff, MyPy
+
+**Frontend:**
+*   **Framework:** React 18 (with TypeScript)
+*   **Build Tool:** Vite
+*   **Styling:** Tailwind CSS, Tremor, PostCSS
+*   **State Management:**
+    *   Server State: TanStack React Query
+    *   Client State: Zustand
+*   **Routing:** React Router v6
+*   **Testing:** Vitest (unit/integration), Playwright (E2E)
+*   **PWA:** The app is configured as a Progressive Web App using `vite-plugin-pwa`.
+
+## 4. Core Features & Flows
+
+*   **Authentication & Authorization:**
+    *   JWT-based authentication with a token persisted in local storage.
+    *   Role-Based Access Control (RBAC) for `admin`, `staff`, `coach`, and `athlete` roles.
+    *   Secure password hashing using `bcrypt`.
+    *   Password reset functionality via email (SMTP).
+
+*   **Athlete Onboarding & Management:**
+    *   Athletes can self-register.
+    *   An approval workflow (`INCOMPLETE` -> `PENDING` -> `APPROVED` / `REJECTED`) is managed by admins/staff.
+    *   Admins can view and manage all athletes.
+
+*   **Team Management:**
+    *   Coaches and staff can create and manage teams.
+    *   Team feed for posts and announcements.
+    *   Dashboards for team-specific metrics and leaderboards.
+
+*   **Reporting and Analytics:**
+    *   Entry of combine results and other performance metrics.
+    *   Generation of "Report Cards" for athletes (including PDF generation with WeasyPrint).
+
+## 5. Project Structure
 
 ```
 .
-├── backend/        # FastAPI + SQLModel API, Alembic migrations, scripts
-├── frontend/       # React (TypeScript) + Vite app, Tailwind/Tremor UI
-├── scripts/        # Branding builder, DB tooling
-├── tests/          # Backend pytest suite
-├── branding/       # Club-specific presets (logos, colors, env)
-└── packages/       # Generated deliverables per club
+├── backend/        # FastAPI API, migrations, and services
+│   ├── app/        # Core application code
+│   │   ├── api/    # API endpoints (routers)
+│   │   ├── core/   # Configuration, security, etc.
+│   │   ├── db/     # Database session management
+│   │   ├── models/ # SQLModel data models
+│   │   ├── schemas/# Pydantic schemas
+│   │   └── services/ # Business logic
+│   ├── alembic/    # Database migrations
+│   └── tests/      # Backend tests
+├── frontend/       # React (TypeScript) + Vite frontend
+│   ├── src/
+│   │   ├── api/        # API client (axios)
+│   │   ├── components/ # Reusable components
+│   │   ├── hooks/      # Custom hooks
+│   │   ├── pages/      # Top-level page components
+│   │   ├── stores/     # Zustand stores
+│   │   └── styles/     # Global styles and Tailwind config
+│   └── e2e/          # Playwright E2E tests
+└── scripts/        # Utility scripts (e.g., build branding packages)
 ```
 
-## Current Highlights
-
-### Authentication & Access Control
-- JWT authentication with refresh handling
-- Role-based permissions (admin, staff, coach, athlete)
-- Athlete onboarding + approval workflow
-- Protected routes on the frontend and backend
-
-### Athlete Operations
-- Self-serve registration, profile editing, and document capture
-- Status tracking (Incomplete → Pending → Approved/Rejected)
-- Admin view with bulk operations and filters
-- Player Profile portal (overview, combines, report cards, scheduling)
-
-### Team & Staff Management
-- Team builder with roster drag-and-drop
-- Coach directory with assignments and invites
-- Team feed (community posts with photo uploads)
-- Per-team dashboards with leaderboards, schedules, combine metrics, and a maintenance utility for end-of-season exports
-
-### Reporting & Analytics
-- Combine result entry (splits, YoYo, jump, max power) via API or UI
-- Leaderboards for scorers and clean sheets (global, team-filtered)
-- Report cards, match reports, approval queue, and insights tracker
-- Calendar + availability panel for events, training, and combines
-
-### Branding & Packaging
-- Theme definitions (`branding/*.json`) drive colors, logos, and env files
-- `scripts/build_club_package.py` produces env bundles + themed builds per club
-- Assets placed under `packages/<club-id>/` for deployment
-
-## Technology Stack
-
-- **Backend:** FastAPI, SQLModel, PostgreSQL/SQLite, Alembic, Pydantic, JWT
-- **Frontend:** React 18, TypeScript, Vite, React Query, Zustand, Tailwind CSS, Tremor, FontAwesome
-- **Tooling:** Pytest, Ruff, MyPy, ESLint, Vitest
-- **DevOps hooks:** Docker Compose, branding builder script
-
-## Setup
+## 6. Environment Setup
 
 ### Prerequisites
-- Python 3.11+
-- Node.js 18+ (with npm)
-- (Optional) PostgreSQL for production/testing
-
-### Backend
-
-```bash
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-pip install --upgrade pip
-pip install -e ".[dev]"
-cp .env.example .env
-# Edit your local .env file for development settings (database, keys, etc.)
-uvicorn app.main:app --reload
-```
-
-API: http://localhost:8000  
-Docs: http://localhost:8000/docs
-
-For migrations:
-```bash
-cd backend
-alembic upgrade head          # apply latest schema
-alembic revision --autogenerate -m "Describe change"
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-App: http://localhost:5173
-
-Production build:
-```bash
-npm run build
-npm run preview
-```
-Set `VITE_API_BASE_URL` and `VITE_MEDIA_BASE_URL` for non-local deployments. When `VITE_ENABLE_PWA_BUILD=true`, the Service Worker/PWA bundle is included.
-
-## Configuration
+*   Python 3.11+
+*   Node.js 18+ (with npm)
+*   (Optional) PostgreSQL for production-like testing.
 
 ### Backend `.env`
-```
-SECRET_KEY=change-me
-ENCRYPTION_KEY_CURRENT=your-32-byte-hex-or-random
-# Optional during key rotation:
-# ENCRYPTION_KEY_PREVIOUS=old-key
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=10080
-BACKEND_CORS_ORIGINS=["http://localhost:5173"]
-MEDIA_ROOT=media
-DATABASE_URL=sqlite:///./data/combine.db  # or PostgreSQL DSN
-LOG_LEVEL=INFO
-SENTRY_DSN=
-SENTRY_TRACES_SAMPLE_RATE=0.1
-SENTRY_PROFILES_SAMPLE_RATE=
-OTEL_EXPORTER_OTLP_ENDPOINT=
-OTEL_EXPORTER_OTLP_HEADERS=
-OTEL_SERVICE_NAME=StatCat
-OTEL_TRACES_SAMPLER_RATIO=0.2
-```
 
-For PostgreSQL testing, create a second `.env` (for example `env.test`) pointing to `postgresql://.../statcat_test`.
+Create a `.env` file in the `backend/` directory by copying `.env.example`. Key variables:
 
-### Frontend env (`.env.local`)
-```
-VITE_API_BASE_URL=http://localhost:8000
-VITE_MEDIA_BASE_URL=http://localhost:8000/media
-VITE_ENABLE_PWA_BUILD=false
-VITE_TERMS_OF_SERVICE_URL=https://example.com/terms
-VITE_PRIVACY_POLICY_URL=https://example.com/privacy
-```
+*   `SECRET_KEY`: A strong, unique secret for signing JWTs.
+*   `ENCRYPTION_KEY_CURRENT`: A separate strong key for encrypting sensitive data in the database. **This is critical for security.**
+*   `DATABASE_URL`: Connection string for your database (e.g., `sqlite:///./data/combine.db` for local dev, or `postgresql://...` for production).
+*   `BACKEND_CORS_ORIGINS`: A JSON-style list of allowed frontend origins (e.g., `["http://localhost:5173"]`).
+*   `SMTP_HOST`, `SMTP_USER`, etc.: Credentials for your email provider for password resets.
 
-## Useful Commands
+### Frontend `.env`
+
+Create a `.env` file in the `frontend/` directory.
+
+*   `VITE_API_BASE_URL`: The URL of the backend API (e.g., `http://localhost:8000`).
+*   `VITE_MEDIA_BASE_URL`: The URL where media files are served from.
+
+## 7. Running Locally
 
 ### Backend
-- Run dev server: `uvicorn app.main:app --reload`
-- Tests: `PYTHONPATH=backend .venv/bin/python -m pytest`
-- Lint: `ruff check app`
-- Types: `mypy app`
-- Audit Security: `pip-audit -r requirements.txt`
-- Seed/reset DB: use scripts in `backend/scripts/`
+
+```bash
+# From the project root
+cd backend
+
+# Create and activate a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Apply database migrations
+alembic upgrade head
+
+# Run the development server
+uvicorn app.main:app --reload
+```
+The API will be available at `http://localhost:8000`, with OpenAPI docs at `http://localhost:8000/docs`.
 
 ### Frontend
-- Dev server: `npm run dev`
-- Build: `npm run build`
-- Lint: `npm run lint`
-- Tests (if configured): `npm run test`
 
-## API Overview
-- Auth: `/api/v1/auth/*`
-- Athletes: `/api/v1/athletes/*`
-- Teams / Coaches: `/api/v1/teams/*`
-- Team feed + posts: `/api/v1/teams/{team_id}/posts`
-- Team combine metrics: `/api/v1/teams/{team_id}/combine-metrics`
-- Reports/analytics: `/api/v1/reports/*`, `/api/v1/analytics/*`
-- Events: `/api/v1/events/*`
+```bash
+# From the project root
+cd frontend
 
-Refer to the OpenAPI schema for parameter details and response models.
+# Install dependencies
+npm install
 
-## Style and Text
-
-- **Theme tokens**: `frontend/src/theme/tokens.ts` (colors, typography, radii, shadows) and `frontend/src/theme/chartPalette.ts` (chart palettes). The `ThemeProvider` converts these tokens into CSS variables.
-- **Vars/utilities**: `frontend/src/styles/index.css` maps the CSS vars (colors, fonts, radii, shadows) to classes used in components.
-- **Texts/labels**: `frontend/src/i18n/translations.ts` centralizes all strings; avoid hardcoded text in components.
-
-## Branding Packages
-
+# Run the development server
+npm run dev
 ```
-python scripts/build_club_package.py <club-id>
-```
+The frontend will be available at `http://localhost:5173`.
 
-Outputs (`packages/<club-id>/`):
-- `frontend-dist/`: themed static build
-- `backend.env`, `frontend.env`, `compose.env`: environment files
-- `branding.json`: snapshot of the source branding config
+## 8. Useful Scripts
 
-Use `--skip-build` to regenerate envs only, or `--persist-theme` to keep the generated Tailwind theme checked in. By default the script restores the previous theme files after building.
+*   **Backend Tests:** `pytest`
+*   **Backend Linting:** `ruff check .`
+*   **Frontend Tests:** `npm run test` (Vitest)
+*   **Frontend E2E Tests:** `npm run e2e` (Playwright)
+*   **Frontend Linting:** `npm run lint`
 
-## Test Accounts (Demo)
+## 9. Security, Auth & Permissions
 
-| Email               | Password  | Role   |
-|---------------------|-----------|--------|
-| admin@combine.local | admin123  | admin  |
-| staff@combine.local | staff123  | staff  |
-| coach@combine.local | coach123  | coach  |
+*   **Authentication:** The frontend receives a JWT access token upon successful login, which is stored in local storage and sent in the `Authorization` header for all API requests.
+*   **Authorization:** The backend protects endpoints based on the user's role (`admin`, `staff`, `coach`, `athlete`). The frontend uses a `ProtectedRoute` component and a `usePermissions` hook to control access to routes and UI elements based on the same roles.
+*   **Data Encryption:** Sensitive athlete data (e.g., medical information) is encrypted at rest in the database using `cryptography.fernet`. A dedicated `ENCRYPTION_KEY_CURRENT` is required for this.
 
-Athletes self-register and need approval before accessing their profile.
+## 10. Deployment Considerations
 
-## Notes
-- Media uploads are served from `/media`. Ensure `MEDIA_ROOT` exists and is writable (`backend/media/` by default).
-- When running the frontend in development, set `VITE_MEDIA_BASE_URL` so images from Team Feed render correctly.
-- The SQLite DB is stored under `backend/data/` (gitignored). Use PostgreSQL for staging/production.
+*   **Database:** A production-grade PostgreSQL database is required.
+*   **File Storage:** The default setup serves media files from the local filesystem. For a scalable and robust solution, it is highly recommended to use a cloud storage service like AWS S3. The application is already configured to support this via the `AWS_S3_BUCKET` setting.
+*   **Environment Variables:** All secrets and environment-specific configurations must be managed securely in the deployment environment.
+*   **Database Migrations:** Alembic migrations (`alembic upgrade head`) should be run as part of the deployment process before the new application version is launched.
 
-StatCat is under active development. Larger backlog items include comment reactions, team feed filters, global search, and additional automated QA coverage.
-- Logos/favicons live inside `branding/assets/<club-id>/`. Reference them from the club JSON via the `assets` block.
-- During a build the helper copies those files into `frontend/public/branding/<club-id>/` and generates `frontend/src/theme/branding.generated.ts` so React components pick up the correct paths.
-- When testing locally and you want to keep the generated files in place (so `docker compose up` shows the club colors/logo), run:
+## 11. Potential Improvements (Roadmap)
 
-  ```bash
-  python scripts/build_club_package.py <club-id> --persist-theme --persist-branding --persist-assets
-  docker compose up -d --build frontend
-  ```
+Based on the analysis of the codebase, here are some recommended improvements:
 
-  The `--persist-*` flags keep the temporary files so the next `npm run dev` / Docker build reuses them. Omit the flags in CI or when you just want to produce a clean package.
+*   **Refactor Authentication Flow:** The current frontend authentication flow has a potential race condition on initialization. This should be refactored to ensure the user's session is fully restored *before* the main application renders, preventing UI flashes.
+*   **Implement Refresh Tokens:** The current auth system only uses access tokens. Implementing a refresh token mechanism would provide a more secure and persistent user session.
+*   **Improve Athlete Onboarding UX:** Instead of redirecting unapproved athletes back to the login page, it would be better to direct them to a dedicated page explaining their "Pending Approval" status.
+*   **Consolidate Styling System:** The frontend uses both Tailwind CSS and `styled-components`. To ensure consistency and reduce bundle size, the project should standardize on one system (likely Tailwind CSS).
+*   **Integrate Error Reporting:** The `ErrorBoundary` in the frontend should be integrated with a service like Sentry (which is already a dependency) to capture and track production errors.
 
-- `python scripts/build_club_package.py` automatically appends `http://localhost:3000` and `http://localhost:5173` to `BACKEND_CORS_ORIGINS` so the package works locally. Provide `--no-localhost-cors` if you need a production-only `.env`.
-- The dev server (`npm run dev`) now reads default branding values from `frontend/.env.development` (StatCat). Override them per machine using `frontend/.env.local` so you can keep the base experience intact while preparing custom packages.
+## 12. License
 
-## Project Status
-
-- Complete authentication and approval workflow
-- Athlete and team management
-- Assessment session scheduling and reporting
-- Dashboard and analytics
-- Comprehensive test coverage
-- RESTful API with OpenAPI docs
-- Responsive UI with mobile support
-
-## Architecture Notes
-
-- Monorepo with separate backend and frontend
-- Type-safe schemas (Pydantic, TypeScript)
-- Secure password storage and JWT tokens
-- Alembic migrations for schema versioning
-- Pagination and optimized queries
-- Role-based access control and input validation
-
-## Performance & Security
-
-- Indexed columns and eager loading for database performance
-- JWT authentication and bcrypt password hashing
-- CORS and RBAC on all endpoints
-- Comprehensive test coverage and code quality checks
-
----
+This project is currently unlicensed.

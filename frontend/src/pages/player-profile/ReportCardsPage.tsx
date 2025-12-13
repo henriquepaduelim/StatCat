@@ -6,6 +6,7 @@ import { getScoreBand, type ScoreBand } from "../../lib/reportCard";
 import ReportCardBadge from "../../components/ReportCardBadge";
 import Spinner from "../../components/Spinner";
 import ReportCardRadar from "../../components/ReportCardRadar";
+import { getMediaUrl } from "../../utils/media";
 
 const bandClasses: Record<ScoreBand, string> = {
   low: "text-orange-600",
@@ -19,10 +20,10 @@ const bandBgClasses: Record<ScoreBand, string> = {
   high: "bg-emerald-500",
 };
 
-const CATEGORY_ICONS: Record<string, string> = {
-  mindset: "/media/Asset 1BRAIN4 1.png",
-  physicality: "/media/Asset 1person-2 1.png",
-  "technical foundation": "/media/Asset 1blocks1 1.png",
+const CATEGORY_ICONS: Record<string, string | null> = {
+  mindset: getMediaUrl("/media/Asset 1BRAIN4 1.png"),
+  physicality: getMediaUrl("/media/Asset 1person-2 1.png"),
+  "technical foundation": getMediaUrl("/media/Asset 1blocks1 1.png"),
 };
 
 const ReportCardsPage = () => {

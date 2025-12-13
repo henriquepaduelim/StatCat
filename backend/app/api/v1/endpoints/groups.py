@@ -3,13 +3,14 @@ from __future__ import annotations
 from typing import Iterable
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, delete, select
+from sqlmodel import Session, delete, select, func
 
 from app.api.deps import ensure_roles, get_current_active_user
 from app.db.session import get_session
 from app.models.athlete import Athlete
 from app.models.group import Group, GroupMembership
 from app.models.user import User, UserRole
+from app.schemas.pagination import PaginatedResponse
 from app.schemas.group import GroupCreate, GroupRead, GroupUpdate
 
 router = APIRouter()
@@ -44,13 +45,13 @@ def _validate_athletes(session: Session, athlete_ids: list[int]) -> list[Athlete
     return athletes
 
 
-@router.get("/", response_model=list[GroupRead])
+@router.get("/", response_model=PaginatedResponse[GroupRead])
 def list_groups(
     session: Session = Depends(get_session),
     _current_user: User = Depends(get_current_active_user),
     page: int = 1,
     size: int = 50,
-) -> list[GroupRead]:
+) -> PaginatedResponse[GroupRead]:
     """List groups with optional pagination.
     
     Args:
@@ -65,16 +66,13 @@ def list_groups(
     if size > 100:
         size = 100
         
-    statement = select(Group).order_by(Group.name)
-    
-    # Apply pagination
-    offset = (page - 1) * size
-    statement = statement.offset(offset).limit(size)
-    
+    total = session.exec(select(func.count()).select_from(Group)).one()
+
+    statement = select(Group).order_by(Group.name).offset((page - 1) * size).limit(size)
     groups = session.exec(statement).all()
     memberships = _load_memberships(session, [group.id for group in groups])
 
-    return [
+    items = [
         GroupRead(
             id=group.id,
             name=group.name,
@@ -86,6 +84,8 @@ def list_groups(
         )
         for group in groups
     ]
+
+    return PaginatedResponse(total=total, page=page, size=size, items=items)
 
 
 @router.post("/", response_model=GroupRead, status_code=status.HTTP_201_CREATED)

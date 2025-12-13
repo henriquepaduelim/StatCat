@@ -1,11 +1,13 @@
 import api from "./client";
 import type { Team } from "../types/team";
+import type { PaginatedResponse } from "../types/pagination";
 import type { ReportSubmissionItem } from "../types/report_submission";
 
-export const listTeams = async (ageCategory?: string) => {
-  const params = ageCategory ? { age_category: ageCategory } : undefined;
-  const { data } = await api.get<Team[]>("/teams/", { params });
-  return data;
+export const listTeams = async (ageCategory?: string, page = 1, size = 50) => {
+  const params = { page, size, ...(ageCategory ? { age_category: ageCategory } : {}) };
+  const { data } = await api.get<PaginatedResponse<Team>>("/teams/", { params });
+  // Preserve backward compatibility by returning the list of teams directly
+  return data.items ?? [];
 };
 
 export interface TeamPayload {

@@ -4,6 +4,7 @@ import type { ReportCardCategory } from "../../types/reportCard";
 import { getScoreBand, type ScoreBand } from "../../lib/reportCard";
 import type { Athlete } from "../../types/athlete";
 import type { Team } from "../../types/team";
+import { getMediaUrl } from "../../utils/media";
 
 type ReportCardModalProps = {
   isOpen: boolean;
@@ -36,10 +37,10 @@ const bandLabels: Record<ScoreBand, string> = {
   high: "High",
 };
 
-const CATEGORY_ICONS: Record<string, string> = {
-  mindset: "/media/Asset 1BRAIN4 1.png",
-  physicality: "/media/Asset 1person-2 1.png",
-  "technical foundation": "/media/Asset 1blocks1 1.png",
+const CATEGORY_ICONS: Record<string, string | null> = {
+  mindset: getMediaUrl("/media/Asset 1BRAIN4 1.png"),
+  physicality: getMediaUrl("/media/Asset 1person-2 1.png"),
+  "technical foundation": getMediaUrl("/media/Asset 1blocks1 1.png"),
 };
 
 const ReportCardModal = ({

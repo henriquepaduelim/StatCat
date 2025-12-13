@@ -20,7 +20,8 @@ class ReportCardCategory(BaseModel):
 class ReportCardCreate(BaseModel):
     athlete_id: int
     team_id: int | None = None
-    coach_report: str = Field(..., min_length=1, max_length=2000)
+    coach_report: str | None = Field(default=None, max_length=2000)
+    general_notes: str | None = Field(default=None, max_length=2000)
     categories: list[ReportCardCategory] = Field(default_factory=list)
 
 

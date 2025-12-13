@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 from sqlmodel import Field, SQLModel
@@ -23,7 +23,7 @@ class TeamCombineMetric(SQLModel, table=True):
     recorded_by_id: int = Field(foreign_key="user.id", index=True)
     approved_by_id: int | None = Field(default=None, foreign_key="user.id")
     
-    recorded_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    recorded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
 
     sitting_height_cm: float | None = Field(default=None)
     standing_height_cm: float | None = Field(default=None)

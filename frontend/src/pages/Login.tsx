@@ -13,6 +13,7 @@ import { useTranslation } from "../i18n/useTranslation";
 import { submitForApproval, submitForApprovalPublic } from "../api/athletes";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import api from "../api/client";
+import { getMediaUrl } from "../utils/media";
 const PasswordRecoveryDialog = lazy(() => import("../components/PasswordRecoveryDialog"));
 const AthleteOnboardingModal = lazy(() => import("../components/AthleteOnboardingModal"));
 import type { OnboardingStep } from "../components/AthleteOnboardingModal";
@@ -143,10 +144,14 @@ const Login = () => {
   
   const submitApprovalMutation = useMutation({
     mutationFn: (athleteId: number) => {
-      if (signupToken) {
+      // Se não há token de login, use o fluxo público (token de signup) ou não envie
+      if (!token && signupToken) {
         return submitForApprovalPublic(athleteId, signupToken);
       }
-      return submitForApproval(athleteId);
+      if (!token && !signupToken) {
+        return Promise.resolve();
+      }
+      return submitForApproval(athleteId); // requer token
     },
     onSuccess: () => {
       // Update user status in store
@@ -242,12 +247,29 @@ const Login = () => {
           navigate(from, { replace: true });
         }
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
+      const status = typeof err === "object" && err !== null
+        ? (err as { response?: { status?: number; data?: { detail?: string } } }).response?.status
+        : undefined;
+      const detail = typeof err === "object" && err !== null
+        ? (err as { response?: { data?: { detail?: string } } }).response?.data?.detail
+        : undefined;
+
       if (isRegister) {
-        setError("Unable to create account. Please check if the email is already registered and try again.");
+        if (status === 400 || status === 409 || (detail && detail.toLowerCase().includes("email"))) {
+          setError("Email already registered. Try logging in or use a different email.");
+        } else {
+          setError("Unable to create account. Please check your details and try again.");
+        }
       } else {
-        setError("Invalid email or password. Please check your credentials and try again.");
+        if (status === 403) {
+          setError("Your account is pending approval. Please wait for an admin to approve your access.");
+        } else if (status === 401) {
+          setError("Invalid email or password. Please check your credentials and try again.");
+        } else {
+          setError("Unable to sign in now. Please try again.");
+        }
       }
     } finally {
       setIsSubmitting(false);
@@ -357,17 +379,19 @@ const handlePendingReviewClose = () => {
 
   return (
     <div className="relative min-h-screen">
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute top-0 left-0 h-full w-full object-cover"
-        style={{ zIndex: -1 }}
-      >
-        <source src="/media/login-bg.mp4" type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
+      {getMediaUrl("/media/login-bg.mp4") ? (
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute top-0 left-0 h-full w-full object-cover"
+          style={{ zIndex: -1 }}
+        >
+          <source src={getMediaUrl("/media/login-bg.mp4") as string} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      ) : null}
       <div className="flex min-h-screen items-center justify-center bg-black/50 px-4 py-10">
         <div className={`w-full max-w-md rounded-2xl bg-container-gradient bg-opacity-80 p-8 shadow-xl transition-opacity duration-300 ${
           onboardingStep !== null ? "opacity-0 pointer-events-none" : "opacity-100"

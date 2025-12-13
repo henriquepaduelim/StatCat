@@ -1,7 +1,7 @@
 """Notification service for coordinating email and push notifications."""
 import logging
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlmodel import Session, select
 
 from app.models.event import Event, EventParticipant, Notification
@@ -59,7 +59,7 @@ class NotificationService:
                     title=f"You're invited: {event.name}",
                     body=f"Event on {event.event_date}" + (f" at {event.start_time}" if event.start_time else ""),
                     sent=success,
-                    sent_at=datetime.utcnow() if success else None,
+                    sent_at=datetime.now(timezone.utc) if success else None,
                 )
                 db.add(notification)
         
@@ -115,11 +115,11 @@ class NotificationService:
                 title=f"Event Updated: {event.name}",
                 body=f"Changes: {changes}",
                 sent=success,
-                sent_at=datetime.utcnow() if success else None,
+                sent_at=datetime.now(timezone.utc) if success else None,
             )
             db.add(notification)
         
-        event.updated_at = datetime.utcnow()
+        event.updated_at = datetime.now(timezone.utc)
         db.add(event)
         db.commit()
         
@@ -164,7 +164,7 @@ class NotificationService:
                     title=f"Reminder: {event.name}",
                     body=f"Starts in {hours_until}h",
                     sent=True,
-                    sent_at=datetime.utcnow(),
+                    sent_at=datetime.now(timezone.utc),
                 )
                 db.add(notification)
         db.commit()
@@ -203,7 +203,7 @@ class NotificationService:
             title=f"{participant_user.full_name} {status}",
             body=f"For event: {event.name}",
             sent=success,
-            sent_at=datetime.utcnow() if success else None,
+            sent_at=datetime.now(timezone.utc) if success else None,
         )
         db.add(notification)
         db.commit()

@@ -30,7 +30,12 @@ const ReadOnlyAthleteTable = ({ athletes, teamsById, isLoading, isError, athlete
   }, [athletes, query]);
 
   if (isLoading && !athletes.length) {
-    return <Spinner className="py-8" />;
+    return (
+      <div className="flex items-center justify-center gap-2 py-8">
+        <Spinner className="py-0" />
+        <span className="text-sm text-muted">Loading</span>
+      </div>
+    );
   }
 
   if (isError) {

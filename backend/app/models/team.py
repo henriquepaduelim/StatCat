@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, List
 
 from sqlmodel import Field, Relationship, SQLModel
@@ -21,11 +21,11 @@ class Team(SQLModel, table=True):
     description: str | None = None
     coach_name: str | None = None
     created_by_id: int | None = Field(default=None, foreign_key="user.id", index=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         nullable=False,
-        sa_column_kwargs={"onupdate": datetime.utcnow},
+        sa_column_kwargs={"onupdate": datetime.now(timezone.utc)},
     )
 
     coaches: List["User"] = Relationship(

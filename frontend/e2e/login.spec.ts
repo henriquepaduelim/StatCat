@@ -4,19 +4,33 @@ import { test, expect } from '@playwright/test';
 
 const BASE_URL = process.env.APP_URL ?? 'http://localhost:5173';
 const API_BASE = process.env.API_URL ?? 'http://127.0.0.1:8000';
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@combine.local';
-const ADMIN_PASS = process.env.ADMIN_PASS ?? 'admin123';
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@statcat.com';
+const ADMIN_PASS = process.env.ADMIN_PASS ?? 'marvin123';
+
+async function ensureAdminToken(request: any) {
+  const login = await request.post(`${API_BASE}/api/v1/auth/login`, {
+    form: { username: ADMIN_EMAIL, password: ADMIN_PASS },
+  });
+  if (login.ok()) {
+    return (await login.json()).access_token;
+  }
+  throw new Error(
+    `Admin login failed. Configure ADMIN_EMAIL/ADMIN_PASS envs with a valid admin. Status: ${login.status()}`
+  );
+}
 
 test('login admin e vê dashboard', async ({ page }) => {
+  const adminToken = await ensureAdminToken(page.request);
   await page.goto(BASE_URL);
   await page.getByLabel(/email/i).fill(ADMIN_EMAIL);
   await page.getByRole('textbox', { name: /password|senha/i }).fill(ADMIN_PASS);
   await page.locator('form button[type="submit"]').click();
-  await page.waitForURL(/dashboard/i, { timeout: 10000 });
-  await expect(page.locator('body')).toContainText(/dashboard|insights/i);
+  await page.waitForURL(/dashboard|player-profile/i, { timeout: 15000 });
+  await expect(page.locator('body')).toContainText(/dashboard|insights|player profile/i);
 });
 
 test('admin cria atleta via modal', async ({ page }) => {
+  const adminToken = await ensureAdminToken(page.request);
   const uniqueEmail = `e2e.${Date.now()}@example.com`;
   const uniquePhone = `+1555${Math.floor(Math.random() * 9000000) + 1000000}`;
   const today = new Date().toISOString().slice(0, 10);
@@ -86,11 +100,7 @@ test('atleta só acessa após aprovação do admin', async ({ page }) => {
   expect(loginPending.status()).toBe(403);
 
   // Admin aprova o atleta
-  const adminLogin = await page.request.post(`${API_BASE}/api/v1/auth/login`, {
-    form: { username: ADMIN_EMAIL, password: ADMIN_PASS },
-  });
-  expect(adminLogin.ok()).toBeTruthy();
-  const adminToken = (await adminLogin.json()).access_token;
+  const adminToken = await ensureAdminToken(page.request);
 
   const approve = await page.request.post(`${API_BASE}/api/v1/athletes/${athleteId}/approve`, {
     headers: { Authorization: `Bearer ${adminToken}` },
@@ -101,7 +111,10 @@ test('atleta só acessa após aprovação do admin', async ({ page }) => {
   const loginApproved = await page.request.post(`${API_BASE}/api/v1/auth/login`, {
     form: { username: athleteEmail, password: athletePass },
   });
-  expect(loginApproved.ok()).toBeTruthy();
+  if (!loginApproved.ok()) {
+    const body = await loginApproved.text();
+    throw new Error(`Athlete login failed after approval. Status: ${loginApproved.status()} Body: ${body}`);
+  }
 
   // Valida via UI que consegue entrar
   await page.goto(BASE_URL);

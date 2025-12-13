@@ -64,6 +64,7 @@ const renderProtectedRoute = (requiredPermission?: keyof Permissions, fallbackPa
           }
         />
         <Route path="/login" element={<div>Login Page</div>} />
+        <Route path="/pending-approval" element={<div>Pending Page</div>} />
         <Route path="/player-profile" element={<div>Player Profile Page</div>} />
       </Routes>
     </MemoryRouter>,
@@ -109,7 +110,7 @@ describe("ProtectedRoute", () => {
     authState.user = { role: "athlete", athlete_status: "PENDING" };
 
     renderProtectedRoute("canViewDashboard");
-    expect(screen.getByText(/Login Page/)).toBeInTheDocument();
+    expect(screen.getByText(/Pending Page/)).toBeInTheDocument();
   });
 
   it("redirects non-athletes without permission to fallback path", () => {

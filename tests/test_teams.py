@@ -46,8 +46,9 @@ def test_list_teams(client: TestClient, session: Session, test_user: User):
     )
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
-    assert len(data) >= 2
+    assert isinstance(data, dict)
+    assert data["total"] >= 2
+    assert len(data["items"]) >= 2
 
 
 def test_list_teams_with_pagination(client: TestClient, session: Session, test_user: User):
@@ -70,8 +71,9 @@ def test_list_teams_with_pagination(client: TestClient, session: Session, test_u
     )
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
-    assert len(data) <= 3
+    assert isinstance(data, dict)
+    assert data["total"] >= 3
+    assert len(data["items"]) <= 3
 
 
 def test_get_team(client: TestClient, session: Session, test_user: User):
@@ -109,4 +111,4 @@ def test_filter_teams_by_age_category(client: TestClient, session: Session, test
     )
     assert response.status_code == 200
     data = response.json()
-    assert all(team["age_category"] == "U15" for team in data)
+    assert all(team["age_category"] == "U15" for team in data["items"])

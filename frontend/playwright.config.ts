@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { defineConfig } from '@playwright/test';
 
 const baseURL = process.env.APP_URL || 'http://localhost:5173';

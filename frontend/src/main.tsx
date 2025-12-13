@@ -32,9 +32,3 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     </QueryClientProvider>
   </React.StrictMode>
 );
-
-if (document.readyState === "complete") {
-  // no-op
-} else {
-  window.addEventListener("load", () => {}, { once: true });
-}

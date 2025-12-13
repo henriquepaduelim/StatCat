@@ -121,12 +121,55 @@ def fake_mailbox(monkeypatch: pytest.MonkeyPatch):
     """
     sent: dict[str, list[dict[str, object]]] = defaultdict(list)
 
-    async def _record_email(self, to_email: str, subject: str, body: str) -> bool:  # noqa: ANN001
-        sent["emails"].append({"to": to_email, "subject": subject, "body": body})
+    def _append_email(to_email: str, subject: str, body: str = "", html: str | None = None) -> bool:
+        sent["emails"].append({"to": to_email, "subject": subject, "body": body, "html": html})
         return True
 
+    async def _record_email(self, to_email: str, subject: str, body: str) -> bool:  # noqa: ANN001
+        return _append_email(to_email, subject, body)
+
+    async def _record_email_four(self, to_email: str, subject: str, body: str, html_body: str | None = None) -> bool:  # noqa: ANN001
+        return _append_email(to_email, subject, body, html_body)
+
+    async def _mock_registration_pending(self, to_email: str, **kwargs):  # noqa: ANN001
+        return _append_email(to_email, "We received your registration")
+
+    async def _mock_account_approved(self, to_email: str, to_name: str | None = None, **kwargs):  # noqa: ANN001
+        return _append_email(to_email, "Your account is approved")
+
+    async def _mock_welcome(self, to_email: str, to_name: str | None = None, **kwargs):  # noqa: ANN001
+        return _append_email(to_email, "Welcome to StatCat")
+
+    async def _mock_event_invite(self, to_email: str, **kwargs):  # noqa: ANN001
+        return _append_email(to_email, "You're invited")
+
+    async def _mock_event_update(self, to_email: str, **kwargs):  # noqa: ANN001
+        return _append_email(to_email, "Event updated")
+
+    async def _mock_event_reminder(self, to_email: str, **kwargs):  # noqa: ANN001
+        return _append_email(to_email, "Reminder")
+
+    async def _mock_confirmation(self, to_email: str, **kwargs):  # noqa: ANN001
+        return _append_email(to_email, "Confirmed")
+
+    async def _mock_confirmation_receipt(self, to_email: str, status: str | None = None, **kwargs):  # noqa: ANN001
+        subject = f"{status or 'confirmed'}"
+        return _append_email(to_email, subject)
+
+    async def _mock_report_ready(self, to_email: str, **kwargs):  # noqa: ANN001
+        return _append_email(to_email, "Report card is ready")
+
     # Patch low-level sender and mark configured
-    monkeypatch.setattr(EmailService, "_send_email", _record_email)
+    monkeypatch.setattr(EmailService, "_send_email", _record_email_four)
+    monkeypatch.setattr(EmailService, "send_registration_pending", _mock_registration_pending, raising=False)
+    monkeypatch.setattr(EmailService, "send_account_approved", _mock_account_approved, raising=False)
+    monkeypatch.setattr(EmailService, "send_welcome_email", _mock_welcome, raising=False)
+    monkeypatch.setattr(EmailService, "send_event_invitation", _mock_event_invite, raising=False)
+    monkeypatch.setattr(EmailService, "send_event_update", _mock_event_update, raising=False)
+    monkeypatch.setattr(EmailService, "send_event_reminder", _mock_event_reminder, raising=False)
+    monkeypatch.setattr(EmailService, "send_confirmation_received", _mock_confirmation, raising=False)
+    monkeypatch.setattr(EmailService, "send_confirmation_receipt", _mock_confirmation_receipt, raising=False)
+    monkeypatch.setattr(EmailService, "send_report_ready", _mock_report_ready, raising=False)
     for instance in (services_email_service, getattr(auth_module, "email_service", None)):
         if instance:
             instance.is_configured = True

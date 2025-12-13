@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 import io
@@ -57,7 +57,7 @@ def _store_media(team_id: int, file: UploadFile) -> str:
         )
     destination_dir = team_posts_root / str(team_id)
     destination_dir.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
     destination = destination_dir / f"{timestamp}_{_safe_filename(file.filename)}"
     destination.write_bytes(data)
     relative_path = destination.relative_to(media_root)
@@ -204,7 +204,7 @@ def export_team_posts(
     posts = session.exec(statement).scalars().all()
 
     buffer = io.BytesIO()
-    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
         if include_posts:
             payload = [

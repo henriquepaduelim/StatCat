@@ -390,6 +390,29 @@ class EmailService:
         )
         return await self._send_email(to_email, subject, text_body, html_body)
 
+    async def send_welcome_email(self, to_email: str, to_name: Optional[str] = None) -> bool:
+        """Lightweight welcome email sent on first login."""
+        if not self.is_configured: 
+            return False
+        subject = f"Welcome to {self.from_name}"
+        login_url = f"{self.frontend_url}/login"
+        text_body = (
+            f"Hello {to_name or 'there'},\n\n"
+            f"Welcome to {self.from_name}! Your account is ready to use. "
+            f"Sign in to explore your dashboard, teams, and reports.\n\n"
+            f"Best regards,\nThe {self.from_name} Team"
+        )
+        content_html = (
+            f"<p>Welcome to {self.from_name}! Your account is ready to use. "
+            f"Sign in to explore your dashboard, teams, and reports.</p>"
+        )
+        html_body = self._generate_html_body(
+            f"Hello {to_name or 'there'},",
+            content_html,
+            [{"text": "Open StatCat", "url": login_url}]
+        )
+        return await self._send_email(to_email, subject, text_body, html_body)
+
     async def send_password_change_confirmation(self, to_email: str, to_name: Optional[str] = None) -> bool:
         if not self.is_configured: return False
         subject = f"Your {self.from_name} Password Was Changed"

@@ -24,10 +24,15 @@ def _get_ciphers() -> list[Fernet]:
     """Return ciphers for current and previous keys to support rotation."""
 
     keys: list[str] = []
-    if settings.ENCRYPTION_KEY_CURRENT:
-        keys.append(settings.ENCRYPTION_KEY_CURRENT)
+    current = settings.ENCRYPTION_KEY_CURRENT
+    if current:
+        keys.append(current)
     else:
-        keys.append(settings.SECRET_KEY)  # fallback to legacy behavior
+        # In non-prod environments, allow fallback to SECRET_KEY for local dev/tests.
+        is_prod_env = settings.ENVIRONMENT.lower() not in {"dev", "development", "local"}
+        if is_prod_env:
+            raise ValueError("ENCRYPTION_KEY_CURRENT is required in production.")
+        keys.append(settings.SECRET_KEY)
     if settings.ENCRYPTION_KEY_PREVIOUS:
         keys.append(settings.ENCRYPTION_KEY_PREVIOUS)
 

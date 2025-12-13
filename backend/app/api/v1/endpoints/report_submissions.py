@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -15,7 +15,7 @@ from app.models.report_submission import (
     ReportSubmissionStatus,
     ReportSubmissionType,
 )
-from app.models.team import Team
+from app.models.team import CoachTeamLink, Team
 from app.models.user import User, UserRole
 from app.schemas.report_submission import (
     ReportCardCreate,
@@ -31,6 +31,28 @@ router = APIRouter()
 CREATION_ROLES = {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH}
 APPROVAL_ROLES = {UserRole.ADMIN}
 VIEW_APPROVED_ROLES = {UserRole.ADMIN, UserRole.STAFF}
+
+
+def _normalize_pagination(page: int, size: int, max_size: int = 200) -> tuple[int, int]:
+    """Clamp pagination parameters to sane bounds."""
+    page = page if page > 0 else 1
+    size = size if size > 0 else 50
+    size = min(size, max_size)
+    return page, size
+
+
+def _coach_team_ids(session: Session, coach_id: int) -> set[int]:
+    rows = session.exec(select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == coach_id)).scalars().all()
+    return {int(team_id) for team_id in rows if team_id is not None}
+
+
+def _assert_coach_can_access(session: Session, coach: User, team_id: int | None, athlete: Athlete | None) -> None:
+    allowed_team_ids = _coach_team_ids(session, coach.id)
+    if team_id and team_id in allowed_team_ids:
+        return
+    if athlete and athlete.team_id and athlete.team_id in allowed_team_ids:
+        return
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
 
 
 def _clean_text(value: str | None) -> str | None:
@@ -118,10 +140,13 @@ def _to_submission_item(
 def list_pending_submissions(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
+    page: int = 1,
+    size: int = 50,
 ) -> List[ReportSubmissionItem]:
     if current_user.role not in APPROVAL_ROLES:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
 
+    page, size = _normalize_pagination(page, size)
     statement = (
         select(
             ReportSubmission,
@@ -135,6 +160,8 @@ def list_pending_submissions(
         .join(User, User.id == ReportSubmission.submitted_by_id)
         .where(ReportSubmission.status == ReportSubmissionStatus.PENDING)
         .order_by(ReportSubmission.created_at.desc())
+        .offset((page - 1) * size)
+        .limit(size)
     )
 
     items: list[ReportSubmissionItem] = []
@@ -159,10 +186,13 @@ def list_pending_submissions(
 def list_approved_submissions(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
+    page: int = 1,
+    size: int = 50,
 ) -> List[ReportSubmissionItem]:
     if current_user.role not in VIEW_APPROVED_ROLES:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
 
+    page, size = _normalize_pagination(page, size)
     statement = (
         select(
             ReportSubmission,
@@ -176,6 +206,8 @@ def list_approved_submissions(
         .join(User, User.id == ReportSubmission.submitted_by_id)
         .where(ReportSubmission.status == ReportSubmissionStatus.APPROVED)
         .order_by(ReportSubmission.created_at.desc())
+        .offset((page - 1) * size)
+        .limit(size)
     )
 
     items: list[ReportSubmissionItem] = []
@@ -200,7 +232,10 @@ def list_approved_submissions(
 def list_my_submissions(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
+    page: int = 1,
+    size: int = 50,
 ) -> List[ReportSubmissionItem]:
+    page, size = _normalize_pagination(page, size)
     statement = (
         select(
             ReportSubmission,
@@ -212,6 +247,8 @@ def list_my_submissions(
         .outerjoin(Athlete, Athlete.id == ReportSubmission.athlete_id)
         .where(ReportSubmission.submitted_by_id == current_user.id)
         .order_by(ReportSubmission.created_at.desc())
+        .offset((page - 1) * size)
+        .limit(size)
     )
     items: list[ReportSubmissionItem] = []
     for submission, team_name, athlete_first, athlete_last in session.exec(statement):
@@ -236,6 +273,8 @@ def list_athlete_reports(
     athlete_id: int,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
+    page: int = 1,
+    size: int = 50,
 ) -> List[ReportSubmissionItem]:
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
@@ -243,10 +282,12 @@ def list_athlete_reports(
 
     if current_user.role == UserRole.ATHLETE and current_user.athlete_id != athlete_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
-
+    if current_user.role == UserRole.COACH:
+        _assert_coach_can_access(session, current_user, team_id=athlete.team_id, athlete=athlete)
     if current_user.role not in {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH, UserRole.ATHLETE}:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
 
+    page, size = _normalize_pagination(page, size)
     statement = (
         select(
             ReportSubmission,
@@ -261,6 +302,8 @@ def list_athlete_reports(
             ReportSubmission.status == ReportSubmissionStatus.APPROVED,
         )
         .order_by(ReportSubmission.created_at.desc())
+        .offset((page - 1) * size)
+        .limit(size)
     )
 
     results: list[ReportSubmissionItem] = []
@@ -288,22 +331,25 @@ def request_report_card(
     athlete = session.get(Athlete, payload.athlete_id)
     if not athlete:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+    if current_user.role == UserRole.COACH:
+        _assert_coach_can_access(session, current_user, team_id=payload.team_id, athlete=athlete)
 
-    coach_report = _clean_text(payload.coach_report)
+    coach_report = _clean_text(payload.coach_report) or _clean_text(payload.general_notes)
     if not coach_report:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Coach report is required.",
-        )
+        coach_report = "No coach report provided."
 
     normalized_categories = _normalize_categories(payload.categories)
-    computed_categories, overall_average, total_scores = _compute_report_card(normalized_categories)
-
-    if total_scores == 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Provide at least one score greater than zero.",
-        )
+    if normalized_categories:
+        computed_categories, overall_average, total_scores = _compute_report_card(normalized_categories)
+        if total_scores == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Provide at least one score greater than zero.",
+            )
+    else:
+        computed_categories = []
+        overall_average = None
+        total_scores = 0
 
     report_payload = [category.model_dump() for category in computed_categories]
 
@@ -368,6 +414,8 @@ def update_report_card(
     athlete = session.get(Athlete, payload.athlete_id)
     if not athlete:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+    if current_user.role == UserRole.COACH:
+        _assert_coach_can_access(session, current_user, team_id=payload.team_id, athlete=athlete)
 
     coach_report = _clean_text(payload.coach_report)
     if not coach_report:
@@ -443,7 +491,7 @@ async def approve_submission(
 
     submission.status = ReportSubmissionStatus.APPROVED
     submission.approved_by_id = current_user.id
-    submission.approved_at = datetime.utcnow()
+    submission.approved_at = datetime.now(timezone.utc)
 
     session.add(submission)
     session.commit()
@@ -494,7 +542,7 @@ def reject_submission(
     submission.status = ReportSubmissionStatus.REJECTED
     submission.review_notes = cleaned_notes
     submission.approved_by_id = current_user.id
-    submission.approved_at = datetime.utcnow()
+    submission.approved_at = datetime.now(timezone.utc)
     session.add(submission)
     session.commit()
     session.refresh(submission)
@@ -546,7 +594,7 @@ def reopen_submission(
 
     submission.status = ReportSubmissionStatus.REOPENED
     submission.approved_by_id = current_user.id
-    submission.approved_at = datetime.utcnow()
+    submission.approved_at = datetime.now(timezone.utc)
     session.add(submission)
     session.commit()
     session.refresh(submission)

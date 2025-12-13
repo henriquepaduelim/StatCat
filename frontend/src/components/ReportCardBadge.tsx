@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import type { ReportSubmissionSummary } from "../api/reportSubmissions";
 import type { Athlete } from "../types/athlete";
 import { extractReportMetricScores, type MetricKey } from "../lib/reportCardMetrics";
+import { getMediaUrl } from "../utils/media";
 
 const POSITION_MAP: Record<string, string> = {
   goalkeeper: "GK",
@@ -60,7 +61,7 @@ export const ReportCardBadge = ({ submission, athlete }: ReportCardBadgeProps) =
       : `${apiBase.replace(/\/$/, "")}/${athlete.photo_url.replace(/^\//, "")}`
     : null;
   // Flag now served from frontend public assets
-  const flagUrl = "/media/flags/ca.svg";
+  const flagUrl = getMediaUrl("/media/flags/ca.svg");
 
   const positionLabel = (() => {
     const raw = athlete?.primary_position?.toLowerCase().trim();
@@ -81,7 +82,9 @@ export const ReportCardBadge = ({ submission, athlete }: ReportCardBadgeProps) =
           </div>
           <div className="h-px w-10 bg-white/70" />
           <div className="w-12">
-            <img src={flagUrl} alt="Canada flag" className="block h-auto w-full" />
+            {flagUrl ? (
+              <img src={flagUrl} alt="Canada flag" className="block h-auto w-full" />
+            ) : null}
           </div>
         </div>
         <div className="flex w-[80%] items-center justify-center bg-[#d9d9d9]">

@@ -2,7 +2,6 @@ import { PropsWithChildren } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { usePermissions, type UserRole } from "../hooks/usePermissions";
 import { useAuthStore } from "../stores/useAuthStore";
-import { useAuthBootstrap } from "../hooks/useAuthBootstrap";
 import { useTranslation } from "../i18n/useTranslation";
 import Spinner from "./Spinner";
 
@@ -39,8 +38,6 @@ const ProtectedRoute = ({
   fallbackPath = "/player-profile",
   requireAuth = true
 }: ProtectedRouteProps): JSX.Element => {
-  useAuthBootstrap();
-  
   const { token, user, isInitialized } = useAuthStore();
   const permissions = usePermissions();
   const location = useLocation();
@@ -81,13 +78,8 @@ const ProtectedRoute = ({
       // Special handling for athletes who don't have access
       if (user.role === "athlete") {
         const status = user.athlete_status || "INCOMPLETE";
-        if (status === "INCOMPLETE" || status === "REJECTED") {
-          // These pages are handled by Login.tsx modal now
-          return <Navigate to="/login" replace />;
-        }
-        if (status === "PENDING") {
-          // These pages are handled by Login.tsx modal now
-          return <Navigate to="/login" replace />;
+        if (status !== "APPROVED") {
+          return <Navigate to="/pending-approval" replace />;
         }
       }
       

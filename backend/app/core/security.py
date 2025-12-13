@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from jose import jwt
@@ -12,7 +12,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 def create_access_token(subject: str, expires_minutes: int | None = None) -> str:
     if expires_minutes is None:
         expires_minutes = settings.ACCESS_TOKEN_EXPIRE_MINUTES
-    expire = datetime.utcnow() + timedelta(minutes=expires_minutes)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes)
     to_encode: dict[str, Any] = {"sub": subject, "exp": expire}
     encoded_jwt = jwt.encode(
         to_encode,
@@ -24,7 +24,7 @@ def create_access_token(subject: str, expires_minutes: int | None = None) -> str
 
 def create_signup_token(athlete_id: int, expires_minutes: int = 60 * 24) -> str:
     """Short-lived token used to complete onboarding before approval."""
-    expire = datetime.utcnow() + timedelta(minutes=expires_minutes)
+    expire = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes)
     payload: dict[str, Any] = {
         "sub": f"signup:{athlete_id}",
         "scope": "signup",

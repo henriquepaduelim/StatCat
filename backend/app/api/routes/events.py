@@ -1,5 +1,5 @@
 """API endpoints for events management."""
-from datetime import date as date_type, datetime, time as time_type
+from datetime import date as date_type, datetime, time as time_type, timezone
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import delete, or_
@@ -245,7 +245,7 @@ async def update_event(
     if event_in.coach_id is not None:
         event.coach_id = event_in.coach_id
     
-    event.updated_at = datetime.utcnow()
+    event.updated_at = datetime.now(timezone.utc)
     should_sync_team_links = event_in.team_ids is not None or event_in.team_id is not None
     
     db.add(event)
@@ -334,12 +334,12 @@ async def confirm_event_attendance(
             event_id=event_id,
             user_id=current_user.id,
             status=confirmation.status,
-            responded_at=datetime.utcnow(),
+            responded_at=datetime.now(timezone.utc),
         )
         db.add(participant)
     else:
         participant.status = confirmation.status
-        participant.responded_at = datetime.utcnow()
+        participant.responded_at = datetime.now(timezone.utc)
         db.add(participant)
     
     db.commit()

@@ -22,6 +22,7 @@ from app.models.team import CoachTeamLink, Team
 from app.models.team_post import TeamPost
 from app.models.user import User, UserRole
 from app.services.email_service import email_service
+from app.schemas.pagination import PaginatedResponse
 from app.schemas.report_submission import ReportSubmissionItem
 from app.schemas.team import TeamCoachCreate, TeamCreate, TeamRead
 from app.schemas.user import UserRead
@@ -62,43 +63,53 @@ def _get_team_or_404(session: Session, team_id: int) -> Team:
     return team
 
 
-@router.get("/", response_model=list[TeamRead])
+@router.get("/", response_model=PaginatedResponse[TeamRead])
 def list_teams(
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
     age_category: str | None = None,
     page: int = 1,
     size: int = 50,
-) -> list[TeamRead]:
-    """List teams with optional pagination.
-    
-    Args:
-        page: Page number (1-indexed), default 1
-        size: Items per page, default 50, max 100
-    """
-    # Validate pagination params
-    if page < 1:
-        page = 1
-    if size < 1:
-        size = 50
-    if size > 100:
-        size = 100
-        
-    statement = (
-        select(Team, func.count(Athlete.id).label("athlete_count"))
-        .outerjoin(Athlete, Athlete.team_id == Team.id)
-        .group_by(Team.id)
-        .order_by(Team.name)
-    )
+) -> PaginatedResponse[TeamRead]:
+    """List teams with optional pagination."""
+    page = page if page > 0 else 1
+    size = size if size > 0 else 50
+    size = min(size, 100)
+
+    filters = []
     if age_category:
-        statement = statement.where(Team.age_category == age_category)
-    
-    # Apply pagination
-    offset = (page - 1) * size
-    statement = statement.offset(offset).limit(size)
+        filters.append(Team.age_category == age_category)
+
+    if current_user.role == UserRole.COACH:
+        coach_team_ids = _extract_team_ids(
+            session.exec(select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == current_user.id)).all()
+        )
+        if not coach_team_ids:
+            return PaginatedResponse(total=0, page=page, size=size, items=[])
+        filters.append(Team.id.in_(coach_team_ids))
+
+    base_query = select(Team).where(*filters)
+    total_row = session.exec(select(func.count()).select_from(base_query.subquery())).one()
+    if isinstance(total_row, tuple):
+        total = total_row[0]
+    elif hasattr(total_row, "__getitem__"):
+        try:
+            total = total_row[0]
+        except Exception:
+            total = int(total_row)
+    else:
+        total = int(total_row)
+
+    statement = select(Team, func.count(Athlete.id).label("athlete_count")).outerjoin(
+        Athlete, Athlete.team_id == Team.id
+    )
+    if filters:
+        statement = statement.where(*filters)
+    statement = statement.group_by(Team.id).order_by(Team.name)
+    statement = statement.offset((page - 1) * size).limit(size)
 
     rows = session.exec(statement).all()
-    return [
+    items = [
         TeamRead(
             id=team.id,
             name=team.name,
@@ -112,6 +123,7 @@ def list_teams(
         )
         for team, athlete_count in rows
     ]
+    return PaginatedResponse(total=total, page=page, size=size, items=items)
 
 
 @router.get("/coaches", response_model=list[UserRead])
@@ -137,6 +149,12 @@ def get_team(
 ) -> TeamRead:
     """Retrieve a single team."""
     ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH})
+    if current_user.role == UserRole.COACH:
+        coach_team_ids = _extract_team_ids(
+            session.exec(select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == current_user.id)).all()
+        )
+        if team_id not in coach_team_ids:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
     team = _get_team_or_404(session, team_id)
     roster_counts = _load_roster_counts(session, [team.id])
     return TeamRead(

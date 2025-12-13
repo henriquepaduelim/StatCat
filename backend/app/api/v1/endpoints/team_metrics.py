@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -56,7 +56,7 @@ def create_team_combine_metric(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
     _ensure_team_access(session, current_user, team_id)
 
-    recorded_at = payload.recorded_at or datetime.utcnow()
+    recorded_at = payload.recorded_at or datetime.now(timezone.utc)
 
     metric = TeamCombineMetric(
         team_id=team_id,

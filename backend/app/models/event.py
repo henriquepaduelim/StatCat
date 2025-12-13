@@ -1,7 +1,7 @@
 """Event models for calendar functionality with notifications."""
 
 import enum
-from datetime import date, datetime, time as dt_time
+from datetime import date, datetime, time as dt_time, timezone
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Column, Enum
@@ -41,8 +41,8 @@ class Event(SQLModel, table=True):
     coach_id: int | None = Field(default=None, foreign_key="user.id", index=True)
     
     # Timestamps
-    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
     # Notification flags
     email_sent: bool = Field(default=False)
@@ -85,7 +85,7 @@ class EventParticipant(SQLModel, table=True):
     )
     
     # Timestamps
-    invited_at: datetime = Field(default_factory=datetime.utcnow)
+    invited_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     responded_at: datetime | None = Field(default=None)
     
     # Relationships
@@ -114,7 +114,7 @@ class Notification(SQLModel, table=True):
     error: str | None = Field(default=None)
     
     # Timestamps
-    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
 
 
 class PushSubscription(SQLModel, table=True):
@@ -130,5 +130,5 @@ class PushSubscription(SQLModel, table=True):
     auth: str
     
     # Timestamps
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

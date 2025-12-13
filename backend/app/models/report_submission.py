@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import JSON
 from sqlmodel import Column, Enum, Field, SQLModel
@@ -48,5 +48,5 @@ class ReportSubmission(SQLModel, table=True):
     )
     overall_average: float | None = Field(default=None)
     review_notes: str | None = Field(default=None)
-    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
     approved_at: datetime | None = None

@@ -12,6 +12,22 @@ from app.models.user import User, UserRole, UserAthleteApprovalStatus
 from tests.conftest import get_auth_token
 
 
+def _create_user(session: Session, *, email: str, role: UserRole) -> User:
+    user = User(
+        email=email,
+        hashed_password=get_password_hash("secret123"),
+        full_name="Temp User",
+        role=role,
+        is_active=True,
+    )
+    if role == UserRole.ATHLETE:
+        user.athlete_status = UserAthleteApprovalStatus.APPROVED
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
+
+
 def test_create_athlete(client: TestClient, admin_user: User):
     """Test creating an athlete."""
     token = get_auth_token(client, admin_user.email, "adminpass123")
@@ -109,6 +125,136 @@ def test_list_athletes_with_pagination(client: TestClient, session: Session, tes
     data = response.json()
     assert "items" in data
     assert len(data["items"]) <= 3
+
+
+def test_list_athletes_rbac_coach_restricted(client: TestClient, session: Session):
+    """Coach should only see athletes from linked teams."""
+    # Create team and athlete linked to that team
+    from app.models.team import Team, CoachTeamLink
+
+    team_allowed = Team(name="Allowed", age_category="U15")
+    session.add(team_allowed)
+    session.commit()
+    session.refresh(team_allowed)
+
+    athlete_allowed = Athlete(
+        first_name="Allowed",
+        last_name="Athlete",
+        email="allowed@example.com",
+        gender=AthleteGender.male,
+        birth_date=date(2005, 1, 1),
+        team_id=team_allowed.id,
+    )
+    athlete_blocked = Athlete(
+        first_name="Blocked",
+        last_name="Athlete",
+        email="blocked@example.com",
+        gender=AthleteGender.male,
+        birth_date=date(2005, 2, 1),
+        team_id=None,
+    )
+    session.add(athlete_allowed)
+    session.add(athlete_blocked)
+    session.commit()
+
+    coach_user = _create_user(session, email="coach_rbac@example.com", role=UserRole.COACH)
+    session.add(CoachTeamLink(user_id=coach_user.id, team_id=team_allowed.id))
+    session.commit()
+
+    token = get_auth_token(client, coach_user.email, "secret123")
+    response = client.get(
+        "/api/v1/athletes/",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert all(item["team_id"] == team_allowed.id for item in data["items"])
+
+
+def test_list_athletes_rbac_athlete_self_only(client: TestClient, session: Session):
+    """Athlete should only see their own record."""
+    athlete = Athlete(
+        first_name="Self",
+        last_name="View",
+        email="self@example.com",
+        gender=AthleteGender.male,
+        birth_date=date(2004, 3, 3),
+    )
+    session.add(athlete)
+    session.commit()
+    session.refresh(athlete)
+
+    athlete_user = _create_user(session, email="selfuser@example.com", role=UserRole.ATHLETE)
+    athlete_user.athlete_id = athlete.id
+    session.add(athlete_user)
+    session.commit()
+
+    token = get_auth_token(client, athlete_user.email, "secret123")
+    response = client.get(
+        "/api/v1/athletes/",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data["items"]) == 1
+    assert data["items"][0]["id"] == athlete.id
+
+
+def test_approve_athlete_as_admin(client: TestClient, session: Session, admin_user: User):
+    """Admin should approve a pending athlete."""
+    athlete = Athlete(
+        first_name="Pending",
+        last_name="Athlete",
+        email="pending@example.com",
+        gender=AthleteGender.male,
+        birth_date=date(2003, 1, 1),
+    )
+    session.add(athlete)
+    session.commit()
+    session.refresh(athlete)
+
+    user = _create_user(session, email="pendinguser@example.com", role=UserRole.ATHLETE)
+    user.athlete_id = athlete.id
+    user.athlete_status = UserAthleteApprovalStatus.PENDING
+    session.add(user)
+    session.commit()
+
+    token = get_auth_token(client, admin_user.email, "adminpass123")
+    response = client.post(
+        f"/api/v1/athletes/{athlete.id}/approve",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 200
+    updated_user = session.exec(select(User).where(User.id == user.id)).first()
+    assert updated_user.athlete_status == UserAthleteApprovalStatus.APPROVED
+
+
+def test_approve_athlete_forbidden_for_coach(client: TestClient, session: Session):
+    """Coach should not be able to approve athletes."""
+    coach = _create_user(session, email="coachapprover@example.com", role=UserRole.COACH)
+    athlete = Athlete(
+        first_name="Pending",
+        last_name="Athlete",
+        email="pending2@example.com",
+        gender=AthleteGender.male,
+        birth_date=date(2003, 2, 2),
+    )
+    session.add(athlete)
+    session.commit()
+    session.refresh(athlete)
+
+    user = _create_user(session, email="pendinguser2@example.com", role=UserRole.ATHLETE)
+    user.athlete_id = athlete.id
+    user.athlete_status = UserAthleteApprovalStatus.PENDING
+    session.add(user)
+    session.commit()
+
+    token = get_auth_token(client, coach.email, "secret123")
+    response = client.post(
+        f"/api/v1/athletes/{athlete.id}/approve",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 403
 
 
 def test_get_athlete(client: TestClient, session: Session, test_user: User):

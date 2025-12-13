@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from random import choice, randint, uniform
 
 from sqlmodel import Session, select
@@ -208,14 +208,14 @@ def seed_database(session: Session) -> None:
             _combine_payload(
                 team_id=athlete.team_id,
                 athlete_id=athlete.id,
-                recorded_at=datetime.utcnow() - timedelta(days=3),
+                recorded_at=datetime.now(timezone.utc) - timedelta(days=3),
             )
         )
         session.add(
             _combine_payload(
                 team_id=athlete.team_id,
                 athlete_id=athlete.id,
-                recorded_at=datetime.utcnow() - timedelta(days=12),
+                recorded_at=datetime.now(timezone.utc) - timedelta(days=12),
             )
         )
     session.commit()

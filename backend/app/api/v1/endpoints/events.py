@@ -1,5 +1,5 @@
 """API endpoints for events management."""
-from datetime import date as date_type, datetime, time as time_type
+from datetime import date as date_type, datetime, time as time_type, timezone
 from typing import Iterable, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -60,6 +60,11 @@ def _collect_invitee_user_ids(
     if coach_id:
         invitees.add(coach_id)
     return invitees
+
+
+def _coach_team_ids(db: Session, coach_id: int) -> set[int]:
+    rows = db.exec(select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == coach_id)).all()
+    return {row[0] if isinstance(row, tuple) else row for row in rows if row is not None}
 
 
 def _ensure_user_participants(db: Session, event: Event, user_ids: Iterable[int]) -> None:
@@ -167,14 +172,34 @@ def list_events(
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     athlete_id: Optional[int] = None,
+    page: int = 1,
+    size: int = 50,
 ) -> List[Event]:
     """List all events, optionally filtered."""
+    if current_user.role == UserRole.COACH:
+        allowed_team_ids = _coach_team_ids(db, current_user.id)
+        if team_id is not None and team_id not in allowed_team_ids:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+        if not allowed_team_ids and team_id is None:
+            return []
     stmt = select(Event)
+    # Pagination constraints
+    if page < 1:
+        page = 1
+    if size < 1:
+        size = 50
+    if size > 200:
+        size = 200
     
     # Filter by team if provided (include multi-team associations)
     if team_id is not None:
         linked_event_ids = select(EventTeamLink.event_id).where(EventTeamLink.team_id == team_id)
         stmt = stmt.where(or_(Event.team_id == team_id, Event.id.in_(linked_event_ids)))
+    elif current_user.role == UserRole.COACH:
+        allowed_team_ids = _coach_team_ids(db, current_user.id)
+        if allowed_team_ids:
+            linked_event_ids = select(EventTeamLink.event_id).where(EventTeamLink.team_id.in_(allowed_team_ids))
+            stmt = stmt.where(or_(Event.team_id.in_(allowed_team_ids), Event.id.in_(linked_event_ids)))
     
     # Filter by date range
     parsed_from = _parse_date_str(date_from)
@@ -188,6 +213,8 @@ def list_events(
         stmt = stmt.join(EventParticipant).where(EventParticipant.athlete_id == athlete_id)
     
     stmt = stmt.order_by(Event.event_date.desc(), Event.start_time.desc())
+    offset = (page - 1) * size
+    stmt = stmt.offset(offset).limit(size)
     
     events = db.exec(stmt).all()
     attach_team_ids(db, events)
@@ -201,6 +228,7 @@ def list_my_events(
     current_user: User = Depends(get_current_active_user),
 ) -> List[Event]:
     """List events where current user is invited or organizer."""
+    coach_team_ids = _coach_team_ids(db, current_user.id) if current_user.role == UserRole.COACH else set()
     # Get events where user is organizer
     stmt_created = select(Event).where(Event.created_by_id == current_user.id)
     created_events = db.exec(stmt_created).all()
@@ -234,6 +262,23 @@ def list_my_events(
         if e.id not in all_events:
             all_events[e.id] = e
     
+    # If coach, restrict to own teams (direct or linked)
+    if current_user.role == UserRole.COACH and coach_team_ids:
+        filtered: dict[int, Event] = {}
+        for event in all_events.values():
+            if event.team_id and event.team_id in coach_team_ids:
+                filtered[event.id] = event
+                continue
+            linked_ids = db.exec(
+                select(EventTeamLink.team_id).where(EventTeamLink.event_id == event.id)
+            ).all()
+            linked_set = {row[0] if isinstance(row, tuple) else row for row in linked_ids if row is not None}
+            if linked_set.intersection(coach_team_ids):
+                filtered[event.id] = event
+        all_events = filtered
+    elif current_user.role == UserRole.COACH and not coach_team_ids:
+        all_events = {}
+
     # Sort by date
     events = sorted(
         all_events.values(),
@@ -255,6 +300,27 @@ def get_event(
     event = db.get(Event, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
+    if current_user.role == UserRole.COACH:
+        allowed_team_ids = _coach_team_ids(db, current_user.id)
+        linked_team_ids = db.exec(
+            select(EventTeamLink.team_id).where(EventTeamLink.event_id == event.id)
+        ).all()
+        linked_set = {row[0] if isinstance(row, tuple) else row for row in linked_team_ids if row is not None}
+        if event.team_id and event.team_id in allowed_team_ids:
+            pass
+        elif linked_set.intersection(allowed_team_ids):
+            pass
+        else:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+    if current_user.role == UserRole.ATHLETE:
+        is_participant = db.exec(
+            select(EventParticipant).where(
+                EventParticipant.event_id == event.id,
+                EventParticipant.athlete_id == current_user.athlete_id,
+            )
+        ).first()
+        if not is_participant and event.team_id and current_user.team_id != event.team_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
     attach_team_ids(db, [event])
     return event
 
@@ -305,12 +371,12 @@ async def handle_rsvp_from_token(
             event_id=event_id,
             user_id=user_id,
             status=new_status,
-            responded_at=datetime.utcnow(),
+            responded_at=datetime.now(timezone.utc),
         )
         db.add(participant)
     else:
         participant.status = new_status
-        participant.responded_at = datetime.utcnow()
+        participant.responded_at = datetime.now(timezone.utc)
         db.add(participant)
     
     db.commit()
@@ -378,7 +444,7 @@ async def update_event(
     if event_in.coach_id is not None:
         event.coach_id = event_in.coach_id
     
-    event.updated_at = datetime.utcnow()
+    event.updated_at = datetime.now(timezone.utc)
 
     should_sync_team_links = event_in.team_ids is not None or event_in.team_id is not None
     resolved_team_ids: list[int] = []
@@ -578,12 +644,12 @@ async def confirm_event_attendance(
             event_id=event_id,
             user_id=current_user.id,
             status=confirmation.status,
-            responded_at=datetime.utcnow(),
+            responded_at=datetime.now(timezone.utc),
         )
         db.add(participant)
     else:
         participant.status = confirmation.status
-        participant.responded_at = datetime.utcnow()
+        participant.responded_at = datetime.now(timezone.utc)
         db.add(participant)
     
     db.commit()

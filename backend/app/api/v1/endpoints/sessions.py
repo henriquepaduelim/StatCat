@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 
 from app.api.deps import ensure_roles, get_current_active_user
 from app.db.session import get_session
@@ -11,6 +11,7 @@ from app.models.session_result import SessionResult
 from app.models.test_definition import TestDefinition
 from app.models.athlete import Athlete
 from app.models.user import User, UserRole
+from app.schemas.pagination import PaginatedResponse
 from app.schemas.assessment_session import (
     AssessmentSessionCreate,
     AssessmentSessionRead,
@@ -56,22 +57,35 @@ def ensure_related_entities(session: Session, results: Sequence[SessionResultCre
             )
 
 
-@router.get("/", response_model=list[AssessmentSessionRead])
+@router.get("/", response_model=PaginatedResponse[AssessmentSessionRead])
 def list_sessions(
     start: date | None = None,
     end: date | None = None,
+    page: int = 1,
+    size: int = 50,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
-) -> list[AssessmentSessionRead]:
+) -> PaginatedResponse[AssessmentSessionRead]:
     _ensure_can_view(current_user)
-    statement = select(AssessmentSession)
+    page = page if page > 0 else 1
+    size = size if size > 0 else 50
+    size = min(size, 200)
 
+    statement = select(AssessmentSession)
     if start:
         statement = statement.where(AssessmentSession.scheduled_at >= start)
     if end:
         statement = statement.where(AssessmentSession.scheduled_at <= end)
 
-    return session.exec(statement).all()
+    total = session.exec(select(func.count()).select_from(statement.subquery())).one()
+
+    statement = (
+        statement.order_by(AssessmentSession.scheduled_at.desc())
+        .offset((page - 1) * size)
+        .limit(size)
+    )
+    items = session.exec(statement).all()
+    return PaginatedResponse(total=total, page=page, size=size, items=items)
 
 
 @router.post(

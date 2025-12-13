@@ -21,6 +21,7 @@ const renderRedirect = () =>
       <Routes>
         <Route path="/" element={<RedirectToDashboardOrPlayerProfile />} />
         <Route path="/login" element={<div>Login Page</div>} />
+        <Route path="/pending-approval" element={<div>Pending Page</div>} />
         <Route path="/dashboard" element={<div>Dashboard Page</div>} />
         <Route path="/player-profile" element={<div>Player Profile Page</div>} />
       </Routes>
@@ -54,7 +55,7 @@ describe("RedirectToDashboardOrPlayerProfile", () => {
   it("keeps pending athletes on login", () => {
     authState.user = { role: "athlete", athlete_status: "PENDING" };
     renderRedirect();
-    expect(screen.getByText(/Login Page/)).toBeInTheDocument();
+    expect(screen.getByText(/Pending Page/)).toBeInTheDocument();
   });
 
   it("sends staff/admin users to dashboard", () => {

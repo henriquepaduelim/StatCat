@@ -93,6 +93,10 @@ class Settings(BaseSettings):
 
         if is_prod_env and is_default_secret:
             raise ValueError("SECRET_KEY must be set to a strong value in production.")
+        if is_prod_env and not self.ENCRYPTION_KEY_CURRENT:
+            raise ValueError("ENCRYPTION_KEY_CURRENT must be set in production and cannot fallback to SECRET_KEY.")
+        if is_prod_env and self.ENCRYPTION_KEY_CURRENT and self.ENCRYPTION_KEY_CURRENT == self.SECRET_KEY:
+            raise ValueError("ENCRYPTION_KEY_CURRENT must differ from SECRET_KEY in production.")
         if is_prod_env and self.AUTO_SEED_DATABASE:
             raise ValueError("AUTO_SEED_DATABASE must be disabled in production.")
         return self

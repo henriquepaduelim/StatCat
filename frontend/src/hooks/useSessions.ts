@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import api from "../api/client";
 import { useAuthStore } from "../stores/useAuthStore";
+import type { PaginatedResponse } from "../types/pagination";
 
 export interface SessionRecord {
   id: number;
@@ -19,7 +20,9 @@ export interface SessionFilters {
 
 const defaultFilters: SessionFilters = {};
 
-const fetchSessions = async (filters: SessionFilters = defaultFilters): Promise<SessionRecord[]> => {
+const fetchSessions = async (
+  filters: SessionFilters = defaultFilters,
+): Promise<SessionRecord[]> => {
   const params = new URLSearchParams();
   if (filters.start) {
     params.append("start", filters.start);
@@ -28,8 +31,8 @@ const fetchSessions = async (filters: SessionFilters = defaultFilters): Promise<
     params.append("end", filters.end);
   }
 
-  const { data } = await api.get<SessionRecord[]>("/sessions/", { params });
-  return data;
+  const { data } = await api.get<PaginatedResponse<SessionRecord>>("/sessions/", { params });
+  return data.items ?? [];
 };
 
 export const useSessions = (filters: SessionFilters = defaultFilters) => {

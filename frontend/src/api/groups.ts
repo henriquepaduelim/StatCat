@@ -1,4 +1,5 @@
 import api from "./client";
+import type { PaginatedResponse } from "../types/pagination";
 
 export interface Group {
   id: number;
@@ -11,6 +12,6 @@ export interface Group {
 }
 
 export const listGroups = async () => {
-  const { data } = await api.get<Group[]>("/groups/");
-  return data;
+  const { data } = await api.get<PaginatedResponse<Group>>("/groups/");
+  return data.items ?? [];
 };

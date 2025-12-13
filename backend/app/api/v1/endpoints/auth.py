@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import anyio
 from pathlib import Path
 
@@ -46,7 +46,7 @@ async def _handle_first_login(session: Session, user: User) -> None:
         # Do not treat as first login for pending athletes
         return
     first_login = user.last_login_at is None
-    user.last_login_at = datetime.utcnow()
+    user.last_login_at = datetime.now(timezone.utc)
     session.add(user)
     session.commit()
     session.refresh(user)

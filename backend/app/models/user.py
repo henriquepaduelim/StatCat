@@ -1,5 +1,5 @@
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import Column, Enum
@@ -40,7 +40,7 @@ class User(SQLModel, table=True):
     is_active: bool = Field(default=True)
     must_change_password: bool = Field(default=False)
     last_login_at: Optional[datetime] = Field(default=None, index=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
     teams: List["Team"] = Relationship(
         back_populates="coaches",
         link_model=CoachTeamLink,
