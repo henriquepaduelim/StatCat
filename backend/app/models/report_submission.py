@@ -54,4 +54,4 @@ class ReportSubmission(SQLModel, table=True):
     review_notes: str | None = Field(default=None)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
     approved_at: datetime | None = None
-    athlete: "Athlete | None" = Relationship(back_populates="report_submissions")
+    athlete: Optional["Athlete"] = Relationship(back_populates="report_submissions")
