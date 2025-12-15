@@ -40,7 +40,7 @@ const ReportCardRadar = ({ submission, className = "", heightClass }: ReportCard
     fill: "var(--radar-fill, #c9184a)",
     dot: "var(--radar-dot, #7af7b4)",
     tooltipBg: "var(--radar-tooltip-bg, #111118)",
-    tooltipBorder: "var(--radar-tooltip-border, #1f1f27)",
+    tooltipBorder: "var(--radar-tooltip-border, #111118)",
     tooltipText: "var(--radar-tooltip-text, #e5e7eb)",
     title: "var(--radar-title, #ffffff)",
     subtitle: "var(--radar-subtitle, #e5e7eb)",

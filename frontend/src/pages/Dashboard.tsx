@@ -26,7 +26,7 @@ const DashboardReportModals = lazy(
 );
 
 const SectionFallback = ({ label }: { label: string }) => (
-  <div className="rounded-lg border border-gray-200 bg-white px-4 py-6 text-sm text-gray-500">
+  <div className="card-base px-4 py-6 text-sm text-text-secondary">
     {label}
   </div>
 );

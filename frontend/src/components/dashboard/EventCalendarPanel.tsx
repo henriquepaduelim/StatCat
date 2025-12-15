@@ -60,7 +60,7 @@ const EventCalendarPanel = ({
 }: EventCalendarPanelProps) => {
   return (
     <div className="w-full space-y-4 xl:w-1/2">
-      <div className="rounded-xl border border-action-primary/25 bg-container-gradient p-6 shadow-xl backdrop-blur">
+      <div className="card-base p-6 border-2 border-border-muted shadow-none">
         <div className="flex items-center justify-between gap-3">
           <button
             type="button"
@@ -144,7 +144,7 @@ const EventCalendarPanel = ({
             ) : null}
           </div>
           {upcomingEvents.length ? (
-            <details className="mt-3 rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] shadow-sm dark:border-[rgb(var(--color-border))]/70">
+            <details className="mt-3 card-base shadow-sm">
               <summary className="cursor-pointer px-3 py-2 text-sm font-semibold text-container-foreground">
                 Upcoming Events ({upcomingEvents.length})
               </summary>
@@ -152,7 +152,7 @@ const EventCalendarPanel = ({
                 <ul className="space-y-3 text-sm">
                   {upcomingEvents.map((event) => (
                     <li key={event.id}>
-                      <div className="rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] px-3 py-2 shadow-sm dark:border-[rgb(var(--color-border))]/70">
+                      <div className="card-base px-3 py-2 shadow-sm">
                         <div className="flex items-start gap-3">
                           <button
                             type="button"

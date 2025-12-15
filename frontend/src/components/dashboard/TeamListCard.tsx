@@ -124,7 +124,7 @@ const TeamListCard = ({
   );
 
   return (
-    <div className="flex h-full w-full flex-col rounded-xl border border-black/10 bg-container-gradient p-4 sm:p-3 shadow-xl backdrop-blur dark:border-[rgb(var(--color-border))]/70">
+    <div className="card-base flex h-full w-full flex-col p-4 sm:p-3 border-2 border-border-muted shadow-none">
       <div className="flex h-full flex-col gap-4">
         <div className="flex flex-shrink-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="w-full sm:max-w-sm">
@@ -180,8 +180,8 @@ const TeamListCard = ({
             ) : showNoMatches ? (
               <p className="text-sm text-muted">No teams match your search.</p>
             ) : (
-              <div className="flex h-full flex-col overflow-hidden rounded-lg border border-black/10 bg-container-gradient dark:border-[rgb(var(--color-border))]/50">
-                <div className="hidden grid-cols-[minmax(60px,0.6fr)_minmax(140px,0.9fr)_90px_90px_minmax(100px,0.8fr)] gap-3 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted dark:border-[var(--border-table-light)] sm:grid">
+              <div className="flex h-full flex-col overflow-hidden rounded-lg border border-border-muted bg-container-gradient">
+                <div className="hidden grid-cols-[minmax(60px,0.6fr)_minmax(140px,0.9fr)_90px_90px_minmax(100px,0.8fr)] gap-3 border-b border-border-muted bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted sm:grid">
                   <span className="text-left">Team Name</span>
                   <span className="text-center">Coach</span>
                   <span className="text-center">Age Group</span>
@@ -197,7 +197,7 @@ const TeamListCard = ({
                     return (
                       <div
                         key={team.id}
-                        className="team-row list-row grid grid-cols-1 items-center gap-2 border-b border-black/10 px-3 py-2 text-sm last:border-b-0 sm:grid-cols-[minmax(60px,0.6fr)_minmax(140px,0.9fr)_90px_90px_minmax(100px,0.8fr)] sm:px-4 dark:border-[var(--border-table-light)]"
+                        className="team-row list-row grid grid-cols-1 items-center gap-2 border-b border-border-muted px-3 py-2 text-sm last:border-b-0 sm:grid-cols-[minmax(60px,0.6fr)_minmax(140px,0.9fr)_90px_90px_minmax(100px,0.8fr)] sm:px-4"
                       >
                         <div className="flex items-center gap-3">
                           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-action-primary/10 text-action-primary">
@@ -242,7 +242,7 @@ const TeamListCard = ({
                     );
                   })}
                 </div>
-                <div className="border-t border-black/10 p-2 dark:border-[rgb(var(--color-border))]/50">
+                <div className="border-t border-border-muted p-2">
                   <button
                     onClick={() => athletesQuery.fetchNextPage()}
                     disabled={

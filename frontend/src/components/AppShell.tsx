@@ -1,11 +1,12 @@
 import { PropsWithChildren, useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faRightFromBracket, faGear } from "@fortawesome/free-solid-svg-icons";
+import { faRightFromBracket, faGear, faMoon, faSun } from "@fortawesome/free-solid-svg-icons";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import SideNav from "./SideNav";
 import { useAuthStore } from "../stores/useAuthStore";
 import branding from "../theme/branding.generated";
+import { useTheme } from "../theme/ThemeProvider";
 
 import BackToTopButton from "./BackToTopButton";
 
@@ -13,6 +14,7 @@ const AppShell = ({ children }: PropsWithChildren) => {
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
+  const { themeId, toggleTheme } = useTheme();
   const [hasModalTarget, setHasModalTarget] = useState(false);
 
   useEffect(() => {
@@ -51,7 +53,7 @@ const AppShell = ({ children }: PropsWithChildren) => {
   }`;
 
   return (
-    <div className="relative min-h-screen bg-page text-page-foreground">
+    <div className="relative min-h-screen bg-page text-page-foreground transition-colors">
       {greeting}
       <div className="hidden md:flex fixed left-0 top-0 z-10 w-72 flex-col items-center pt-0 pointer-events-none">
         <a
@@ -79,7 +81,7 @@ const AppShell = ({ children }: PropsWithChildren) => {
             <button
               type="button"
               onClick={() => navigate("/settings")}
-              className="rounded-full bg-action-primary p-2 text-action-primary-foreground shadow-lg"
+              className="rounded-full bg-primary p-2 text-text-on-primary shadow-lg"
               aria-label="Open settings"
             >
               <FontAwesomeIcon icon={faGear} className="text-base" />
@@ -87,7 +89,7 @@ const AppShell = ({ children }: PropsWithChildren) => {
             <button
               type="button"
               onClick={() => useAuthStore.getState().clear()}
-              className="rounded-full bg-action-primary p-2 text-action-primary-foreground shadow-lg"
+              className="rounded-full bg-primary p-2 text-text-on-primary shadow-lg"
               aria-label="Log out"
             >
               <FontAwesomeIcon icon={faRightFromBracket} className="text-base" />
@@ -98,7 +100,7 @@ const AppShell = ({ children }: PropsWithChildren) => {
           {children}
         </main>
       </div>
-      {!hasModalTarget && <BackToTopButton className="bottom-16 md:bottom-6" />}
+      {!hasModalTarget && <BackToTopButton className="bottom-24 md:bottom-6" />}
       {hasModalTarget && (
         <BackToTopButton
           targetSelector=".modal-overlay .modal-surface"

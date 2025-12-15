@@ -1,0 +1,59 @@
+/* Nota: as cores agora vêm do ThemeProvider/tokens. Deixamos apenas fallbacks mínimos e tokens estáticos. */
+:root {
+  /* Fallback neutro (substituído pelo ThemeProvider) */
+  --color-page: 255 255 255;
+  --color-page-background: 255 255 255;
+  --color-page-foreground: 17 24 39;
+  --color-container-background: 255 255 255;
+  --color-container-foreground: 17 24 39;
+  --color-sidebar-background: 255 255 255;
+  --color-sidebar-foreground: 17 24 39;
+  --color-header-background: 255 255 255;
+  --color-header-foreground: 17 24 39;
+  --color-border: 0 0 0;
+  --color-border-muted: 0 0 0;
+  --color-action-primary-background: 245 166 35;
+  --color-action-primary-foreground: 17 24 39;
+  --color-text-primary: 17 24 39;
+  --color-text-secondary: 75 85 99;
+  --color-text-on-primary: 17 24 39;
+
+  /* Report card badge specifics */
+  --badge-surface: 31 32 43;
+  --badge-photo: 217 217 217;
+  --badge-leadership: 48 227 166;
+  --badge-leadership-text: 17 24 39;
+  --badge-text: 255 255 255;
+
+  /* Gradiente default (desativado) */
+  --gradient-container: none;
+}
+
+:root[data-theme='dark'] {
+  /* Fallback neutro (substituído pelo ThemeProvider) */
+  --color-page: 9 14 24;
+  --color-page-background: 9 14 24;
+  --color-page-foreground: 248 250 252;
+  --color-container-background: 13 20 33;
+  --color-container-foreground: 248 250 252;
+  --color-sidebar-background: 13 20 33;
+  --color-sidebar-foreground: 248 250 252;
+  --color-header-background: 13 20 33;
+  --color-header-foreground: 248 250 252;
+  --color-border: 237, 242, 244;
+  --color-border-muted: 237, 242, 244;
+  --color-action-primary-background: 245 166 35;
+  --color-action-primary-foreground: 17 24 39;
+  --color-text-primary: 248 250 252;
+  --color-text-secondary: 203 213 225;
+  --color-text-on-primary: 11 15 26;
+
+  /* Badge (mantido) */
+  --badge-surface: 31 32 43;
+  --badge-photo: 217 217 217;
+  --badge-leadership: 48 227 166;
+  --badge-leadership-text: 17 24 39;
+  --badge-text: 255 255 255;
+
+  --gradient-container: none;
+}

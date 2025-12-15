@@ -15,8 +15,8 @@ const LOGOUT_ICON = faRightFromBracket;
 const SETTINGS_ICON = faGear;
 
 const linkClasses = ({ isActive }: { isActive: boolean }) =>
-  `interactive-hover block w-full px-3 py-2 text-left text-sm font-medium shadow-lg transition-colors duration-100 ease-in-out ${
-    isActive ? "" : "hover:bg-action-primary/85"
+  `block w-full px-3 py-2 text-left text-sm font-medium shadow-lg transition-colors duration-100 ease-in-out ${
+    isActive ? "bg-action-primary" : "bg-sidebar-button hover:bg-sidebar-button-hover"
   }`;
 
 type AllowedNavItem = NavItem & {
@@ -115,8 +115,8 @@ const SideNav = () => {
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `flex-1 flex flex-col items-center justify-center gap-1.5 relative transition-all duration-200 ${
-                  isActive ? "bg-white/5" : "hover:bg-white/5"
+                `flex-1 flex flex-col items-center justify-center gap-1.5 relative transition-all duration-200 text-[var(--nav-mobile-label)] ${
+                  isActive ? "bg-[var(--nav-mobile-bg)]" : "hover:bg-[var(--nav-mobile-bg)]"
                 }`
               }
             >

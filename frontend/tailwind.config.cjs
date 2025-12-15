@@ -12,6 +12,25 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        primary: withOpacityValue("--color-primary"),
+        secondary: withOpacityValue("--color-secondary"),
+        accent: withOpacityValue("--color-accent"),
+        success: withOpacityValue("--color-success"),
+        error: withOpacityValue("--color-error"),
+        surface: {
+          primary: withOpacityValue("--color-surface-primary"),
+          secondary: withOpacityValue("--color-surface-secondary"),
+        },
+        page: withOpacityValue("--color-page"),
+        text: {
+          primary: withOpacityValue("--color-text-primary"),
+          secondary: withOpacityValue("--color-text-secondary"),
+          onprimary: withOpacityValue("--color-text-on-primary"),
+        },
+        border: {
+          primary: withOpacityValue("--color-border-primary"),
+          muted: withOpacityValue("--color-border-muted"),
+        },
         page: colorToken("page-background"),
         "page-foreground": colorToken("page-foreground"),
         container: colorToken("container-background"),
@@ -20,13 +39,15 @@ module.exports = {
         "header-foreground": colorToken("header-foreground"),
         sidebar: colorToken("sidebar-background"),
         "sidebar-foreground": colorToken("sidebar-foreground"),
+        "sidebar-button": colorToken("sidebar-button-background"),
+        "sidebar-button-hover": colorToken("sidebar-button-hover-background"),
         footer: colorToken("footer-background"),
         "footer-foreground": colorToken("footer-foreground"),
         "action-primary": colorToken("action-primary-background"),
         "action-primary-foreground": colorToken("action-primary-foreground"),
-        accent: colorToken("accent"),
-        border: colorToken("border"),
-        muted: colorToken("muted"),
+      },
+      backgroundImage: {
+        "gradient-container": "var(--gradient-container)",
       },
       keyframes: {
         'slide-up': {

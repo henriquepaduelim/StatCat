@@ -21,7 +21,7 @@ const bandBgClasses: Record<ScoreBand, string> = {
 };
 
 const CATEGORY_ICONS: Record<string, string | null> = {
-  mindset: getMediaUrl("/media/Asset 1BRAIN4 1.png"),
+  mindset: getMediaUrl("frontend/public/media/Asset 1BRAIN4 1.png"),
   physicality: getMediaUrl("/media/Asset 1person-2 1.png"),
   "technical foundation": getMediaUrl("/media/Asset 1blocks1 1.png"),
 };
@@ -132,7 +132,7 @@ const ReportCardsPage = () => {
       {currentAthlete && reportCards.length > 0 && (
         <div className="mt-2 space-y-4">
           {selectedSubmission ? (
-            <article className="rounded-lg border border-black/10 bg-container/80 p-4 shadow-sm">
+            <article className="card-base bg-container p-4 border-2 border-black shadow-none">
               <div className="grid gap-4 lg:grid-cols-[17.25rem,1fr] lg:items-stretch">
                 <div className="flex flex-col items-center lg:items-start">
                   <ReportCardBadge submission={selectedSubmission} athlete={athleteForBadge} />
@@ -155,7 +155,7 @@ const ReportCardsPage = () => {
                 <span>PHY = Physicality</span>
               </div>
 
-              <div className="mt-4 flex h-full flex-col rounded-lg bg-container px-4 py-3 shadow-sm border border-black/10">
+              <div className="mt-4 flex h-full flex-col rounded-lg card-elevated px-4 py-3">
                 <div className="space-y-1">
                   <p className="text-sm font-semibold text-container-foreground">
                     {athleteForBadge?.first_name} {athleteForBadge?.last_name}
@@ -170,12 +170,17 @@ const ReportCardsPage = () => {
                       t.common.select}
                   </p>
                 </div>
-                <div className="mt-3 flex flex-1 flex-col rounded-md bg-container px-3 py-3 shadow-inner">
+                <div
+                  className="mt-3 flex flex-1 flex-col rounded-md px-3 py-3 shadow-inner border-2 border-black"
+                  style={{ backgroundColor: "rgb(var(--color-container-background))" }}
+                >
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted">
                     Coach report
                   </p>
-                  <p className="mt-3 whitespace-pre-wrap text-sm text-container-foreground leading-relaxed overflow-hidden flex-1">
-                    {selectedSubmission.coach_report?.trim() || t.playerProfile.reportCardNoNotes}
+                  <p className="mt-3 whitespace-pre-wrap text-sm text-container-foreground leading-relaxed flex-1">
+                    {(selectedSubmission.coach_report?.trim() || t.playerProfile.reportCardNoNotes)
+                      .slice(0, 1000)
+                      .replace(/(.{120})/g, "$1\n")}
                   </p>
                 </div>
               </div>

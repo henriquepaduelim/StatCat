@@ -118,7 +118,7 @@ const ReportSubmissionReviewModal = ({
           className="modal-surface relative w-full max-w-6xl max-h-[90vh] overflow-hidden rounded-2xl p-0 sm:p-0"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-black/10 bg-white px-4 py-3 sm:px-5 sm:py-4">
+          <div className="sticky top-0 z-10 flex items-center justify-between border-b border-black/10 bg-container px-4 py-3 sm:px-5 sm:py-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">{headerLabel}</p>
               <h2 className="text-xl font-semibold text-container-foreground">Submission details</h2>
@@ -171,7 +171,7 @@ const ReportSubmissionReviewModal = ({
 
                 {typeof submission.overall_average === "number" ? (
                   <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="modal-card rounded-xl bg-white/80 px-4 py-3 shadow-sm">
+                    <div className="modal-card rounded-xl bg-container px-4 py-3 shadow-sm">
                       <p className="text-xs uppercase tracking-wide text-muted">Overall average</p>
                       <p className="text-2xl font-semibold text-container-foreground">
                         {submission.overall_average.toFixed(1)}
@@ -198,7 +198,7 @@ const ReportSubmissionReviewModal = ({
                             const bandClass = band ? bandClasses[band] : "text-muted";
                             const barClass = band ? bandBgClasses[band] : "bg-slate-300";
                             return (
-                              <div key={`${category.name}-${metric.name}`} className="rounded-xl bg-white/90 px-4 py-3 shadow-sm">
+                              <div key={`${category.name}-${metric.name}`} className="rounded-xl bg-container px-4 py-3 shadow-sm">
                                 <div className="flex items-center justify-between text-sm">
                                   <span className="font-semibold text-container-foreground">{metric.name}</span>
                                   <span className={`text-xs font-semibold ${bandClass}`}>
@@ -226,13 +226,13 @@ const ReportSubmissionReviewModal = ({
               <div className="modal-card rounded-2xl bg-container/80 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">Match summary</p>
                 <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                  <div className="modal-card rounded-xl bg-white/80 px-4 py-3">
+                  <div className="modal-card rounded-xl bg-container px-4 py-3">
                     <p className="text-xs uppercase tracking-wide text-muted">Opponent</p>
                     <p className="text-base font-semibold text-container-foreground">
                       {submission.opponent ?? "TBD"}
                     </p>
                   </div>
-                  <div className="modal-card rounded-xl bg-white/80 px-4 py-3">
+                  <div className="modal-card rounded-xl bg-container px-4 py-3">
                     <p className="text-xs uppercase tracking-wide text-muted">Score</p>
                     <p className="text-base font-semibold text-container-foreground">
                       {typeof submission.goals_for === "number" || typeof submission.goals_against === "number"
@@ -240,7 +240,7 @@ const ReportSubmissionReviewModal = ({
                         : "Not provided"}
                     </p>
                   </div>
-                  <div className="modal-card rounded-xl bg-white/80 px-4 py-3">
+                  <div className="modal-card rounded-xl bg-container px-4 py-3">
                     <p className="text-xs uppercase tracking-wide text-muted">Match date</p>
                     <p className="text-base font-semibold text-container-foreground">{formatDate(submission.match_date)}</p>
                   </div>
@@ -259,7 +259,7 @@ const ReportSubmissionReviewModal = ({
                   onChange={(event) => setNotes(event.target.value)}
                   rows={4}
                   placeholder="Explain why the submission needs adjustments…"
-                  className="mt-2 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  className="mt-2 w-full rounded-lg border border-black/10 bg-container px-3 py-2 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                 />
                 <span className="mt-1 inline-block text-xs text-muted/80">
                   Coaches will see this message if the report is returned.
@@ -297,7 +297,7 @@ const ReportSubmissionReviewModal = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="w-full rounded-xl border border-black/10 bg-white px-4 py-2 text-sm font-semibold text-container-foreground transition hover:bg-container/80 sm:w-auto"
+                className="w-full rounded-xl border border-black/10 bg-container px-4 py-2 text-sm font-semibold text-container-foreground transition hover:bg-container/80 sm:w-auto"
               >
                 Close
               </button>

@@ -69,7 +69,7 @@ const ReportSubmissionListModal = ({
         className="modal-surface w-full max-w-screen-xl max-h-[90vh] overflow-hidden rounded-2xl p-0 shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="sticky top-0 z-10 border-b border-black/10 bg-container/90 backdrop-blur">
+          <div className="sticky top-0 z-10 border-b border-border-muted bg-container/90 backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">Submission overview</p>
@@ -96,7 +96,7 @@ const ReportSubmissionListModal = ({
               </button>
             </div>
           </div>
-          <div className="flex gap-2 border-t border-black/10 px-4 py-2 text-xs font-semibold text-muted sm:px-6">
+          <div className="flex gap-2 border-t border-border-muted px-4 py-2 text-xs font-semibold text-muted sm:px-6">
             {tabs.map((tab) => {
               const pendingCount = safePendingReports.filter((r) => r.report_type === tab.id).length;
               const approvedCount = (canApproveReports ? safeApprovedReports : safeMySubmissions).filter(
@@ -112,7 +112,7 @@ const ReportSubmissionListModal = ({
                   className={`flex flex-1 items-center justify-center gap-1.5 rounded-full border px-1 py-1.5 text-[12px] transition ${
                     isActive
                       ? "border-action-primary bg-action-primary/15 text-action-primary shadow-sm"
-                      : "border-black/20 bg-black/10 text-container-foreground/80 hover:border-action-primary/50 hover:bg-container/50"
+                      : "border-border-muted bg-surface-primary/50 text-container-foreground/80 hover:border-action-primary/50 hover:bg-container/50"
                   }`}
                 >
                   <span>{tab.label}</span>
@@ -130,7 +130,7 @@ const ReportSubmissionListModal = ({
         </div>
 
         <div className="grid gap-4 px-4 pb-5 sm:grid-cols-2 sm:px-6">
-          <section className="flex flex-col gap-3 rounded-2xl border border-black/10 bg-container/80 p-4 shadow-sm">
+          <section className="card-base flex flex-col gap-3 rounded-2xl bg-container p-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-semibold text-container-foreground">Pending approval</h3>
@@ -145,7 +145,7 @@ const ReportSubmissionListModal = ({
                 filteredPending.map((submission) => (
                   <article
                     key={`pending-submission-${submission.id}`}
-                    className="rounded-lg border border-black/10 bg-container px-3 py-3 text-sm shadow-sm"
+                    className="rounded-lg border border-border-muted bg-container px-3 py-3 text-sm shadow-sm"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div>
@@ -226,7 +226,7 @@ const ReportSubmissionListModal = ({
                       <button
                         type="button"
                         onClick={() => onViewMySubmission(submission)}
-                        className="w-full rounded-full border border-black/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-container-foreground transition hover:bg-container/70"
+                        className="w-full rounded-full border border-border-muted px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-container-foreground transition hover:bg-container/70"
                       >
                         View submission
                       </button>

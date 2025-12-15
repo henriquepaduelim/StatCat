@@ -150,7 +150,7 @@ const TeamCombineMetricModal = ({
               <select
                 value={form.athleteId}
                 onChange={(event) => setForm((prev) => ({ ...prev, athleteId: event.target.value }))}
-                className="mt-1 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                className="mt-1 w-full rounded-lg border border-border-muted bg-container px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               >
                 <option value="">Unassigned</option>
                 {sortedAthletes.map((athlete) => (
@@ -171,7 +171,7 @@ const TeamCombineMetricModal = ({
                     recordedAt: event.target.value,
                   }))
                 }
-                className="mt-1 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                className="mt-1 w-full rounded-lg border border-border-muted bg-container px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               />
             </label>
           </div>
@@ -185,7 +185,7 @@ const TeamCombineMetricModal = ({
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, sittingHeight: event.target.value }))
                 }
-                className="mt-1 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                className="mt-1 w-full rounded-lg border border-border-muted bg-container px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               />
             </label>
             <label className="text-sm text-muted">
@@ -197,7 +197,7 @@ const TeamCombineMetricModal = ({
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, standingHeight: event.target.value }))
                 }
-                className="mt-1 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                className="mt-1 w-full rounded-lg border border-border-muted bg-container px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               />
             </label>
             <label className="text-sm text-muted">
@@ -207,7 +207,7 @@ const TeamCombineMetricModal = ({
                 step="0.1"
                 value={form.weight}
                 onChange={(event) => setForm((prev) => ({ ...prev, weight: event.target.value }))}
-                className="mt-1 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                className="mt-1 w-full rounded-lg border border-border-muted bg-container px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               />
             </label>
           </div>
@@ -219,7 +219,7 @@ const TeamCombineMetricModal = ({
                 step="0.01"
                 value={form.split10}
                 onChange={(event) => setForm((prev) => ({ ...prev, split10: event.target.value }))}
-                className="mt-1 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                className="mt-1 w-full rounded-lg border border-border-muted bg-container px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               />
             </label>
             <label className="text-sm text-muted">
@@ -229,7 +229,7 @@ const TeamCombineMetricModal = ({
                 step="0.01"
                 value={form.split20}
                 onChange={(event) => setForm((prev) => ({ ...prev, split20: event.target.value }))}
-                className="mt-1 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                className="mt-1 w-full rounded-lg border border-border-muted bg-container px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               />
             </label>
             <label className="text-sm text-muted">
@@ -239,7 +239,7 @@ const TeamCombineMetricModal = ({
                 step="0.01"
                 value={form.split35}
                 onChange={(event) => setForm((prev) => ({ ...prev, split35: event.target.value }))}
-                className="mt-1 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                className="mt-1 w-full rounded-lg border border-border-muted bg-container px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               />
             </label>
           </div>
@@ -251,7 +251,7 @@ const TeamCombineMetricModal = ({
                 step="1"
                 value={form.yoyo}
                 onChange={(event) => setForm((prev) => ({ ...prev, yoyo: event.target.value }))}
-                className="mt-1 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                className="mt-1 w-full rounded-lg border border-border-muted bg-container px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               />
             </label>
             <label className="text-sm text-muted">
@@ -261,7 +261,7 @@ const TeamCombineMetricModal = ({
                 step="0.1"
                 value={form.jump}
                 onChange={(event) => setForm((prev) => ({ ...prev, jump: event.target.value }))}
-                className="mt-1 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                className="mt-1 w-full rounded-lg border border-border-muted bg-container px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               />
             </label>
             <label className="text-sm text-muted">
@@ -271,7 +271,7 @@ const TeamCombineMetricModal = ({
                 step="0.1"
                 value={form.maxPower}
                 onChange={(event) => setForm((prev) => ({ ...prev, maxPower: event.target.value }))}
-                className="mt-1 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                className="mt-1 w-full rounded-lg border border-border-muted bg-container px-3 py-2 text-sm text-container-foreground focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               />
             </label>
           </div>

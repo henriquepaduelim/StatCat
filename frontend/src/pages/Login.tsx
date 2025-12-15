@@ -1,4 +1,4 @@
-import { FormEvent, Suspense, lazy, useEffect, useState } from "react";
+import { FormEvent, Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import type { Location } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -13,7 +13,6 @@ import { useTranslation } from "../i18n/useTranslation";
 import { submitForApproval, submitForApprovalPublic } from "../api/athletes";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import api from "../api/client";
-import { getMediaUrl } from "../utils/media";
 const PasswordRecoveryDialog = lazy(() => import("../components/PasswordRecoveryDialog"));
 const AthleteOnboardingModal = lazy(() => import("../components/AthleteOnboardingModal"));
 import type { OnboardingStep } from "../components/AthleteOnboardingModal";
@@ -40,6 +39,8 @@ const Login = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showLoadingOverlay, setShowLoadingOverlay] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isRecoveryModalOpen, setIsRecoveryModalOpen] = useState(false);
@@ -176,6 +177,15 @@ const Login = () => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
+    setShowLoadingOverlay(true);
+    if (videoRef.current) {
+      try {
+        videoRef.current.currentTime = 0;
+        await videoRef.current.play();
+      } catch (playError) {
+        console.warn("Unable to play login background video", playError);
+      }
+    }
     setError(null);
     setSuccessMessage(null);
 
@@ -273,6 +283,11 @@ const Login = () => {
       }
     } finally {
       setIsSubmitting(false);
+      setShowLoadingOverlay(false);
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
     }
   };
 
@@ -363,6 +378,8 @@ const handlePendingReviewClose = () => {
     setSignupToken(null);
   };
 
+  const loginBgUrl = import.meta.env.VITE_LOGIN_BG_URL ?? "/media/login-bg.mp4";
+
   // Redirect logic for authenticated users
   if (token && !onboardingStep && user) {
     // Athletes should only leave if APPROVED
@@ -379,22 +396,23 @@ const handlePendingReviewClose = () => {
 
   return (
     <div className="relative min-h-screen">
-      {getMediaUrl("/media/login-bg.mp4") ? (
+      {loginBgUrl ? (
         <video
-          autoPlay
           loop
           muted
           playsInline
+          preload="metadata"
+          ref={videoRef}
           className="absolute top-0 left-0 h-full w-full object-cover"
           style={{ zIndex: -1 }}
         >
-          <source src={getMediaUrl("/media/login-bg.mp4") as string} type="video/mp4" />
+          <source src={loginBgUrl} type="video/mp4" />
           Your browser does not support the video tag.
         </video>
       ) : null}
-      <div className="flex min-h-screen items-center justify-center bg-black/50 px-4 py-10">
-        <div className={`w-full max-w-md rounded-2xl bg-container-gradient bg-opacity-80 p-8 shadow-xl transition-opacity duration-300 ${
-          onboardingStep !== null ? "opacity-0 pointer-events-none" : "opacity-100"
+      <div className="flex min-h-screen items-center justify-center bg-surface-primary/40 px-4 py-10">
+        <div className={`w-full max-w-md rounded-2xl border border-border-muted bg-container-gradient p-8 shadow-xl transition-opacity duration-300 ${
+          onboardingStep !== null || showLoadingOverlay ? "opacity-0 pointer-events-none" : "opacity-100"
         }`}>
           <div className="mb-6 text-center">
             <h1 className="text-2xl font-semibold text-container-foreground">
@@ -506,6 +524,12 @@ const handlePendingReviewClose = () => {
           onClosePendingReview={handlePendingReviewClose}
         />
       </Suspense>
+
+      {showLoadingOverlay ? (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-surface-primary/70 backdrop-blur-sm">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-action-primary border-t-transparent" />
+        </div>
+      ) : null}
     </div>
   );
 };

@@ -105,7 +105,7 @@ const ReportCardModal = ({
                     onAthleteSelect(event.target.value ? Number(event.target.value) : null)
                   }
                   required
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  className="mt-1 w-full rounded-md border border-black/10 bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                 >
                   <option value="">Select athlete</option>
                   {athletes.map((athlete) => (
@@ -123,7 +123,7 @@ const ReportCardModal = ({
                   onChange={(event) =>
                     onTeamSelect(event.target.value ? Number(event.target.value) : null)
                   }
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  className="mt-1 w-full rounded-md border border-black/10 bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                 >
                   <option value="">No specific team</option>
                   {teams.map((team) => (
@@ -138,7 +138,7 @@ const ReportCardModal = ({
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-semibold uppercase tracking-wide text-muted">
-                  Coach report
+                  Coach report <span className="ml-1 text-[11px] font-normal text-muted">(max 1000 chars)</span>
                 </label>
                 <button
                   type="button"
@@ -149,13 +149,17 @@ const ReportCardModal = ({
                 </button>
               </div>
               <textarea
-                value={coachReport}
-                onChange={(event) => onCoachReportChange(event.target.value)}
+                value={coachReport.slice(0, 1000)}
+                onChange={(event) => onCoachReportChange(event.target.value.slice(0, 1000))}
                 rows={3}
-                className="w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                placeholder="Add observations, context, and priorities for the athlete…"
+                maxLength={1000}
+                className="w-full rounded-md border border-black/10 bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                placeholder="Add observations, context, and priorities for the athlete… (max 1000 chars)"
                 required
               />
+              <div className="flex justify-end text-[11px] text-muted">
+                {Math.min(coachReport.length, 1000)} / 1000 characters
+              </div>
             </div>
 
             <div className="space-y-5">
@@ -188,7 +192,7 @@ const ReportCardModal = ({
                         const sliderValue = metric.score ?? 0;
 
                         return (
-                          <div key={`${category.name}-${metric.name}`} className="space-y-1 rounded-lg bg-white/80 p-3 shadow-sm">
+                          <div key={`${category.name}-${metric.name}`} className="space-y-1 rounded-lg bg-container p-3 shadow-sm">
                             <div className="flex items-center justify-between gap-2 text-sm">
                               <span className="font-semibold text-container-foreground">{metric.name}</span>
                               <span className={`text-xs font-semibold ${bandClass}`}>
@@ -229,13 +233,13 @@ const ReportCardModal = ({
             </div>
 
             <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                onClick={onCancel}
-                className="w-full rounded-md border border-black/10 px-4 py-2 text-sm font-semibold text-container-foreground hover:bg-white sm:w-auto"
-              >
-                Cancel
-              </button>
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  className="w-full rounded-md border border-black/10 px-4 py-2 text-sm font-semibold text-container-foreground hover:bg-container/80 sm:w-auto"
+                >
+                  Cancel
+                </button>
               <button
                 type="submit"
                 disabled={isSubmitting}

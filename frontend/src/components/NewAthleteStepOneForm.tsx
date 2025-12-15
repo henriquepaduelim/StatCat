@@ -115,7 +115,7 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
         <p className="text-sm text-muted">{t.newAthlete.stepOneSubtitle}</p>
       </header>
 
-      <section className="space-y-4 rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+      <section className="space-y-4 rounded-lg border border-border-muted bg-container p-4 shadow-sm">
         <h3 className="text-sm font-semibold text-container-foreground">
           {t.newAthlete.identitySection}
         </h3>
@@ -127,7 +127,7 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
               name="first_name"
               value={form.first_name}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-border-muted/70 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -137,7 +137,7 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
               name="last_name"
               value={form.last_name}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-border-muted/70 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -148,7 +148,7 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
               name="birth_date"
               value={form.birth_date}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-border-muted/70 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -157,7 +157,7 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
               name="gender"
               value={form.gender}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-border-muted/70 px-3 py-2"
             >
               <option value="male">{t.newAthlete.genderOptions.male}</option>
               <option value="female">{t.newAthlete.genderOptions.female}</option>
@@ -171,7 +171,7 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
               name="email"
               value={form.email}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-border-muted/70 px-3 py-2"
             />
           </label>
         </div>
@@ -183,7 +183,7 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
               name="phone"
               value={form.phone}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-border-muted/70 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -192,7 +192,7 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
               name="height_cm"
               value={form.height_cm}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-border-muted/70 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -201,7 +201,7 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
               name="weight_kg"
               value={form.weight_kg}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-border-muted/70 px-3 py-2"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -210,7 +210,7 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
               name="dominant_foot"
               value={form.dominant_foot}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-border-muted/70 px-3 py-2"
             >
               <option value="">{t.newAthlete.dominantFootOptions.default}</option>
               <option value="right">{t.newAthlete.dominantFootOptions.right}</option>
@@ -221,7 +221,7 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
         </div>
       </section>
 
-      <section className="space-y-4 rounded-lg border border-black/5 bg-white p-4 shadow-sm">
+      <section className="space-y-4 rounded-lg border border-border-muted bg-container p-4 shadow-sm">
         <h3 className="text-sm font-semibold text-container-foreground">
           {t.newAthlete.registrationSection}
         </h3>
@@ -281,7 +281,7 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
               name="desired_shirt_number"
               value={form.desired_shirt_number}
               onChange={handleInputChange}
-              className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
+              className="mt-1 w-full rounded-md border border-border-muted/70 px-3 py-2"
             />
           </label>
         </div>

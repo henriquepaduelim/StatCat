@@ -298,7 +298,7 @@ const NewAthlete = () => {
       ) : null}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <section className="space-y-4 rounded-xl border border-black/5 bg-white p-6 shadow-sm">
+        <section className="space-y-4 rounded-xl border border-border-muted bg-container p-6 shadow-sm">
           <h2 className="text-sm font-semibold text-container-foreground">
             {t.newAthlete.contactSection}
           </h2>
@@ -327,7 +327,7 @@ const NewAthlete = () => {
           </div>
         </section>
 
-        <section className="space-y-4 rounded-xl border border-black/5 bg-white p-6 shadow-sm">
+        <section className="space-y-4 rounded-xl border border-border-muted bg-container p-6 shadow-sm">
           <h2 className="text-sm font-semibold text-container-foreground">
             {t.newAthlete.addressSection}
           </h2>
@@ -396,7 +396,7 @@ const NewAthlete = () => {
           </div>
         </section>
 
-        <section className="space-y-4 rounded-xl border border-black/5 bg-white p-6 shadow-sm">
+        <section className="space-y-4 rounded-xl border border-border-muted bg-container p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-container-foreground">
               {t.newAthlete.guardianSection}
@@ -493,7 +493,7 @@ const NewAthlete = () => {
           ) : null}
         </section>
 
-        <section className="space-y-4 rounded-xl border border-black/5 bg-white p-6 shadow-sm">
+        <section className="space-y-4 rounded-xl border border-border-muted bg-container p-6 shadow-sm">
           <h2 className="text-sm font-semibold text-container-foreground">
             {t.newAthlete.emergencySection}
           </h2>
@@ -531,7 +531,7 @@ const NewAthlete = () => {
           </div>
         </section>
 
-        <section className="space-y-4 rounded-xl border border-black/5 bg-white p-6 shadow-sm">
+        <section className="space-y-4 rounded-xl border border-border-muted bg-container p-6 shadow-sm">
           <h2 className="text-sm font-semibold text-container-foreground">
             {t.newAthlete.medicalSection}
           </h2>
@@ -579,7 +579,7 @@ const NewAthlete = () => {
           </div>
         </section>
 
-        <section className="space-y-4 rounded-xl border border-black/5 bg-white p-6 shadow-sm">
+        <section className="space-y-4 rounded-xl border border-border-muted bg-container p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-container-foreground">
               {t.newAthlete.documentsSection}

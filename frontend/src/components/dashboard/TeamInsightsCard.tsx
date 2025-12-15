@@ -45,48 +45,42 @@ const TeamInsightsCard = ({
   }, [pendingReports, mySubmissions]);
 
   return (
-    <div
-      className="flex h-full w-full flex-col rounded-xl border border-action-primary/20 p-4 sm:p-6 shadow-xl backdrop-blur"
-      style={{
-        backgroundColor: "rgb(var(--color-container-background))",
-        borderColor: "rgb(var(--color-border))",
-      }}
-    >
-      <div className="flex h-full flex-col gap-4">
-        <div className="flex flex-shrink-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold text-container-foreground">Report Workflow</h2>
-          </div>
-          <div className="flex w-full flex-row gap-0.5 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-end">
-            <button
-              type="button"
-              onClick={onGameReport}
-              disabled={isGameReportPending}
-              className="flex items-center justify-center gap-1 rounded-md bg-action-primary px-3 py-2 text-sm font-semibold tracking-wide text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4"
-            >
-              <FontAwesomeIcon icon={faPlus} className="text-xs" />
-              <span className="whitespace-nowrap">
-                {isGameReportPending ? "Saving..." : "Game Report"}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={onNewReportCard}
-              className="flex items-center justify-center gap-1 rounded-md bg-action-primary px-3 py-2 text-sm font-semibold tracking-wide text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary focus-visible:ring-offset-2 sm:px-4"
-            >
-              <FontAwesomeIcon icon={faPlus} className="text-xs" />
-              <span className="whitespace-nowrap">Report Card</span>
-            </button>
-            {canRecordCombineMetrics ? (
+    <div className="card-base flex h-full w-full flex-col p-4 sm:p-6 border-2 border-border-muted shadow-none">
+        <div className="flex h-full flex-col gap-4">
+          <div className="flex flex-shrink-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+              <h2 className="text-lg font-semibold text-container-foreground">Report Workflow</h2>
+            </div>
+            <div className="flex w-full flex-row flex-wrap gap-2 sm:w-auto sm:flex-nowrap sm:justify-end">
               <button
                 type="button"
-                onClick={onRecordCombineMetrics}
-                className="flex items-center justify-center gap-1 rounded-md bg-action-primary px-3 py-2 text-sm font-semibold tracking-wide text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 focus-visible:ring-2"
+                onClick={onGameReport}
+                disabled={isGameReportPending}
+                className="flex items-center justify-center gap-1 rounded-md bg-action-primary px-3 py-2 text-sm font-semibold tracking-wide text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <FontAwesomeIcon icon={faPlus} className="text-xs" />
-                <span className="whitespace-nowrap">Testing</span>
+                <span className="whitespace-nowrap">
+                  {isGameReportPending ? "Saving..." : "Game Report"}
+                </span>
               </button>
-            ) : null}
+              <button
+                type="button"
+                onClick={onNewReportCard}
+                className="flex items-center justify-center gap-1 rounded-md bg-action-primary px-3 py-2 text-sm font-semibold tracking-wide text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary focus-visible:ring-offset-2"
+              >
+                <FontAwesomeIcon icon={faPlus} className="text-xs" />
+                <span className="whitespace-nowrap">Report Card</span>
+              </button>
+              {canRecordCombineMetrics ? (
+                <button
+                  type="button"
+                  onClick={onRecordCombineMetrics}
+                  className="flex items-center justify-center gap-1 rounded-md bg-action-primary px-3 py-2 text-sm font-semibold tracking-wide text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-action-primary focus-visible:ring-offset-2"
+                >
+                  <FontAwesomeIcon icon={faPlus} className="text-xs" />
+                  <span className="whitespace-nowrap">Testing</span>
+                </button>
+              ) : null}
           </div>
         </div>
 

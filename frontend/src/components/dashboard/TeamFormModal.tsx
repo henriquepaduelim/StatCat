@@ -112,7 +112,7 @@ const TeamFormModal = ({
                 value={teamForm.name}
                 onChange={(event) => onFieldChange("name", event.target.value)}
                 disabled={isSubmitting} 
-                className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70 dark:bg-container"
+                className="mt-1 w-full rounded-md border border-black/10 bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
                 placeholder="U14 National"
                 required
               />
@@ -123,7 +123,7 @@ const TeamFormModal = ({
                 value={teamForm.ageCategory}
                 onChange={(event) => onFieldChange("ageCategory", event.target.value)}
                 disabled={isSubmitting}
-                className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70 dark:bg-container"
+                className="mt-1 w-full rounded-md border border-black/10 bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
               >
                 {teamAgeOptions.map((option) => (
                   <option key={`team-age-${option}`} value={option}>
@@ -140,7 +140,7 @@ const TeamFormModal = ({
                   onFieldChange("gender", event.target.value as NewTeamFormState["gender"])
                 }
                 disabled={isSubmitting}
-                className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70 dark:bg-container"
+                className="mt-1 w-full rounded-md border border-black/10 bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
               >
                 {genderOptions.map((option) => (
                   <option key={`team-gender-${option.value}`} value={option.value}>
@@ -155,7 +155,7 @@ const TeamFormModal = ({
                 value={teamForm.description}
                 onChange={(event) => onFieldChange("description", event.target.value)}
                 disabled={isSubmitting}
-                className="mt-1 w-full rounded-md border border-black/10 bg-white/90 px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70 dark:bg-container"
+                className="mt-1 w-full rounded-md border border-black/10 bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:opacity-70"
                 rows={2}
               />
             </label>
@@ -170,13 +170,13 @@ const TeamFormModal = ({
             <div className="grid items-start gap-4 lg:grid-cols-2">
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase text-muted">{labels.coachesAssignedLabel}</p>
-                <div className="modal-card min-h-[120px] rounded-lg bg-white/80 p-2 dark:bg-container">
+                <div className="modal-card min-h-[120px] rounded-lg bg-container p-2">
                   {selectedCoaches.length ? (
                     <div className="space-y-1">
                       {selectedCoaches.map((coach) => (
                         <div
                           key={`selected-coach-${coach.id}`}
-                          className="modal-card flex items-center justify-between gap-2 rounded-md bg-white px-3 py-2 text-sm dark:bg-container"
+                          className="modal-card flex items-center justify-between gap-2 rounded-md bg-container px-3 py-2 text-sm"
                         >
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-semibold text-container-foreground">{coach.full_name}</p>
@@ -208,13 +208,13 @@ const TeamFormModal = ({
               </div>
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase text-muted">{labels.coachesAvailableLabel}</p>
-                <div className="modal-card min-h-[120px] max-h-[220px] overflow-y-auto rounded-lg bg-white/80 p-2 dark:bg-container">
+                <div className="modal-card min-h-[120px] max-h-[220px] overflow-y-auto rounded-lg bg-container p-2">
                   {remainingCoaches.length ? (
                     <div className="space-y-1">
                       {remainingCoaches.map((coach) => (
                         <div
                           key={`available-coach-${coach.id}`}
-                          className="modal-card flex items-center justify-between gap-2 rounded-md bg-white px-3 py-2 text-sm dark:bg-container"
+                          className="modal-card flex items-center justify-between gap-2 rounded-md bg-container px-3 py-2 text-sm"
                         >
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-semibold text-container-foreground">{coach.full_name}</p>
@@ -290,7 +290,7 @@ const TeamFormModal = ({
                           key={`roster-athlete-${athlete.id}`}
                           draggable
                           onDragStart={() => setDraggedAthleteId(athlete.id)}
-                          className="modal-card flex items-center justify-between gap-2 rounded-md bg-white px-3 py-2 text-sm transition hover:bg-gray-50 dark:bg-container"
+                          className="modal-card flex items-center justify-between gap-2 rounded-md bg-container px-3 py-2 text-sm transition hover:bg-container/80"
                         >
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium text-container-foreground">
@@ -329,7 +329,7 @@ const TeamFormModal = ({
             <div className="space-y-2">
               <p className="text-sm font-semibold text-container-foreground">Available Athletes</p>
               <p className="text-xs text-muted">Filter by age or group to find athletes faster.</p>
-              <div className="modal-card rounded-lg bg-white/90 p-2 text-xs text-muted dark:bg-container">
+              <div className="modal-card rounded-lg bg-container p-2 text-xs text-muted">
                 <div className="flex flex-wrap items-center gap-2">
                   <label className="flex items-center gap-2">
                     <span className="text-[0.65rem] uppercase">Search</span>
@@ -340,7 +340,7 @@ const TeamFormModal = ({
                         setAthleteFilter((prev) => ({ ...prev, query: event.target.value }))
                       }
                       placeholder="e.g., 16, U18, Alice, female"
-                      className="w-32 rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none dark:border-[var(--border-table-dark)]/30 dark:bg-container"
+                      className="w-32 rounded border border-black/10 bg-container px-2 py-1 text-xs focus:border-action-primary focus:outline-none dark:border-[var(--border-table-dark)]/30"
                     />
                   </label>
                   <label className="flex items-center gap-1">
@@ -350,7 +350,7 @@ const TeamFormModal = ({
                       onChange={(event) =>
                         setAthleteFilter((prev) => ({ ...prev, age: event.target.value }))
                       }
-                      className="rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none dark:border-[var(--border-table-dark)]/30 dark:bg-container"
+                      className="rounded border border-black/10 bg-container px-2 py-1 text-xs focus:border-action-primary focus:outline-none dark:border-[var(--border-table-dark)]/30"
                     >
                       <option value="">All</option>
                       <option value="U14">U14</option>
@@ -367,7 +367,7 @@ const TeamFormModal = ({
                       onChange={(event) =>
                         setAthleteFilter((prev) => ({ ...prev, gender: event.target.value }))
                       }
-                      className="rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
+                      className="rounded border border-black/10 bg-container px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
                     >
                       <option value="">All</option>
                       <option value="male">Male</option>
@@ -384,7 +384,7 @@ const TeamFormModal = ({
                           teamStatus: event.target.value as AthleteFilter["teamStatus"],
                         }))
                       }
-                      className="rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
+                      className="rounded border border-black/10 bg-container px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
                     >
                       <option value="all">All</option>
                       <option value="assigned">Assigned</option>
@@ -401,7 +401,7 @@ const TeamFormModal = ({
                 </div>
               </div>
 
-              <div className="modal-card min-h-[300px] max-h-[400px] overflow-y-auto rounded-lg bg-white/70 p-2">
+              <div className="modal-card min-h-[300px] max-h-[400px] overflow-y-auto rounded-lg bg-container p-2">
                 {teamBuilderCandidates.length === 0 ? (
                   <div className="flex h-32 items-center justify-center text-xs text-muted">
                     No athletes available with selected filters
@@ -414,7 +414,7 @@ const TeamFormModal = ({
                           key={`available-athlete-${athlete.id}`}
                           draggable
                           onDragStart={() => setDraggedAthleteId(athlete.id)}
-                          className="modal-card flex items-center justify-between gap-2 rounded-md bg-white px-3 py-2 text-sm transition hover:bg-blue-50"
+                          className="modal-card flex items-center justify-between gap-2 rounded-md bg-container px-3 py-2 text-sm transition hover:bg-container/80"
                         >
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium text-container-foreground">

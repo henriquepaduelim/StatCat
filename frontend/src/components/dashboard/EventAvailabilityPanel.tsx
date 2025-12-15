@@ -182,7 +182,7 @@ const EventAvailabilityPanel = ({
   const renderBody = () => {
     if (!selectedEventDate) {
       return (
-        <div className="rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] px-3 py-6 text-center text-xs text-muted">
+        <div className="card-base px-3 py-6 text-center text-xs text-muted">
           Select a date to view RSVP availability.
         </div>
       );
@@ -190,7 +190,7 @@ const EventAvailabilityPanel = ({
 
     if (isRosterLoading) {
       return (
-        <div className="rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] px-3 py-6 text-center text-xs text-muted">
+        <div className="card-base px-3 py-6 text-center text-xs text-muted">
           {summaryLabels.loading}
         </div>
       );
@@ -198,7 +198,7 @@ const EventAvailabilityPanel = ({
 
     if (rosterHasError) {
       return (
-        <div className="rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] px-3 py-6 text-center text-xs text-red-500">
+        <div className="card-base px-3 py-6 text-center text-xs text-red-500">
           {summaryLabels.error}
         </div>
       );
@@ -206,7 +206,7 @@ const EventAvailabilityPanel = ({
 
     if (!totalPages || !currentEntry || !currentTeam) {
       return (
-        <div className="rounded-lg border border-[rgb(var(--color-border))] bg-[rgb(var(--color-container-background))] px-3 py-6 text-center text-xs text-muted">
+        <div className="card-base px-3 py-6 text-center text-xs text-muted">
           {summaryLabels.empty}
         </div>
       );
@@ -223,14 +223,8 @@ const EventAvailabilityPanel = ({
       currentUserRole === "coach" && currentUserId != null && Boolean(coachParticipant);
 
     return (
-      <div
-        className="flex h-[500px] flex-col overflow-hidden rounded-lg border"
-        style={{
-          backgroundColor: "rgb(var(--color-container-background))",
-          borderColor: "rgb(var(--color-border))",
-        }}
-      >
-        <div className="border-b border-black/5 px-4 py-3 text-sm font-semibold text-container-foreground">
+    <div className="card-base flex h-[500px] flex-col overflow-hidden border-0 shadow-none">
+        <div className="border-b border-border-muted px-4 py-3 text-sm font-semibold text-container-foreground">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p>{event.name}</p>

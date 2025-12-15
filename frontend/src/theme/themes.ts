@@ -8,7 +8,12 @@ export type ThemeColors = {
   page: ThemeColorPair;
   container: ThemeColorPair;
   header: ThemeColorPair;
-  sidebar: ThemeColorPair;
+  sidebar: {
+    background: string;
+    foreground: string;
+    button: string;
+    buttonHover: string;
+  };
   footer: ThemeColorPair;
   action: {
     primary: ThemeColorPair;

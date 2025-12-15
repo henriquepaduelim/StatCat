@@ -315,7 +315,7 @@ const TeamDashboard = () => {
               value={selectedTeamId ?? ""}
               onChange={(event) => setSelectedTeamId(Number(event.target.value))}
               disabled={role === "athlete" || availableTeams.length === 0}
-              className="mt-2 w-full rounded-xl border border-black/10 bg-white px-4 py-2 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-2 w-full card-base px-4 py-2 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:cursor-not-allowed disabled:opacity-60"
             >
               {availableTeams.map((team) => (
                 <option key={team.id} value={team.id}>

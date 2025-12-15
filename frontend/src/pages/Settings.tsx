@@ -695,6 +695,7 @@ const Settings = () => {
               name="firstName"
               value={profileForm.firstName}
               onChange={handleProfileChange}
+              className="w-full rounded-md border border-border-muted bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               required
             />
           </label>
@@ -705,6 +706,7 @@ const Settings = () => {
               name="lastName"
               value={profileForm.lastName}
               onChange={handleProfileChange}
+              className="w-full rounded-md border border-border-muted bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               required
             />
           </label>
@@ -716,6 +718,7 @@ const Settings = () => {
                 name="birthDate"
                 value={profileForm.birthDate}
                 onChange={handleProfileChange}
+                className="w-full rounded-md border border-border-muted bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                 required
               />
             </label>
@@ -726,7 +729,7 @@ const Settings = () => {
               name="gender"
               value={profileForm.gender}
               onChange={handleProfileChange}
-              className="min-h-[42px]"
+              className="min-h-[42px] w-full rounded-md border border-border-muted bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             >
               <option value="male">Male</option>
               <option value="female">Female</option>
@@ -739,12 +742,19 @@ const Settings = () => {
               name="email"
               value={profileForm.email}
               onChange={handleProfileChange}
+              className="w-full rounded-md border border-border-muted bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               required
             />
           </label>
           <label className="flex flex-col gap-1 text-sm font-medium text-container-foreground">
             Phone
-            <input type="tel" name="phone" value={profileForm.phone} onChange={handleProfileChange} />
+            <input
+              type="tel"
+              name="phone"
+              value={profileForm.phone}
+              onChange={handleProfileChange}
+              className="w-full rounded-md border border-border-muted bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+            />
           </label>
           <div className="flex items-end md:col-span-3">
             <button
@@ -1155,7 +1165,7 @@ const Settings = () => {
                     value={maintenanceTeamId ?? ""}
                     onChange={(event) => setMaintenanceTeamId(Number(event.target.value))}
                     disabled={teamsQuery.isLoading || teamsQuery.isError || (teamsQuery.data?.length ?? 0) === 0}
-                    className="mt-2 w-full rounded-xl border border-black/10 bg-white px-4 py-2 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-2 w-full rounded-xl border border-border-muted bg-container px-4 py-2 text-sm text-container-foreground shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {teamsQuery.data?.map((team) => (
                       <option key={team.id} value={team.id}>

@@ -97,7 +97,7 @@ const LeaderboardCard = ({
   const entries = leaderboardQuery.data?.entries ?? [];
 
   return (
-    <div className="w-full rounded-xl border border-action-primary/25 bg-container-gradient p-4 sm:p-6 shadow-xl backdrop-blur">
+    <div className="card-base w-full p-4 sm:p-6 border-2 border-border-muted shadow-none">
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -111,13 +111,7 @@ const LeaderboardCard = ({
         </div>
 
 
-        <div
-          className="rounded-2xl border p-4 shadow-inner"
-          style={{
-            backgroundColor: "rgb(var(--color-container-background))",
-            borderColor: "rgb(var(--color-border) / 0.4)",
-          }}
-        >
+        <div className="card-base p-4 shadow-inner">
           {leaderboardQuery.isLoading ? (
             <p className="text-sm text-muted">Loading leaderboard...</p>
           ) : leaderboardQuery.isError ? (

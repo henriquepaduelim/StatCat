@@ -170,9 +170,9 @@ const TeamFeed = () => {
         </div>
       ) : null}
 
-      <div className="flex-1 overflow-hidden rounded-2xl border border-black/5 bg-container shadow-sm">
+      <div className="card-base flex-1 overflow-hidden rounded-2xl shadow-sm">
         <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between border-b border-black/5 px-4 py-3 text-sm text-muted">
+          <div className="flex items-center justify-between border-b border-border-muted px-4 py-3 text-sm text-muted">
             <span>{availableTeams.find((team) => team.id === selectedTeamId)?.name ?? t.teamFeed?.title ?? "Team Feed"}</span>
             <span className="text-xs">
               {postsQuery.data?.length ? `${postsQuery.data.length} ${t.teamFeed?.messages ?? "messages"}` : t.teamFeed?.empty ?? "No messages yet"}
@@ -197,7 +197,7 @@ const TeamFeed = () => {
               </div>
             )}
             {!postsQuery.isLoading && postsQuery.data?.length === 0 && (
-              <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-black/10 bg-container/60 p-6 text-sm text-muted">
+              <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-border-muted bg-container/60 p-6 text-sm text-muted">
                 {t.teamFeed?.empty ?? "No posts yet. Start the conversation!"}
               </div>
             )}
@@ -206,7 +206,7 @@ const TeamFeed = () => {
             ))}
           </section>
 
-          <div className="border-t border-black/5 bg-container/95 px-4 py-1 backdrop-blur">
+          <div className="border-t border-border-muted bg-container/95 px-4 py-1 backdrop-blur">
             <form onSubmit={handleSubmit} className="space-y-2">
               <div className="flex gap-2">
                 <textarea

@@ -111,7 +111,7 @@ const GameReportModal = ({
               <select
                 value={form.teamId ?? ""}
                 onChange={(event) => onInputChange("teamId", event.target.value ? Number(event.target.value) : null)}
-                className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                className="mt-1 w-full rounded-md border border-black/10 bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                 required
               >
                 <option value="">Select team</option>
@@ -128,7 +128,7 @@ const GameReportModal = ({
                 type="date"
                 value={form.date}
                 onChange={(event) => onInputChange("date", event.target.value)}
-                className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                className="mt-1 w-full rounded-md border border-black/10 bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               />
             </label>
             <label className="text-xs font-semibold text-muted">
@@ -137,7 +137,7 @@ const GameReportModal = ({
                 type="text"
                 value={form.location}
                 onChange={(event) => onInputChange("location", event.target.value)}
-                className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                className="mt-1 w-full rounded-md border border-black/10 bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                 placeholder="Home / Away / Venue"
               />
             </label>
@@ -150,7 +150,7 @@ const GameReportModal = ({
                 type="text"
                 value={form.opponent}
                 onChange={(event) => onInputChange("opponent", event.target.value)}
-                className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                className="mt-1 w-full rounded-md border border-black/10 bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                 placeholder="Opponent team"
                 required
               />
@@ -163,7 +163,7 @@ const GameReportModal = ({
                   min="0"
                   value={form.goalsFor}
                   onChange={(event) => onInputChange("goalsFor", event.target.value)}
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  className="mt-1 w-full rounded-md border border-black/10 bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                   placeholder="0"
                 />
               </label>
@@ -174,7 +174,7 @@ const GameReportModal = ({
                   min="0"
                   value={form.goalsAgainst}
                   onChange={(event) => onInputChange("goalsAgainst", event.target.value)}
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  className="mt-1 w-full rounded-md border border-black/10 bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                   placeholder="0"
                 />
               </label>
@@ -194,7 +194,7 @@ const GameReportModal = ({
                   onChange={(event) =>
                     setAthleteFilterTeam(event.target.value ? Number(event.target.value) : null)
                   }
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary md:w-48"
+                  className="mt-1 w-full rounded-md border border-black/10 bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary md:w-48"
                 >
                   <option value="">All teams</option>
                   {teams.map((team) => (
@@ -207,7 +207,7 @@ const GameReportModal = ({
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="modal-card space-y-2 rounded-lg bg-white/70 p-3">
+              <div className="modal-card space-y-2 rounded-lg bg-container p-3">
                 <p className="text-xs font-semibold uppercase text-muted">Selected scorers</p>
                 {form.goalScorers.length ? (
                   <ul className="space-y-2">
@@ -217,7 +217,7 @@ const GameReportModal = ({
                       return (
                         <li
                           key={`goal-scorer-${entry.athleteId}`}
-                          className="modal-card flex items-center justify-between gap-3 rounded-md bg-white px-3 py-2 text-sm"
+                          className="modal-card flex items-center justify-between gap-3 rounded-md bg-container px-3 py-2 text-sm"
                         >
                           <div className="flex-1">
                             <p className="font-semibold text-container-foreground">
@@ -270,7 +270,7 @@ const GameReportModal = ({
                 )}
               </div>
 
-              <div className="modal-card space-y-2 rounded-lg bg-white/70 p-3">
+              <div className="modal-card space-y-2 rounded-lg bg-container p-3">
                 <p className="text-xs font-semibold uppercase text-muted">Available athletes</p>
                 <div className="max-h-64 overflow-y-auto space-y-1">
                   {filteredAthletes.length ? (
@@ -279,7 +279,7 @@ const GameReportModal = ({
                       return (
                         <div
                           key={`available-scorer-${athlete.id}`}
-                          className="modal-card flex items-center justify-between gap-2 rounded-md bg-white px-3 py-2 text-sm"
+                          className="modal-card flex items-center justify-between gap-2 rounded-md bg-container px-3 py-2 text-sm"
                         >
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium text-container-foreground">
@@ -315,7 +315,7 @@ const GameReportModal = ({
               Add the goalkeepers who played. Use the badge to mark who conceded goals.
             </p>
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="modal-card space-y-2 rounded-lg bg-white/70 p-3">
+              <div className="modal-card space-y-2 rounded-lg bg-container p-3">
                 <p className="text-xs font-semibold uppercase text-muted">Goalkeepers who played</p>
                 {form.goalkeepersPlayed.length ? (
                   <ul className="space-y-2">
@@ -327,7 +327,7 @@ const GameReportModal = ({
                       return (
                         <li
                           key={`keeper-${athleteId}`}
-                          className="modal-card rounded-md bg-white px-3 py-2 text-sm"
+                          className="modal-card rounded-md bg-container px-3 py-2 text-sm"
                         >
                           <div className="flex items-center justify-between gap-2">
                             <div>
@@ -380,7 +380,7 @@ const GameReportModal = ({
                   <p className="text-xs text-muted">No goalkeepers selected yet.</p>
                 )}
               </div>
-              <div className="modal-card space-y-2 rounded-lg bg-white/70 p-3">
+              <div className="modal-card space-y-2 rounded-lg bg-container p-3">
                 <p className="text-xs font-semibold uppercase text-muted">Available athletes</p>
                 <div className="max-h-64 overflow-y-auto space-y-1">
                   {filteredAthletes.length ? (
@@ -389,7 +389,7 @@ const GameReportModal = ({
                       return (
                         <div
                           key={`available-keeper-${athlete.id}`}
-                          className="modal-card flex items-center justify-between gap-2 rounded-md bg-white px-3 py-2 text-sm"
+                          className="modal-card flex items-center justify-between gap-2 rounded-md bg-container px-3 py-2 text-sm"
                         >
                           <div className="min-w-0 flex-1">
                             <p className="truncate font-medium text-container-foreground">
@@ -424,7 +424,7 @@ const GameReportModal = ({
             <textarea
               value={form.notes}
               onChange={(event) => onInputChange("notes", event.target.value)}
-              className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+              className="mt-1 w-full rounded-md border border-black/10 bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               rows={3}
               placeholder="Add tactical notes, key moments or incidents."
             />
@@ -434,7 +434,7 @@ const GameReportModal = ({
             <button
               type="button"
               onClick={onCancel}
-              className="w-full rounded-md border border-black/10 px-4 py-2 text-sm font-semibold text-container-foreground hover:bg-white sm:w-auto"
+              className="w-full rounded-md border border-black/10 px-4 py-2 text-sm font-semibold text-container-foreground hover:bg-container/80 sm:w-auto"
             >
               Cancel
             </button>

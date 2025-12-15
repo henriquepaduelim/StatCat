@@ -458,7 +458,7 @@ const AdminAthletesView = () => {
       >
         <div ref={tableWrapperRef} className="flex min-h-0 flex-1 flex-col p-4">
           <div className="relative flex min-h-0 flex-1 flex-col overflow-x-auto overflow-y-visible">
-          <table className="athlete-table min-w-full border-y border-black/10 dark:border-[var(--border-table-light)]/80 divide-y divide-black/10 dark:divide-transparent">
+          <table className="athlete-table min-w-full border-y border-[rgb(var(--color-border))] divide-y divide-[rgb(var(--color-border))] dark:border-[var(--border-table-dark)] dark:divide-[var(--border-table-dark)]">
               <thead ref={tableHeadRef} className="bg-container/80">
                 <tr>
                   <th className="relative px-4 py-1 text-left text-xs font-semibold uppercase tracking-wider text-muted">
@@ -1098,7 +1098,7 @@ const AdminAthletesView = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-black/5">
+              <tbody className="divide-y divide-[rgb(var(--color-border))] dark:divide-[var(--border-table-dark)]">
             {isLoading && (
               <tr>
                 <td colSpan={7} className="px-4 py-6 text-center">

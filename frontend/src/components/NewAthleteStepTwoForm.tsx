@@ -257,7 +257,7 @@ const NewAthleteStepTwoForm = ({
       )}
 
       {/* Contact Information */}
-      <section className="space-y-4 rounded-lg border border-black/10 bg-container p-4 shadow-sm dark:border-white/10">
+      <section className="space-y-4 rounded-lg border border-border-muted bg-container p-4 shadow-sm">
         <h3 className="text-sm font-semibold text-container-foreground">
           Athlete Details
         </h3>
@@ -270,7 +270,7 @@ const NewAthleteStepTwoForm = ({
               name="email"
               value={form.email}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -281,7 +281,7 @@ const NewAthleteStepTwoForm = ({
               name="phone"
               value={form.phone}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -293,7 +293,7 @@ const NewAthleteStepTwoForm = ({
               name="birth_date"
               value={form.birth_date}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -304,7 +304,7 @@ const NewAthleteStepTwoForm = ({
               name="gender"
               value={form.gender}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
             >
               <option value="" disabled>Select gender</option>
               <option value="male">Male</option>
@@ -315,7 +315,7 @@ const NewAthleteStepTwoForm = ({
       </section>
 
       {/* Address */}
-      <section className="space-y-4 rounded-lg border border-black/10 bg-container p-4 shadow-sm dark:border-white/10">
+      <section className="space-y-4 rounded-lg border border-border-muted bg-container p-4 shadow-sm">
         <h3 className="text-sm font-semibold text-container-foreground">
           Address
         </h3>
@@ -329,7 +329,7 @@ const NewAthleteStepTwoForm = ({
               name="address_line1"
               value={form.address_line1}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -340,7 +340,7 @@ const NewAthleteStepTwoForm = ({
               name="address_line2"
               value={form.address_line2}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
             />
           </label>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -353,7 +353,7 @@ const NewAthleteStepTwoForm = ({
                 name="city"
                 value={form.city}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -365,7 +365,7 @@ const NewAthleteStepTwoForm = ({
                 name="province"
                 value={form.province}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -377,7 +377,7 @@ const NewAthleteStepTwoForm = ({
                 name="postal_code"
                 value={form.postal_code}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -389,7 +389,7 @@ const NewAthleteStepTwoForm = ({
                 name="country"
                 value={form.country}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
               />
             </label>
           </div>
@@ -397,7 +397,7 @@ const NewAthleteStepTwoForm = ({
       </section>
 
       {/* Guardian/Responsible */}
-      <section className="space-y-4 rounded-lg border border-black/10 bg-container p-4 shadow-sm dark:border-white/10">
+      <section className="space-y-4 rounded-lg border border-border-muted/70 bg-container p-4 shadow-sm dark:border-white/10">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-container-foreground">
             Guardian/Responsible
@@ -421,7 +421,7 @@ const NewAthleteStepTwoForm = ({
               name="guardian_name"
               value={form.guardian_name}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -433,7 +433,7 @@ const NewAthleteStepTwoForm = ({
               value={form.guardian_relationship}
               onChange={handleFieldChange}
               placeholder="e.g. Father, Mother, Guardian"
-              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -444,7 +444,7 @@ const NewAthleteStepTwoForm = ({
               name="guardian_email"
               value={form.guardian_email}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -455,7 +455,7 @@ const NewAthleteStepTwoForm = ({
               name="guardian_phone"
               value={form.guardian_phone}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
             />
           </label>
         </div>
@@ -470,7 +470,7 @@ const NewAthleteStepTwoForm = ({
                 name="secondary_guardian_name"
                 value={form.secondary_guardian_name}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -481,7 +481,7 @@ const NewAthleteStepTwoForm = ({
                 name="secondary_guardian_relationship"
                 value={form.secondary_guardian_relationship}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -492,7 +492,7 @@ const NewAthleteStepTwoForm = ({
                 name="secondary_guardian_email"
                 value={form.secondary_guardian_email}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -503,7 +503,7 @@ const NewAthleteStepTwoForm = ({
                 name="secondary_guardian_phone"
                 value={form.secondary_guardian_phone}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
               />
             </label>
           </div>
@@ -511,7 +511,7 @@ const NewAthleteStepTwoForm = ({
       </section>
 
       {/* Emergency Contact */}
-      <section className="space-y-4 rounded-lg border border-black/10 bg-container p-4 shadow-sm dark:border-white/10">
+      <section className="space-y-4 rounded-lg border border-border-muted/70 bg-container p-4 shadow-sm dark:border-white/10">
         <h3 className="text-sm font-semibold text-container-foreground">
           Emergency Contact
         </h3>
@@ -525,7 +525,7 @@ const NewAthleteStepTwoForm = ({
               name="emergency_contact_name"
               value={form.emergency_contact_name}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -537,7 +537,7 @@ const NewAthleteStepTwoForm = ({
               name="emergency_contact_relationship"
               value={form.emergency_contact_relationship}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -549,14 +549,14 @@ const NewAthleteStepTwoForm = ({
               name="emergency_contact_phone"
               value={form.emergency_contact_phone}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
             />
           </label>
         </div>
       </section>
 
       {/* Medical Information */}
-      <section className="space-y-4 rounded-lg border border-black/10 bg-container p-4 shadow-sm dark:border-white/10">
+      <section className="space-y-4 rounded-lg border border-border-muted/70 bg-container p-4 shadow-sm dark:border-white/10">
         <h3 className="text-sm font-semibold text-container-foreground">
           Medical Information
         </h3>
@@ -569,7 +569,7 @@ const NewAthleteStepTwoForm = ({
               rows={3}
               value={form.medical_allergies}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
               placeholder="Describe any known allergies..."
             />
           </label>
@@ -581,7 +581,7 @@ const NewAthleteStepTwoForm = ({
               rows={3}
               value={form.medical_conditions}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
               placeholder="Describe any relevant medical conditions..."
             />
           </label>
@@ -594,7 +594,7 @@ const NewAthleteStepTwoForm = ({
                 name="physician_name"
                 value={form.physician_name}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -605,7 +605,7 @@ const NewAthleteStepTwoForm = ({
                 name="physician_phone"
                 value={form.physician_phone}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-black/10 bg-[rgb(var(--color-input-background))] px-3 py-2 text-[rgb(var(--color-input-foreground))]"
+                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
               />
             </label>
           </div>
@@ -624,7 +624,7 @@ const NewAthleteStepTwoForm = ({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md border border-black/10 px-4 py-2 text-sm font-semibold text-muted hover:border-action-primary hover:text-accent"
+            className="rounded-md border border-border-muted/70 px-4 py-2 text-sm font-semibold text-muted hover:border-action-primary hover:text-accent"
           >
             Skip and Finish
           </button>

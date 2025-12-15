@@ -246,7 +246,7 @@ const EventModal = ({
         </div>
 
         <div className="mt-4 space-y-6">
-        <form className="modal-card space-y-4 rounded-xl bg-white/80 p-4" onSubmit={onSubmit}>
+        <form className="modal-card space-y-4 rounded-xl bg-container p-4" onSubmit={onSubmit}>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-4">
                 <label className="text-xs font-medium text-muted">
@@ -254,7 +254,7 @@ const EventModal = ({
                   <input
                     value={eventForm.name}
                     onChange={(event) => onInputChange("name", event.target.value)}
-                    className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                    className="mt-1 w-full rounded-md border border-border-muted bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                     placeholder="Training session"
                     required
                   />
@@ -265,7 +265,7 @@ const EventModal = ({
                     type="date"
                     value={eventForm.date || selectedEventDate || formatDateKey(new Date())}
                     onChange={(event) => onInputChange("date", event.target.value)}
-                    className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                    className="mt-1 w-full rounded-md border border-border-muted bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                     required
                   />
                 </label>
@@ -276,7 +276,7 @@ const EventModal = ({
                       type="time"
                       value={eventForm.startTime}
                       onChange={(event) => onInputChange("startTime", event.target.value)}
-                      className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                      className="mt-1 w-full rounded-md border border-border-muted bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                       step={900}
                     />
                   </label>
@@ -286,7 +286,7 @@ const EventModal = ({
                       type="time"
                       value={eventForm.endTime}
                       onChange={(event) => onInputChange("endTime", event.target.value)}
-                      className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                      className="mt-1 w-full rounded-md border border-border-muted bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                       step={900}
                     />
                   </label>
@@ -299,7 +299,7 @@ const EventModal = ({
                     value={eventForm.location}
                     onChange={(event) => onInputChange("location", event.target.value)}
                     ref={locationInputRef}
-                    className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                    className="mt-1 w-full rounded-md border border-border-muted bg-container px-3 py-2 text-sm shadow-sm focus-border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                     placeholder="Main field"
                   />
                 </label>
@@ -315,7 +315,7 @@ const EventModal = ({
                 <textarea
                   value={eventForm.notes}
                   onChange={(event) => onInputChange("notes", event.target.value)}
-                  className="mt-1 w-full rounded-md border border-black/10 bg-white px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+                  className="mt-1 w-full rounded-md border border-border-muted bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
                   rows={3}
                 />
               </label>
@@ -324,7 +324,7 @@ const EventModal = ({
             <div className="grid gap-4 lg:grid-cols-3">
               <div className="text-xs font-medium text-muted">
                 <p className="mb-1">{summaryLabels.calendar.teamLabel}</p>
-                <div className="modal-card space-y-1 rounded-lg bg-white/90 p-2">
+                <div className="modal-card space-y-1 rounded-lg bg-container p-2">
                   {teams.map((team) => {
                     const isSelected = eventForm.teamIds.includes(team.id);
                     return (
@@ -346,7 +346,7 @@ const EventModal = ({
 
               <div className="text-xs font-medium text-muted">
                 <p className="mb-1">Invite coaches</p>
-                <div className="modal-card space-y-1 rounded-lg bg-white/90 p-2">
+                <div className="modal-card space-y-1 rounded-lg bg-container p-2">
                   {availableCoaches.map((coach) => {
                     const isSelected = eventForm.coachIds.includes(coach.id);
                     return (
@@ -366,7 +366,7 @@ const EventModal = ({
                 </div>
               </div>
 
-              <div className="rounded-lg border border-dashed border-black/10 bg-white/60 p-3 text-[0.7rem] text-muted lg:col-span-1">
+              <div className="card-base border-dashed bg-container/60 p-3 text-[0.7rem] text-muted lg:col-span-1">
                 <p className="font-semibold text-container-foreground">Tip</p>
                 <p className="mt-1">
                   Selected teams automatically include all roster athletes. Use the coach selector to add assistant or guest coaches.
@@ -376,7 +376,7 @@ const EventModal = ({
 
             <div className="text-xs font-medium text-muted">
               <p className="mb-3 text-sm font-semibold">Invite Athletes</p>
-              <div className="modal-card mb-3 rounded-lg bg-white/70 p-2 text-xs text-muted">
+              <div className="modal-card mb-3 rounded-lg bg-container p-2 text-xs text-muted">
                 <div className="flex flex-wrap items-center gap-2">
                   <label className="flex items-center gap-1">
                     <span className="text-[0.65rem] uppercase">Team</span>
@@ -398,7 +398,7 @@ const EventModal = ({
                           setAthleteFilterTeam(Number(value));
                         }
                       }}
-                      className="rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
+                      className="rounded border border-border-muted bg-container px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
                     >
                       <option value="">All</option>
                       <option value="unassigned">Unassigned</option>
@@ -414,7 +414,7 @@ const EventModal = ({
                     <select
                       value={athleteFilterAge}
                       onChange={(event) => setAthleteFilterAge(event.target.value)}
-                      className="rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
+                      className="rounded border border-border-muted bg-container px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
                     >
                       <option value="">All</option>
                       <option value="U14">U14</option>
@@ -429,7 +429,7 @@ const EventModal = ({
                     <select
                       value={athleteFilterGender}
                       onChange={(event) => setAthleteFilterGender(event.target.value)}
-                      className="rounded border border-black/10 bg-white px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
+                      className="rounded border border-border-muted bg-container px-2 py-1 text-xs focus:border-action-primary focus:outline-none"
                     >
                       <option value="">All</option>
                       <option value="male">Male</option>
@@ -470,7 +470,7 @@ const EventModal = ({
                     {filteredEventAthletes.map((athlete) => (
                       <div
                         key={`invitee-${athlete.id}`}
-                        className="modal-card flex items-start justify-between gap-2 rounded-lg bg-white/80 px-3 py-2 text-sm transition hover:bg-container/70"
+                        className="modal-card flex items-start justify-between gap-2 rounded-lg bg-container px-3 py-2 text-sm transition hover:bg-container/80"
                       >
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-semibold text-container-foreground">
@@ -509,7 +509,7 @@ const EventModal = ({
               <button
                 type="button"
                 onClick={onCancel}
-                className="w-full rounded-md border border-black/10 px-4 py-2 text-sm font-semibold text-container-foreground hover:bg-white sm:w-auto"
+                className="w-full rounded-md border border-black/10 px-4 py-2 text-sm font-semibold text-container-foreground hover:bg-container/80 sm:w-auto"
               >
                 Cancel
               </button>

@@ -28,7 +28,7 @@ const CoachDirectoryCard = ({
 }: CoachDirectoryCardProps) => {
   return (
     <section className="print-hidden h-full">
-      <div className="rounded-xl border border-action-primary/25 bg-container-gradient p-4 sm:p-6 shadow-xl backdrop-blur h-full flex flex-col">
+      <div className="card-base h-full flex flex-col p-4 sm:p-6 border-2 border-border-muted shadow-none">
         <div className="space-y-4 flex-1 flex flex-col">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -67,14 +67,8 @@ const CoachDirectoryCard = ({
             ) : !coaches.length ? (
               <p className="text-sm text-muted">No coaches registered yet.</p>
             ) : (
-              <div
-                className="overflow-hidden rounded-lg border"
-                style={{
-                  backgroundColor: "rgb(var(--color-container-background))",
-                  borderColor: "rgb(var(--color-border))",
-                }}
-              >
-                <div className="hidden items-center gap-4 border-b border-black/10 bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted sm:grid sm:grid-cols-[minmax(0,1.8fr)_220px_140px]">
+              <div className="overflow-hidden rounded-lg border border-border-muted bg-container">
+                <div className="hidden items-center gap-4 border-b border-border-muted bg-container/20 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted sm:grid sm:grid-cols-[minmax(0,1.8fr)_220px_140px]">
                   <span>Coach Name</span>
                   <span className="text-right">Contact</span>
                   <span className="text-right">Actions</span>
@@ -82,8 +76,7 @@ const CoachDirectoryCard = ({
                 {coaches.map((coach) => (
                   <div
                     key={coach.id}
-                    className="grid grid-cols-1 items-start gap-3 border-b border-black/5 px-3 py-3 text-sm last:border-b-0 sm:grid-cols-[minmax(0,1.8fr)_220px_140px] sm:items-center sm:px-4 sm:gap-4"
-                    style={{ backgroundColor: "rgb(var(--color-container-background))" }}
+                    className="grid grid-cols-1 items-start gap-3 border border-border-muted px-3 py-3 text-sm last:border-b-0 sm:grid-cols-[minmax(0,1.8fr)_220px_140px] sm:items-center sm:px-4 sm:gap-4 bg-container"
                   >
                     <div className="flex items-center gap-3">
                       <div className="flex-1">

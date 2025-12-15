@@ -15,7 +15,7 @@ const ProfileOverviewPage = () => {
   const t = useTranslation();
 
   return (
-    <section className="rounded-xl bg-container/40 shadow-sm print:bg-white">
+    <section className="rounded-xl bg-container shadow-sm border border-border-muted print:bg-white">
       <div className="px-4 pt-4 pb-4 space-y-6 sm:px-6 sm:pt-6 sm:pb-6">
         {!currentAthlete && <p className="text-sm text-muted">{t.playerProfile.noAthlete}</p>}
 
