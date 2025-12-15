@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import enum
 from datetime import datetime, timezone
+from typing import Optional, TYPE_CHECKING
 
 from sqlalchemy import JSON
-from sqlmodel import Column, Enum, Field, SQLModel
+from sqlmodel import Column, Enum, Field, Relationship, SQLModel
+
+if TYPE_CHECKING:  # pragma: no cover
+    from .athlete import Athlete
 
 
 class ReportSubmissionType(str, enum.Enum):
@@ -50,3 +54,4 @@ class ReportSubmission(SQLModel, table=True):
     review_notes: str | None = Field(default=None)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
     approved_at: datetime | None = None
+    athlete: "Athlete | None" = Relationship(back_populates="report_submissions")

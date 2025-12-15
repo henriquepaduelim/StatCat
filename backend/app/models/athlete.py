@@ -1,8 +1,13 @@
 from datetime import date, datetime, timezone
+from typing import List, Optional, TYPE_CHECKING
 
 from enum import Enum
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
+
+if TYPE_CHECKING:  # pragma: no cover
+    from .report_submission import ReportSubmission
+    from .user import User
 
 
 class AthleteStatus(str, Enum):
@@ -53,6 +58,9 @@ class Athlete(SQLModel, table=True):
     player_registration_status: PlayerRegistrationStatus | None = Field(default=None, index=True)
     preferred_position: str | None = None
     desired_shirt_number: str | None = None
+    # Relationships
+    user: Optional["User"] = Relationship(back_populates="athlete")
+    report_submissions: list["ReportSubmission"] = Relationship(back_populates="athlete")
 class AthleteDetail(SQLModel, table=True):
     athlete_id: int = Field(primary_key=True, foreign_key="athlete.id")
     email: str | None = None

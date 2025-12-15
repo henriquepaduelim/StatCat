@@ -6,6 +6,7 @@ import anyio
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import delete, func, select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import OperationalError
 from sqlmodel import Session
 
@@ -183,6 +184,7 @@ def get_team_report_submissions(
     statement = (
         select(ReportSubmission, User.full_name)
         .join(User, User.id == ReportSubmission.submitted_by_id)
+        .options(selectinload(ReportSubmission.athlete))
         .where(ReportSubmission.team_id == team_id)
         .order_by(ReportSubmission.created_at.desc())
     )
@@ -190,12 +192,9 @@ def get_team_report_submissions(
 
     items: list[ReportSubmissionItem] = []
     for submission, submitter_name in results:
-        athlete_name = None
-        if submission.athlete_id:
-            athlete = session.get(Athlete, submission.athlete_id)
-            if athlete:
-                athlete_name = f"{athlete.first_name} {athlete.last_name}".strip()
-        
+        athlete = submission.athlete
+        athlete_name = f"{athlete.first_name} {athlete.last_name}".strip() if athlete else None
+
         items.append(
             ReportSubmissionItem(
                 id=submission.id,

@@ -4,6 +4,7 @@ import anyio
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlmodel import Session, delete, select, func
+from sqlalchemy.orm import selectinload
 
 from app.api.deps import ensure_roles, get_current_active_user
 from app.core.config import settings
@@ -576,19 +577,27 @@ def get_pending_athletes(
     """Get all pending athletes for admin/staff review."""
     ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
 
-    pending_users = session.exec(
-        select(User).where(
-            User.athlete_id.isnot(None),
-            User.athlete_status.in_([
-                UserAthleteApprovalStatus.PENDING,
-                UserAthleteApprovalStatus.INCOMPLETE
-            ])
+    pending_users = (
+        session.exec(
+            select(User)
+            .options(selectinload(User.athlete))
+            .where(
+                User.athlete_id.isnot(None),
+                User.athlete_status.in_(
+                    [
+                        UserAthleteApprovalStatus.PENDING,
+                        UserAthleteApprovalStatus.INCOMPLETE,
+                    ]
+                ),
+            )
         )
-    ).all()
+        .scalars()
+        .all()
+    )
 
     result = []
     for user in pending_users:
-        athlete = session.get(Athlete, user.athlete_id) if user.athlete_id is not None else None
+        athlete = user.athlete
 
         first_name = athlete.first_name if athlete else (user.full_name.split(" ")[0] if user.full_name else "")
         last_name = (

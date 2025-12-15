@@ -75,9 +75,9 @@ class EventParticipant(SQLModel, table=True):
     __tablename__ = "event_participant"
     
     id: int | None = Field(default=None, primary_key=True)
-    event_id: int = Field(foreign_key="event.id", index=True)
-    user_id: int | None = Field(default=None, foreign_key="user.id", index=True)
-    athlete_id: int | None = Field(default=None, foreign_key="athlete.id", index=True)
+    event_id: int = Field(foreign_key="event.id", index=True, ondelete="CASCADE")
+    user_id: int | None = Field(default=None, foreign_key="user.id", index=True, ondelete="CASCADE")
+    athlete_id: int | None = Field(default=None, foreign_key="athlete.id", index=True, ondelete="CASCADE")
     
     status: ParticipantStatus = Field(
         default=ParticipantStatus.INVITED,
@@ -97,8 +97,8 @@ class Notification(SQLModel, table=True):
     __tablename__ = "notification"
     
     id: int | None = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", index=True)
-    event_id: int | None = Field(default=None, foreign_key="event.id", index=True)
+    user_id: int = Field(foreign_key="user.id", index=True, ondelete="CASCADE")
+    event_id: int | None = Field(default=None, foreign_key="event.id", index=True, ondelete="CASCADE")
     
     # Notification type
     type: str = Field(max_length=50)  # 'event_invite', 'event_update', 'event_confirmation', 'event_reminder'
@@ -122,7 +122,7 @@ class PushSubscription(SQLModel, table=True):
     __tablename__ = "push_subscription"
     
     id: int | None = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", index=True, unique=True)
+    user_id: int = Field(foreign_key="user.id", index=True, unique=True, ondelete="CASCADE")
     
     # Web Push subscription data
     endpoint: str

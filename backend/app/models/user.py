@@ -9,6 +9,7 @@ from .team import CoachTeamLink
 
 if TYPE_CHECKING:
     from .team import Team
+    from .athlete import Athlete
 
 
 class UserRole(str, enum.Enum):
@@ -45,3 +46,4 @@ class User(SQLModel, table=True):
         back_populates="coaches",
         link_model=CoachTeamLink,
     )
+    athlete: Optional["Athlete"] = Relationship(back_populates="user")

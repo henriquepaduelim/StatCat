@@ -20,6 +20,8 @@ export const activeTheme: ThemeDefinition = {
     sidebar: {
       background: "#212529",
       foreground: "#000000",
+      button: "#2a2f32",
+      buttonHover: "#3b4043",
     },
     footer: {
       background: "#000000",
