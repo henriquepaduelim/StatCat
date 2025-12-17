@@ -1,8 +1,9 @@
 from datetime import date, datetime, time, timezone
 from enum import Enum
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Iterable
 
 import sqlalchemy as sa
+from pydantic import PrivateAttr
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.db.types import SafeDate, SafeTime
@@ -52,6 +53,16 @@ class Event(SQLModel, table=True):
     coach: Optional["User"] = Relationship(sa_relationship_kwargs={"foreign_keys": "Event.coach_id"})
     teams: List["EventTeamLink"] = Relationship(back_populates="event")
     participants: List["EventParticipant"] = Relationship(back_populates="event")
+
+    # Cached, non-persistent team ids for serialization
+    _team_ids: List[int] = PrivateAttr(default_factory=list)
+
+    @property
+    def team_ids(self) -> List[int]:
+        return list(self._team_ids)
+
+    def set_team_ids(self, team_ids: Iterable[int] | None) -> None:
+        self._team_ids = list(team_ids or [])
 
 
 class Notification(SQLModel, table=True):

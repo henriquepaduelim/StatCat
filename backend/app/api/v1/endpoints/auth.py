@@ -347,10 +347,12 @@ async def signup_user(
     session: Session = Depends(get_session),
 ) -> User:
     try:
-        if payload.role != UserRole.ATHLETE:
+        role_value = (payload.role or "").strip().upper()
+        normalized_role = UserRole.ATHLETE.value if not role_value else role_value
+        if normalized_role != UserRole.ATHLETE.value:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Signup is only available for athletes. Contact an admin for staff access.",
+                detail="Public signup is only available for athletes. Contact an admin for other roles.",
             )
         exists = session.exec(select(User).where(User.email == payload.email)).first()
         if exists:

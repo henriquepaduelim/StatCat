@@ -53,7 +53,7 @@ class UserSignup(SQLModel):
     email: LocalEmailStr
     full_name: str
     password: str
-    role: UserRole = UserRole.ATHLETE
+    role: str | None = None
     phone: str | None = None
 
 
