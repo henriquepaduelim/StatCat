@@ -195,12 +195,19 @@ def list_events(
     # Filter by team if provided (include multi-team associations)
     if team_id is not None:
         linked_event_ids = select(EventTeamLink.event_id).where(EventTeamLink.team_id == team_id)
-        stmt = stmt.where(or_(Event.team_id == team_id, Event.id.in_(linked_event_ids)))
+        # Inclui eventos sem time para permitir convites de atletas sem time
+        stmt = stmt.where(
+            or_(Event.team_id == team_id, Event.id.in_(linked_event_ids), Event.team_id.is_(None))
+        )
     elif current_user.role == UserRole.COACH:
         allowed_team_ids = _coach_team_ids(db, current_user.id)
         if allowed_team_ids:
-            linked_event_ids = select(EventTeamLink.event_id).where(EventTeamLink.team_id.in_(allowed_team_ids))
-            stmt = stmt.where(or_(Event.team_id.in_(allowed_team_ids), Event.id.in_(linked_event_ids)))
+            linked_event_ids = select(EventTeamLink.event_id).where(
+                EventTeamLink.team_id.in_(allowed_team_ids)
+            )
+            stmt = stmt.where(
+                or_(Event.team_id.in_(allowed_team_ids), Event.id.in_(linked_event_ids), Event.team_id.is_(None))
+            )
     
     # Filter by date range
     parsed_from = _parse_date_str(date_from)
@@ -263,7 +270,7 @@ def list_my_events(
         if e.id not in all_events:
             all_events[e.id] = e
     
-    # If coach, restrict to own teams (direct or linked)
+    # If coach, restrict to own teams (direct or linked), but keep events without team
     if current_user.role == UserRole.COACH and coach_team_ids:
         filtered: dict[int, Event] = {}
         for event in all_events.values():
@@ -275,6 +282,10 @@ def list_my_events(
             ).all()
             linked_set = {row[0] if isinstance(row, tuple) else row for row in linked_ids if row is not None}
             if linked_set.intersection(coach_team_ids):
+                filtered[event.id] = event
+                continue
+            # eventos sem time também ficam visíveis para coaches convidados/organizadores
+            if event.team_id is None:
                 filtered[event.id] = event
         all_events = filtered
     elif current_user.role == UserRole.COACH and not coach_team_ids:

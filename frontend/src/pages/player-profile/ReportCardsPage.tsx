@@ -21,7 +21,7 @@ const bandBgClasses: Record<ScoreBand, string> = {
 };
 
 const CATEGORY_ICONS: Record<string, string | null> = {
-  mindset: getMediaUrl("frontend/public/media/Asset 1BRAIN4 1.png"),
+  mindset: getMediaUrl("/media/Asset 1BRAIN4 1.png"),
   physicality: getMediaUrl("/media/Asset 1person-2 1.png"),
   "technical foundation": getMediaUrl("/media/Asset 1blocks1 1.png"),
 };

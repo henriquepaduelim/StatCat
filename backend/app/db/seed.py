@@ -6,14 +6,28 @@ from random import choice, randint, uniform
 from sqlmodel import Session, select
 
 from app.core.security import get_password_hash
-from app.models import AssessmentSession, Athlete, SessionResult, Team, TeamCombineMetric, TestDefinition, User
-from app.models.athlete import AthleteGender, AthleteStatus
+from app.models import (
+    AssessmentSession,
+    Athlete,
+    SessionResult,
+    Team,
+    TeamCombineMetric,
+    TestDefinition,
+    User,
+)
+from app.models.athlete import (
+    AthleteGender,
+    AthleteStatus,
+    PlayerRegistrationStatus,
+    RegistrationCategory,
+)
 from app.models.report_submission import (
     ReportSubmission,
     ReportSubmissionStatus,
     ReportSubmissionType,
 )
 from app.models.user import UserRole, UserAthleteApprovalStatus
+from app.models.team_combine_metric import CombineMetricStatus
 
 
 TEST_DEFINITIONS = [
@@ -40,23 +54,28 @@ TEAM_BLUEPRINTS = [
     {"name": "U14 A Boys", "age_category": "U14", "description": "U14 1st Team Boys"},
     {"name": "U14 B Boys", "age_category": "U14", "description": "U14 2nd Team Boys"},
     {"name": "U14 A Girls", "age_category": "U14", "description": "U14 1st Team Girls"},
-    {"name": "U14 B Girls", "age_category": "U14", "description": "U14 2nd Team Girls"}
+    {"name": "U14 B Girls", "age_category": "U14", "description": "U14 2nd Team Girls"},
 ]
 
 FIRST_NAMES = [
     # Boys
-    "Alex", "Daniel", "Matthew", "John", "Luke", "James", "Brian", "Ryan", "David", "Michael", "Chris", "Kevin",
-    "Ethan", "Joshua", "Andrew", "Justin", "Samuel", "Benjamin", "Adam", "Nathan", "Tyler", "Jason", "Eric", "Aaron",
+    "Alex", "Daniel", "Matthew", "John", "Luke", "James", "Brian", "Ryan", "David",
+    "Michael", "Chris", "Kevin", "Ethan", "Joshua", "Andrew", "Justin", "Samuel",
+    "Benjamin", "Adam", "Nathan", "Tyler", "Jason", "Eric", "Aaron",
     # Girls
-    "Emily", "Sophia", "Olivia", "Emma", "Ava", "Isabella", "Mia", "Charlotte", "Amelia", "Grace", "Ella", "Hannah",
-    "Abigail", "Madison", "Chloe", "Lily", "Samantha", "Natalie", "Victoria", "Brooklyn", "Zoe", "Layla", "Savannah", "Avery",
+    "Emily", "Sophia", "Olivia", "Emma", "Ava", "Isabella", "Mia", "Charlotte",
+    "Amelia", "Grace", "Ella", "Hannah", "Abigail", "Madison", "Chloe", "Lily",
+    "Samantha", "Natalie", "Victoria", "Brooklyn", "Zoe", "Layla", "Savannah", "Avery",
 ]
 
 LAST_NAMES = [
-    "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Martinez", "Taylor", "Clark", "Walker",
-    "Young", "Allen", "King", "Wright", "Scott", "Green", "Baker", "AdAMS", "Nelson", "Hill", "Ramirez", "Campbell",
-    "Mitchell", "Perez", "Roberts", "Turner", "Phillips", "Howard", "Parker", "EvANS", "Edwards", "Collins", "Stewart",
-    "Sanchez", "Morris", "Rogers", "Reed", "Cook", "Morgan", "Bell", "Murphy", "Bailey", "Rivera", "Cooper", "Richardson", "Cox"
+    "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis",
+    "Martinez", "Taylor", "Clark", "Walker", "Young", "Allen", "King", "Wright",
+    "Scott", "Green", "Baker", "Adams", "Nelson", "Hill", "Ramirez", "Campbell",
+    "Mitchell", "Perez", "Roberts", "Turner", "Phillips", "Howard", "Parker",
+    "Evans", "Edwards", "Collins", "Stewart", "Sanchez", "Morris", "Rogers",
+    "Reed", "Cook", "Morgan", "Bell", "Murphy", "Bailey", "Rivera", "Cooper",
+    "Richardson", "Cox",
 ]
 
 
@@ -68,12 +87,10 @@ def _random_birth_date(min_age: int = 16, max_age: int = 28) -> date:
 
 def _random_birth_date_for_team(age_category: str) -> date:
     today = date.today()
-    # Map team age category to age range
     age_map = {
         "U14": (12, 13),
         "U15": (13, 14),
         "U16": (14, 15),
-       
     }
     min_age, max_age = age_map.get(age_category, (14, 19))
     age = randint(min_age, max_age)
@@ -109,8 +126,10 @@ def _combine_payload(team_id: int, athlete_id: int, recorded_at: datetime) -> Te
         athlete_id=athlete_id,
         recorded_at=recorded_at,
         recorded_by_id=1,  # admin (seeded user)
+        approved_by_id=1,
+        status=CombineMetricStatus.APPROVED,
         sitting_height_cm=_test_value("sitting height"),
-        standing_height_cm=_test_value("standing hesight"),
+        standing_height_cm=_test_value("standing height"),
         weight_kg=_test_value("weight"),
         split_10m_s=_test_value("10m sprint"),
         split_20m_s=_test_value("20m sprint"),
@@ -122,6 +141,7 @@ def _combine_payload(team_id: int, athlete_id: int, recorded_at: datetime) -> Te
 
 
 def seed_database(session: Session) -> None:
+    """Seed básico de usuários admin/staff/coach (modo antigo)."""
     if session.exec(select(User.id)).first():
         return
 
@@ -149,101 +169,175 @@ def seed_database(session: Session) -> None:
     session.add_all([admin, staff, coach])
     session.commit()
 
+
+def seed_bulk_teams_and_athletes(
+    session: Session,
+    team_count: int = 5,
+    athletes_per_team: int = 25,
+    admin_email: str = "seed_admin@statcat.local",
+    admin_password: str = "admin123",
+    athlete_password: str = "athlete123",
+) -> None:
+    """Cria N times com atletas completos, report cards e combine tests."""
+    # Evita duplicar se já rodado
+    existing = session.exec(select(User).where(User.email == admin_email)).first()
+    if existing:
+        print("Seed já aplicado: admin encontrado, nada a fazer.")
+        return
+
+    now = datetime.now(timezone.utc)
+
+    # Admin
+    admin = User(
+        email=admin_email,
+        hashed_password=get_password_hash(admin_password),
+        full_name="Seed Admin",
+        role=UserRole.ADMIN,
+        is_active=True,
+        created_at=now,
+    )
+    session.add(admin)
+    session.flush()
+
+    # Times
     teams: list[Team] = []
-    for blueprint in TEAM_BLUEPRINTS:
+    for idx in range(team_count):
         team = Team(
-            name=blueprint["name"],
-            age_category=blueprint["age_category"],
-            description=blueprint["description"],
+            name=f"Seed Team {idx + 1}",
+            age_category="U16",
+            description="Seeded team",
             created_by_id=admin.id,
         )
         session.add(team)
         teams.append(team)
-    session.commit()
+    session.flush()
 
-    tests: list[TestDefinition] = []
-    for payload in TEST_DEFINITIONS:
-        definition = TestDefinition(**payload)
-        session.add(definition)
-        tests.append(definition)
-    session.commit()
-
-    athletes: list[Athlete] = []
-    for index in range(len(FIRST_NAMES)):
-        team = teams[index % len(teams)]
-        birth_date = _random_birth_date_for_team(team.age_category)
-        athlete = Athlete(
-            first_name=FIRST_NAMES[index],
-            last_name=LAST_NAMES[index],
-            email=f"{FIRST_NAMES[index].lower()}.{LAST_NAMES[index].lower()}@combine.local",
-            phone=f"+1-555-01{index:02d}",
-            birth_date=birth_date,
-            gender=AthleteGender.male if index % 2 == 0 else AthleteGender.female,
-            height_cm=round(uniform(160, 195), 1),
-            weight_kg=round(uniform(55, 92), 1),
-            primary_position=choice([
-                "Goalkeeper", "Center Back", "Full Back", "Midfielder", "Winger", "Striker"
-            ]),
-            team_id=team.id,
-            status=AthleteStatus.active,
-        )
-        session.add(athlete)
-        athletes.append(athlete)
-    session.commit()
-
-    # Opcional: criar contas de atleta para testes de login (vinculadas aos dois primeiros atletas)
-    athlete_user_payloads = athletes[:2]
-    for athlete in athlete_user_payloads:
-        session.add(
-            User(
-                email=athlete.email,
-                hashed_password=get_password_hash("athlete123"),
-                full_name=f"{athlete.first_name} {athlete.last_name}",
-                role=UserRole.ATHLETE,
-                athlete_id=athlete.id,
-                athlete_status=UserAthleteApprovalStatus.APPROVED,
-                is_active=True,
-            )
-    )
-    session.commit()
-
-    # Seed combine metrics to match the UI collection (Testing/New Session)
-    for athlete in athletes:
-        session.add(
-            _combine_payload(
-                team_id=athlete.team_id,
-                athlete_id=athlete.id,
-                recorded_at=datetime.now(timezone.utc) - timedelta(days=3),
-            )
-        )
-        session.add(
-            _combine_payload(
-                team_id=athlete.team_id,
-                athlete_id=athlete.id,
-                recorded_at=datetime.now(timezone.utc) - timedelta(days=12),
-            )
-        )
-
-    # Report cards: 2 por atleta, aprovados
+    # Template de categorias de report card
+    # Report card categories aligned with frontend radar expectations
     report_categories_template = [
-        {"name": "Technique", "metrics": [{"name": "Passing", "score": 80}, {"name": "Dribbling", "score": 82}]},
-        {"name": "Physical", "metrics": [{"name": "Endurance", "score": 78}, {"name": "Speed", "score": 85}]},
+        {
+            "name": "Technical Foundation",
+            "group_average": 84,
+            "metrics": [
+                {"name": "Short-Range Saves", "score": 85},
+                {"name": "Long-Range Saves", "score": 83},
+                {"name": "Distribution", "score": 84},
+            ],
+        },
+        {
+            "name": "Mindset",
+            "group_average": 82,
+            "metrics": [
+                {"name": "Leadership", "score": 86},
+                {"name": "Composure", "score": 80},
+            ],
+        },
+        {
+            "name": "Physicality",
+            "group_average": 81,
+            "metrics": [
+                {"name": "Strength", "score": 82},
+                {"name": "Speed", "score": 80},
+            ],
+        },
     ]
-    for athlete in athletes:
-        for idx in range(2):
-            report = ReportSubmission(
-                report_type=ReportSubmissionType.REPORT_CARD,
-                status=ReportSubmissionStatus.APPROVED,
-                submitted_by_id=coach.id if idx % 2 == 0 else admin.id,
-                approved_by_id=admin.id,
-                approved_at=datetime.now(timezone.utc),
-                team_id=athlete.team_id,
-                athlete_id=athlete.id,
-                coach_report=f"Report {idx + 1} for {athlete.first_name}",
-                general_notes="Seeded report card",
-                report_card_categories=report_categories_template,
-                overall_average=82 + idx,
-                created_at=datetime.now(timezone.utc) - timedelta(days=idx + 1),
+
+    # Atletas, users, reports e combine metrics
+    for t_idx, team in enumerate(teams):
+        for a_idx in range(athletes_per_team):
+            first_name = f"Athlete{t_idx + 1}_{a_idx + 1}"
+            last_name = "Seed"
+            email = f"{first_name.lower()}@seed.local"
+            birth_date = _random_birth_date_for_team(team.age_category)
+
+            athlete = Athlete(
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                phone=f"+1-555-{t_idx:02d}{a_idx:02d}",
+                birth_date=birth_date,
+                gender=AthleteGender.male if (a_idx % 2 == 0) else AthleteGender.female,
+                dominant_foot="right" if (a_idx % 2 == 0) else "left",
+                height_cm=round(uniform(165, 190), 1),
+                weight_kg=round(uniform(55, 90), 1),
+                club_affiliation="Seed FC",
+                team_id=team.id,
+                primary_position=choice(["Midfielder", "Winger", "Striker", "Goalkeeper"]),
+                secondary_position="Full Back",
+                photo_url=None,
+                status=AthleteStatus.active,
+                registration_year=str(now.year),
+                registration_category=RegistrationCategory.youth,
+                player_registration_status=PlayerRegistrationStatus.new,
+                preferred_position="Midfielder",
+                desired_shirt_number=str(randint(1, 99)),
             )
-            session.add(report)
+            session.add(athlete)
+            session.flush()
+
+            # Conta de usuário aprovada para o atleta
+            session.add(
+                User(
+                    email=email,
+                    hashed_password=get_password_hash(athlete_password),
+                    full_name=f"{first_name} {last_name}",
+                    role=UserRole.ATHLETE,
+                    athlete_id=athlete.id,
+                    athlete_status=UserAthleteApprovalStatus.APPROVED,
+                    is_active=True,
+                    must_change_password=False,
+                    created_at=now,
+                )
+            )
+
+            # Dois report cards aprovados
+            for r_idx in range(2):
+                session.add(
+                    ReportSubmission(
+                        report_type=ReportSubmissionType.REPORT_CARD,
+                        status=ReportSubmissionStatus.APPROVED,
+                        submitted_by_id=admin.id,
+                        approved_by_id=admin.id,
+                        approved_at=now - timedelta(days=r_idx + 1),
+                        team_id=team.id,
+                        athlete_id=athlete.id,
+                        coach_report=f"Seed report {r_idx + 1} for {first_name}",
+                        general_notes="Seeded report card",
+                        report_card_categories=report_categories_template,
+                        overall_average=82 + r_idx,
+                        created_at=now - timedelta(days=r_idx + 2),
+                    )
+                )
+
+            # Dois combine tests aprovados
+            for days_ago in (3, 12):
+                session.add(
+                    TeamCombineMetric(
+                        team_id=team.id,
+                        athlete_id=athlete.id,
+                        recorded_by_id=admin.id,
+                        approved_by_id=admin.id,
+                        status=CombineMetricStatus.APPROVED,
+                        recorded_at=now - timedelta(days=days_ago),
+                        sitting_height_cm=_test_value("sitting height"),
+                        standing_height_cm=_test_value("standing height"),
+                        weight_kg=_test_value("weight"),
+                        split_10m_s=_test_value("10m sprint"),
+                        split_20m_s=_test_value("20m sprint"),
+                        split_35m_s=_test_value("35m sprint"),
+                        yoyo_distance_m=_test_value("yoyo distance"),
+                        jump_cm=_test_value("jump"),
+                        max_power_kmh=_test_value("max power"),
+                    )
+                )
+
     session.commit()
+    print(f"Seed concluído: {team_count} times, {team_count * athletes_per_team} atletas.")
+
+
+if __name__ == "__main__":
+    # Execução direta: cria times, atletas, report cards e combine tests
+    from app.db.session import engine
+
+    with Session(engine) as session:
+        seed_bulk_teams_and_athletes(session)

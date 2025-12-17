@@ -224,6 +224,8 @@ const NewAthleteStepTwoForm = ({
   };
 
   const athleteName = `${athlete.first_name} ${athlete.last_name}`.trim();
+  const inputClass =
+    "mt-1 w-full rounded-md border border-black/10 bg-white/95 px-3 py-2 text-sm text-black placeholder:text-gray-500 shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-h-full overflow-y-auto">
@@ -270,7 +272,7 @@ const NewAthleteStepTwoForm = ({
               name="email"
               value={form.email}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
+              className={inputClass}
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -281,7 +283,7 @@ const NewAthleteStepTwoForm = ({
               name="phone"
               value={form.phone}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+              className={inputClass}
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -293,7 +295,7 @@ const NewAthleteStepTwoForm = ({
               name="birth_date"
               value={form.birth_date}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+              className={inputClass}
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -304,7 +306,7 @@ const NewAthleteStepTwoForm = ({
               name="gender"
               value={form.gender}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+              className={inputClass}
             >
               <option value="" disabled>Select gender</option>
               <option value="male">Male</option>
@@ -329,7 +331,7 @@ const NewAthleteStepTwoForm = ({
               name="address_line1"
               value={form.address_line1}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+              className={inputClass}
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -340,7 +342,7 @@ const NewAthleteStepTwoForm = ({
               name="address_line2"
               value={form.address_line2}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+              className={inputClass}
             />
           </label>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
@@ -353,7 +355,7 @@ const NewAthleteStepTwoForm = ({
                 name="city"
                 value={form.city}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+                className={inputClass}
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -365,7 +367,7 @@ const NewAthleteStepTwoForm = ({
                 name="province"
                 value={form.province}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+                className={inputClass}
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -377,7 +379,7 @@ const NewAthleteStepTwoForm = ({
                 name="postal_code"
                 value={form.postal_code}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+                className={inputClass}
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -389,7 +391,7 @@ const NewAthleteStepTwoForm = ({
                 name="country"
                 value={form.country}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+                className={inputClass}
               />
             </label>
           </div>
@@ -421,7 +423,7 @@ const NewAthleteStepTwoForm = ({
               name="guardian_name"
               value={form.guardian_name}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+              className={inputClass}
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -433,7 +435,7 @@ const NewAthleteStepTwoForm = ({
               value={form.guardian_relationship}
               onChange={handleFieldChange}
               placeholder="e.g. Father, Mother, Guardian"
-              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+              className={inputClass}
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -444,7 +446,7 @@ const NewAthleteStepTwoForm = ({
               name="guardian_email"
               value={form.guardian_email}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+              className={inputClass}
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -455,7 +457,7 @@ const NewAthleteStepTwoForm = ({
               name="guardian_phone"
               value={form.guardian_phone}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+              className={inputClass}
             />
           </label>
         </div>
@@ -470,7 +472,7 @@ const NewAthleteStepTwoForm = ({
                 name="secondary_guardian_name"
                 value={form.secondary_guardian_name}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+                className={inputClass}
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -481,7 +483,7 @@ const NewAthleteStepTwoForm = ({
                 name="secondary_guardian_relationship"
                 value={form.secondary_guardian_relationship}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+                className={inputClass}
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -492,7 +494,7 @@ const NewAthleteStepTwoForm = ({
                 name="secondary_guardian_email"
                 value={form.secondary_guardian_email}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+                className={inputClass}
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -503,7 +505,7 @@ const NewAthleteStepTwoForm = ({
                 name="secondary_guardian_phone"
                 value={form.secondary_guardian_phone}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+                className={inputClass}
               />
             </label>
           </div>
@@ -525,7 +527,7 @@ const NewAthleteStepTwoForm = ({
               name="emergency_contact_name"
               value={form.emergency_contact_name}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+              className={inputClass}
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -537,7 +539,7 @@ const NewAthleteStepTwoForm = ({
               name="emergency_contact_relationship"
               value={form.emergency_contact_relationship}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+              className={inputClass}
             />
           </label>
           <label className="text-sm font-medium text-muted">
@@ -549,7 +551,7 @@ const NewAthleteStepTwoForm = ({
               name="emergency_contact_phone"
               value={form.emergency_contact_phone}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+              className={inputClass}
             />
           </label>
         </div>
@@ -569,7 +571,7 @@ const NewAthleteStepTwoForm = ({
               rows={3}
               value={form.medical_allergies}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+              className={inputClass}
               placeholder="Describe any known allergies..."
             />
           </label>
@@ -581,7 +583,7 @@ const NewAthleteStepTwoForm = ({
               rows={3}
               value={form.medical_conditions}
               onChange={handleFieldChange}
-              className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+              className={inputClass}
               placeholder="Describe any relevant medical conditions..."
             />
           </label>
@@ -594,7 +596,7 @@ const NewAthleteStepTwoForm = ({
                 name="physician_name"
                 value={form.physician_name}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+                className={inputClass}
               />
             </label>
             <label className="text-sm font-medium text-muted">
@@ -605,7 +607,7 @@ const NewAthleteStepTwoForm = ({
                 name="physician_phone"
                 value={form.physician_phone}
                 onChange={handleFieldChange}
-                className="mt-1 w-full rounded-md border border-border-muted/70 bg-container px-3 py-2 text-container-foreground"
+                className={inputClass}
               />
             </label>
           </div>

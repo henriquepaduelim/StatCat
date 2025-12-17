@@ -71,22 +71,22 @@ const AuthCredentialsForm = ({
             </label>
           </div>
           <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <TextInput
+            <input
               id="first-name"
               name="first-name"
               value={firstName}
               onChange={(event) => onFirstNameChange(event.target.value)}
               placeholder="Marvin"
-              className="placeholder:text-gray-500"
+              className="w-full rounded-md border border-black/10 bg-white/95 px-3 py-2 text-sm text-black placeholder:text-gray-500 focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               required
             />
-            <TextInput
+            <input
               id="last-name"
               name="last-name"
               value={lastName}
               onChange={(event) => onLastNameChange(event.target.value)}
               placeholder="Fergusson"
-              className="placeholder:text-gray-500"
+              className="w-full rounded-md border border-black/10 bg-white/95 px-3 py-2 text-sm text-black placeholder:text-gray-500 focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
               required
             />
           </div>
@@ -97,7 +97,7 @@ const AuthCredentialsForm = ({
         <label className="text-sm font-medium text-muted" htmlFor="email">
           {emailLabel}
         </label>
-        <TextInput
+        <input
           id="email"
           type="email"
           name="email"
@@ -105,7 +105,7 @@ const AuthCredentialsForm = ({
           value={email}
           onChange={(event) => onEmailChange(event.target.value)}
           placeholder="exemple@statcat.com"
-          className="mt-2 placeholder:text-gray-500"
+          className="mt-2 w-full rounded-md border border-black/10 bg-white/95 px-3 py-2 text-sm text-black placeholder:text-gray-500 focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
           required
         />
       </div>
@@ -114,7 +114,7 @@ const AuthCredentialsForm = ({
           <label className="text-sm font-medium text-muted" htmlFor="confirm-email">
             Confirm Email
           </label>
-          <TextInput
+          <input
             id="confirm-email"
             type="email"
             name="confirm-email"
@@ -122,7 +122,7 @@ const AuthCredentialsForm = ({
             value={confirmEmail}
             onChange={(event) => onConfirmEmailChange(event.target.value)}
             placeholder="exemple@statcat.com"
-            className="mt-2 placeholder:text-gray-500"
+            className="mt-2 w-full rounded-md border border-black/10 bg-white/95 px-3 py-2 text-sm text-black placeholder:text-gray-500 focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
             required
           />
         </div>
