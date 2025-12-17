@@ -51,8 +51,8 @@ const CombineLeaderboardCard = ({ limit = 5, teamId }: CombineLeaderboardCardPro
   const entries: CombineLeaderboardEntry[] = leaderboardQuery.data?.entries ?? [];
 
   return (
-    <div className="card-base w-full p-4 sm:p-6 border-2 border-border-muted shadow-none">
-      <div className="space-y-4">
+    <div className="card-base w-full p-3 sm:p-4 border border-border-muted shadow-none">
+      <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-container-foreground">Combine Leaderboard</h2>
@@ -77,7 +77,7 @@ const CombineLeaderboardCard = ({ limit = 5, teamId }: CombineLeaderboardCardPro
           </div>
         </div>
 
-        <div className="card-base rounded-2xl border border-border-muted p-4 shadow-inner space-y-3">
+        <div className="space-y-2">
           {leaderboardQuery.isLoading ? (
             <p className="text-sm text-muted">Loading leaderboard...</p>
           ) : leaderboardQuery.isError ? (

@@ -97,8 +97,8 @@ const LeaderboardCard = ({
   const entries = leaderboardQuery.data?.entries ?? [];
 
   return (
-    <div className="card-base w-full p-4 sm:p-6 border-2 border-border-muted shadow-none">
-      <div className="space-y-4">
+    <div className="card-base w-full p-3 sm:p-4 border border-border-muted shadow-none">
+      <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-container-foreground">
@@ -110,8 +110,7 @@ const LeaderboardCard = ({
           </div>
         </div>
 
-
-        <div className="card-base p-4 shadow-inner">
+        <div className="space-y-2">
           {leaderboardQuery.isLoading ? (
             <p className="text-sm text-muted">Loading leaderboard...</p>
           ) : leaderboardQuery.isError ? (

@@ -354,7 +354,7 @@ const TeamDashboard = () => {
               </button>
             </div>
           ) : null}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
             <LeaderboardCard
               presetType="scorers"
               title={leaderboardLabels.scorersTitle}
