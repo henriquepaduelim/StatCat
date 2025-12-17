@@ -1,10 +1,12 @@
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, List
 
-from sqlmodel import Field, Relationship, SQLModel
+from sqlalchemy.orm import Mapped
+from sqlmodel import Field, SQLModel, Relationship
 
 if TYPE_CHECKING:
     from .user import User
+    from .event_team_link import EventTeamLink
 
 
 class CoachTeamLink(SQLModel, table=True):
@@ -28,7 +30,8 @@ class Team(SQLModel, table=True):
         sa_column_kwargs={"onupdate": datetime.now(timezone.utc)},
     )
 
-    coaches: List["User"] = Relationship(
+    coaches: Mapped[List["app.models.user.User"]] = Relationship(
         back_populates="teams",
         link_model=CoachTeamLink,
     )
+    event_links: Mapped[List["EventTeamLink"]] = Relationship(back_populates="team")

@@ -11,9 +11,12 @@ from app.core.config import settings
 from app.core.crypto import encrypt_text
 from app.core.security import get_password_hash
 from app.db.session import get_session
-from app.models.athlete import Athlete, AthleteDetail, AthleteDocument, AthleteGender, AthletePayment
+from app.models.athlete import Athlete, AthleteGender
+from app.models.athlete_detail import AthleteDetail
+from app.models.athlete_document import AthleteDocument
+from app.models.athlete_payment import AthletePayment
 from app.models.assessment_session import AssessmentSession
-from app.models.event import EventParticipant
+from app.models.event_participant import EventParticipant
 from app.models.group import GroupMembership
 from app.models.match_stat import MatchStat
 from app.models.session_result import SessionResult
@@ -591,7 +594,6 @@ def get_pending_athletes(
                 ),
             )
         )
-        .scalars()
         .all()
     )
 

@@ -1,18 +1,15 @@
-from datetime import date, datetime, timezone
-from typing import List, Optional, TYPE_CHECKING
-
+from datetime import date
 from enum import Enum
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
-if TYPE_CHECKING:  # pragma: no cover
+# Use TYPE_CHECKING to prevent circular imports at runtime,
+# while still allowing type checkers to see the import.
+if TYPE_CHECKING:
     from .report_submission import ReportSubmission
     from .user import User
-
-
-class AthleteStatus(str, Enum):
-    active = "active"
-    inactive = "inactive"
+    from .event_participant import EventParticipant
 
 
 class AthleteGender(str, Enum):
@@ -20,91 +17,54 @@ class AthleteGender(str, Enum):
     female = "female"
 
 
+class AthleteStatus(str, Enum):
+    active = "active"
+    inactive = "inactive"
+
+
 class RegistrationCategory(str, Enum):
     youth = "youth"
     senior = "senior"
     trial = "trial"
-    return_player = "return"
+    return_player = "return_player"
 
 
 class PlayerRegistrationStatus(str, Enum):
     new = "new"
     transfer = "transfer"
-    return_player = "return"
+    return_player = "return_player"
     guest = "guest"
 
 
 class Athlete(SQLModel, table=True):
-    """Basic athlete profile captured during registration."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    first_name: str = Field(index=True, nullable=False)
+    last_name: str = Field(index=True, nullable=False)
+    email: str = Field(unique=False, index=True, nullable=False)
+    phone: Optional[str] = Field(default=None, index=True)
+    birth_date: date = Field(nullable=False)
+    dominant_foot: Optional[str] = Field(default=None, index=True)
+    gender: Optional[AthleteGender] = Field(default=None, index=True)
+    height_cm: Optional[float] = None
+    weight_kg: Optional[float] = None
+    club_affiliation: Optional[str] = None
+    team_id: Optional[int] = Field(default=None, foreign_key="team.id", index=True)
+    primary_position: str = Field(index=True, nullable=False)
+    secondary_position: Optional[str] = Field(default=None, index=True)
+    photo_url: Optional[str] = None
+    status: AthleteStatus = Field(default=AthleteStatus.active, index=True, nullable=False)
+    registration_year: Optional[str] = Field(default=None, index=True)
+    registration_category: Optional[RegistrationCategory] = Field(default=None, index=True)
+    player_registration_status: Optional[PlayerRegistrationStatus] = Field(default=None, index=True)
+    preferred_position: Optional[str] = None
+    desired_shirt_number: Optional[str] = None
 
-    id: int | None = Field(default=None, primary_key=True)
-    team_id: int | None = Field(default=None, foreign_key="team.id", index=True)
-    first_name: str
-    last_name: str
-    email: str = Field(index=True)
-    phone: str | None = Field(default=None, index=True)
-    birth_date: date
-    dominant_foot: str | None = Field(default=None, index=True)
-    gender: AthleteGender | None = Field(default=AthleteGender.male, index=True)
-    height_cm: float | None = None
-    weight_kg: float | None = None
-    club_affiliation: str | None = None
-    primary_position: str = Field(default="unknown", index=True)
-    secondary_position: str | None = Field(default=None, index=True)
-    photo_url: str | None = None
-    status: AthleteStatus = Field(default=AthleteStatus.active, index=True)
-    registration_year: str | None = Field(default=None, index=True)
-    registration_category: RegistrationCategory | None = Field(default=None, index=True)
-    player_registration_status: PlayerRegistrationStatus | None = Field(default=None, index=True)
-    preferred_position: str | None = None
-    desired_shirt_number: str | None = None
-    # Relationships
-    user: Optional["User"] = Relationship(back_populates="athlete")
-    report_submissions: list["ReportSubmission"] = Relationship(back_populates="athlete")
-class AthleteDetail(SQLModel, table=True):
-    athlete_id: int = Field(primary_key=True, foreign_key="athlete.id")
-    email: str | None = None
-    phone: str | None = None
-    address_line1: str | None = None
-    address_line2: str | None = None
-    city: str | None = None
-    province: str | None = None
-    postal_code: str | None = None
-    country: str | None = None
-    guardian_name: str | None = None
-    guardian_relationship: str | None = None
-    guardian_email: str | None = None
-    guardian_phone: str | None = None
-    secondary_guardian_name: str | None = None
-    secondary_guardian_relationship: str | None = None
-    secondary_guardian_email: str | None = None
-    secondary_guardian_phone: str | None = None
-    emergency_contact_name: str | None = None
-    emergency_contact_relationship: str | None = None
-    emergency_contact_phone: str | None = None
-    medical_allergies_encrypted: str | None = None
-    medical_conditions_encrypted: str | None = None
-    physician_name_encrypted: str | None = None
-    physician_phone_encrypted: str | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    # Relacionamento bidirecional:
+    # Este atributo conterá a lista de submissões de relatório para este atleta.
+    # `back_populates` aponta para o atributo "athlete" no modelo ReportSubmission.
+    report_submissions: List["ReportSubmission"] = Relationship(back_populates="athlete")
 
+    # One-to-one link to User.
+    user: "User" = Relationship(back_populates="athlete")
 
-class AthleteDocument(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    athlete_id: int = Field(foreign_key="athlete.id", index=True)
-    label: str
-    file_url: str
-    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-
-class AthletePayment(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    athlete_id: int = Field(foreign_key="athlete.id", index=True)
-    amount: float | None = None
-    currency: str | None = None
-    method: str | None = None
-    reference: str | None = None
-    receipt_url: str | None = None
-    paid_at: datetime | None = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    event_participations: List["EventParticipant"] = Relationship(back_populates="athlete")

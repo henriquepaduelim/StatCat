@@ -27,8 +27,8 @@ class ReportCardCreate(BaseModel):
 
 class ReportSubmissionItem(BaseModel):
     id: int
-    report_type: Literal["game_report", "report_card"]
-    status: Literal["pending", "approved", "rejected", "reopened"]
+    report_type: Literal["GAME", "REPORT_CARD"]
+    status: Literal["PENDING", "APPROVED", "REJECTED", "REOPENED"]
     team_name: str | None = None
     opponent: str | None = None
     athlete_name: str | None = None

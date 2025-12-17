@@ -129,12 +129,12 @@ def read_users_me(
     
     # Ensure athlete_status is properly serialized
     if current_user.athlete_status:
-        if hasattr(current_user.athlete_status, 'value'):
-            user_dict['athlete_status'] = current_user.athlete_status.value
+        if hasattr(current_user.athlete_status, "value"):
+            user_dict["athlete_status"] = current_user.athlete_status.value
         else:
-            user_dict['athlete_status'] = str(current_user.athlete_status)
+            user_dict["athlete_status"] = str(current_user.athlete_status).lower()
     else:
-        user_dict['athlete_status'] = "INCOMPLETE"
+        user_dict["athlete_status"] = None
     
     return user_dict
 

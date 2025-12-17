@@ -1,57 +1,73 @@
-from __future__ import annotations
-
-import enum
+from enum import Enum
 from datetime import datetime, timezone
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import JSON
-from sqlmodel import Column, Enum, Field, Relationship, SQLModel
+import sqlalchemy as sa
+from sqlmodel import Field, Relationship, SQLModel
 
-if TYPE_CHECKING:  # pragma: no cover
+# Use TYPE_CHECKING para evitar importações circulares.
+if TYPE_CHECKING:
     from .athlete import Athlete
 
 
-class ReportSubmissionType(str, enum.Enum):
-    GAME = "game_report"
-    REPORT_CARD = "report_card"
+class ReportSubmissionStatus(str, Enum):
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    REOPENED = "REOPENED"
 
 
-class ReportSubmissionStatus(str, enum.Enum):
-    PENDING = "pending"
-    APPROVED = "approved"
-    REJECTED = "rejected"
-    REOPENED = "reopened"
+class ReportSubmissionType(str, Enum):
+    GAME = "GAME"
+    REPORT_CARD = "REPORT_CARD"
 
 
 class ReportSubmission(SQLModel, table=True):
     __tablename__ = "report_submission"
 
-    id: int | None = Field(default=None, primary_key=True)
-    report_type: ReportSubmissionType = Field(sa_column=Column(Enum(ReportSubmissionType)))
+    id: Optional[int] = Field(default=None, primary_key=True)
+    report_type: Optional[ReportSubmissionType] = Field(
+        default=None,
+        sa_column=sa.Column(
+            sa.Enum(
+                ReportSubmissionType,
+                name="reportsubmissiontype",
+                values_callable=lambda e: [item.value for item in e],
+            ),
+            index=True,
+            nullable=True,
+        ),
+    )
     status: ReportSubmissionStatus = Field(
         default=ReportSubmissionStatus.PENDING,
-        sa_column=Column(Enum(ReportSubmissionStatus)),
+        sa_column=sa.Column(
+            sa.Enum(
+                ReportSubmissionStatus,
+                name="reportsubmissionstatus",
+                values_callable=lambda e: [item.value for item in e],
+            ),
+            index=True,
+        ),
     )
     submitted_by_id: int = Field(foreign_key="user.id", index=True)
-    approved_by_id: int | None = Field(default=None, foreign_key="user.id", index=True)
-    team_id: int | None = Field(default=None, foreign_key="team.id", index=True)
-    athlete_id: int | None = Field(default=None, foreign_key="athlete.id", index=True)
-    opponent: str | None = None
-    match_date: datetime | None = None
-    goals_for: int | None = None
-    goals_against: int | None = None
-    notes: str | None = None
-    technical_rating: int | None = Field(default=None)
-    physical_rating: int | None = Field(default=None)
-    training_rating: int | None = Field(default=None)
-    match_rating: int | None = Field(default=None)
-    general_notes: str | None = Field(default=None)
-    coach_report: str | None = Field(default=None)
-    report_card_categories: list[dict] | None = Field(
-        default=None, sa_column=Column(JSON, nullable=True)
-    )
-    overall_average: float | None = Field(default=None)
-    review_notes: str | None = Field(default=None)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
-    approved_at: datetime | None = None
+    approved_by_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
+    team_id: Optional[int] = Field(default=None, foreign_key="team.id", index=True)
+    athlete_id: Optional[int] = Field(default=None, foreign_key="athlete.id", index=True)
+    opponent: Optional[str] = None
+    match_date: Optional[datetime] = None
+    goals_for: Optional[int] = None
+    goals_against: Optional[int] = None
+    notes: Optional[str] = None
+    technical_rating: Optional[int] = None
+    physical_rating: Optional[int] = None
+    training_rating: Optional[int] = None
+    match_rating: Optional[int] = None
+    general_notes: Optional[str] = None
+    review_notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    approved_at: Optional[datetime] = None
+    coach_report: Optional[str] = None
+    report_card_categories: Optional[dict] = Field(default=None, sa_column=sa.Column(sa.JSON))
+    overall_average: Optional[float] = None
+
     athlete: Optional["Athlete"] = Relationship(back_populates="report_submissions")

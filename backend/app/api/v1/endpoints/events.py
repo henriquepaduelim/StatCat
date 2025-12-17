@@ -10,7 +10,8 @@ from sqlmodel import Session, select
 from app.api.deps import SessionDep, ensure_roles, get_current_active_user
 from app.core.config import settings
 from app.core.security_token import security_token_manager
-from app.models.event import Event, EventParticipant, Notification, ParticipantStatus
+from app.models.event import Event, EventStatus, Notification
+from app.models.event_participant import EventParticipant, ParticipantStatus
 from app.models.event_team_link import EventTeamLink
 from app.models.team import CoachTeamLink
 from app.models.user import User, UserRole
@@ -205,9 +206,9 @@ def list_events(
     parsed_from = _parse_date_str(date_from)
     parsed_to = _parse_date_str(date_to)
     if parsed_from:
-        stmt = stmt.where(Event.date >= parsed_from)
+        stmt = stmt.where(Event.event_date >= parsed_from)
     if parsed_to:
-        stmt = stmt.where(Event.date <= parsed_to)
+        stmt = stmt.where(Event.event_date <= parsed_to)
     
     if athlete_id is not None:
         stmt = stmt.join(EventParticipant).where(EventParticipant.athlete_id == athlete_id)
@@ -348,7 +349,7 @@ async def handle_rsvp_from_token(
     
     # Validate status_str against ParticipantStatus enum
     try:
-        new_status = ParticipantStatus(status_str)
+        new_status = ParticipantStatus(status_str.upper())
     except ValueError:
         return RedirectResponse(url=f"{settings.FRONTEND_URL}/rsvp-error?message=invalid_status", status_code=status.HTTP_302_FOUND)
 
@@ -436,7 +437,10 @@ async def update_event(
         event.notes = event_in.notes
     
     if event_in.status:
-        event.status = event_in.status
+        try:
+            event.status = EventStatus(event_in.status.upper())
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
     
     if event_in.team_id is not None:
         event.team_id = event_in.team_id
@@ -638,17 +642,19 @@ async def confirm_event_attendance(
         if participant:
             participant.user_id = current_user.id
 
+    status_enum = ParticipantStatus(confirmation.status.upper())
+
     if not participant:
         # User wasn't invited, but allow them to respond
         participant = EventParticipant(
             event_id=event_id,
             user_id=current_user.id,
-            status=confirmation.status,
+            status=status_enum,
             responded_at=datetime.now(timezone.utc),
         )
         db.add(participant)
     else:
-        participant.status = confirmation.status
+        participant.status = status_enum
         participant.responded_at = datetime.now(timezone.utc)
         db.add(participant)
     
@@ -660,7 +666,7 @@ async def confirm_event_attendance(
         db=db,
         event=event,
         participant=participant,
-        status=confirmation.status,
+        status=status_enum.value,
     )
     
     return participant

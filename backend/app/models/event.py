@@ -1,134 +1,87 @@
-"""Event models for calendar functionality with notifications."""
+from datetime import date, datetime, time, timezone
+from enum import Enum
+from typing import TYPE_CHECKING, List, Optional
 
-import enum
-from datetime import date, datetime, time as dt_time, timezone
-from typing import TYPE_CHECKING, Optional
-
-from sqlalchemy import Column, Enum
+import sqlalchemy as sa
 from sqlmodel import Field, Relationship, SQLModel
+
 from app.db.types import SafeDate, SafeTime
-from app.models.user import User
+
+if TYPE_CHECKING:
+    from .user import User
+    from .event_team_link import EventTeamLink
+    from .event_participant import EventParticipant
 
 
-class EventStatus(str, enum.Enum):
-    """Status of an event."""
-    SCHEDULED = "scheduled"
-    CANCELLED = "cancelled"
-    COMPLETED = "completed"
-
-
-class ParticipantStatus(str, enum.Enum):
-    """Status of event participation."""
-    INVITED = "invited"
-    CONFIRMED = "confirmed"
-    DECLINED = "declined"
-    MAYBE = "maybe"
+class EventStatus(str, Enum):
+    SCHEDULED = "SCHEDULED"
+    CANCELLED = "CANCELLED"
+    COMPLETED = "COMPLETED"
 
 
 class Event(SQLModel, table=True):
-    """Event model for calendar events."""
-    id: int | None = Field(default=None, primary_key=True)
-    event_date: date = Field(sa_column=Column(SafeDate(), nullable=False))
-    name: str = Field(max_length=200)
-    start_time: dt_time | None = Field(default=None, sa_column=Column(SafeTime(), nullable=True))
-    location: str | None = Field(default=None, max_length=500)
-    notes: str | None = Field(default=None)
-    status: EventStatus = Field(default=EventStatus.SCHEDULED, sa_column=Column(Enum(EventStatus)))
-    
-    # Relations
-    team_id: int | None = Field(default=None, foreign_key="team.id", index=True)
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(sa_column=sa.Column(sa.String(length=200), nullable=False))
+    event_date: date = Field(sa_column=sa.Column(SafeDate(), nullable=False))
+    start_time: Optional[time] = Field(default=None, sa_column=sa.Column(SafeTime(), nullable=True))
+    location: Optional[str] = Field(default=None, sa_column=sa.Column(sa.String(length=500)))
+    notes: Optional[str] = None
+    status: Optional[EventStatus] = Field(
+        default=EventStatus.SCHEDULED,
+        sa_column=sa.Column(
+            sa.Enum(EventStatus, name="eventstatus", values_callable=lambda e: [item.value for item in e]),
+            nullable=True,
+        ),
+    )
+    team_id: Optional[int] = Field(default=None, foreign_key="team.id", index=True)
+    coach_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
     created_by_id: int = Field(foreign_key="user.id", index=True)
-    coach_id: int | None = Field(default=None, foreign_key="user.id", index=True)
-    
-    # Timestamps
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    
-    # Notification flags
-    email_sent: bool = Field(default=False)
-    push_sent: bool = Field(default=False)
-    
-    # Relationships
-    participants: Optional[list["EventParticipant"]] = Relationship(
-        back_populates="event",
-        sa_relationship_kwargs={"cascade": "all, delete-orphan", "passive_deletes": True},
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True, nullable=False)
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column_kwargs={"onupdate": datetime.now(timezone.utc)},
+        nullable=False,
     )
-    created_by: Optional["User"] = Relationship(
-        sa_relationship_kwargs={"foreign_keys": "[Event.created_by_id]"}
+    email_sent: bool = Field(default=False, nullable=False)
+    push_sent: bool = Field(default=False, nullable=False)
+
+    created_by: "User" = Relationship(
+        back_populates="created_events",
+        sa_relationship_kwargs={"foreign_keys": "Event.created_by_id"},
     )
-
-    def set_team_ids(self, team_ids: list[int]) -> None:
-        """Cache resolved team ids for serialization."""
-        setattr(self, "_team_ids_cache", team_ids)
-
-    @property
-    def team_ids(self) -> list[int]:
-        """Return cached team ids, falling back to single team_id if unset."""
-        cached = getattr(self, "_team_ids_cache", None)
-        if cached is not None:
-            return cached
-        return [self.team_id] if self.team_id else []
-
-
-class EventParticipant(SQLModel, table=True):
-    """Many-to-many relationship between events and participants (athletes/users)."""
-    __tablename__ = "event_participant"
-    
-    id: int | None = Field(default=None, primary_key=True)
-    event_id: int = Field(foreign_key="event.id", index=True, ondelete="CASCADE")
-    user_id: int | None = Field(default=None, foreign_key="user.id", index=True, ondelete="CASCADE")
-    athlete_id: int | None = Field(default=None, foreign_key="athlete.id", index=True, ondelete="CASCADE")
-    
-    status: ParticipantStatus = Field(
-        default=ParticipantStatus.INVITED,
-        sa_column=Column(Enum(ParticipantStatus))
-    )
-    
-    # Timestamps
-    invited_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    responded_at: datetime | None = Field(default=None)
-    
-    # Relationships
-    event: Event = Relationship(back_populates="participants")
+    coach: Optional["User"] = Relationship(sa_relationship_kwargs={"foreign_keys": "Event.coach_id"})
+    teams: List["EventTeamLink"] = Relationship(back_populates="event")
+    participants: List["EventParticipant"] = Relationship(back_populates="event")
 
 
 class Notification(SQLModel, table=True):
-    """Notification log for tracking sent notifications."""
     __tablename__ = "notification"
-    
-    id: int | None = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", index=True, ondelete="CASCADE")
-    event_id: int | None = Field(default=None, foreign_key="event.id", index=True, ondelete="CASCADE")
-    
-    # Notification type
-    type: str = Field(max_length=50)  # 'event_invite', 'event_update', 'event_confirmation', 'event_reminder'
-    channel: str = Field(max_length=20)  # 'email', 'push', 'both'
-    
-    # Content
-    title: str = Field(max_length=200)
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    event_id: Optional[int] = Field(default=None, foreign_key="event.id", index=True)
+    type: str
+    channel: str
+    title: str
     body: str
-    
-    # Status
     sent: bool = Field(default=False)
-    sent_at: datetime | None = Field(default=None)
-    error: str | None = Field(default=None)
-    
-    # Timestamps
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+    sent_at: Optional[datetime] = None
+    error: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True, nullable=False)
+    read: bool = Field(default=False)
 
 
 class PushSubscription(SQLModel, table=True):
-    """Push notification subscriptions for web push."""
     __tablename__ = "push_subscription"
-    
-    id: int | None = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", index=True, unique=True, ondelete="CASCADE")
-    
-    # Web Push subscription data
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True, nullable=False)
     endpoint: str
     p256dh: str
     auth: str
-    
-    # Timestamps
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_column_kwargs={"onupdate": datetime.now(timezone.utc)},
+        nullable=False,
+    )

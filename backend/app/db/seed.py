@@ -8,6 +8,11 @@ from sqlmodel import Session, select
 from app.core.security import get_password_hash
 from app.models import AssessmentSession, Athlete, SessionResult, Team, TeamCombineMetric, TestDefinition, User
 from app.models.athlete import AthleteGender, AthleteStatus
+from app.models.report_submission import (
+    ReportSubmission,
+    ReportSubmissionStatus,
+    ReportSubmissionType,
+)
 from app.models.user import UserRole, UserAthleteApprovalStatus
 
 
@@ -218,4 +223,27 @@ def seed_database(session: Session) -> None:
                 recorded_at=datetime.now(timezone.utc) - timedelta(days=12),
             )
         )
+
+    # Report cards: 2 por atleta, aprovados
+    report_categories_template = [
+        {"name": "Technique", "metrics": [{"name": "Passing", "score": 80}, {"name": "Dribbling", "score": 82}]},
+        {"name": "Physical", "metrics": [{"name": "Endurance", "score": 78}, {"name": "Speed", "score": 85}]},
+    ]
+    for athlete in athletes:
+        for idx in range(2):
+            report = ReportSubmission(
+                report_type=ReportSubmissionType.REPORT_CARD,
+                status=ReportSubmissionStatus.APPROVED,
+                submitted_by_id=coach.id if idx % 2 == 0 else admin.id,
+                approved_by_id=admin.id,
+                approved_at=datetime.now(timezone.utc),
+                team_id=athlete.team_id,
+                athlete_id=athlete.id,
+                coach_report=f"Report {idx + 1} for {athlete.first_name}",
+                general_notes="Seeded report card",
+                report_card_categories=report_categories_template,
+                overall_average=82 + idx,
+                created_at=datetime.now(timezone.utc) - timedelta(days=idx + 1),
+            )
+            session.add(report)
     session.commit()

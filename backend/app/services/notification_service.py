@@ -4,7 +4,8 @@ from typing import List
 from datetime import datetime, timezone
 from sqlmodel import Session, select
 
-from app.models.event import Event, EventParticipant, Notification
+from app.models.event import Event, Notification
+from app.models.event_participant import EventParticipant, ParticipantStatus
 from app.models.user import User
 from app.services.email_service import email_service
 
@@ -85,7 +86,7 @@ class NotificationService:
         # Get confirmed participants
         stmt = select(EventParticipant).where(
             EventParticipant.event_id == event.id,
-            EventParticipant.status == "confirmed"
+            EventParticipant.status == ParticipantStatus.CONFIRMED,
         )
         participants = db.exec(stmt).all()
         
@@ -134,7 +135,7 @@ class NotificationService:
         """Send reminder emails to confirmed participants."""
         stmt = select(EventParticipant).where(
             EventParticipant.event_id == event.id,
-            EventParticipant.status == "confirmed"
+            EventParticipant.status == ParticipantStatus.CONFIRMED,
         )
         participants = db.exec(stmt).all()
         sent = 0
@@ -195,12 +196,13 @@ class NotificationService:
         )
         
         # Log notification
+        status_enum = ParticipantStatus(status.upper()) if isinstance(status, str) else status
         notification = Notification(
             user_id=organizer.id,
             event_id=event.id,
             type="event_confirmation",
             channel="email",
-            title=f"{participant_user.full_name} {status}",
+            title=f"{participant_user.full_name} {status_enum.value}",
             body=f"For event: {event.name}",
             sent=success,
             sent_at=datetime.now(timezone.utc) if success else None,

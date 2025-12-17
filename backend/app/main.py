@@ -3,6 +3,8 @@ from pathlib import Path
 from datetime import datetime, date, time
 import json
 
+from app.core.config import settings
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -10,42 +12,43 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exceptions import RequestValidationError
 from starlette.requests import Request
+from google.cloud import storage
+from google.api_core.exceptions import GoogleAPICallError
 
 # ==============================================================================
 # TEMPORARY: Google Cloud Storage Authentication Test
 # ==============================================================================
-try:
-    from google.cloud import storage
-    from google.api_core.exceptions import GoogleAPICallError
-
-    logger = logging.getLogger(__name__)
-    logger.info("Attempting to authenticate with Google Cloud Storage...")
-    storage_client = storage.Client()
-    # The list_buckets() method is a good way to check authentication.
-    buckets = storage_client.list_buckets()
-    logger.info("✅ Google Cloud Storage authentication successful.")
-except GoogleAPICallError as e:
-    logger.error(
-        "❌ Google Cloud Storage authentication failed. "
-        "Please check your credentials (GOOGLE_APPLICATION_CREDENTIALS) and permissions.",
-        exc_info=True,
-    )
-    # Re-raise the exception to prevent the app from starting in a broken state
-    raise e
-except ImportError:
-    logger.warning(
-        "⚠️ 'google-cloud-storage' library is not installed. "
-        "Skipping GCS authentication test."
-    )
-except Exception as e:
-    logger.error(
-        "❌ An unexpected error occurred during GCS authentication.", exc_info=True
-    )
-    raise e
+if settings.ENVIRONMENT.lower() not in {"dev", "development", "local"}:
+    try:
+        logger = logging.getLogger(__name__)
+        logger.info("Attempting to authenticate with Google Cloud Storage...")
+        storage_client = storage.Client()
+        # The list_buckets() method is a good way to check authentication.
+        buckets = storage_client.list_buckets()
+        logger.info("✅ Google Cloud Storage authentication successful.")
+    except GoogleAPICallError as e:
+        logger.error(
+            "❌ Google Cloud Storage authentication failed. "
+            "Please check your credentials (GOOGLE_APPLICATION_CREDENTIALS) and permissions.",
+            exc_info=True,
+        )
+        # Re-raise the exception to prevent the app from starting in a broken state
+        raise e
+    except ImportError:
+        logger.warning(
+            "⚠️ 'google-cloud-storage' library is not installed. "
+            "Skipping GCS authentication test."
+        )
+    except Exception as e:
+        logger.error(
+            "❌ An unexpected error occurred during GCS authentication.", exc_info=True
+        )
+        raise e
+else:
+    logging.getLogger(__name__).info("Running in local environment, skipping GCS authentication at startup.")
 # ==============================================================================
 
 from app.api.v1.router import api_router
-from app.core.config import settings
 from app.core.observability import (
     RequestContextMiddleware,
     configure_logging,

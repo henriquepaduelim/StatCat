@@ -40,7 +40,7 @@ class UserBase(SQLModel):
     photo_url: str | None = None
     role: UserRole = UserRole.STAFF
     athlete_id: int | None = None
-    athlete_status: UserAthleteApprovalStatus = UserAthleteApprovalStatus.INCOMPLETE
+    athlete_status: UserAthleteApprovalStatus | None = None
     rejection_reason: str | None = None
     is_active: bool = True
 

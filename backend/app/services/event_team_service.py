@@ -8,7 +8,8 @@ from sqlalchemy import delete
 from sqlmodel import Session, select
 
 from app.models.athlete import Athlete
-from app.models.event import Event, EventParticipant, ParticipantStatus
+from app.models.event import Event
+from app.models.event_participant import EventParticipant, ParticipantStatus
 from app.models.event_team_link import EventTeamLink
 
 
