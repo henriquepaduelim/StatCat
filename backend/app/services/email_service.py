@@ -56,6 +56,16 @@ class EmailService:
                 "`ics` library not installed. Calendar invite features will be disabled. Run `pip install ics`."
             )
 
+    def _require_configured(self, action: str) -> bool:
+        """Ensure email service is configured; log and skip otherwise."""
+        if self.is_configured:
+            return True
+        logger.error(
+            "Email service not configured; cannot %s. Set RESEND_API_KEY or SMTP_USER/SMTP_PASSWORD.",
+            action,
+        )
+        return False
+
     def _generate_html_body(
         self, greeting: str, content: str, buttons: List[Dict[str, str]] = None
     ) -> str:
@@ -152,7 +162,7 @@ class EmailService:
         event_end_date: Optional[str] = None,
         event_end_time: Optional[str] = None,
     ) -> bool:
-        if not self.is_configured:
+        if not self._require_configured("send event invitation"):
             return False
 
         subject = f"Invitation: {event_name}"
@@ -278,7 +288,7 @@ class EmailService:
         event_end_time: Optional[str] = None,
         event_id: Optional[int] = None,
     ) -> bool:
-        if not self.is_configured:
+        if not self._require_configured("send event update"):
             return False
         subject = f"Event Updated: {event_name}"
         event_url = (
@@ -348,7 +358,7 @@ class EmailService:
         status: str,
         event_id: Optional[int] = None,
     ) -> bool:
-        if not self.is_configured:
+        if not self._require_configured("send confirmation receipt"):
             return False
         subject = f"RSVP Update for {event_name}"
         event_url = (
@@ -384,7 +394,7 @@ class EmailService:
         event_end_time: Optional[str] = None,
         event_id: Optional[int] = None,
     ) -> bool:
-        if not self.is_configured:
+        if not self._require_configured("send event reminder"):
             return False
         subject = f"Reminder: {event_name} in {hours_until} hours"
         event_url = (
@@ -448,7 +458,7 @@ class EmailService:
     async def send_password_reset(
         self, to_email: str, to_name: str, reset_token: str, expires_minutes: int
     ) -> bool:
-        if not self.is_configured:
+        if not self._require_configured("send password reset"):
             return False
         subject = "Reset Your StatCat Password"
         reset_url = f"{self.frontend_url}/reset-password?token={reset_token}"
@@ -475,7 +485,7 @@ class EmailService:
     async def send_registration_pending(
         self, to_email: str, to_name: Optional[str] = None
     ) -> bool:
-        if not self.is_configured:
+        if not self._require_configured("send registration pending notification"):
             return False
         subject = "We've Received Your StatCat Registration"
         text_body = (
@@ -498,7 +508,7 @@ class EmailService:
     async def send_account_approved(
         self, to_email: str, to_name: Optional[str] = None
     ) -> bool:
-        if not self.is_configured:
+        if not self._require_configured("send account approved notification"):
             return False
         subject = f"Welcome to {self.from_name}! Your Account is Approved"
         login_url = f"{self.frontend_url}/login"
@@ -523,7 +533,7 @@ class EmailService:
         self, to_email: str, to_name: Optional[str] = None
     ) -> bool:
         """Lightweight welcome email sent on first login."""
-        if not self.is_configured:
+        if not self._require_configured("send welcome email"):
             return False
         subject = f"Welcome to {self.from_name}"
         login_url = f"{self.frontend_url}/login"
@@ -547,7 +557,7 @@ class EmailService:
     async def send_password_change_confirmation(
         self, to_email: str, to_name: Optional[str] = None
     ) -> bool:
-        if not self.is_configured:
+        if not self._require_configured("send password change confirmation"):
             return False
         subject = f"Your {self.from_name} Password Was Changed"
         text_body = (
@@ -575,7 +585,7 @@ class EmailService:
         to_name: Optional[str] = None,
         athlete_id: Optional[int] = None,
     ) -> bool:
-        if not self.is_configured:
+        if not self._require_configured("send report ready notification"):
             return False
         subject = "Your Performance Report is Ready"
         report_url = (
@@ -607,7 +617,7 @@ class EmailService:
         team_name: str,
         team_id: Optional[int] = None,
     ) -> bool:
-        if not self.is_configured:
+        if not self._require_configured("send team assignment notification"):
             return False
         subject = f"You Have Joined Team {team_name}"
         team_url = (
@@ -633,7 +643,7 @@ class EmailService:
     async def send_temp_password(
         self, to_email: str, to_name: Optional[str], password: str
     ) -> bool:
-        if not self.is_configured:
+        if not self._require_configured("send temporary password"):
             return False
         subject = f"Your Temporary {self.from_name} Password"
         login_url = f"{self.frontend_url}/login"
@@ -666,8 +676,7 @@ class EmailService:
         html_body: Optional[str] = None,
         attachments: Optional[List[Dict[str, Any]]] = None,
     ) -> bool:
-        if not self.is_configured:
-            logger.error("Email service not configured for sending.")
+        if not self._require_configured("send email"):
             return False
         # If Resend is configured, try to use it first
         if self.use_resend:
