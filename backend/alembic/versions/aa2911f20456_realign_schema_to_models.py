@@ -22,6 +22,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema to match current models (events, participants, notifications, reports)."""
+    bind = op.get_bind()
+    is_sqlite = bind.dialect.name == "sqlite"
 
     # Drop dependent tables first (no data to preserve)
     op.drop_table("match_stat")
@@ -32,11 +34,14 @@ def upgrade() -> None:
     op.drop_table("event")
     op.execute("DROP TABLE IF EXISTS event_team_link")
 
-    # Drop legacy enum type no longer used
-    op.execute("DROP TYPE IF EXISTS eventstatus")
+    # Drop legacy enum type no longer used (Postgres only)
+    if not is_sqlite:
+        op.execute("DROP TYPE IF EXISTS eventstatus")
 
     # Recreate event table (aligned to Event model)
-    event_type_enum = sa.Enum("game", "training", "other", name="eventtype")
+    event_type_enum = sa.Enum(
+        "game", "training", "other", name="eventtype", native_enum=not is_sqlite
+    )
     op.create_table(
         "event",
         sa.Column("id", sa.Integer(), primary_key=True),
@@ -100,18 +105,18 @@ def upgrade() -> None:
     )
 
     # Recreate report_submission (minimal)
-    rs_status_enum = ENUM(
+    rs_status_enum = sa.Enum(
         "pending",
         "approved",
         "rejected",
         name="reportsubmissionstatus",
-        create_type=False,
+        native_enum=not is_sqlite,
     )
-    rs_type_enum = ENUM(
+    rs_type_enum = sa.Enum(
         "injury",
         "wellness",
         name="reportsubmissiontype",
-        create_type=False,
+        native_enum=not is_sqlite,
     )
     op.create_table(
         "report_submission",
@@ -184,10 +189,14 @@ def upgrade() -> None:
     )
 
     # Adjust existing columns/indexes
-    op.alter_column("team_combine_metric", "status", nullable=True)
-    op.alter_column("user", "full_name", nullable=True)
-    op.drop_index("ix_athlete_email", table_name="athlete")
-    op.create_index("ix_athlete_email", "athlete", ["email"], unique=True)
+    if is_sqlite:
+        op.execute("DROP INDEX IF EXISTS ix_athlete_email")
+        op.create_index("ix_athlete_email", "athlete", ["email"], unique=True)
+    else:
+        op.alter_column("team_combine_metric", "status", nullable=True)
+        op.alter_column("user", "full_name", nullable=True)
+        op.drop_index("ix_athlete_email", table_name="athlete")
+        op.create_index("ix_athlete_email", "athlete", ["email"], unique=True)
 
 
 def downgrade() -> None:

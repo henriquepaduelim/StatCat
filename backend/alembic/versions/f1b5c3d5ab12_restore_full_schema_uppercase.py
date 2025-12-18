@@ -30,6 +30,9 @@ def _drop_enum(type_name: str) -> None:
 def upgrade() -> None:
     """Recreate legacy tables and enums expected by the application."""
     bind = op.get_bind()
+    if bind.dialect.name == "sqlite":
+        # Skip Postgres-specific enum/table recreation on SQLite
+        return
 
     # Drop simplified tables created in the last realignment
     _drop_if_exists("match_stat")

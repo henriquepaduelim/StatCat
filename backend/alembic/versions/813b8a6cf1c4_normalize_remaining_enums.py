@@ -21,6 +21,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema to use lowercase enum values matching the models."""
+    bind = op.get_bind()
+    if bind.dialect.name == "sqlite":
+        # SQLite uses CHECK constraints; skip enum type recreation
+        return
 
     # userathleteapprovalstatus -> lowercase
     op.execute(

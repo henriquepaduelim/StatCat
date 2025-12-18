@@ -22,6 +22,11 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     """Upgrade schema to lowercase user roles."""
 
+    bind = op.get_bind()
+    if bind.dialect.name == "sqlite":
+        # SQLite stores enums as CHECK constraints; skip type recreation
+        return
+
     # Create new enum with lowercase values
     op.execute(
         "CREATE TYPE userrole_new AS ENUM ('athlete', 'coach', 'staff', 'admin')"

@@ -771,13 +771,18 @@ def upgrade() -> None:
     )
 
     # Add foreign keys that were deferred to avoid creation-order cycles
-    op.create_foreign_key(
-        "fk_team_created_by_id", "team", "user", ["created_by_id"], ["id"]
-    )
-    op.create_foreign_key("fk_athlete_team_id", "athlete", "team", ["team_id"], ["id"])
-    op.create_foreign_key(
-        "fk_user_athlete_id", "user", "athlete", ["athlete_id"], ["id"]
-    )
+    with op.batch_alter_table("team", schema=None) as batch_op:
+        batch_op.create_foreign_key(
+            "fk_team_created_by_id", "user", ["created_by_id"], ["id"]
+        )
+
+    with op.batch_alter_table("athlete", schema=None) as batch_op:
+        batch_op.create_foreign_key("fk_athlete_team_id", "team", ["team_id"], ["id"])
+
+    with op.batch_alter_table("user", schema=None) as batch_op:
+        batch_op.create_foreign_key(
+            "fk_user_athlete_id", "athlete", ["athlete_id"], ["id"]
+        )
     # ### end Alembic commands ###
 
 

@@ -20,8 +20,14 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema for report cards."""
-    # Extend enum for reopened status
-    op.execute("ALTER TYPE reportsubmissionstatus ADD VALUE IF NOT EXISTS 'REOPENED'")
+    bind = op.get_bind()
+    is_sqlite = bind.dialect.name == "sqlite"
+
+    # Extend enum for reopened status (skip on SQLite)
+    if not is_sqlite:
+        op.execute(
+            "ALTER TYPE reportsubmissionstatus ADD VALUE IF NOT EXISTS 'REOPENED'"
+        )
 
     # New fields for report cards
     op.add_column(
