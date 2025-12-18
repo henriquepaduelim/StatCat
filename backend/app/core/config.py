@@ -24,30 +24,30 @@ class Settings(BaseSettings):
     DATABASE_HOSTADDR: str | None = None
     AWS_S3_BUCKET: str | None = None
     AWS_REGION: str | None = None
+    STORAGE_PROVIDER: str = "local"  # options: local, gcs
     SECRET_KEY: str = "change-me"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
     SECURITY_ALGORITHM: str = "HS256"
-    BACKEND_CORS_ORIGINS: list[str] = Field(default_factory=lambda: [
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "http://localhost:4173",  # Vite preview
-        "https://stat-cat-git-main-henriquepaduelims-projects.vercel.app",
-        "https://stats-cat.vercel.app",
-        "https://statscat.vercel.app",
-        "https://stat-cat.vercel.app",
-        # Add Vercel preview URLs variations
-        "https://stat-cat-git-*.vercel.app",
-        "https://stats-cat-git-*.vercel.app",
-    ])
+    BACKEND_CORS_ORIGINS: list[str] = Field(
+        default_factory=lambda: [
+            "http://localhost:5173",
+            "http://localhost:3000",
+            "http://localhost:4173",  # Vite preview
+        ]
+    )
+    FRONTEND_ORIGIN: str | None = None
+    ADMIN_EMAIL: str | None = None
+    ADMIN_PASSWORD: str | None = None
+    ADMIN_NAME: str | None = None
     MEDIA_ROOT: str = "media"
     AUTO_SEED_DATABASE: bool = False
     LOG_LEVEL: str = "INFO"
-    
+
     # Google OAuth settings
     GOOGLE_CLIENT_ID: str | None = None
     GOOGLE_CLIENT_SECRET: str | None = None
     GOOGLE_REDIRECT_URI: str | None = None
-    
+
     # SMTP Email Configuration
     SMTP_HOST: str | None = None
     SMTP_PORT: int = 587
@@ -70,11 +70,21 @@ class Settings(BaseSettings):
         "image/jpeg",
     }
     ATHLETE_ALLOWED_PHOTO_EXTENSIONS: set[str] = {".png", ".jpg", ".jpeg"}
-    ATHLETE_ALLOWED_PHOTO_MIME_TYPES: set[str] = {"image/png", "image/jpeg", "image/heic", "image/heif"}
+    ATHLETE_ALLOWED_PHOTO_MIME_TYPES: set[str] = {
+        "image/png",
+        "image/jpeg",
+        "image/heic",
+        "image/heif",
+    }
     USER_PHOTO_MAX_BYTES: int = 5 * 1024 * 1024
     USER_ALLOWED_PHOTO_EXTENSIONS: set[str] = {".png", ".jpg", ".jpeg"}
-    USER_ALLOWED_PHOTO_MIME_TYPES: set[str] = {"image/png", "image/jpeg", "image/heic", "image/heif"}
-    
+    USER_ALLOWED_PHOTO_MIME_TYPES: set[str] = {
+        "image/png",
+        "image/jpeg",
+        "image/heic",
+        "image/heif",
+    }
+
     # Observability
     SENTRY_DSN: str | None = None
     SENTRY_TRACES_SAMPLE_RATE: float = 0.1
@@ -88,18 +98,38 @@ class Settings(BaseSettings):
     def _validate_security_basics(self) -> "Settings":
         """Prevent weak defaults from being used in production-like environments."""
 
-        is_default_secret = self.SECRET_KEY in {"change-me", "your-secret-key-here", "your-secret-key-here-change-in-production"}
+        is_default_secret = self.SECRET_KEY in {
+            "change-me",
+            "your-secret-key-here",
+            "your-secret-key-here-change-in-production",
+        }
         is_prod_env = self.ENVIRONMENT.lower() not in {"dev", "development", "local"}
 
         if is_prod_env and is_default_secret:
             raise ValueError("SECRET_KEY must be set to a strong value in production.")
         if is_prod_env and not self.ENCRYPTION_KEY_CURRENT:
-            raise ValueError("ENCRYPTION_KEY_CURRENT must be set in production and cannot fallback to SECRET_KEY.")
-        if is_prod_env and self.ENCRYPTION_KEY_CURRENT and self.ENCRYPTION_KEY_CURRENT == self.SECRET_KEY:
-            raise ValueError("ENCRYPTION_KEY_CURRENT must differ from SECRET_KEY in production.")
+            raise ValueError(
+                "ENCRYPTION_KEY_CURRENT must be set in production and cannot fallback to SECRET_KEY."
+            )
+        if (
+            is_prod_env
+            and self.ENCRYPTION_KEY_CURRENT
+            and self.ENCRYPTION_KEY_CURRENT == self.SECRET_KEY
+        ):
+            raise ValueError(
+                "ENCRYPTION_KEY_CURRENT must differ from SECRET_KEY in production."
+            )
         if is_prod_env and self.AUTO_SEED_DATABASE:
             raise ValueError("AUTO_SEED_DATABASE must be disabled in production.")
-        return self
+            return self
+
+    @property
+    def resolved_cors_origins(self) -> list[str]:
+        """Return CORS origins including optional production origin."""
+        origins = list(self.BACKEND_CORS_ORIGINS)
+        if self.FRONTEND_ORIGIN:
+            origins.append(self.FRONTEND_ORIGIN.rstrip("/"))
+        return origins
 
 
 @lru_cache

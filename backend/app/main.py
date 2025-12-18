@@ -12,41 +12,51 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exceptions import RequestValidationError
 from starlette.requests import Request
-from google.cloud import storage
-from google.api_core.exceptions import GoogleAPICallError
 
-# ==============================================================================
-# TEMPORARY: Google Cloud Storage Authentication Test
-# ==============================================================================
-if settings.ENVIRONMENT.lower() not in {"dev", "development", "local"}:
+
+def _maybe_verify_gcs() -> None:
+    """Optionally verify GCS credentials; skipped unless explicitly enabled."""
+    env = settings.ENVIRONMENT.lower()
+    provider = settings.STORAGE_PROVIDER.lower()
+    if provider != "gcs":
+        logging.getLogger(__name__).info(
+            "GCS check skipped (STORAGE_PROVIDER=%s)", settings.STORAGE_PROVIDER
+        )
+        return
+    if env in {"dev", "development", "local"}:
+        logging.getLogger(__name__).info(
+            "Running in local environment, skipping GCS authentication at startup."
+        )
+        return
+
+    try:
+        from google.cloud import storage  # type: ignore
+        from google.api_core.exceptions import GoogleAPICallError  # type: ignore
+    except ImportError:
+        logging.getLogger(__name__).warning(
+            "GCS provider selected but 'google-cloud-storage' is not installed; skipping check."
+        )
+        return
+
     try:
         logger = logging.getLogger(__name__)
         logger.info("Attempting to authenticate with Google Cloud Storage...")
         storage_client = storage.Client()
-        # The list_buckets() method is a good way to check authentication.
-        buckets = storage_client.list_buckets()
+        _ = storage_client.list_buckets()
         logger.info("✅ Google Cloud Storage authentication successful.")
-    except GoogleAPICallError as e:
+    except GoogleAPICallError as exc:
         logger.error(
             "❌ Google Cloud Storage authentication failed. "
-            "Please check your credentials (GOOGLE_APPLICATION_CREDENTIALS) and permissions.",
+            "Check GOOGLE_APPLICATION_CREDENTIALS and permissions.",
             exc_info=True,
         )
-        # Re-raise the exception to prevent the app from starting in a broken state
-        raise e
-    except ImportError:
-        logger.warning(
-            "⚠️ 'google-cloud-storage' library is not installed. "
-            "Skipping GCS authentication test."
-        )
-    except Exception as e:
+        raise exc
+    except Exception as exc:  # pragma: no cover - unexpected runtime errors
         logger.error(
-            "❌ An unexpected error occurred during GCS authentication.", exc_info=True
+            "❌ Unexpected error during GCS authentication.", exc_info=True
         )
-        raise e
-else:
-    logging.getLogger(__name__).info("Running in local environment, skipping GCS authentication at startup.")
-# ==============================================================================
+        raise exc
+
 
 from app.api.v1.router import api_router
 from app.core.observability import (
@@ -62,10 +72,14 @@ configure_logging(settings.LOG_LEVEL)
 setup_sentry(settings)
 logger = logging.getLogger(__name__)
 
+# Optional GCS check (disabled unless STORAGE_PROVIDER=gcs)
+_maybe_verify_gcs()
+
 app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION)
 app.add_middleware(RequestContextMiddleware)
 setup_metrics(app)
 setup_tracing(app, settings, engine=engine)
+
 
 # Global exception handlers
 @app.exception_handler(Exception)
@@ -76,6 +90,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "Internal server error"},
     )
 
+
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     return JSONResponse(
@@ -83,9 +98,11 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         content={"detail": exc.detail},
     )
 
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     logger.error(f"Validation error on {request.url}: {exc}")
+
     def _default(o):
         if isinstance(o, (datetime, date, time)):
             return o.isoformat()
@@ -96,10 +113,11 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         content=json.loads(json.dumps({"detail": exc.errors()}, default=_default)),
     )
 
+
 # Set up CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_origins=settings.resolved_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
