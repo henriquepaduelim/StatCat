@@ -1,4 +1,5 @@
 """API endpoints for events management."""
+
 from datetime import date as date_type, datetime, time as time_type, timezone
 from typing import Iterable, List, Optional
 
@@ -30,7 +31,7 @@ from app.services.event_team_service import (
     get_event_athlete_ids,
     get_team_roster_athlete_ids,
     persist_event_team_links,
-resolve_event_team_ids,
+    resolve_event_team_ids,
 )
 
 router = APIRouter()
@@ -41,7 +42,9 @@ def _get_team_coach_user_ids(db: Session, team_ids: Iterable[int]) -> set[int]:
     unique_ids = {team_id for team_id in team_ids or [] if team_id is not None}
     if not unique_ids:
         return set()
-    rows = db.exec(select(CoachTeamLink.user_id).where(CoachTeamLink.team_id.in_(unique_ids))).all()
+    rows = db.exec(
+        select(CoachTeamLink.user_id).where(CoachTeamLink.team_id.in_(unique_ids))
+    ).all()
     normalized: set[int] = set()
     for row in rows:
         value = row[0] if isinstance(row, tuple) else row
@@ -64,18 +67,24 @@ def _collect_invitee_user_ids(
 
 
 def _coach_team_ids(db: Session, coach_id: int) -> set[int]:
-    rows = db.exec(select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == coach_id)).all()
-    return {row[0] if isinstance(row, tuple) else row for row in rows if row is not None}
+    rows = db.exec(
+        select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == coach_id)
+    ).all()
+    return {
+        row[0] if isinstance(row, tuple) else row for row in rows if row is not None
+    }
 
 
-def _ensure_user_participants(db: Session, event: Event, user_ids: Iterable[int]) -> None:
+def _ensure_user_participants(
+    db: Session, event: Event, user_ids: Iterable[int]
+) -> None:
     normalized = {user_id for user_id in user_ids if user_id is not None}
     if not normalized or not event.id:
         return
     existing_rows = db.exec(
         select(EventParticipant.user_id).where(
             EventParticipant.event_id == event.id,
-            EventParticipant.user_id != None,
+            EventParticipant.user_id is not None, # Changed != None to is not None
         )
     ).all()
     existing = {row[0] for row in existing_rows if row and row[0] is not None}
@@ -133,13 +142,19 @@ async def create_event(
     athlete_user_rows = db.exec(
         select(User.athlete_id, User.id).where(User.athlete_id.in_(all_athlete_ids))
     ).all()
-    athlete_user_map = {row[0]: row[1] for row in athlete_user_rows if row[0] is not None and row[1] is not None}
+    athlete_user_map = {
+        row[0]: row[1]
+        for row in athlete_user_rows
+        if row[0] is not None and row[1] is not None
+    }
     invitee_user_ids.update(athlete_user_map.values())
 
     _ensure_user_participants(db, event, invitee_user_ids)
 
     existing_participants = db.exec(
-        select(EventParticipant).where(EventParticipant.event_id == event.id, EventParticipant.user_id != None)
+        select(EventParticipant).where(
+            EventParticipant.event_id == event.id, EventParticipant.user_id is not None # Changed != None to is not None
+        )
     ).all()
     participants_by_user: dict[int, EventParticipant] = {
         ep.user_id: ep for ep in existing_participants if ep.user_id is not None
@@ -164,11 +179,11 @@ async def create_event(
                 status=ParticipantStatus.INVITED,
             )
         )
-    
+
     db.commit()
     db.refresh(event)
     attach_team_ids(db, [event])
-    
+
     # Send notifications
     user_invitees_list = sorted(invitee_user_ids)
     all_invitee_ids = user_invitees_list + event_in.athlete_ids
@@ -180,7 +195,7 @@ async def create_event(
             send_email=event_in.send_email,
             send_push=event_in.send_push,
         )
-    
+
     # Refresh to get participants
     db.refresh(event)
     return event
@@ -202,7 +217,9 @@ def list_events(
     if current_user.role == UserRole.COACH:
         allowed_team_ids = _coach_team_ids(db, current_user.id)
         if team_id is not None and team_id not in allowed_team_ids:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed"
+            )
         if not allowed_team_ids and team_id is None:
             return []
     stmt = select(Event)
@@ -213,13 +230,19 @@ def list_events(
         size = 50
     if size > 200:
         size = 200
-    
+
     # Filter by team if provided (include multi-team associations)
     if team_id is not None:
-        linked_event_ids = select(EventTeamLink.event_id).where(EventTeamLink.team_id == team_id)
+        linked_event_ids = select(EventTeamLink.event_id).where(
+            EventTeamLink.team_id == team_id
+        )
         # Inclui eventos sem time para permitir convites de atletas sem time
         stmt = stmt.where(
-            or_(Event.team_id == team_id, Event.id.in_(linked_event_ids), Event.team_id.is_(None))
+            or_(
+                Event.team_id == team_id,
+                Event.id.in_(linked_event_ids),
+                Event.team_id.is_(None),
+            )
         )
     elif current_user.role == UserRole.COACH:
         allowed_team_ids = _coach_team_ids(db, current_user.id)
@@ -228,9 +251,13 @@ def list_events(
                 EventTeamLink.team_id.in_(allowed_team_ids)
             )
             stmt = stmt.where(
-                or_(Event.team_id.in_(allowed_team_ids), Event.id.in_(linked_event_ids), Event.team_id.is_(None))
+                or_(
+                    Event.team_id.in_(allowed_team_ids),
+                    Event.id.in_(linked_event_ids),
+                    Event.team_id.is_(None),
+                )
             )
-    
+
     # Filter by date range
     parsed_from = _parse_date_str(date_from)
     parsed_to = _parse_date_str(date_to)
@@ -238,14 +265,16 @@ def list_events(
         stmt = stmt.where(Event.event_date >= parsed_from)
     if parsed_to:
         stmt = stmt.where(Event.event_date <= parsed_to)
-    
+
     if athlete_id is not None:
-        stmt = stmt.join(EventParticipant).where(EventParticipant.athlete_id == athlete_id)
-    
+        stmt = stmt.join(EventParticipant).where(
+            EventParticipant.athlete_id == athlete_id
+        )
+
     stmt = stmt.order_by(Event.event_date.desc(), Event.start_time.desc())
     offset = (page - 1) * size
     stmt = stmt.offset(offset).limit(size)
-    
+
     events = db.exec(stmt).all()
     attach_team_ids(db, events)
     return events
@@ -258,18 +287,22 @@ def list_my_events(
     current_user: User = Depends(get_current_active_user),
 ) -> List[Event]:
     """List events where current user is invited or organizer."""
-    coach_team_ids = _coach_team_ids(db, current_user.id) if current_user.role == UserRole.COACH else set()
+    coach_team_ids = (
+        _coach_team_ids(db, current_user.id)
+        if current_user.role == UserRole.COACH
+        else set()
+    )
     # Get events where user is organizer
     stmt_created = select(Event).where(Event.created_by_id == current_user.id)
     created_events = db.exec(stmt_created).all()
-    
+
     # Get events where user is invited (not as athlete placeholder)
     stmt_invited = (
         select(Event)
         .join(EventParticipant)
         .where(
             EventParticipant.user_id == current_user.id,
-            EventParticipant.athlete_id == None  # Only real user invitations, not athlete placeholders
+            EventParticipant.athlete_id is None,  # Changed == None to is None
         )
     )
     invited_events = db.exec(stmt_invited).all()
@@ -282,7 +315,7 @@ def list_my_events(
             .where(EventParticipant.athlete_id == current_user.athlete_id)
         )
         athlete_events = db.exec(stmt_athlete).all()
-    
+
     # Combine and deduplicate
     all_events = {e.id: e for e in created_events}
     for e in invited_events:
@@ -291,7 +324,7 @@ def list_my_events(
     for e in athlete_events:
         if e.id not in all_events:
             all_events[e.id] = e
-    
+
     # If coach, restrict to own teams (direct or linked), but keep events without team
     if current_user.role == UserRole.COACH and coach_team_ids:
         filtered: dict[int, Event] = {}
@@ -302,7 +335,11 @@ def list_my_events(
             linked_ids = db.exec(
                 select(EventTeamLink.team_id).where(EventTeamLink.event_id == event.id)
             ).all()
-            linked_set = {row[0] if isinstance(row, tuple) else row for row in linked_ids if row is not None}
+            linked_set = {
+                row[0] if isinstance(row, tuple) else row
+                for row in linked_ids
+                if row is not None
+            }
             if linked_set.intersection(coach_team_ids):
                 filtered[event.id] = event
                 continue
@@ -339,13 +376,19 @@ def get_event(
         linked_team_ids = db.exec(
             select(EventTeamLink.team_id).where(EventTeamLink.event_id == event.id)
         ).all()
-        linked_set = {row[0] if isinstance(row, tuple) else row for row in linked_team_ids if row is not None}
+        linked_set = {
+            row[0] if isinstance(row, tuple) else row
+            for row in linked_team_ids
+            if row is not None
+        }
         if event.team_id and event.team_id in allowed_team_ids:
             pass
         elif linked_set.intersection(allowed_team_ids):
             pass
         else:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed"
+            )
     if current_user.role == UserRole.ATHLETE:
         is_participant = db.exec(
             select(EventParticipant).where(
@@ -353,8 +396,14 @@ def get_event(
                 EventParticipant.athlete_id == current_user.athlete_id,
             )
         ).first()
-        if not is_participant and event.team_id and current_user.team_id != event.team_id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+        if (
+            not is_participant
+            and event.team_id
+            and current_user.team_id != event.team_id
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed"
+            )
     attach_team_ids(db, [event])
     return event
 
@@ -368,29 +417,41 @@ async def handle_rsvp_from_token(
     Handles one-click RSVP confirmation from email links.
     Verifies the token, updates participant status, and redirects to frontend.
     """
-    data = security_token_manager.verify_token(token, salt='rsvp-event')
+    data = security_token_manager.verify_token(token, salt="rsvp-event")
     if not data:
         # Redirect to a frontend error page or a generic RSVP page
-        return RedirectResponse(url=f"{settings.FRONTEND_URL}/rsvp-error?message=invalid_or_expired_link", status_code=status.HTTP_302_FOUND)
+        return RedirectResponse(
+            url=f"{settings.FRONTEND_URL}/rsvp-error?message=invalid_or_expired_link",
+            status_code=status.HTTP_302_FOUND,
+        )
 
-    user_id = data.get('user_id')
-    event_id = data.get('event_id')
-    status_str = data.get('status') # This will be 'confirmed' or 'declined'
+    user_id = data.get("user_id")
+    event_id = data.get("event_id")
+    status_str = data.get("status")  # This will be 'confirmed' or 'declined'
 
     if not all([user_id, event_id, status_str]):
-        return RedirectResponse(url=f"{settings.FRONTEND_URL}/rsvp-error?message=missing_info", status_code=status.HTTP_302_FOUND)
-    
+        return RedirectResponse(
+            url=f"{settings.FRONTEND_URL}/rsvp-error?message=missing_info",
+            status_code=status.HTTP_302_FOUND,
+        )
+
     # Validate status_str against ParticipantStatus enum
     try:
         new_status = ParticipantStatus(status_str.upper())
     except ValueError:
-        return RedirectResponse(url=f"{settings.FRONTEND_URL}/rsvp-error?message=invalid_status", status_code=status.HTTP_302_FOUND)
+        return RedirectResponse(
+            url=f"{settings.FRONTEND_URL}/rsvp-error?message=invalid_status",
+            status_code=status.HTTP_302_FOUND,
+        )
 
     event = db.get(Event, event_id)
     user = db.get(User, user_id)
 
     if not event or not user:
-        return RedirectResponse(url=f"{settings.FRONTEND_URL}/rsvp-error?message=event_or_user_not_found", status_code=status.HTTP_302_FOUND)
+        return RedirectResponse(
+            url=f"{settings.FRONTEND_URL}/rsvp-error?message=event_or_user_not_found",
+            status_code=status.HTTP_302_FOUND,
+        )
 
     participant = db.exec(
         select(EventParticipant).where(
@@ -412,7 +473,7 @@ async def handle_rsvp_from_token(
         participant.status = new_status
         participant.responded_at = datetime.now(timezone.utc)
         db.add(participant)
-    
+
     db.commit()
     db.refresh(participant)
 
@@ -421,10 +482,13 @@ async def handle_rsvp_from_token(
         db=db,
         event=event,
         participant=participant,
-        status=new_status.value, # Pass the enum value
+        status=new_status.value,  # Pass the enum value
     )
 
-    return RedirectResponse(url=f"{settings.FRONTEND_URL}/rsvp-confirmation?status={new_status.value}&event_id={event_id}", status_code=status.HTTP_302_FOUND)
+    return RedirectResponse(
+        url=f"{settings.FRONTEND_URL}/rsvp-confirmation?status={new_status.value}&event_id={event_id}",
+        status_code=status.HTTP_302_FOUND,
+    )
 
 
 @router.put("/{event_id}", response_model=EventResponse)
@@ -440,27 +504,29 @@ async def update_event(
     event = db.get(Event, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-    
+
     # Check permission (only organizer can update)
     if event.created_by_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized to update this event")
-    
+        raise HTTPException(
+            status_code=403, detail="Not authorized to update this event"
+        )
+
     # Track changes for notification
     changes = []
-    
+
     if event_in.name and event_in.name != event.name:
         changes.append(f"Name changed to: {event_in.name}")
         event.name = event_in.name
-    
+
     if event_in.event_date and event_in.event_date != event.event_date:
         changes.append(f"Date changed to: {event_in.event_date}")
         event.event_date = event_in.event_date
-    
+
     if event_in.start_time is not None and event_in.start_time != event.start_time:
         parsed_time = _parse_time_str(event_in.start_time)
         changes.append(f"Time changed to: {event_in.start_time}")
         event.start_time = parsed_time
-    
+
     if event_in.location is not None and event_in.location != event.location:
         changes.append(f"Location changed to: {event_in.location}")
         event.location = event_in.location
@@ -468,24 +534,28 @@ async def update_event(
         if event.notes != event_in.notes:
             changes.append("Event notes were updated")
         event.notes = event_in.notes
-    
+
     if event_in.status:
         try:
             event.status = EventStatus(event_in.status.upper())
         except ValueError:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
-    
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status"
+            )
+
     if event_in.team_id is not None:
         event.team_id = event_in.team_id
-    
+
     if event_in.coach_id is not None:
         event.coach_id = event_in.coach_id
-    
+
     event.updated_at = datetime.now(timezone.utc)
 
-    should_sync_team_links = event_in.team_ids is not None or event_in.team_id is not None
+    should_sync_team_links = (
+        event_in.team_ids is not None or event_in.team_id is not None
+    )
     resolved_team_ids: list[int] = []
-    
+
     db.add(event)
 
     if should_sync_team_links:
@@ -501,7 +571,9 @@ async def update_event(
         ensure_roster_participants(db, event, roster_ids)
 
     team_ids_for_coaches = (
-        resolved_team_ids if resolved_team_ids else resolve_event_team_ids(db=db, event=event)
+        resolved_team_ids
+        if resolved_team_ids
+        else resolve_event_team_ids(db=db, event=event)
     )
     auto_invitees = _collect_invitee_user_ids(
         db=db,
@@ -510,11 +582,11 @@ async def update_event(
         coach_id=event.coach_id,
     )
     _ensure_user_participants(db, event, auto_invitees)
-    
+
     db.commit()
     db.refresh(event)
     attach_team_ids(db, [event])
-    
+
     # Send notifications if there are changes
     if changes and event_in.send_notification:
         await notification_service.notify_event_updated(
@@ -523,7 +595,7 @@ async def update_event(
             changes=", ".join(changes),
             send_notification=True,
         )
-    
+
     return event
 
 
@@ -539,10 +611,12 @@ def delete_event(
     event = db.get(Event, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-    
+
     # Check permission
     if event.created_by_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized to delete this event")
+        raise HTTPException(
+            status_code=403, detail="Not authorized to delete this event"
+        )
 
     # Remove participants and notifications explicitly to avoid FK issues
     db.exec(delete(EventParticipant).where(EventParticipant.event_id == event_id))
@@ -586,13 +660,17 @@ async def add_event_participants(
     ensure_roles(current_user, MANAGE_EVENT_ROLES)
     event = db.get(Event, event_id)
     if not event:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
+        )
 
-    requested_user_ids = {user_id for user_id in payload.user_ids if user_id is not None}
+    requested_user_ids = {
+        user_id for user_id in payload.user_ids if user_id is not None
+    }
     existing_rows = db.exec(
         select(EventParticipant.user_id).where(
             EventParticipant.event_id == event.id,
-            EventParticipant.user_id != None,
+            EventParticipant.user_id is not None, # Changed != None to is not None
         )
     ).all()
     existing_user_ids = {row[0] for row in existing_rows if row and row[0] is not None}
@@ -619,7 +697,9 @@ async def add_event_participants(
     return event
 
 
-@router.delete("/{event_id}/participants/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{event_id}/participants/{user_id}", status_code=status.HTTP_204_NO_CONTENT
+)
 def remove_event_participant(
     *,
     db: SessionDep,
@@ -631,7 +711,9 @@ def remove_event_participant(
     ensure_roles(current_user, MANAGE_EVENT_ROLES)
     event = db.get(Event, event_id)
     if not event:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Event not found"
+        )
 
     participant = db.exec(
         select(EventParticipant).where(
@@ -640,7 +722,9 @@ def remove_event_participant(
         )
     ).first()
     if not participant:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Participant not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Participant not found"
+        )
 
     db.delete(participant)
     db.commit()
@@ -658,7 +742,7 @@ async def confirm_event_attendance(
     event = db.get(Event, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-    
+
     # Find or create participant
     stmt = select(EventParticipant).where(
         EventParticipant.event_id == event_id,
@@ -690,18 +774,18 @@ async def confirm_event_attendance(
         participant.status = status_enum
         participant.responded_at = datetime.now(timezone.utc)
         db.add(participant)
-    
+
     db.commit()
     db.refresh(participant)
-    
+
     # Notify organizer
     await notification_service.notify_confirmation_received(
         db=db,
         event=event,
         participant=participant,
-        status=status_enum.value,
+        status=status_enum.value,  # Pass the enum value
     )
-    
+
     return participant
 
 
@@ -717,7 +801,7 @@ def get_event_participants(
     event = db.get(Event, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-    
+
     stmt = select(EventParticipant).where(EventParticipant.event_id == event_id)
     participants = db.exec(stmt).all()
     return participants
@@ -729,7 +813,12 @@ def _parse_date_str(value: Optional[str]) -> Optional[date_type]:
     try:
         return date_type.fromisoformat(value)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date format. Use YYYY-MM-DD.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid date format. Use YYYY-MM-DD.",
+        )
+
+
 def _parse_time_str(value: Optional[str]) -> Optional[time_type]:
     if value is None:
         return None
@@ -742,4 +831,7 @@ def _parse_time_str(value: Optional[str]) -> Optional[time_type]:
         try:
             return datetime.strptime(v, "%H:%M").time()
         except ValueError:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time format. Use HH:MM.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid time format. Use HH:MM.",
+            )

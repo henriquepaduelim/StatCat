@@ -13,4 +13,6 @@ class TeamPost(SQLModel, table=True):
     author_id: int = Field(foreign_key="user.id", index=True)
     content: str = Field(max_length=2000)
     media_url: str | None = Field(default=None, max_length=500)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True, nullable=False)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), index=True, nullable=False
+    )

@@ -51,7 +51,7 @@ def get_current_user(
         if token is None:
             logger.debug("get_current_user: No token provided")
             raise credentials_exception
-        
+
         logger.debug(f"get_current_user: Attempting to decode token: {token[:20]}...")
         payload = jwt.decode(
             token,
@@ -72,15 +72,19 @@ def get_current_user(
         raise credentials_exception
     if not user.is_active:
         logger.debug(f"get_current_user: User {user.email} is inactive")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
-    
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user"
+        )
+
     logger.debug(f"get_current_user: Successfully authenticated user: {user.email}")
     return user
 
 
 def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
     if not current_user.is_active:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user"
+        )
     return current_user
 
 

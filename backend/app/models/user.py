@@ -39,11 +39,17 @@ class User(SQLModel, table=True):
     role: Optional[UserRole] = Field(
         default=UserRole.ATHLETE,
         sa_column=sa.Column(
-            sa.Enum(UserRole, name="userrole", values_callable=lambda e: [item.value for item in e]),
+            sa.Enum(
+                UserRole,
+                name="userrole",
+                values_callable=lambda e: [item.value for item in e],
+            ),
             nullable=True,
         ),
     )
-    athlete_id: Optional[int] = Field(default=None, foreign_key="athlete.id", unique=True, index=True)
+    athlete_id: Optional[int] = Field(
+        default=None, foreign_key="athlete.id", unique=True, index=True
+    )
     athlete_status: Optional[UserAthleteApprovalStatus] = Field(
         default=None,
         sa_column=sa.Column(
@@ -59,11 +65,15 @@ class User(SQLModel, table=True):
     is_active: bool = Field(default=True)
     must_change_password: bool = Field(default=False)
     last_login_at: Optional[datetime] = Field(default=None, index=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), index=True
+    )
 
     athlete: Optional["Athlete"] = Relationship(back_populates="user")
     created_events: List["Event"] = Relationship(
         back_populates="created_by",
         sa_relationship_kwargs={"foreign_keys": "Event.created_by_id"},
     )
-    teams: List["Team"] = Relationship(back_populates="coaches", link_model=CoachTeamLink)
+    teams: List["Team"] = Relationship(
+        back_populates="coaches", link_model=CoachTeamLink
+    )

@@ -42,11 +42,19 @@ def _normalize_pagination(page: int, size: int, max_size: int = 200) -> tuple[in
 
 
 def _coach_team_ids(session: Session, coach_id: int) -> set[int]:
-    rows = session.exec(select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == coach_id)).scalars().all()
+    rows = (
+        session.exec(
+            select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == coach_id)
+        )
+        .scalars()
+        .all()
+    )
     return {int(team_id) for team_id in rows if team_id is not None}
 
 
-def _assert_coach_can_access(session: Session, coach: User, team_id: int | None, athlete: Athlete | None) -> None:
+def _assert_coach_can_access(
+    session: Session, coach: User, team_id: int | None, athlete: Athlete | None
+) -> None:
     allowed_team_ids = _coach_team_ids(session, coach.id)
     if team_id and team_id in allowed_team_ids:
         return
@@ -63,7 +71,9 @@ def _clean_text(value: str | None) -> str | None:
     return cleaned or None
 
 
-def _normalize_categories(categories: list[ReportCardCategory]) -> list[ReportCardCategory]:
+def _normalize_categories(
+    categories: list[ReportCardCategory],
+) -> list[ReportCardCategory]:
     """Trim names and drop empty metric names."""
     normalized: list[ReportCardCategory] = []
     for category in categories:
@@ -89,7 +99,9 @@ def _compute_report_card(
     total_scores = 0
 
     for category in categories:
-        scores = [metric.score for metric in category.metrics if metric.score is not None]
+        scores = [
+            metric.score for metric in category.metrics if metric.score is not None
+        ]
         total_scores += len(scores)
         group_avg = round(sum(scores) / len(scores), 2) if scores else None
         computed_categories.append(
@@ -102,7 +114,9 @@ def _compute_report_card(
         if group_avg is not None:
             group_avgs.append(group_avg)
 
-    overall_average = round(sum(group_avgs) / len(group_avgs), 2) if group_avgs else None
+    overall_average = (
+        round(sum(group_avgs) / len(group_avgs), 2) if group_avgs else None
+    )
     return computed_categories, overall_average, total_scores
 
 
@@ -165,7 +179,13 @@ def list_pending_submissions(
     )
 
     items: list[ReportSubmissionItem] = []
-    for submission, team_name, athlete_first, athlete_last, submitter_name in session.exec(statement):
+    for (
+        submission,
+        team_name,
+        athlete_first,
+        athlete_last,
+        submitter_name,
+    ) in session.exec(statement):
         athlete_name = (
             f"{athlete_first} {athlete_last}".strip()
             if athlete_first or athlete_last
@@ -211,7 +231,13 @@ def list_approved_submissions(
     )
 
     items: list[ReportSubmissionItem] = []
-    for submission, team_name, athlete_first, athlete_last, submitter_name in session.exec(statement):
+    for (
+        submission,
+        team_name,
+        athlete_first,
+        athlete_last,
+        submitter_name,
+    ) in session.exec(statement):
         athlete_name = (
             f"{athlete_first} {athlete_last}".strip()
             if athlete_first or athlete_last
@@ -278,13 +304,22 @@ def list_athlete_reports(
 ) -> List[ReportSubmissionItem]:
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found"
+        )
 
     if current_user.role == UserRole.ATHLETE and current_user.athlete_id != athlete_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
     if current_user.role == UserRole.COACH:
-        _assert_coach_can_access(session, current_user, team_id=athlete.team_id, athlete=athlete)
-    if current_user.role not in {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH, UserRole.ATHLETE}:
+        _assert_coach_can_access(
+            session, current_user, team_id=athlete.team_id, athlete=athlete
+        )
+    if current_user.role not in {
+        UserRole.ADMIN,
+        UserRole.STAFF,
+        UserRole.COACH,
+        UserRole.ATHLETE,
+    }:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
 
     page, size = _normalize_pagination(page, size)
@@ -319,7 +354,11 @@ def list_athlete_reports(
     return results
 
 
-@router.post("/report-card", response_model=ReportSubmissionItem, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/report-card",
+    response_model=ReportSubmissionItem,
+    status_code=status.HTTP_201_CREATED,
+)
 def request_report_card(
     payload: ReportCardCreate,
     session: Session = Depends(get_session),
@@ -330,17 +369,25 @@ def request_report_card(
 
     athlete = session.get(Athlete, payload.athlete_id)
     if not athlete:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found"
+        )
     if current_user.role == UserRole.COACH:
-        _assert_coach_can_access(session, current_user, team_id=payload.team_id, athlete=athlete)
+        _assert_coach_can_access(
+            session, current_user, team_id=payload.team_id, athlete=athlete
+        )
 
-    coach_report = _clean_text(payload.coach_report) or _clean_text(payload.general_notes)
+    coach_report = _clean_text(payload.coach_report) or _clean_text(
+        payload.general_notes
+    )
     if not coach_report:
         coach_report = "No coach report provided."
 
     normalized_categories = _normalize_categories(payload.categories)
     if normalized_categories:
-        computed_categories, overall_average, total_scores = _compute_report_card(normalized_categories)
+        computed_categories, overall_average, total_scores = _compute_report_card(
+            normalized_categories
+        )
         if total_scores == 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -396,7 +443,9 @@ def update_report_card(
 
     submission = session.get(ReportSubmission, submission_id)
     if not submission:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found"
+        )
 
     if submission.report_type != ReportSubmissionType.REPORT_CARD:
         raise HTTPException(
@@ -410,14 +459,21 @@ def update_report_card(
             detail="Approved submissions must be reopened by an admin before editing.",
         )
 
-    if current_user.role not in {UserRole.ADMIN} and submission.submitted_by_id != current_user.id:
+    if (
+        current_user.role not in {UserRole.ADMIN}
+        and submission.submitted_by_id != current_user.id
+    ):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
 
     athlete = session.get(Athlete, payload.athlete_id)
     if not athlete:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found"
+        )
     if current_user.role == UserRole.COACH:
-        _assert_coach_can_access(session, current_user, team_id=payload.team_id, athlete=athlete)
+        _assert_coach_can_access(
+            session, current_user, team_id=payload.team_id, athlete=athlete
+        )
 
     coach_report = _clean_text(payload.coach_report)
     if not coach_report:
@@ -427,7 +483,9 @@ def update_report_card(
         )
 
     normalized_categories = _normalize_categories(payload.categories)
-    computed_categories, overall_average, total_scores = _compute_report_card(normalized_categories)
+    computed_categories, overall_average, total_scores = _compute_report_card(
+        normalized_categories
+    )
 
     if total_scores == 0:
         raise HTTPException(
@@ -441,7 +499,9 @@ def update_report_card(
     submission.athlete_id = payload.athlete_id
     submission.coach_report = coach_report
     submission.general_notes = coach_report
-    submission.report_card_categories = [category.model_dump() for category in computed_categories]
+    submission.report_card_categories = [
+        category.model_dump() for category in computed_categories
+    ]
     submission.overall_average = overall_average
     submission.status = ReportSubmissionStatus.PENDING
     submission.review_notes = None
@@ -474,9 +534,13 @@ async def approve_submission(
 
     submission = session.get(ReportSubmission, submission_id)
     if not submission:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found"
+        )
     if submission.status != ReportSubmissionStatus.PENDING:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Already resolved")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Already resolved"
+        )
 
     team_name = None
     athlete_name = None
@@ -517,7 +581,6 @@ async def approve_submission(
     )
 
 
-
 @router.post("/{submission_id}/reject", response_model=ReportSubmissionItem)
 def reject_submission(
     submission_id: int,
@@ -530,9 +593,13 @@ def reject_submission(
 
     submission = session.get(ReportSubmission, submission_id)
     if not submission:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found"
+        )
     if submission.status != ReportSubmissionStatus.PENDING:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Already resolved")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Already resolved"
+        )
 
     cleaned_notes = payload.notes.strip()
     if not cleaned_notes:
@@ -556,7 +623,9 @@ def reject_submission(
         team_name = team.name if team else None
     if submission.athlete_id:
         athlete = session.get(Athlete, submission.athlete_id)
-        athlete_name = f"{athlete.first_name} {athlete.last_name}".strip() if athlete else None
+        athlete_name = (
+            f"{athlete.first_name} {athlete.last_name}".strip() if athlete else None
+        )
 
     submitter = session.get(User, submission.submitted_by_id)
     submitter_name = submitter.full_name if submitter else ""
@@ -580,7 +649,9 @@ def reopen_submission(
 
     submission = session.get(ReportSubmission, submission_id)
     if not submission:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Submission not found"
+        )
 
     if submission.report_type != ReportSubmissionType.REPORT_CARD:
         raise HTTPException(
@@ -608,7 +679,9 @@ def reopen_submission(
         team_name = team.name if team else None
     if submission.athlete_id:
         athlete = session.get(Athlete, submission.athlete_id)
-        athlete_name = f"{athlete.first_name} {athlete.last_name}".strip() if athlete else None
+        athlete_name = (
+            f"{athlete.first_name} {athlete.last_name}".strip() if athlete else None
+        )
     submitter = session.get(User, submission.submitted_by_id)
     submitter_name = submitter.full_name if submitter else ""
 
@@ -618,6 +691,7 @@ def reopen_submission(
         athlete_name=athlete_name,
         submitter_name=submitter_name,
     )
+
 
 @router.delete("/{submission_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_submission(

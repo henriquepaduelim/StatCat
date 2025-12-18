@@ -32,7 +32,9 @@ def _ensure_can_edit(user: User) -> None:
     ensure_roles(user, MANAGE_SESSION_ROLES)
 
 
-def ensure_related_entities(session: Session, results: Sequence[SessionResultCreate]) -> None:
+def ensure_related_entities(
+    session: Session, results: Sequence[SessionResultCreate]
+) -> None:
     athlete_ids = {result.athlete_id for result in results}
     test_ids = {result.test_id for result in results}
     if athlete_ids:
@@ -114,7 +116,9 @@ def get_session_detail(
 ) -> AssessmentSessionRead:
     assessment_session = session.get(AssessmentSession, session_id)
     if not assessment_session:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
+        )
     _ensure_can_view(current_user)
     return assessment_session
 
@@ -128,7 +132,9 @@ def update_session(
 ) -> AssessmentSessionRead:
     assessment_session = session.get(AssessmentSession, session_id)
     if not assessment_session:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
+        )
     _ensure_can_edit(current_user)
 
     update_data = payload.model_dump(exclude_unset=True)
@@ -147,7 +153,9 @@ def delete_session(
 ) -> None:
     assessment_session = session.get(AssessmentSession, session_id)
     if not assessment_session:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
+        )
     _ensure_can_edit(current_user)
 
     session.delete(assessment_session)
@@ -163,7 +171,9 @@ def add_results(
 ) -> list[SessionResultRead]:
     assessment_session = session.get(AssessmentSession, session_id)
     if not assessment_session:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
+        )
     _ensure_can_edit(current_user)
 
     if not payload:

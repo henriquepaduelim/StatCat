@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import sqlite3
 
-conn = sqlite3.connect('combine.db')
+conn = sqlite3.connect("combine.db")
 cursor = conn.cursor()
 
 # Check athlete 30
@@ -28,7 +28,7 @@ if result:
     print(f"User ID: {result[4]}")
     print(f"User Email: {result[5]}")
     print(f"Status: {result[6]}")
-    
+
     if result[4] is None:
         print("\n⚠️  PROBLEM: This athlete has NO USER ACCOUNT!")
         print("Solution: Create a user account for this athlete first.")

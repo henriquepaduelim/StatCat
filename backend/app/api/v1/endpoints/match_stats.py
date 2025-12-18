@@ -28,7 +28,9 @@ def _ensure_team(session: Session, team_id: int | None) -> None:
         return
     team = session.get(Team, team_id)
     if team is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Team not found"
+        )
 
 
 def _ensure_athletes_exist(session: Session, athlete_ids: Iterable[int]) -> None:
@@ -45,7 +47,9 @@ def _ensure_athletes_exist(session: Session, athlete_ids: Iterable[int]) -> None
         )
 
 
-@router.post("/reports", response_model=GameReportResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/reports", response_model=GameReportResponse, status_code=status.HTTP_201_CREATED
+)
 def create_match_report(
     report: GameReportCreate,
     session: Session = Depends(get_session),
@@ -63,13 +67,21 @@ def create_match_report(
     total_recorded_goals = sum(entry.goals for entry in report.goal_scorers)
     total_recorded_conceded = sum(entry.conceded for entry in report.goalkeepers)
 
-    if report.goals_for and total_recorded_goals and total_recorded_goals != report.goals_for:
+    if (
+        report.goals_for
+        and total_recorded_goals
+        and total_recorded_goals != report.goals_for
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Sum of goal scorers must match goals_for.",
         )
 
-    if report.goals_against and total_recorded_conceded and total_recorded_conceded != report.goals_against:
+    if (
+        report.goals_against
+        and total_recorded_conceded
+        and total_recorded_conceded != report.goals_against
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Sum of goalkeeper conceded values must match goals_against.",

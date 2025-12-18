@@ -1,7 +1,7 @@
 from logging.config import fileConfig
 import sys
 from pathlib import Path
-from dotenv import load_dotenv # Import load_dotenv
+from dotenv import load_dotenv  # Import load_dotenv
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -15,17 +15,18 @@ load_dotenv()
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # Import all models to ensure they are registered with SQLModel
-from app.models.user import User
-from app.models.athlete import Athlete
-from app.models.team import Team
-from app.models.group import Group
-from app.models.test_definition import TestDefinition
-from app.models.assessment_session import AssessmentSession
-from app.models.session_result import SessionResult
-from app.models.match_stat import MatchStat
-from app.models.event import Event, Notification, PushSubscription
-from app.models.event_participant import EventParticipant
-from app.models.event_team_link import EventTeamLink
+from app.models.user import User  # noqa: F401
+from app.models.athlete import Athlete  # noqa: F401
+from app.models.team import Team  # noqa: F401
+from app.models.group import Group  # noqa: F401
+from app.models.test_definition import TestDefinition  # noqa: F401
+from app.models.assessment_session import AssessmentSession  # noqa: F401
+from app.models.session_result import SessionResult  # noqa: F401
+from app.models.match_stat import MatchStat  # noqa: F401
+from app.models.event import Event, Notification, PushSubscription  # noqa: F401
+from app.models.event_participant import EventParticipant  # noqa: F401
+from app.models.event_team_link import EventTeamLink  # noqa: F401
+
 from app.core.config import settings
 from sqlmodel import SQLModel
 

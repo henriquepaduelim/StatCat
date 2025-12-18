@@ -7,7 +7,10 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from app.core.security import get_password_hash
-from app.models.athlete import Athlete, AthleteDetail, AthleteDocument, AthleteGender, AthletePayment
+from app.models.athlete import Athlete, AthleteGender
+from app.models.athlete_detail import AthleteDetail
+from app.models.athlete_document import AthleteDocument
+from app.models.athlete_payment import AthletePayment
 from app.models.user import User, UserRole, UserAthleteApprovalStatus
 from tests.conftest import get_auth_token
 
@@ -76,6 +79,7 @@ def test_list_athletes(client: TestClient, session: Session, test_user: User):
         email="alice@example.com",
         gender=AthleteGender.female,
         birth_date=date(2000, 1, 1),
+        primary_position="forward",
     )
     athlete2 = Athlete(
         first_name="Bob",
@@ -83,6 +87,7 @@ def test_list_athletes(client: TestClient, session: Session, test_user: User):
         email="bob@example.com",
         gender=AthleteGender.male,
         birth_date=date(2000, 1, 2),
+        primary_position="midfielder",
     )
     session.add(athlete1)
     session.add(athlete2)
@@ -110,6 +115,7 @@ def test_list_athletes_with_pagination(client: TestClient, session: Session, tes
             email=f"athlete{i}@example.com",
             gender=AthleteGender.male,
             birth_date=date(2001, 1, i + 1),
+            primary_position="defender",
         )
         session.add(athlete)
     session.commit()
@@ -144,6 +150,7 @@ def test_list_athletes_rbac_coach_restricted(client: TestClient, session: Sessio
         gender=AthleteGender.male,
         birth_date=date(2005, 1, 1),
         team_id=team_allowed.id,
+        primary_position="forward",
     )
     athlete_blocked = Athlete(
         first_name="Blocked",
@@ -152,6 +159,7 @@ def test_list_athletes_rbac_coach_restricted(client: TestClient, session: Sessio
         gender=AthleteGender.male,
         birth_date=date(2005, 2, 1),
         team_id=None,
+        primary_position="forward",
     )
     session.add(athlete_allowed)
     session.add(athlete_blocked)
@@ -179,6 +187,7 @@ def test_list_athletes_rbac_athlete_self_only(client: TestClient, session: Sessi
         email="self@example.com",
         gender=AthleteGender.male,
         birth_date=date(2004, 3, 3),
+        primary_position="forward",
     )
     session.add(athlete)
     session.commit()
@@ -208,6 +217,7 @@ def test_approve_athlete_as_admin(client: TestClient, session: Session, admin_us
         email="pending@example.com",
         gender=AthleteGender.male,
         birth_date=date(2003, 1, 1),
+        primary_position="goalkeeper",
     )
     session.add(athlete)
     session.commit()
@@ -238,6 +248,7 @@ def test_approve_athlete_forbidden_for_coach(client: TestClient, session: Sessio
         email="pending2@example.com",
         gender=AthleteGender.male,
         birth_date=date(2003, 2, 2),
+        primary_position="goalkeeper",
     )
     session.add(athlete)
     session.commit()
@@ -265,6 +276,7 @@ def test_get_athlete(client: TestClient, session: Session, test_user: User):
         email="jane@example.com",
         gender=AthleteGender.female,
         birth_date=date(2000, 5, 5),
+        primary_position="midfielder",
     )
     session.add(athlete)
     session.commit()
@@ -302,6 +314,7 @@ def test_update_athlete(client: TestClient, session: Session, admin_user: User):
         email="original@example.com",
         gender=AthleteGender.male,
         birth_date=date(1999, 9, 9),
+        primary_position="defender",
     )
     session.add(athlete)
     session.commit()
@@ -334,6 +347,7 @@ def test_delete_athlete(client: TestClient, session: Session, admin_user: User):
         email="delete@example.com",
         gender=AthleteGender.male,
         birth_date=date(1998, 8, 8),
+        primary_position="forward",
     )
     session.add(athlete)
     session.commit()
@@ -342,7 +356,7 @@ def test_delete_athlete(client: TestClient, session: Session, admin_user: User):
     # Attach related rows that reference athlete_id
     session.add(AthleteDocument(athlete_id=athlete.id, label="ID", file_url="/media/doc"))
     session.add(AthletePayment(athlete_id=athlete.id, amount=100, currency="USD"))
-    session.add(AthleteDetail(athlete_id=athlete.id, email="detail@example.com"))
+    session.add(AthleteDetail(athlete_id=athlete.id, email="detail@example.com", primary_position="forward"))
     linked_user = User(
         email="linked@example.com",
         hashed_password=get_password_hash("linkedpass123"),
@@ -383,6 +397,7 @@ def test_delete_athlete_forbidden(client: TestClient, session: Session, athlete_
         email="protected@example.com",
         gender=AthleteGender.male,
         birth_date=date(2000, 1, 1),
+        primary_position="forward",
     )
     session.add(athlete)
     session.commit()
@@ -405,6 +420,7 @@ def test_approve_all_pending_athletes(client: TestClient, session: Session, admi
         email="pending@example.com",
         gender=AthleteGender.male,
         birth_date=date(2005, 1, 1),
+        primary_position="goalkeeper",
     )
     incomplete_athlete = Athlete(
         first_name="Incomplete",
@@ -412,6 +428,7 @@ def test_approve_all_pending_athletes(client: TestClient, session: Session, admi
         email="incomplete@example.com",
         gender=AthleteGender.female,
         birth_date=date(2006, 2, 2),
+        primary_position="midfielder",
     )
     session.add(pending_athlete)
     session.add(incomplete_athlete)

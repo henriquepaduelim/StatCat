@@ -46,7 +46,11 @@ def load_testing_sheet(path: Path | None = None) -> tuple[TestingSheetEntry, ...
                 name=str(item["name"]),
                 category=str(item["category"]),
                 age_groups=tuple(item.get("age_groups", ()) or ()),
-                benchmark=(str(item["benchmark"]) if item.get("benchmark") is not None else None),
+                benchmark=(
+                    str(item["benchmark"])
+                    if item.get("benchmark") is not None
+                    else None
+                ),
                 notes=(str(item["notes"]) if item.get("notes") is not None else None),
             )
         )
@@ -58,9 +62,17 @@ def infer_target_direction(name: str) -> str:
     lowered = name.lower()
     if "max time" in lowered:
         return "higher"
-    if "resting heart rate" in lowered or "recovery" in lowered or "body mass" in lowered or "body weight" in lowered:
+    if (
+        "resting heart rate" in lowered
+        or "recovery" in lowered
+        or "body mass" in lowered
+        or "body weight" in lowered
+    ):
         return "lower"
-    if any(keyword in lowered for keyword in ("sprint", "slalom", "drill", "delivery", "response", "reaction")):
+    if any(
+        keyword in lowered
+        for keyword in ("sprint", "slalom", "drill", "delivery", "response", "reaction")
+    ):
         return "lower"
     if "time" in lowered and "max" not in lowered:
         return "lower"

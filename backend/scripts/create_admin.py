@@ -45,9 +45,15 @@ def create_admin(email: str, password: str, full_name: str = "StatCat Admin") ->
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Create an admin user.")
-    parser.add_argument("--email", required=True, help="Admin email (e.g., admin@statcat.com)")
-    parser.add_argument("--password", required=True, help="Plaintext password for the admin")
-    parser.add_argument("--full-name", default="StatCat Admin", help="Full name for the admin user")
+    parser.add_argument(
+        "--email", required=True, help="Admin email (e.g., admin@statcat.com)"
+    )
+    parser.add_argument(
+        "--password", required=True, help="Plaintext password for the admin"
+    )
+    parser.add_argument(
+        "--full-name", default="StatCat Admin", help="Full name for the admin user"
+    )
     args = parser.parse_args()
 
     create_admin(email=args.email, password=args.password, full_name=args.full_name)

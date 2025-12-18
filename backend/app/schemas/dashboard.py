@@ -9,4 +9,3 @@ class AthleteStatusBreakdown(BaseModel):
 
 class DashboardSummary(BaseModel):
     athletes: AthleteStatusBreakdown
-

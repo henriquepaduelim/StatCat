@@ -109,7 +109,7 @@ def test_staff_can_create_report_card(session: Session, client: TestClient):
   assert data["athlete_name"] == "John Doe"
   assert data["team_name"] == team.name
   assert data["overall_average"] is not None
-  assert data["status"] == "pending"
+  assert data["status"] == "PENDING"
 
 
 def test_coach_cannot_create_for_unlinked_team(session: Session, client: TestClient):
@@ -169,7 +169,7 @@ def test_coach_can_create_for_linked_team(session: Session, client: TestClient):
   assert response.status_code == 201
   data = response.json()
   assert data["team_name"] == team.name
-  assert data["status"] == "pending"
+  assert data["status"] == "PENDING"
 
 
 def test_pending_submissions_pagination_limits_results(session: Session, client: TestClient):

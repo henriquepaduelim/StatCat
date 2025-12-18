@@ -40,8 +40,16 @@ SPRINT_DISTANCES_METERS = {
 
 
 VERTICAL_JUMP_ALIASES = {
-    "verticaljumpnorunup": {"vertical jump (no run-up)", "vertical jump", "vertical jump norun"},
-    "verticaljumprunup": {"vertical jump (run-up)", "vertical jump run", "vertical jump run-up"},
+    "verticaljumpnorunup": {
+        "vertical jump (no run-up)",
+        "vertical jump",
+        "vertical jump norun",
+    },
+    "verticaljumprunup": {
+        "vertical jump (run-up)",
+        "vertical jump run",
+        "vertical jump run-up",
+    },
 }
 
 
@@ -106,10 +114,14 @@ class MetricEngine:
                         break
         return resolved
 
-    def _fetch_results(self, athlete_id: int, tests: Sequence[_TestMeta]) -> dict[int, list[float]]:
+    def _fetch_results(
+        self, athlete_id: int, tests: Sequence[_TestMeta]
+    ) -> dict[int, list[float]]:
         if not tests:
             return {}
-        test_ids = [test.definition.id for test in tests if test.definition.id is not None]
+        test_ids = [
+            test.definition.id for test in tests if test.definition.id is not None
+        ]
         if not test_ids:
             return {}
 
@@ -154,7 +166,9 @@ class MetricEngine:
             speed = distance / best_time
             speeds.append(speed)
             component_scores.append(
-                MetricComponent(label=test.definition.name, value=round(speed, 2), unit="m/s")
+                MetricComponent(
+                    label=test.definition.name, value=round(speed, 2), unit="m/s"
+                )
             )
 
         if not speeds:
@@ -194,7 +208,9 @@ class MetricEngine:
                 continue
             speed = distance / best_time
             component_scores.append(
-                MetricComponent(label=test.definition.name, value=round(speed, 2), unit="m/s")
+                MetricComponent(
+                    label=test.definition.name, value=round(speed, 2), unit="m/s"
+                )
             )
             if top_speed is None or speed > top_speed:
                 top_speed = speed
@@ -237,7 +253,9 @@ class MetricEngine:
                 unit_display = unit or "cm"
             converted.append(value)
             components.append(
-                MetricComponent(label=test.definition.name, value=round(value, 2), unit=unit_display)
+                MetricComponent(
+                    label=test.definition.name, value=round(value, 2), unit=unit_display
+                )
             )
 
         if not converted:
@@ -271,7 +289,11 @@ class MetricEngine:
         vo2_estimate = round(3.46 * best_level + 12, 2)
 
         components = [
-            MetricComponent(label=test.definition.name, value=best_level, unit=test.definition.unit or "level")
+            MetricComponent(
+                label=test.definition.name,
+                value=best_level,
+                unit=test.definition.unit or "level",
+            )
         ]
 
         return MetricScore(
@@ -370,7 +392,11 @@ def filter_athletes(
     for athlete in athletes:
         if gender:
             gender_norm = gender.lower()
-            target = "male" if gender_norm in {"m", "boy", "boys", "male", "masculino"} else "female"
+            target = (
+                "male"
+                if gender_norm in {"m", "boy", "boys", "male", "masculino"}
+                else "female"
+            )
             if not athlete.gender or athlete.gender.value != target:
                 continue
         if age_category and age_category in AGE_CATEGORY_BOUNDS:

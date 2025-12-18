@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 
 T = TypeVar("T")
 
+
 class PaginatedResponse(BaseModel, Generic[T]):
     total: int = Field(..., description="Total number of items")
     page: int = Field(..., description="Current page number")

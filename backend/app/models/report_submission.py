@@ -50,9 +50,13 @@ class ReportSubmission(SQLModel, table=True):
         ),
     )
     submitted_by_id: int = Field(foreign_key="user.id", index=True)
-    approved_by_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
+    approved_by_id: Optional[int] = Field(
+        default=None, foreign_key="user.id", index=True
+    )
     team_id: Optional[int] = Field(default=None, foreign_key="team.id", index=True)
-    athlete_id: Optional[int] = Field(default=None, foreign_key="athlete.id", index=True)
+    athlete_id: Optional[int] = Field(
+        default=None, foreign_key="athlete.id", index=True
+    )
     opponent: Optional[str] = None
     match_date: Optional[datetime] = None
     goals_for: Optional[int] = None
@@ -64,10 +68,14 @@ class ReportSubmission(SQLModel, table=True):
     match_rating: Optional[int] = None
     general_notes: Optional[str] = None
     review_notes: Optional[str] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False
+    )
     approved_at: Optional[datetime] = None
     coach_report: Optional[str] = None
-    report_card_categories: Optional[dict] = Field(default=None, sa_column=sa.Column(sa.JSON))
+    report_card_categories: Optional[dict] = Field(
+        default=None, sa_column=sa.Column(sa.JSON)
+    )
     overall_average: Optional[float] = None
 
     athlete: Optional["Athlete"] = Relationship(back_populates="report_submissions")

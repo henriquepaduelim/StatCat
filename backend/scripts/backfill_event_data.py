@@ -1,4 +1,5 @@
 """Utility script to backfill event/team relationships and roster invites."""
+
 from __future__ import annotations
 
 import argparse
@@ -49,7 +50,9 @@ def ensure_event_team_links(session: Session, event: Event, team_ids: set[int]) 
     return len(team_ids)
 
 
-def ensure_roster_participants(session: Session, event: Event, team_ids: set[int]) -> int:
+def ensure_roster_participants(
+    session: Session, event: Event, team_ids: set[int]
+) -> int:
     if not team_ids:
         return 0
     roster_athletes = session.exec(
@@ -96,7 +99,9 @@ def run_backfill(attach_roster: bool) -> dict[str, int]:
                 stats["events_with_links"] += 1
                 stats["links_created"] += added_links
             if attach_roster and team_ids:
-                added_participants = ensure_roster_participants(session, event, team_ids)
+                added_participants = ensure_roster_participants(
+                    session, event, team_ids
+                )
                 stats["participants_added"] += added_participants
             session.add(event)
         session.commit()

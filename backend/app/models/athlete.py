@@ -52,19 +52,29 @@ class Athlete(SQLModel, table=True):
     primary_position: str = Field(index=True, nullable=False)
     secondary_position: Optional[str] = Field(default=None, index=True)
     photo_url: Optional[str] = None
-    status: AthleteStatus = Field(default=AthleteStatus.active, index=True, nullable=False)
+    status: AthleteStatus = Field(
+        default=AthleteStatus.active, index=True, nullable=False
+    )
     registration_year: Optional[str] = Field(default=None, index=True)
-    registration_category: Optional[RegistrationCategory] = Field(default=None, index=True)
-    player_registration_status: Optional[PlayerRegistrationStatus] = Field(default=None, index=True)
+    registration_category: Optional[RegistrationCategory] = Field(
+        default=None, index=True
+    )
+    player_registration_status: Optional[PlayerRegistrationStatus] = Field(
+        default=None, index=True
+    )
     preferred_position: Optional[str] = None
     desired_shirt_number: Optional[str] = None
 
     # Relacionamento bidirecional:
     # Este atributo conterá a lista de submissões de relatório para este atleta.
     # `back_populates` aponta para o atributo "athlete" no modelo ReportSubmission.
-    report_submissions: List["ReportSubmission"] = Relationship(back_populates="athlete")
+    report_submissions: List["ReportSubmission"] = Relationship(
+        back_populates="athlete"
+    )
 
     # One-to-one link to User.
     user: "User" = Relationship(back_populates="athlete")
 
-    event_participations: List["EventParticipant"] = Relationship(back_populates="athlete")
+    event_participations: List["EventParticipant"] = Relationship(
+        back_populates="athlete"
+    )

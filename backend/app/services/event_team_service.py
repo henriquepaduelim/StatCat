@@ -1,4 +1,5 @@
 """Helper utilities for synchronizing event-to-team associations."""
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -51,7 +52,9 @@ def resolve_event_team_ids(
     return sorted(resolved)
 
 
-def persist_event_team_links(db: Session, event: Event, team_ids: Iterable[int]) -> None:
+def persist_event_team_links(
+    db: Session, event: Event, team_ids: Iterable[int]
+) -> None:
     """Persist the provided team ids for the event and refresh the cached property."""
     if not event.id:
         return
@@ -63,7 +66,9 @@ def persist_event_team_links(db: Session, event: Event, team_ids: Iterable[int])
     event.set_team_ids(unique_ids)
 
 
-def get_event_team_id_map(db: Session, event_ids: Sequence[int]) -> dict[int, list[int]]:
+def get_event_team_id_map(
+    db: Session, event_ids: Sequence[int]
+) -> dict[int, list[int]]:
     """Return mapping of event_id -> associated team ids."""
     if not event_ids:
         return {}
@@ -103,9 +108,7 @@ def get_team_roster_athlete_ids(db: Session, team_ids: Iterable[int]) -> list[in
     unique_ids = [team_id for team_id in sorted(set(team_ids)) if team_id is not None]
     if not unique_ids:
         return []
-    rows = db.exec(
-        select(Athlete.id).where(Athlete.team_id.in_(unique_ids))
-    ).all()
+    rows = db.exec(select(Athlete.id).where(Athlete.team_id.in_(unique_ids))).all()
     normalized: list[int] = []
     for row in rows:
         value = row[0] if isinstance(row, tuple) else row
@@ -114,9 +117,13 @@ def get_team_roster_athlete_ids(db: Session, team_ids: Iterable[int]) -> list[in
     return normalized
 
 
-def ensure_roster_participants(db: Session, event: Event, roster_athlete_ids: Iterable[int]) -> None:
+def ensure_roster_participants(
+    db: Session, event: Event, roster_athlete_ids: Iterable[int]
+) -> None:
     """Add missing event participants for roster athletes."""
-    athlete_ids = {athlete_id for athlete_id in roster_athlete_ids if athlete_id is not None}
+    athlete_ids = {
+        athlete_id for athlete_id in roster_athlete_ids if athlete_id is not None
+    }
     if not athlete_ids or not event.id:
         return
     existing_rows = db.exec(

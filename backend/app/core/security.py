@@ -30,7 +30,9 @@ def create_signup_token(athlete_id: int, expires_minutes: int = 60 * 24) -> str:
         "scope": "signup",
         "exp": expire,
     }
-    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.SECURITY_ALGORITHM)
+    return jwt.encode(
+        payload, settings.SECRET_KEY, algorithm=settings.SECURITY_ALGORITHM
+    )
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

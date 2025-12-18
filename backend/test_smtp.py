@@ -12,31 +12,32 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+
 def test_smtp():
     """Test SMTP configuration"""
-    
-    smtp_host = os.getenv('SMTP_HOST', 'smtp.gmail.com')
-    smtp_port = int(os.getenv('SMTP_PORT', 587))
-    smtp_user = os.getenv('SMTP_USER')
-    smtp_password = os.getenv('SMTP_PASSWORD')
-    from_email = os.getenv('SMTP_FROM_EMAIL', smtp_user)
-    
+
+    smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    smtp_port = int(os.getenv("SMTP_PORT", 587))
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+    from_email = os.getenv("SMTP_FROM_EMAIL", smtp_user)
+
     print(f"Testing SMTP configuration...")
     print(f"Host: {smtp_host}")
     print(f"Port: {smtp_port}")
     print(f"User: {smtp_user}")
     print(f"From: {from_email}")
-    
+
     if not smtp_user or not smtp_password:
         pytest.skip("SMTP credentials not configured in environment variables.")
-    
+
     try:
         # Create message
         msg = MIMEMultipart()
-        msg['From'] = from_email
-        msg['To'] = smtp_user  # Send to yourself for testing
-        msg['Subject'] = "StatCat SMTP Test"
-        
+        msg["From"] = from_email
+        msg["To"] = smtp_user  # Send to yourself for testing
+        msg["Subject"] = "StatCat SMTP Test"
+
         body = """
         This is a test email from StatCat backend.
         
@@ -47,27 +48,27 @@ def test_smtp():
         - Port: {port}
         - User: {user}
         """.format(host=smtp_host, port=smtp_port, user=smtp_user)
-        
-        msg.attach(MIMEText(body, 'plain'))
-        
+
+        msg.attach(MIMEText(body, "plain"))
+
         # Connect and send
         print("Connecting to SMTP server...")
         server = smtplib.SMTP(smtp_host, smtp_port)
         server.starttls()
-        
+
         print("Authenticating...")
         server.login(smtp_user, smtp_password)
-        
+
         print("Sending test email...")
         server.send_message(msg)
         server.quit()
-        
+
         print("✅ SUCCESS: Test email sent successfully!")
         print(f"📧 Check your inbox: {smtp_user}")
-        
+
     except smtplib.SMTPAuthenticationError as exc:
         pytest.fail(f"SMTP authentication failed: {exc}")
-        
+
     except smtplib.SMTPConnectError as exc:
         pytest.fail(f"SMTP connection failed: {exc}")
 
@@ -76,6 +77,7 @@ def test_smtp():
 
     except Exception as exc:
         pytest.fail(f"Unexpected SMTP error: {exc}")
+
 
 if __name__ == "__main__":
     print("🧪 StatCat SMTP Test")

@@ -8,7 +8,10 @@ from app.models.athlete import Athlete
 from app.models.team import CoachTeamLink, Team
 from app.models.team_combine_metric import TeamCombineMetric
 from app.models.user import User, UserRole
-from app.schemas.team_combine_metric import TeamCombineMetricCreate, TeamCombineMetricRead
+from app.schemas.team_combine_metric import (
+    TeamCombineMetricCreate,
+    TeamCombineMetricRead,
+)
 
 router = APIRouter()
 
@@ -16,7 +19,9 @@ router = APIRouter()
 def _ensure_team_access(session: SessionDep, current_user: User, team_id: int) -> Team:
     team = session.get(Team, team_id)
     if not team:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Team not found"
+        )
 
     if current_user.role in {UserRole.ADMIN, UserRole.STAFF}:
         return team
@@ -34,7 +39,9 @@ def _ensure_team_access(session: SessionDep, current_user: User, team_id: int) -
 
     if current_user.role == UserRole.ATHLETE:
         if current_user.athlete_id is None:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed"
+            )
         athlete = session.get(Athlete, current_user.athlete_id)
         if athlete and athlete.team_id == team_id:
             return team
@@ -123,7 +130,9 @@ def list_athlete_combine_metrics(
     # Permission: staff/admin/coach see all; athlete sees own metrics
     if current_user.role not in {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH}:
         if current_user.athlete_id != athlete_id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed"
+            )
 
     statement = (
         select(TeamCombineMetric)

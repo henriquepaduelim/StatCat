@@ -12,12 +12,19 @@ from app.models.user import User, UserRole, UserAthleteApprovalStatus
 from app.services.email_service import email_service
 
 MANAGE_ATHLETE_ROLES: set[UserRole] = {UserRole.ADMIN, UserRole.STAFF}
-READ_ATHLETE_ROLES: set[UserRole] = {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH, UserRole.ATHLETE}
+READ_ATHLETE_ROLES: set[UserRole] = {
+    UserRole.ADMIN,
+    UserRole.STAFF,
+    UserRole.COACH,
+    UserRole.ATHLETE,
+}
 
 
 def _coach_team_ids(session: Session, coach_id: int) -> set[int]:
     # SQLModel <2 returns ScalarResult; normalize to list[int]
-    rows = session.exec(select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == coach_id)).all()
+    rows = session.exec(
+        select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == coach_id)
+    ).all()
     team_ids: set[int] = set()
     for row in rows:
         value = row[0] if isinstance(row, tuple) else row
@@ -46,12 +53,16 @@ def build_athlete_query_for_user(
 
     if current_user.role == UserRole.ATHLETE:
         if current_user.athlete_id is None:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed"
+            )
         statement = statement.where(Athlete.id == current_user.athlete_id)
     elif current_user.role == UserRole.COACH:
         allowed_team_ids = _coach_team_ids(session, current_user.id)
         if team_id is not None and team_id not in allowed_team_ids:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed"
+            )
         if allowed_team_ids:
             statement = statement.where(Athlete.team_id.in_(allowed_team_ids))
         else:
@@ -66,17 +77,23 @@ def build_athlete_query_for_user(
     return statement
 
 
-async def approve_athlete(session: Session, athlete_id: int, approving: User) -> Athlete:
+async def approve_athlete(
+    session: Session, athlete_id: int, approving: User
+) -> Athlete:
     if approving.role not in MANAGE_ATHLETE_ROLES:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
 
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found"
+        )
 
     user = session.exec(select(User).where(User.athlete_id == athlete.id)).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found for athlete")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found for athlete"
+        )
 
     user.athlete_status = UserAthleteApprovalStatus.APPROVED
     user.rejection_reason = None
@@ -98,20 +115,28 @@ async def approve_athlete(session: Session, athlete_id: int, approving: User) ->
     return athlete
 
 
-def reject_athlete(session: Session, athlete_id: int, approving: User, reason: str) -> Athlete:
+def reject_athlete(
+    session: Session, athlete_id: int, approving: User, reason: str
+) -> Athlete:
     if approving.role not in MANAGE_ATHLETE_ROLES:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
     cleaned_reason = (reason or "").strip()
     if not cleaned_reason:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Rejection reason required")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Rejection reason required"
+        )
 
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found"
+        )
 
     user = session.exec(select(User).where(User.athlete_id == athlete.id)).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found for athlete")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found for athlete"
+        )
 
     user.athlete_status = UserAthleteApprovalStatus.REJECTED
     user.rejection_reason = cleaned_reason

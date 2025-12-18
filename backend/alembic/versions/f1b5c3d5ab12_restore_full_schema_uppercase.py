@@ -45,7 +45,9 @@ def upgrade() -> None:
     op.execute(
         'ALTER TABLE "user" ALTER COLUMN athlete_status TYPE varchar USING athlete_status::text'
     )
-    op.execute("ALTER TABLE team_combine_metric ALTER COLUMN status TYPE varchar USING status::text")
+    op.execute(
+        "ALTER TABLE team_combine_metric ALTER COLUMN status TYPE varchar USING status::text"
+    )
 
     # Normalize casing after converting to text
     op.execute('UPDATE "user" SET role = UPPER(role) WHERE role IS NOT NULL')
@@ -67,9 +69,7 @@ def upgrade() -> None:
     _drop_enum("eventtype")
 
     # Recreate enums in uppercase (legacy schema)
-    op.execute(
-        "CREATE TYPE userrole AS ENUM ('ADMIN','STAFF','COACH','ATHLETE')"
-    )
+    op.execute("CREATE TYPE userrole AS ENUM ('ADMIN','STAFF','COACH','ATHLETE')")
     op.execute(
         "CREATE TYPE userathleteapprovalstatus AS ENUM ('INCOMPLETE','PENDING','APPROVED','REJECTED')"
     )
@@ -80,12 +80,18 @@ def upgrade() -> None:
         "PENDING", "APPROVED", "REJECTED", "REOPENED", name="reportsubmissionstatus"
     )
     report_type_enum = sa.Enum("GAME", "REPORT_CARD", name="reportsubmissiontype")
-    combine_status_enum = sa.Enum("PENDING", "APPROVED", "REJECTED", name="combinemetricstatus")
+    combine_status_enum = sa.Enum(
+        "PENDING", "APPROVED", "REJECTED", name="combinemetricstatus"
+    )
     combine_status_enum.create(bind, checkfirst=True)
-    event_status_enum = sa.Enum("SCHEDULED", "CANCELLED", "COMPLETED", name="eventstatus")
+    event_status_enum = sa.Enum(
+        "SCHEDULED", "CANCELLED", "COMPLETED", name="eventstatus"
+    )
 
     # Re-apply enum types to existing columns
-    op.execute('ALTER TABLE "user" ALTER COLUMN role TYPE userrole USING role::userrole')
+    op.execute(
+        'ALTER TABLE "user" ALTER COLUMN role TYPE userrole USING role::userrole'
+    )
     op.execute(
         'ALTER TABLE "user" ALTER COLUMN athlete_status TYPE userathleteapprovalstatus USING athlete_status::userathleteapprovalstatus'
     )
@@ -93,7 +99,9 @@ def upgrade() -> None:
         "ALTER TABLE team_combine_metric ALTER COLUMN status TYPE combinemetricstatus USING status::combinemetricstatus"
     )
     op.execute("ALTER TABLE team_combine_metric ALTER COLUMN status SET NOT NULL")
-    op.execute("ALTER TABLE team_combine_metric ALTER COLUMN status SET DEFAULT 'PENDING'")
+    op.execute(
+        "ALTER TABLE team_combine_metric ALTER COLUMN status SET DEFAULT 'PENDING'"
+    )
 
     # user.full_name must be not null per legacy schema
     op.execute('UPDATE "user" SET full_name = email WHERE full_name IS NULL')
@@ -114,11 +122,15 @@ def upgrade() -> None:
         sa.Column("notes", sa.Text(), nullable=True),
         sa.Column("status", event_status_enum, nullable=True),
         sa.Column("team_id", sa.Integer(), sa.ForeignKey("team.id"), nullable=True),
-        sa.Column("created_by_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False),
+        sa.Column(
+            "created_by_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False
+        ),
         sa.Column("coach_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
-        sa.Column("email_sent", sa.Boolean(), nullable=False, server_default=sa.false()),
+        sa.Column(
+            "email_sent", sa.Boolean(), nullable=False, server_default=sa.false()
+        ),
         sa.Column("push_sent", sa.Boolean(), nullable=False, server_default=sa.false()),
     )
     op.create_index(op.f("ix_event_coach_id"), "event", ["coach_id"])
@@ -129,24 +141,47 @@ def upgrade() -> None:
     # Optional multi-team association
     op.create_table(
         "event_team_link",
-        sa.Column("event_id", sa.Integer(), sa.ForeignKey("event.id", ondelete="CASCADE"), primary_key=True),
-        sa.Column("team_id", sa.Integer(), sa.ForeignKey("team.id", ondelete="CASCADE"), primary_key=True),
+        sa.Column(
+            "event_id",
+            sa.Integer(),
+            sa.ForeignKey("event.id", ondelete="CASCADE"),
+            primary_key=True,
+        ),
+        sa.Column(
+            "team_id",
+            sa.Integer(),
+            sa.ForeignKey("team.id", ondelete="CASCADE"),
+            primary_key=True,
+        ),
     )
 
     # Event participants
     op.create_table(
         "event_participant",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("event_id", sa.Integer(), sa.ForeignKey("event.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "event_id",
+            sa.Integer(),
+            sa.ForeignKey("event.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("user_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=True),
-        sa.Column("athlete_id", sa.Integer(), sa.ForeignKey("athlete.id"), nullable=True),
+        sa.Column(
+            "athlete_id", sa.Integer(), sa.ForeignKey("athlete.id"), nullable=True
+        ),
         sa.Column("status", participant_enum, nullable=True),
         sa.Column("invited_at", sa.DateTime(), nullable=False),
         sa.Column("responded_at", sa.DateTime(), nullable=True),
     )
-    op.create_index(op.f("ix_event_participant_event_id"), "event_participant", ["event_id"])
-    op.create_index(op.f("ix_event_participant_user_id"), "event_participant", ["user_id"])
-    op.create_index(op.f("ix_event_participant_athlete_id"), "event_participant", ["athlete_id"])
+    op.create_index(
+        op.f("ix_event_participant_event_id"), "event_participant", ["event_id"]
+    )
+    op.create_index(
+        op.f("ix_event_participant_user_id"), "event_participant", ["user_id"]
+    )
+    op.create_index(
+        op.f("ix_event_participant_athlete_id"), "event_participant", ["athlete_id"]
+    )
 
     # Notifications
     op.create_table(
@@ -173,11 +208,19 @@ def upgrade() -> None:
         "report_submission",
         sa.Column("id", sa.Integer(), primary_key=True),
         sa.Column("report_type", report_type_enum, nullable=True),
-        sa.Column("status", report_status_enum, nullable=False, server_default="PENDING"),
-        sa.Column("submitted_by_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False),
-        sa.Column("approved_by_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=True),
+        sa.Column(
+            "status", report_status_enum, nullable=False, server_default="PENDING"
+        ),
+        sa.Column(
+            "submitted_by_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False
+        ),
+        sa.Column(
+            "approved_by_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=True
+        ),
         sa.Column("team_id", sa.Integer(), sa.ForeignKey("team.id"), nullable=True),
-        sa.Column("athlete_id", sa.Integer(), sa.ForeignKey("athlete.id"), nullable=True),
+        sa.Column(
+            "athlete_id", sa.Integer(), sa.ForeignKey("athlete.id"), nullable=True
+        ),
         sa.Column("opponent", sa.String(), nullable=True),
         sa.Column("match_date", sa.DateTime(), nullable=True),
         sa.Column("goals_for", sa.Integer(), nullable=True),
@@ -195,19 +238,40 @@ def upgrade() -> None:
         sa.Column("report_card_categories", sa.JSON(), nullable=True),
         sa.Column("overall_average", sa.Float(), nullable=True),
     )
-    op.create_index(op.f("ix_report_submission_approved_by_id"), "report_submission", ["approved_by_id"])
-    op.create_index(op.f("ix_report_submission_athlete_id"), "report_submission", ["athlete_id"])
-    op.create_index(op.f("ix_report_submission_created_at"), "report_submission", ["created_at"])
-    op.create_index(op.f("ix_report_submission_submitted_by_id"), "report_submission", ["submitted_by_id"])
-    op.create_index(op.f("ix_report_submission_team_id"), "report_submission", ["team_id"])
+    op.create_index(
+        op.f("ix_report_submission_approved_by_id"),
+        "report_submission",
+        ["approved_by_id"],
+    )
+    op.create_index(
+        op.f("ix_report_submission_athlete_id"), "report_submission", ["athlete_id"]
+    )
+    op.create_index(
+        op.f("ix_report_submission_created_at"), "report_submission", ["created_at"]
+    )
+    op.create_index(
+        op.f("ix_report_submission_submitted_by_id"),
+        "report_submission",
+        ["submitted_by_id"],
+    )
+    op.create_index(
+        op.f("ix_report_submission_team_id"), "report_submission", ["team_id"]
+    )
 
     # Match stats
     op.create_table(
         "match_stat",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("athlete_id", sa.Integer(), sa.ForeignKey("athlete.id"), nullable=False),
+        sa.Column(
+            "athlete_id", sa.Integer(), sa.ForeignKey("athlete.id"), nullable=False
+        ),
         sa.Column("team_id", sa.Integer(), sa.ForeignKey("team.id"), nullable=True),
-        sa.Column("report_submission_id", sa.Integer(), sa.ForeignKey("report_submission.id"), nullable=True),
+        sa.Column(
+            "report_submission_id",
+            sa.Integer(),
+            sa.ForeignKey("report_submission.id"),
+            nullable=True,
+        ),
         sa.Column("match_date", sa.DateTime(), nullable=False),
         sa.Column("competition", sa.String(), nullable=True),
         sa.Column("opponent", sa.String(), nullable=True),
@@ -221,7 +285,11 @@ def upgrade() -> None:
     )
     op.create_index(op.f("ix_match_stat_athlete_id"), "match_stat", ["athlete_id"])
     op.create_index(op.f("ix_match_stat_team_id"), "match_stat", ["team_id"])
-    op.create_index(op.f("ix_match_stat_report_submission_id"), "match_stat", ["report_submission_id"])
+    op.create_index(
+        op.f("ix_match_stat_report_submission_id"),
+        "match_stat",
+        ["report_submission_id"],
+    )
     op.create_index(op.f("ix_match_stat_match_date"), "match_stat", ["match_date"])
 
     # Push subscriptions
@@ -235,7 +303,12 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
     )
-    op.create_index(op.f("ix_push_subscription_user_id"), "push_subscription", ["user_id"], unique=True)
+    op.create_index(
+        op.f("ix_push_subscription_user_id"),
+        "push_subscription",
+        ["user_id"],
+        unique=True,
+    )
 
 
 def downgrade() -> None:

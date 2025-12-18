@@ -19,7 +19,9 @@ def list_tests(
     return session.exec(statement).all()
 
 
-@router.post("/", response_model=TestDefinitionRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", response_model=TestDefinitionRead, status_code=status.HTTP_201_CREATED
+)
 def create_test(
     payload: TestDefinitionCreate,
     session: Session = Depends(get_session),
@@ -41,5 +43,7 @@ def get_test(
 ) -> TestDefinitionRead:
     test_definition = session.get(TestDefinition, test_id)
     if not test_definition:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Test not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Test not found"
+        )
     return test_definition

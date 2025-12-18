@@ -34,15 +34,55 @@ from app.models.team_combine_metric import CombineMetricStatus
 
 
 TEST_DEFINITIONS = [
-    {"name": "Sitting height", "category": "Anthropometrics", "unit": "cm", "target_direction": "higher"},
-    {"name": "Standing height", "category": "Anthropometrics", "unit": "cm", "target_direction": "higher"},
-    {"name": "Weight", "category": "Anthropometrics", "unit": "kg", "target_direction": "lower"},
-    {"name": "10m sprint", "category": "Speed", "unit": "s", "target_direction": "lower"},
-    {"name": "20m sprint", "category": "Speed", "unit": "s", "target_direction": "lower"},
-    {"name": "35m sprint", "category": "Speed", "unit": "s", "target_direction": "lower"},
-    {"name": "YoYo distance", "category": "Endurance", "unit": "m", "target_direction": "higher"},
+    {
+        "name": "Sitting height",
+        "category": "Anthropometrics",
+        "unit": "cm",
+        "target_direction": "higher",
+    },
+    {
+        "name": "Standing height",
+        "category": "Anthropometrics",
+        "unit": "cm",
+        "target_direction": "higher",
+    },
+    {
+        "name": "Weight",
+        "category": "Anthropometrics",
+        "unit": "kg",
+        "target_direction": "lower",
+    },
+    {
+        "name": "10m sprint",
+        "category": "Speed",
+        "unit": "s",
+        "target_direction": "lower",
+    },
+    {
+        "name": "20m sprint",
+        "category": "Speed",
+        "unit": "s",
+        "target_direction": "lower",
+    },
+    {
+        "name": "35m sprint",
+        "category": "Speed",
+        "unit": "s",
+        "target_direction": "lower",
+    },
+    {
+        "name": "YoYo distance",
+        "category": "Endurance",
+        "unit": "m",
+        "target_direction": "higher",
+    },
     {"name": "Jump", "category": "Power", "unit": "cm", "target_direction": "higher"},
-    {"name": "Max shot power", "category": "Power", "unit": "km/h", "target_direction": "higher"},
+    {
+        "name": "Max shot power",
+        "category": "Power",
+        "unit": "km/h",
+        "target_direction": "higher",
+    },
 ]
 
 TEAM_BLUEPRINTS = [
@@ -62,23 +102,106 @@ TEAM_BLUEPRINTS = [
 
 FIRST_NAMES = [
     # Boys
-    "Alex", "Daniel", "Matthew", "John", "Luke", "James", "Brian", "Ryan", "David",
-    "Michael", "Chris", "Kevin", "Ethan", "Joshua", "Andrew", "Justin", "Samuel",
-    "Benjamin", "Adam", "Nathan", "Tyler", "Jason", "Eric", "Aaron",
+    "Alex",
+    "Daniel",
+    "Matthew",
+    "John",
+    "Luke",
+    "James",
+    "Brian",
+    "Ryan",
+    "David",
+    "Michael",
+    "Chris",
+    "Kevin",
+    "Ethan",
+    "Joshua",
+    "Andrew",
+    "Justin",
+    "Samuel",
+    "Benjamin",
+    "Adam",
+    "Nathan",
+    "Tyler",
+    "Jason",
+    "Eric",
+    "Aaron",
     # Girls
-    "Emily", "Sophia", "Olivia", "Emma", "Ava", "Isabella", "Mia", "Charlotte",
-    "Amelia", "Grace", "Ella", "Hannah", "Abigail", "Madison", "Chloe", "Lily",
-    "Samantha", "Natalie", "Victoria", "Brooklyn", "Zoe", "Layla", "Savannah", "Avery",
+    "Emily",
+    "Sophia",
+    "Olivia",
+    "Emma",
+    "Ava",
+    "Isabella",
+    "Mia",
+    "Charlotte",
+    "Amelia",
+    "Grace",
+    "Ella",
+    "Hannah",
+    "Abigail",
+    "Madison",
+    "Chloe",
+    "Lily",
+    "Samantha",
+    "Natalie",
+    "Victoria",
+    "Brooklyn",
+    "Zoe",
+    "Layla",
+    "Savannah",
+    "Avery",
 ]
 
 LAST_NAMES = [
-    "Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis",
-    "Martinez", "Taylor", "Clark", "Walker", "Young", "Allen", "King", "Wright",
-    "Scott", "Green", "Baker", "Adams", "Nelson", "Hill", "Ramirez", "Campbell",
-    "Mitchell", "Perez", "Roberts", "Turner", "Phillips", "Howard", "Parker",
-    "Evans", "Edwards", "Collins", "Stewart", "Sanchez", "Morris", "Rogers",
-    "Reed", "Cook", "Morgan", "Bell", "Murphy", "Bailey", "Rivera", "Cooper",
-    "Richardson", "Cox",
+    "Smith",
+    "Johnson",
+    "Williams",
+    "Brown",
+    "Jones",
+    "Garcia",
+    "Miller",
+    "Davis",
+    "Martinez",
+    "Taylor",
+    "Clark",
+    "Walker",
+    "Young",
+    "Allen",
+    "King",
+    "Wright",
+    "Scott",
+    "Green",
+    "Baker",
+    "Adams",
+    "Nelson",
+    "Hill",
+    "Ramirez",
+    "Campbell",
+    "Mitchell",
+    "Perez",
+    "Roberts",
+    "Turner",
+    "Phillips",
+    "Howard",
+    "Parker",
+    "Evans",
+    "Edwards",
+    "Collins",
+    "Stewart",
+    "Sanchez",
+    "Morris",
+    "Rogers",
+    "Reed",
+    "Cook",
+    "Morgan",
+    "Bell",
+    "Murphy",
+    "Bailey",
+    "Rivera",
+    "Cooper",
+    "Richardson",
+    "Cox",
 ]
 
 
@@ -123,7 +246,9 @@ def _test_value(test_name: str) -> float:
     return round(uniform(1, 100), 2)
 
 
-def _combine_payload(team_id: int, athlete_id: int, recorded_at: datetime) -> TeamCombineMetric:
+def _combine_payload(
+    team_id: int, athlete_id: int, recorded_at: datetime
+) -> TeamCombineMetric:
     return TeamCombineMetric(
         team_id=team_id,
         athlete_id=athlete_id,
@@ -294,7 +419,9 @@ def seed_bulk_teams_and_athletes(
                 weight_kg=round(uniform(55, 90), 1),
                 club_affiliation="Seed FC",
                 team_id=team.id,
-                primary_position=choice(["Midfielder", "Winger", "Striker", "Goalkeeper"]),
+                primary_position=choice(
+                    ["Midfielder", "Winger", "Striker", "Goalkeeper"]
+                ),
                 secondary_position="Full Back",
                 photo_url=None,
                 status=AthleteStatus.active,
@@ -364,7 +491,9 @@ def seed_bulk_teams_and_athletes(
                 )
 
     session.commit()
-    print(f"Seed concluído: {team_count} times, {team_count * athletes_per_team} atletas.")
+    print(
+        f"Seed concluído: {team_count} times, {team_count * athletes_per_team} atletas."
+    )
 
 
 if __name__ == "__main__":

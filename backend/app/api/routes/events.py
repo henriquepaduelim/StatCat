@@ -1,4 +1,5 @@
 """API endpoints for events management."""
+
 from datetime import date as date_type, datetime, time as time_type, timezone
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -41,7 +42,10 @@ def _parse_time_str(value: Optional[str]) -> Optional[time_type]:
         try:
             return datetime.strptime(v, "%H:%M").time()
         except ValueError:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time format. Use HH:MM.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid time format. Use HH:MM.",
+            )
 
 
 @router.post("/", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
@@ -73,7 +77,7 @@ async def create_event(
         invited_athlete_ids=event_in.athlete_ids,
     )
     persist_event_team_links(db, event, team_ids)
-    
+
     # Create participants for invitee users
     for user_id in event_in.invitee_ids:
         participant = EventParticipant(
@@ -94,11 +98,11 @@ async def create_event(
             status=ParticipantStatus.INVITED,
         )
         db.add(participant)
-    
+
     db.commit()
     db.refresh(event)
     attach_team_ids(db, [event])
-    
+
     # Send notifications
     if event_in.invitee_ids:
         await notification_service.notify_event_created(
@@ -108,7 +112,7 @@ async def create_event(
             send_email=event_in.send_email,
             send_push=event_in.send_push,
         )
-    
+
     # Refresh to get participants
     db.refresh(event)
     return event
@@ -125,12 +129,14 @@ def list_events(
 ) -> List[Event]:
     """List all events, optionally filtered."""
     stmt = select(Event)
-    
+
     # Filter by team if provided (include linked teams)
     if team_id is not None:
-        linked_event_ids = select(EventTeamLink.event_id).where(EventTeamLink.team_id == team_id)
+        linked_event_ids = select(EventTeamLink.event_id).where(
+            EventTeamLink.team_id == team_id
+        )
         stmt = stmt.where(or_(Event.team_id == team_id, Event.id.in_(linked_event_ids)))
-    
+
     # Filter by date range
     parsed_from = _parse_date_str(date_from)
     parsed_to = _parse_date_str(date_to)
@@ -138,9 +144,9 @@ def list_events(
         stmt = stmt.where(Event.date >= parsed_from)
     if parsed_to:
         stmt = stmt.where(Event.date <= parsed_to)
-    
+
     stmt = stmt.order_by(Event.date.desc(), Event.start_time.desc())
-    
+
     events = db.exec(stmt).all()
     attach_team_ids(db, events)
     return events
@@ -156,7 +162,7 @@ def list_my_events(
     # Get events where user is organizer
     stmt_created = select(Event).where(Event.created_by_id == current_user.id)
     created_events = db.exec(stmt_created).all()
-    
+
     # Get events where user is invited
     stmt_invited = (
         select(Event)
@@ -164,13 +170,13 @@ def list_my_events(
         .where(EventParticipant.user_id == current_user.id)
     )
     invited_events = db.exec(stmt_invited).all()
-    
+
     # Combine and deduplicate
     all_events = {e.id: e for e in created_events}
     for e in invited_events:
         if e.id not in all_events:
             all_events[e.id] = e
-    
+
     # Sort by date
     events = sorted(
         all_events.values(),
@@ -208,46 +214,50 @@ async def update_event(
     event = db.get(Event, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-    
+
     # Check permission (only organizer can update)
     if event.created_by_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized to update this event")
-    
+        raise HTTPException(
+            status_code=403, detail="Not authorized to update this event"
+        )
+
     # Track changes for notification
     changes = []
-    
+
     if event_in.name and event_in.name != event.name:
         changes.append(f"Name changed to: {event_in.name}")
         event.name = event_in.name
-    
+
     if event_in.event_date and event_in.event_date != event.event_date:
         changes.append(f"Date changed to: {event_in.event_date}")
         event.event_date = event_in.event_date
-    
+
     if event_in.start_time is not None and event_in.start_time != event.start_time:
         parsed_time = _parse_time_str(event_in.start_time)
         changes.append(f"Time changed to: {event_in.start_time}")
         event.start_time = parsed_time
-    
+
     if event_in.location is not None and event_in.location != event.location:
         changes.append(f"Location changed to: {event_in.location}")
         event.location = event_in.location
-    
+
     if event_in.notes is not None:
         event.notes = event_in.notes
-    
+
     if event_in.status:
         event.status = event_in.status
-    
+
     if event_in.team_id is not None:
         event.team_id = event_in.team_id
-    
+
     if event_in.coach_id is not None:
         event.coach_id = event_in.coach_id
-    
+
     event.updated_at = datetime.now(timezone.utc)
-    should_sync_team_links = event_in.team_ids is not None or event_in.team_id is not None
-    
+    should_sync_team_links = (
+        event_in.team_ids is not None or event_in.team_id is not None
+    )
+
     db.add(event)
 
     if should_sync_team_links:
@@ -265,7 +275,7 @@ async def update_event(
     db.commit()
     db.refresh(event)
     attach_team_ids(db, [event])
-    
+
     # Send notifications if there are changes
     if changes and event_in.send_notification:
         await notification_service.notify_event_updated(
@@ -274,7 +284,7 @@ async def update_event(
             changes=", ".join(changes),
             send_notification=True,
         )
-    
+
     return event
 
 
@@ -284,7 +294,10 @@ def _parse_date_str(value: Optional[str]) -> Optional[date_type]:
     try:
         return date_type.fromisoformat(value)
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date format. Use YYYY-MM-DD.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid date format. Use YYYY-MM-DD.",
+        )
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -298,11 +311,13 @@ def delete_event(
     event = db.get(Event, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-    
+
     # Check permission
     if event.created_by_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Not authorized to delete this event")
-    
+        raise HTTPException(
+            status_code=403, detail="Not authorized to delete this event"
+        )
+
     db.exec(delete(EventTeamLink).where(EventTeamLink.event_id == event_id))
     db.delete(event)
     db.commit()
@@ -320,14 +335,14 @@ async def confirm_event_attendance(
     event = db.get(Event, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-    
+
     # Find or create participant
     stmt = select(EventParticipant).where(
         EventParticipant.event_id == event_id,
         EventParticipant.user_id == current_user.id,
     )
     participant = db.exec(stmt).first()
-    
+
     if not participant:
         # User wasn't invited, but allow them to respond
         participant = EventParticipant(
@@ -341,10 +356,10 @@ async def confirm_event_attendance(
         participant.status = confirmation.status
         participant.responded_at = datetime.now(timezone.utc)
         db.add(participant)
-    
+
     db.commit()
     db.refresh(participant)
-    
+
     # Notify organizer
     await notification_service.notify_confirmation_received(
         db=db,
@@ -352,7 +367,7 @@ async def confirm_event_attendance(
         participant=participant,
         status=confirmation.status,
     )
-    
+
     return participant
 
 
@@ -367,7 +382,7 @@ def get_event_participants(
     event = db.get(Event, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
-    
+
     stmt = select(EventParticipant).where(EventParticipant.event_id == event_id)
     participants = db.exec(stmt).all()
     return participants

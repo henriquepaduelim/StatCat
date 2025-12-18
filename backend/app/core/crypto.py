@@ -5,7 +5,7 @@ from __future__ import annotations
 from base64 import urlsafe_b64encode
 from functools import lru_cache
 from hashlib import sha256
-from typing import Iterable
+# Removed: from typing import Iterable
 
 from cryptography.fernet import Fernet, InvalidToken
 
@@ -29,7 +29,11 @@ def _get_ciphers() -> list[Fernet]:
         keys.append(current)
     else:
         # In non-prod environments, allow fallback to SECRET_KEY for local dev/tests.
-        is_prod_env = settings.ENVIRONMENT.lower() not in {"dev", "development", "local"}
+        is_prod_env = settings.ENVIRONMENT.lower() not in {
+            "dev",
+            "development",
+            "local",
+        }
         if is_prod_env:
             raise ValueError("ENCRYPTION_KEY_CURRENT is required in production.")
         keys.append(settings.SECRET_KEY)

@@ -1,4 +1,5 @@
 """Schemas for Event API endpoints."""
+
 from datetime import date, datetime, time
 from typing import List, Optional
 from pydantic import BaseModel, Field, field_validator
@@ -6,6 +7,7 @@ from pydantic import BaseModel, Field, field_validator
 
 class EventParticipantResponse(BaseModel):
     """Response model for event participant."""
+
     id: int
     user_id: Optional[int] = None  # None for athletes without user accounts
     athlete_id: Optional[int] = None
@@ -16,6 +18,7 @@ class EventParticipantResponse(BaseModel):
 
 class EventCreate(BaseModel):
     """Schema for creating an event."""
+
     name: str = Field(..., max_length=200)
     event_date: date
     start_time: Optional[str] = None
@@ -24,8 +27,12 @@ class EventCreate(BaseModel):
     team_id: Optional[int] = None
     team_ids: List[int] = Field(default_factory=list)
     coach_id: Optional[int] = None
-    invitee_ids: List[int] = Field(default_factory=list)  # List of user IDs to invite (coaches, etc.)
-    athlete_ids: List[int] = Field(default_factory=list)  # List of athlete IDs to invite
+    invitee_ids: List[int] = Field(
+        default_factory=list
+    )  # List of user IDs to invite (coaches, etc.)
+    athlete_ids: List[int] = Field(
+        default_factory=list
+    )  # List of athlete IDs to invite
     send_email: bool = Field(default=True)
     send_push: bool = Field(default=True)
 
@@ -58,6 +65,7 @@ class EventCreate(BaseModel):
 
 class EventUpdate(BaseModel):
     """Schema for updating an event."""
+
     name: Optional[str] = Field(None, max_length=200)
     event_date: Optional[date] = None
     start_time: Optional[str] = None
@@ -98,6 +106,7 @@ class EventUpdate(BaseModel):
 
 class EventResponse(BaseModel):
     """Response model for event."""
+
     id: int
     name: str
     event_date: date
@@ -121,7 +130,8 @@ class EventResponse(BaseModel):
 
 class EventConfirmation(BaseModel):
     """Schema for confirming/declining event attendance."""
-    status: str = Field(..., pattern=r'^(confirmed|declined|maybe)$')
+
+    status: str = Field(..., pattern=r"^(confirmed|declined|maybe)$")
 
 
 class EventParticipantsAdd(BaseModel):
@@ -134,6 +144,7 @@ class EventParticipantsAdd(BaseModel):
 
 class PushSubscriptionCreate(BaseModel):
     """Schema for creating a push subscription."""
+
     endpoint: str
     p256dh: str
     auth: str
@@ -141,8 +152,9 @@ class PushSubscriptionCreate(BaseModel):
 
 class NotificationPreferences(BaseModel):
     """User notification preferences."""
+
     event_invites: bool = True
     event_updates: bool = True
     event_confirmations: bool = True
     event_reminders: bool = True
-    channel: str = Field(default="both", pattern=r'^(email|push|both)$')
+    channel: str = Field(default="both", pattern=r"^(email|push|both)$")

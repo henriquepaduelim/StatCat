@@ -43,7 +43,9 @@ def _safe_filename(filename: str | None) -> str:
 
 def _store_media(team_id: int, file: UploadFile) -> str:
     suffix = Path(file.filename or "").suffix.lower()
-    if suffix not in ALLOWED_MEDIA_EXTENSIONS or (file.content_type and file.content_type.lower() not in ALLOWED_MEDIA_MIME_TYPES):
+    if suffix not in ALLOWED_MEDIA_EXTENSIONS or (
+        file.content_type and file.content_type.lower() not in ALLOWED_MEDIA_MIME_TYPES
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unsupported media type.",
@@ -67,7 +69,9 @@ def _store_media(team_id: int, file: UploadFile) -> str:
 def _get_team(session: Session, team_id: int) -> Team:
     team = session.get(Team, team_id)
     if not team:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Team not found"
+        )
     return team
 
 
@@ -80,7 +84,8 @@ def _ensure_team_access(session: Session, current_user: User, team_id: int) -> T
     if current_user.role == UserRole.COACH:
         membership_exists = session.exec(
             select(CoachTeamLink).where(
-                CoachTeamLink.team_id == team_id, CoachTeamLink.user_id == current_user.id
+                CoachTeamLink.team_id == team_id,
+                CoachTeamLink.user_id == current_user.id,
             )
         ).first()
         if membership_exists:
@@ -89,14 +94,18 @@ def _ensure_team_access(session: Session, current_user: User, team_id: int) -> T
 
     if current_user.role == UserRole.ATHLETE:
         if current_user.athlete_id is None:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed"
+            )
         athlete = session.get(Athlete, current_user.athlete_id)
         if athlete and athlete.team_id == team_id:
             return team
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
 
 
-def _build_post_response(session: Session, posts: Iterable[TeamPost]) -> list[TeamPostRead]:
+def _build_post_response(
+    session: Session, posts: Iterable[TeamPost]
+) -> list[TeamPostRead]:
     posts_list = list(posts)
     if not posts_list:
         return []
@@ -152,7 +161,11 @@ def list_team_posts(
     return _build_post_response(session, posts)
 
 
-@router.post("/teams/{team_id}/posts", response_model=TeamPostRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/teams/{team_id}/posts",
+    response_model=TeamPostRead,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_team_post(
     team_id: int,
     session: SessionDep,

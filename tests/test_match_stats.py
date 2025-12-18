@@ -86,7 +86,7 @@ def test_admin_can_submit_game_report(
         headers={"Authorization": f"Bearer {token}"},
     )
     assert pending.status_code == 200
-    assert any(item["report_type"] == "game_report" for item in pending.json())
+    assert any(item["report_type"] == "GAME" for item in pending.json())
     mine = client.get(
         "/api/v1/report-submissions/mine",
         headers={"Authorization": f"Bearer {token}"},

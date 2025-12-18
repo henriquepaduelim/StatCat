@@ -8,7 +8,11 @@ from sqlmodel import Session, select
 
 from app.api.deps import authenticate_user, get_current_active_user
 from app.core.config import settings  # Import settings to get origins
-from app.core.security import create_access_token, create_signup_token, get_password_hash
+from app.core.security import (
+    create_access_token,
+    create_signup_token,
+    get_password_hash,
+)
 from app.core.security_token import security_token_manager
 from app.db.session import get_session
 from app.models.athlete import Athlete, AthleteGender
@@ -37,12 +41,17 @@ user_media_root.mkdir(parents=True, exist_ok=True)
 
 def _generate_password_reset_token(user_id: int) -> str:
     payload = {"sub": user_id, "scope": "password_reset"}
-    return security_token_manager.generate_token(payload, salt=settings.PASSWORD_RESET_TOKEN_SALT)
+    return security_token_manager.generate_token(
+        payload, salt=settings.PASSWORD_RESET_TOKEN_SALT
+    )
 
 
 async def _handle_first_login(session: Session, user: User) -> None:
     """Update last_login and send welcome email on first login."""
-    if user.role == UserRole.ATHLETE and user.athlete_status != UserAthleteApprovalStatus.APPROVED:
+    if (
+        user.role == UserRole.ATHLETE
+        and user.athlete_status != UserAthleteApprovalStatus.APPROVED
+    ):
         # Do not treat as first login for pending athletes
         return
     first_login = user.last_login_at is None
@@ -51,14 +60,21 @@ async def _handle_first_login(session: Session, user: User) -> None:
     session.commit()
     session.refresh(user)
     if first_login and user.email:
-        await email_service.send_welcome_email(to_email=user.email, to_name=user.full_name or None)
+        await email_service.send_welcome_email(
+            to_email=user.email, to_name=user.full_name or None
+        )
 
 
 def _validate_user_photo(file: UploadFile) -> str:
     content_type = (file.content_type or "").lower()
     ext = Path(file.filename or "").suffix.lower()
-    if ext not in settings.USER_ALLOWED_PHOTO_EXTENSIONS or content_type not in settings.USER_ALLOWED_PHOTO_MIME_TYPES:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported file type.")
+    if (
+        ext not in settings.USER_ALLOWED_PHOTO_EXTENSIONS
+        or content_type not in settings.USER_ALLOWED_PHOTO_MIME_TYPES
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported file type."
+        )
     return ext
 
 
@@ -69,14 +85,21 @@ def _decode_password_reset_token(token: str) -> int:
         max_age_seconds=settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES * 60,
     )
     if not decoded or decoded.get("scope") != "password_reset":
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired reset token")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired reset token",
+        )
     sub = decoded.get("sub")
     if not sub:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token"
+        )
     try:
         return int(sub)
     except (TypeError, ValueError) as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token") from exc
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid reset token"
+        ) from exc
 
 
 @router.post("/login", response_model=Token)
@@ -88,11 +111,19 @@ async def login_access_token(
     user = authenticate_user(session, form_data.username, form_data.password)
     if not user:
         # Authentication failed
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+        )
     if not user.is_active:
         # User is inactive
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
-    if user.role == UserRole.ATHLETE and user.athlete_status != UserAthleteApprovalStatus.APPROVED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user"
+        )
+    if (
+        user.role == UserRole.ATHLETE
+        and user.athlete_status != UserAthleteApprovalStatus.APPROVED
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account pending approval. Please wait for an admin to approve your registration.",
@@ -126,7 +157,7 @@ def read_users_me(
         "is_active": current_user.is_active,
         "rejection_reason": current_user.rejection_reason,
     }
-    
+
     # Ensure athlete_status is properly serialized
     if current_user.athlete_status:
         if hasattr(current_user.athlete_status, "value"):
@@ -135,7 +166,7 @@ def read_users_me(
             user_dict["athlete_status"] = str(current_user.athlete_status).lower()
     else:
         user_dict["athlete_status"] = None
-    
+
     return user_dict
 
 
@@ -161,7 +192,9 @@ def update_me(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Current password is required to change password.",
                 )
-            authenticated = authenticate_user(session, current_user.email, payload.current_password)
+            authenticated = authenticate_user(
+                session, current_user.email, payload.current_password
+            )
             if not authenticated:
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -204,7 +237,11 @@ async def upload_user_photo(
     return current_user
 
 
-@router.post("/signup-athlete", response_model=AthleteSignupResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/signup-athlete",
+    response_model=AthleteSignupResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def signup_athlete(
     payload: AthleteSignup,
     session: Session = Depends(get_session),
@@ -212,12 +249,16 @@ def signup_athlete(
     """Public signup for athletes. Creates user+athlete as INCOMPLETE and returns a short-lived onboarding token."""
     existing = session.exec(select(User).where(User.email == payload.email)).first()
     if existing:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
+        )
 
     try:
         gender_value = AthleteGender(payload.gender.lower())
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid gender") from exc
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid gender"
+        ) from exc
 
     hashed_password = get_password_hash(payload.password)
     user = User(
@@ -267,15 +308,18 @@ def get_athlete_status(
 ) -> dict[str, str]:
     """Get the current athlete's status and rejection reason if applicable."""
     if current_user.role != UserRole.ATHLETE:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only athletes can check status")
-    
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only athletes can check status",
+        )
+
     response = {
         "status": current_user.athlete_status.value,
     }
-    
+
     if current_user.rejection_reason:
         response["rejection_reason"] = current_user.rejection_reason
-    
+
     return response
 
 
@@ -289,7 +333,9 @@ def register_user(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
     exists = session.exec(select(User).where(User.email == payload.email)).first()
     if exists:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
+        )
 
     if payload.role == UserRole.ATHLETE:
         if payload.athlete_id is None:
@@ -299,7 +345,9 @@ def register_user(
             )
         athlete = session.get(Athlete, payload.athlete_id)
         if not athlete:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Athlete not found")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Athlete not found"
+            )
 
     full_name = payload.full_name
     if payload.role == UserRole.COACH:
@@ -356,10 +404,14 @@ async def signup_user(
             )
         exists = session.exec(select(User).where(User.email == payload.email)).first()
         if exists:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered",
+            )
 
         # Create a basic athlete record for the user
         from datetime import date
+
         name_parts = (payload.full_name or "Unknown").split()
         first_name = name_parts[0] if name_parts else "Unknown"
         last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
@@ -369,7 +421,9 @@ async def signup_user(
             last_name=last_name,
             email=payload.email,
             phone=payload.phone or "",
-            birth_date=date(2000, 1, 1),  # Default date, will be updated during onboarding
+            birth_date=date(
+                2000, 1, 1
+            ),  # Default date, will be updated during onboarding
             gender="male",  # Default value, will be updated during onboarding
             primary_position="unknown",
         )
@@ -400,7 +454,10 @@ async def signup_user(
         raise
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Registration failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Registration failed: {str(e)}",
+        )
 
 
 @router.post("/login/full", response_model=UserReadWithToken)
@@ -410,10 +467,18 @@ async def login_with_profile(
 ) -> UserReadWithToken:
     user = authenticate_user(session, form_data.username, form_data.password)
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+        )
     if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
-    if user.role == UserRole.ATHLETE and user.athlete_status != UserAthleteApprovalStatus.APPROVED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user"
+        )
+    if (
+        user.role == UserRole.ATHLETE
+        and user.athlete_status != UserAthleteApprovalStatus.APPROVED
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account pending approval. Please wait for an admin to approve your registration.",
@@ -421,7 +486,7 @@ async def login_with_profile(
     await _handle_first_login(session, user)
 
     token = create_access_token(user.email)
-    
+
     return UserReadWithToken(
         id=user.id,
         email=user.email,
@@ -481,7 +546,9 @@ async def confirm_password_reset(
     user = session.get(User, user_id)
 
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
 
     if user.role not in PASSWORD_RESET_ALLOWED_ROLES:
         raise HTTPException(
@@ -499,4 +566,6 @@ async def confirm_password_reset(
         to_email=user.email,
         to_name=user.full_name or None,
     )
-    return PasswordResetResponse(detail="Your password has been updated. You can sign in with your new credentials.")
+    return PasswordResetResponse(
+        detail="Your password has been updated. You can sign in with your new credentials."
+    )

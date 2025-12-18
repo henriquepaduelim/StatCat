@@ -56,9 +56,7 @@ METRIC_DEFINITIONS: tuple[MetricDefinition, ...] = (
         id="resting_readiness",
         name="Cardiorespiratory Readiness",
         category="General Info",
-        description=(
-            "Physiological state at rest and initial recovery capacity."
-        ),
+        description=("Physiological state at rest and initial recovery capacity."),
         primary_tests=(
             "Resting Heart Rate (Seated)",
             "Recovery Time (60 s)",
@@ -76,9 +74,7 @@ METRIC_DEFINITIONS: tuple[MetricDefinition, ...] = (
         id="mobility_balance",
         name="Mobility and Balance",
         category="Physical",
-        description=(
-            "Joint mobility and multiplanar balance control ability."
-        ),
+        description=("Joint mobility and multiplanar balance control ability."),
         primary_tests=(
             "Knee to Wall",
             "Sit-and-Reach Flexibility",
@@ -113,9 +109,7 @@ METRIC_DEFINITIONS: tuple[MetricDefinition, ...] = (
         id="reactive_quickness",
         name="Reaction Time and Coordination",
         category="Physical",
-        description=(
-            "Neuromuscular response to visual stimuli and fine coordination."
-        ),
+        description=("Neuromuscular response to visual stimuli and fine coordination."),
         primary_tests=(
             "Reaction Time: Ruler Drop (Right Hand)",
             "Reaction Time: Ruler Drop (Left Hand)",
@@ -259,9 +253,7 @@ METRIC_DEFINITIONS: tuple[MetricDefinition, ...] = (
         name="Aerobic Capacity",
         category="Physical",
         description="Cardiorespiratory fitness for prolonged efforts.",
-        primary_tests=(
-            "Beep Test",
-        ),
+        primary_tests=("Beep Test",),
         supporting_tests=(
             "Recovery Time (60 s)",
             "Maximum Heart Rate",
@@ -354,8 +346,7 @@ METRIC_DEFINITIONS: tuple[MetricDefinition, ...] = (
             "35 m Driven Shot (Left Foot, 5 attempts)",
         ),
         calculation=(
-            "Same weighting used for the right leg to facilitate "
-            "comparisons."
+            "Same weighting used for the right leg to facilitate comparisons."
         ),
         direction="higher_is_better",
         tags=("shooting", "accuracy"),
@@ -432,4 +423,3 @@ def list_metrics(category: str | None = None) -> tuple[MetricDefinition, ...]:
     if category is None:
         return METRIC_DEFINITIONS
     return tuple(metric for metric in METRIC_DEFINITIONS if metric.category == category)
-

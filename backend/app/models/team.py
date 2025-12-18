@@ -23,7 +23,9 @@ class Team(SQLModel, table=True):
     description: str | None = None
     coach_name: str | None = None
     created_by_id: int | None = Field(default=None, foreign_key="user.id", index=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False
+    )
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         nullable=False,

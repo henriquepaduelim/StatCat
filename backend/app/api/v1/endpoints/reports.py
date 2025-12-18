@@ -81,7 +81,9 @@ def athlete_report(
 ) -> AthleteReport:
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found"
+        )
     if current_user.role == UserRole.ATHLETE and current_user.athlete_id != athlete.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
 

@@ -5,6 +5,7 @@ Revises: 5541982457a6
 Create Date: 2025-12-17 09:56:45.602595
 
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -13,8 +14,8 @@ from sqlalchemy.dialects.postgresql import ENUM
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'aa2911f20456'
-down_revision: Union[str, Sequence[str], None] = '813b8a6cf1c4'
+revision: str = "aa2911f20456"
+down_revision: Union[str, Sequence[str], None] = "813b8a6cf1c4"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -46,14 +47,20 @@ def upgrade() -> None:
         sa.Column("end_time", sa.DateTime(), nullable=True),
         sa.Column("location", sa.String(), nullable=True),
         sa.Column("is_public", sa.Boolean(), nullable=False, server_default=sa.false()),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
-        sa.Column("created_by_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
+        ),
+        sa.Column(
+            "created_by_id", sa.Integer(), sa.ForeignKey("user.id"), nullable=False
+        ),
     )
 
     # EventTeamLink junction table
     op.create_table(
         "event_team_link",
-        sa.Column("event_id", sa.Integer(), sa.ForeignKey("event.id"), primary_key=True),
+        sa.Column(
+            "event_id", sa.Integer(), sa.ForeignKey("event.id"), primary_key=True
+        ),
         sa.Column("team_id", sa.Integer(), sa.ForeignKey("team.id"), primary_key=True),
     )
 
@@ -61,18 +68,35 @@ def upgrade() -> None:
     op.create_table(
         "event_participant",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("event_id", sa.Integer(), sa.ForeignKey("event.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("athlete_id", sa.Integer(), sa.ForeignKey("athlete.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "event_id",
+            sa.Integer(),
+            sa.ForeignKey("event.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
+        sa.Column(
+            "athlete_id",
+            sa.Integer(),
+            sa.ForeignKey("athlete.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
     )
 
     # Recreate notification (simplified)
     op.create_table(
         "notification",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("user_id", sa.Integer(), sa.ForeignKey("user.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "user_id",
+            sa.Integer(),
+            sa.ForeignKey("user.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("message", sa.String(), nullable=False),
         sa.Column("read", sa.Boolean(), nullable=False, server_default=sa.false()),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
+        ),
     )
 
     # Recreate report_submission (minimal)
@@ -95,42 +119,68 @@ def upgrade() -> None:
         sa.Column("notes", sa.String(), nullable=True),
         sa.Column("status", rs_status_enum, nullable=False, server_default="pending"),
         sa.Column("report_type", rs_type_enum, nullable=False),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
-        sa.Column("athlete_id", sa.Integer(), sa.ForeignKey("athlete.id"), nullable=True),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
+        ),
+        sa.Column(
+            "athlete_id", sa.Integer(), sa.ForeignKey("athlete.id"), nullable=True
+        ),
     )
     op.create_index("ix_report_submission_status", "report_submission", ["status"])
-    op.create_index("ix_report_submission_report_type", "report_submission", ["report_type"])
+    op.create_index(
+        "ix_report_submission_report_type", "report_submission", ["report_type"]
+    )
 
     # Recreate match_stat referencing new report_submission
     op.create_table(
         "match_stat",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("athlete_id", sa.Integer(), sa.ForeignKey("athlete.id"), nullable=False),
+        sa.Column(
+            "athlete_id", sa.Integer(), sa.ForeignKey("athlete.id"), nullable=False
+        ),
         sa.Column("team_id", sa.Integer(), sa.ForeignKey("team.id"), nullable=True),
-        sa.Column("report_submission_id", sa.Integer(), sa.ForeignKey("report_submission.id"), nullable=True),
-        sa.Column("match_date", sa.DateTime(), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "report_submission_id",
+            sa.Integer(),
+            sa.ForeignKey("report_submission.id"),
+            nullable=True,
+        ),
+        sa.Column(
+            "match_date", sa.DateTime(), nullable=False, server_default=sa.func.now()
+        ),
         sa.Column("competition", sa.String(), nullable=True),
         sa.Column("opponent", sa.String(), nullable=True),
         sa.Column("venue", sa.String(), nullable=True),
         sa.Column("goals", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("assists", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("minutes_played", sa.Integer(), nullable=True),
-        sa.Column("shootout_attempts", sa.Integer(), nullable=False, server_default="0"),
+        sa.Column(
+            "shootout_attempts", sa.Integer(), nullable=False, server_default="0"
+        ),
         sa.Column("shootout_goals", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("goals_conceded", sa.Integer(), nullable=False, server_default="0"),
     )
     op.create_index("ix_match_stat_athlete_id", "match_stat", ["athlete_id"])
     op.create_index("ix_match_stat_team_id", "match_stat", ["team_id"])
-    op.create_index("ix_match_stat_report_submission_id", "match_stat", ["report_submission_id"])
+    op.create_index(
+        "ix_match_stat_report_submission_id", "match_stat", ["report_submission_id"]
+    )
     op.create_index("ix_match_stat_match_date", "match_stat", ["match_date"])
 
     # Recreate push_subscription aligned to model
     op.create_table(
         "push_subscription",
         sa.Column("id", sa.Integer(), primary_key=True),
-        sa.Column("user_id", sa.Integer(), sa.ForeignKey("user.id", ondelete="CASCADE"), nullable=False),
+        sa.Column(
+            "user_id",
+            sa.Integer(),
+            sa.ForeignKey("user.id", ondelete="CASCADE"),
+            nullable=False,
+        ),
         sa.Column("subscription_info", sa.String(), nullable=False),
-        sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()),
+        sa.Column(
+            "created_at", sa.DateTime(), nullable=False, server_default=sa.func.now()
+        ),
     )
 
     # Adjust existing columns/indexes

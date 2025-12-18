@@ -23,4 +23,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.add_column("report_submission", sa.Column("report_card_pdf_path", sa.String(), nullable=True))
+    op.add_column(
+        "report_submission",
+        sa.Column("report_card_pdf_path", sa.String(), nullable=True),
+    )

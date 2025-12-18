@@ -24,20 +24,30 @@ class Event(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(sa_column=sa.Column(sa.String(length=200), nullable=False))
     event_date: date = Field(sa_column=sa.Column(SafeDate(), nullable=False))
-    start_time: Optional[time] = Field(default=None, sa_column=sa.Column(SafeTime(), nullable=True))
-    location: Optional[str] = Field(default=None, sa_column=sa.Column(sa.String(length=500)))
+    start_time: Optional[time] = Field(
+        default=None, sa_column=sa.Column(SafeTime(), nullable=True)
+    )
+    location: Optional[str] = Field(
+        default=None, sa_column=sa.Column(sa.String(length=500))
+    )
     notes: Optional[str] = None
     status: Optional[EventStatus] = Field(
         default=EventStatus.SCHEDULED,
         sa_column=sa.Column(
-            sa.Enum(EventStatus, name="eventstatus", values_callable=lambda e: [item.value for item in e]),
+            sa.Enum(
+                EventStatus,
+                name="eventstatus",
+                values_callable=lambda e: [item.value for item in e],
+            ),
             nullable=True,
         ),
     )
     team_id: Optional[int] = Field(default=None, foreign_key="team.id", index=True)
     coach_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
     created_by_id: int = Field(foreign_key="user.id", index=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True, nullable=False)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), index=True, nullable=False
+    )
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         sa_column_kwargs={"onupdate": datetime.now(timezone.utc)},
@@ -50,7 +60,9 @@ class Event(SQLModel, table=True):
         back_populates="created_events",
         sa_relationship_kwargs={"foreign_keys": "Event.created_by_id"},
     )
-    coach: Optional["User"] = Relationship(sa_relationship_kwargs={"foreign_keys": "Event.coach_id"})
+    coach: Optional["User"] = Relationship(
+        sa_relationship_kwargs={"foreign_keys": "Event.coach_id"}
+    )
     teams: List["EventTeamLink"] = Relationship(back_populates="event")
     participants: List["EventParticipant"] = Relationship(back_populates="event")
 
@@ -78,7 +90,9 @@ class Notification(SQLModel, table=True):
     sent: bool = Field(default=False)
     sent_at: Optional[datetime] = None
     error: Optional[str] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True, nullable=False)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), index=True, nullable=False
+    )
     read: bool = Field(default=False)
 
 
@@ -90,7 +104,9 @@ class PushSubscription(SQLModel, table=True):
     endpoint: str
     p256dh: str
     auth: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), nullable=False
+    )
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         sa_column_kwargs={"onupdate": datetime.now(timezone.utc)},

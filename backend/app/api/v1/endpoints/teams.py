@@ -60,7 +60,9 @@ def _load_roster_counts(session: Session, team_ids: Iterable[int]) -> dict[int, 
 def _get_team_or_404(session: Session, team_id: int) -> Team:
     team = session.get(Team, team_id)
     if not team:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Team not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Team not found"
+        )
     return team
 
 
@@ -83,14 +85,20 @@ def list_teams(
 
     if current_user.role == UserRole.COACH:
         coach_team_ids = _extract_team_ids(
-            session.exec(select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == current_user.id)).all()
+            session.exec(
+                select(CoachTeamLink.team_id).where(
+                    CoachTeamLink.user_id == current_user.id
+                )
+            ).all()
         )
         if not coach_team_ids:
             return PaginatedResponse(total=0, page=page, size=size, items=[])
         filters.append(Team.id.in_(coach_team_ids))
 
     base_query = select(Team).where(*filters)
-    total_row = session.exec(select(func.count()).select_from(base_query.subquery())).one()
+    total_row = session.exec(
+        select(func.count()).select_from(base_query.subquery())
+    ).one()
     if isinstance(total_row, tuple):
         total = total_row[0]
     elif hasattr(total_row, "__getitem__"):
@@ -134,11 +142,13 @@ def list_coaches(
 ) -> list[UserRead]:
     """List all coaches with their assigned teams."""
     ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH})
-    coaches = session.exec(
-        select(User)
-        .where(User.role == UserRole.COACH)
-        .order_by(User.full_name)
-    ).scalars().all()
+    coaches = (
+        session.exec(
+            select(User).where(User.role == UserRole.COACH).order_by(User.full_name)
+        )
+        .scalars()
+        .all()
+    )
     return coaches
 
 
@@ -152,10 +162,16 @@ def get_team(
     ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH})
     if current_user.role == UserRole.COACH:
         coach_team_ids = _extract_team_ids(
-            session.exec(select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == current_user.id)).all()
+            session.exec(
+                select(CoachTeamLink.team_id).where(
+                    CoachTeamLink.user_id == current_user.id
+                )
+            ).all()
         )
         if team_id not in coach_team_ids:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed"
+            )
     team = _get_team_or_404(session, team_id)
     roster_counts = _load_roster_counts(session, [team.id])
     return TeamRead(
@@ -193,7 +209,9 @@ def get_team_report_submissions(
     items: list[ReportSubmissionItem] = []
     for submission, submitter_name in results:
         athlete = submission.athlete
-        athlete_name = f"{athlete.first_name} {athlete.last_name}".strip() if athlete else None
+        athlete_name = (
+            f"{athlete.first_name} {athlete.last_name}".strip() if athlete else None
+        )
 
         items.append(
             ReportSubmissionItem(
@@ -243,9 +261,18 @@ def create_team(
 
     # Notify coach if email provided in payload
     if payload.coach_name:
-        coach_user = session.exec(select(User).where(User.full_name == payload.coach_name, User.role == UserRole.COACH)).first()
+        coach_user = session.exec(
+            select(User).where(
+                User.full_name == payload.coach_name, User.role == UserRole.COACH
+            )
+        ).first()
         if coach_user and coach_user.email:
-            anyio.from_thread.run(email_service.send_team_assignment, coach_user.email, coach_user.full_name, team.name)
+            anyio.from_thread.run(
+                email_service.send_team_assignment,
+                coach_user.email,
+                coach_user.full_name,
+                team.name,
+            )
 
     return TeamRead(
         id=team.id,
@@ -296,17 +323,6 @@ def update_team(
     )
 
 
-@router.get("/coaches", response_model=list[UserRead])
-def list_all_coaches(
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_active_user),
-) -> list[UserRead]:
-    # Allow admin, staff, and coaches to see the list of coaches
-    ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH})
-    statement = select(User).where(User.role == UserRole.COACH).order_by(User.full_name)
-    return session.exec(statement).scalars().all()
-
-
 @router.get("/{team_id}/coaches", response_model=list[UserRead])
 def list_team_coaches(
     team_id: int,
@@ -327,7 +343,9 @@ def list_team_coaches(
 def _create_coach_user(session: Session, payload: TeamCoachCreate) -> User:
     existing = session.exec(select(User).where(User.email == payload.email)).first()
     if existing:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
+        )
 
     user = User(
         email=payload.email,
@@ -344,12 +362,19 @@ def _create_coach_user(session: Session, payload: TeamCoachCreate) -> User:
 
     # Send temporary password to coach
     if user.email:
-        anyio.from_thread.run(email_service.send_temp_password, user.email, user.full_name, payload.password)
+        anyio.from_thread.run(
+            email_service.send_temp_password,
+            user.email,
+            user.full_name,
+            payload.password,
+        )
 
     return user
 
 
-@router.post("/{team_id}/coaches", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{team_id}/coaches", response_model=UserRead, status_code=status.HTTP_201_CREATED
+)
 def create_team_coach(
     team_id: int,
     payload: TeamCoachCreate,
@@ -370,7 +395,9 @@ def create_team_coach(
     if user.email:
         import anyio
 
-        anyio.from_thread.run(email_service.send_team_assignment, user.email, user.full_name, team.name)
+        anyio.from_thread.run(
+            email_service.send_team_assignment, user.email, user.full_name, team.name
+        )
     return user
 
 
@@ -399,7 +426,9 @@ def assign_existing_coach(
     team = _get_team_or_404(session, team_id)
     coach = session.get(User, coach_id)
     if not coach or coach.role != UserRole.COACH:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Coach not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Coach not found"
+        )
 
     existing_link_row = session.exec(
         select(CoachTeamLink).where(
@@ -417,23 +446,10 @@ def assign_existing_coach(
         session.add(team)
     session.commit()
     if coach.email:
-        anyio.from_thread.run(email_service.send_team_assignment, coach.email, coach.full_name, team.name)
+        anyio.from_thread.run(
+            email_service.send_team_assignment, coach.email, coach.full_name, team.name
+        )
     return coach
-
-
-@router.get("/coaches", response_model=list[UserRead])
-def list_coaches(
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_active_user),
-) -> list[UserRead]:
-    """List all coaches with their assigned teams."""
-    ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH})
-    coaches = session.exec(
-        select(User)
-        .where(User.role == UserRole.COACH)
-        .order_by(User.full_name)
-    ).all()
-    return coaches
 
 
 @router.put("/coaches/{coach_id}", response_model=UserRead)
@@ -445,21 +461,23 @@ def update_coach(
 ) -> UserRead:
     """Update coach information including password."""
     ensure_roles(current_user, {UserRole.ADMIN, UserRole.STAFF})
-    
+
     coach = session.get(User, coach_id)
     if not coach or coach.role != UserRole.COACH:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Coach not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Coach not found"
+        )
+
     # Update fields
     coach.full_name = payload.full_name
     coach.email = payload.email
     if payload.phone:
         coach.phone = payload.phone
-    
+
     # Update password if provided
     if payload.password:
         coach.hashed_password = get_password_hash(payload.password)
-    
+
     session.add(coach)
     session.commit()
     session.refresh(coach)
@@ -477,23 +495,33 @@ def delete_coach(
 
     coach = session.get(User, coach_id)
     if not coach or coach.role != UserRole.COACH:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Coach not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Coach not found"
+        )
 
     linked_team_ids = _extract_team_ids(
-        session.exec(select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == coach_id)).all()
+        session.exec(
+            select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == coach_id)
+        ).all()
     )
 
     session.exec(
-        text("DELETE FROM coachteamlink WHERE user_id = :user_id").bindparams(user_id=coach_id)
+        text("DELETE FROM coachteamlink WHERE user_id = :user_id").bindparams(
+            user_id=coach_id
+        )
     )
 
     try:
-        events_as_coach = session.exec(select(Event).where(Event.coach_id == coach_id)).all()
+        events_as_coach = session.exec(
+            select(Event).where(Event.coach_id == coach_id)
+        ).all()
         for event in events_as_coach:
             event.coach_id = None
             session.add(event)
 
-        events_created = session.exec(select(Event).where(Event.created_by_id == coach_id)).all()
+        events_created = session.exec(
+            select(Event).where(Event.created_by_id == coach_id)
+        ).all()
         for event in events_created:
             event.created_by_id = current_user.id
             session.add(event)
@@ -532,20 +560,28 @@ def get_coach_teams(
 
     coach = session.get(User, coach_id)
     if not coach or coach.role != UserRole.COACH:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Coach not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Coach not found"
+        )
+
     # Get all team IDs for this coach
     team_ids = _extract_team_ids(
-        session.exec(select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == coach_id)).all()
+        session.exec(
+            select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == coach_id)
+        ).all()
     )
     if not team_ids:
         return []
-    teams = session.exec(
-        select(Team).where(Team.id.in_(tuple(team_ids))).order_by(Team.name)
-    ).scalars().all()
-    
+    teams = (
+        session.exec(
+            select(Team).where(Team.id.in_(tuple(team_ids))).order_by(Team.name)
+        )
+        .scalars()
+        .all()
+    )
+
     roster_counts = _load_roster_counts(session, team_ids)
-    
+
     return [
         TeamRead(
             id=team.id,
@@ -581,7 +617,9 @@ def remove_team_coach(
         )
     ).first()
     if not link_row:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Coach assignment not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Coach assignment not found"
+        )
     link = link_row[0] if isinstance(link_row, tuple) else link_row
     session.delete(link)
     session.commit()
@@ -610,14 +648,16 @@ def delete_team(
     first_submission = session.exec(
         select(ReportSubmission).where(ReportSubmission.team_id == team_id)
     ).first()
-    if first_submission: # If any submission exists, it's not None
+    if first_submission:  # If any submission exists, it's not None
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Team has report submissions; remove or reassign them before deleting the team.",
         )
 
     # Unassign athletes from the team
-    athletes = session.exec(select(Athlete).where(Athlete.team_id == team_id)).scalars().all()
+    athletes = (
+        session.exec(select(Athlete).where(Athlete.team_id == team_id)).scalars().all()
+    )
     for athlete in athletes:
         athlete.team_id = None
         session.add(athlete)

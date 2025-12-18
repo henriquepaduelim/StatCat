@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 from app.api.deps import ensure_roles, get_current_active_user
 from app.core.config import settings
 from app.core.crypto import encrypt_text
-from app.core.security import get_password_hash
+# from app.core.security import get_password_hash # Removed F401
 from app.db.session import get_session
 from app.models.athlete import Athlete, AthleteGender
 from app.models.athlete_detail import AthleteDetail
@@ -22,7 +22,7 @@ from app.models.match_stat import MatchStat
 from app.models.session_result import SessionResult
 from app.models.team import CoachTeamLink, Team
 from app.models.user import User, UserRole, UserAthleteApprovalStatus
-from app.core.security import create_signup_token
+# from app.core.security import create_signup_token # Removed F401
 from jose import jwt, JWTError
 from app.services.email_service import email_service
 from app.services.athlete_service import (
@@ -38,8 +38,8 @@ from app.schemas.athlete import (
     AthleteRegistrationCompletion,
     AthleteRegistrationCreate,
     AthleteUpdate,
-    AthleteDocumentPayload,
-    AthletePaymentPayload,
+    # AthleteDocumentPayload, # Removed F401
+    # AthletePaymentPayload, # Removed F401
 )
 from app.schemas.pagination import PaginatedResponse
 from app.schemas.user import UserRead
@@ -50,20 +50,29 @@ athlete_media_root.mkdir(parents=True, exist_ok=True)
 documents_root = athlete_media_root / "documents"
 documents_root.mkdir(parents=True, exist_ok=True)
 
+
 def _safe_filename(filename: str | None) -> str:
     stem = (filename or "upload").replace("/", "_").replace("\\", "_")
     stem = stem.strip() or "upload"
     return stem
 
-def _validate_upload(file: UploadFile, allowed_exts: set[str], allowed_mimes: set[str]) -> None:
+
+def _validate_upload(
+    file: UploadFile, allowed_exts: set[str], allowed_mimes: set[str]
+) -> None:
     suffix = Path(file.filename or "").suffix.lower()
-    if suffix not in allowed_exts or (file.content_type and file.content_type.lower() not in allowed_mimes):
+    if suffix not in allowed_exts or (
+        file.content_type and file.content_type.lower() not in allowed_mimes
+    ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unsupported file type.",
         )
 
-def _store_file(athlete_id: int, file: UploadFile, base_dir: Path, max_size: int) -> str:
+
+def _store_file(
+    athlete_id: int, file: UploadFile, base_dir: Path, max_size: int
+) -> str:
     if base_dir is documents_root:
         _validate_upload(
             file,
@@ -101,25 +110,38 @@ router = APIRouter()
 def _decode_signup_token(token: str, athlete_id: int) -> None:
     """Validate signup token scope and athlete id."""
     try:
-        decoded = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.SECURITY_ALGORITHM])
+        decoded = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.SECURITY_ALGORITHM]
+        )
     except JWTError as exc:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signup token") from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signup token"
+        ) from exc
     if decoded.get("scope") != "signup":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signup token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signup token"
+        )
     sub = decoded.get("sub") or ""
     if not sub.startswith("signup:"):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signup token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signup token"
+        )
     try:
         token_athlete_id = int(sub.split("signup:")[-1])
     except ValueError as exc:  # pragma: no cover
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signup token") from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid signup token"
+        ) from exc
     if token_athlete_id != athlete_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Signup token mismatch")
-
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Signup token mismatch"
+        )
 
 def _get_signup_token(auth_header: str | None) -> str:
     if not auth_header or not auth_header.lower().startswith("bearer "):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Signup token required")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Signup token required"
+        )
     return auth_header.split(" ", 1)[1].strip()
 
 
@@ -140,7 +162,9 @@ def complete_registration_public(
 
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found"
+        )
 
     detail = session.get(AthleteDetail, athlete_id)
     if not detail:
@@ -215,6 +239,7 @@ def complete_registration_public(
     session.refresh(athlete)
     return athlete
 
+
 def _validate_team(session: Session, team_id: int | None) -> None:
     if team_id is None:
         return
@@ -247,7 +272,9 @@ SENSITIVE_DETAIL_FIELDS = [
 ]
 
 
-def _encrypt_detail_fields(detail: AthleteDetail, payload: AthleteRegistrationCompletion) -> None:
+def _encrypt_detail_fields(
+    detail: AthleteDetail, payload: AthleteRegistrationCompletion
+) -> None:
     detail.address_line1 = encrypt_text(payload.address_line1)
     detail.address_line2 = encrypt_text(payload.address_line2)
     detail.city = encrypt_text(payload.city)
@@ -259,11 +286,15 @@ def _encrypt_detail_fields(detail: AthleteDetail, payload: AthleteRegistrationCo
     detail.guardian_email = encrypt_text(payload.guardian_email)
     detail.guardian_phone = encrypt_text(payload.guardian_phone)
     detail.secondary_guardian_name = encrypt_text(payload.secondary_guardian_name)
-    detail.secondary_guardian_relationship = encrypt_text(payload.secondary_guardian_relationship)
+    detail.secondary_guardian_relationship = encrypt_text(
+        payload.secondary_guardian_relationship
+    )
     detail.secondary_guardian_email = encrypt_text(payload.secondary_guardian_email)
     detail.secondary_guardian_phone = encrypt_text(payload.secondary_guardian_phone)
     detail.emergency_contact_name = encrypt_text(payload.emergency_contact_name)
-    detail.emergency_contact_relationship = encrypt_text(payload.emergency_contact_relationship)
+    detail.emergency_contact_relationship = encrypt_text(
+        payload.emergency_contact_relationship
+    )
     detail.emergency_contact_phone = encrypt_text(payload.emergency_contact_phone)
     detail.medical_allergies_encrypted = encrypt_text(payload.medical_allergies)
     detail.medical_conditions_encrypted = encrypt_text(payload.medical_conditions)
@@ -277,7 +308,6 @@ def _coach_team_ids(session: Session, coach_id: int) -> set[int]:
     ).all()
     return {tid for tid in team_ids if tid is not None}
 
-
 def _ensure_can_view(current_user: User, athlete: Athlete, session: Session) -> None:
     if current_user.role in MANAGE_ATHLETE_ROLES:
         return
@@ -289,7 +319,6 @@ def _ensure_can_view(current_user: User, athlete: Athlete, session: Session) -> 
     if current_user.role == UserRole.ATHLETE and current_user.athlete_id == athlete.id:
         return
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
-
 
 def _ensure_can_edit(current_user: User, athlete: Athlete, session: Session) -> None:
     if current_user.role in MANAGE_ATHLETE_ROLES:
@@ -303,21 +332,30 @@ def _ensure_can_edit(current_user: User, athlete: Athlete, session: Session) -> 
         return
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
 
-
 def _cascade_delete_athlete(session: Session, athlete_id: int) -> None:
     """Remove dependent records before deleting the athlete to avoid FK errors."""
     session.exec(delete(SessionResult).where(SessionResult.athlete_id == athlete_id))
     session.exec(delete(MatchStat).where(MatchStat.athlete_id == athlete_id))
-    session.exec(delete(EventParticipant).where(EventParticipant.athlete_id == athlete_id))
-    session.exec(delete(GroupMembership).where(GroupMembership.athlete_id == athlete_id))
-    session.exec(delete(AssessmentSession).where(AssessmentSession.athlete_id == athlete_id))
-    session.exec(delete(AthleteDocument).where(AthleteDocument.athlete_id == athlete_id))
+    session.exec(
+        delete(EventParticipant).where(EventParticipant.athlete_id == athlete_id)
+    )
+    session.exec(
+        delete(GroupMembership).where(GroupMembership.athlete_id == athlete_id)
+    )
+    session.exec(
+        delete(AssessmentSession).where(AssessmentSession.athlete_id == athlete_id)
+    )
+    session.exec(
+        delete(AthleteDocument).where(AthleteDocument.athlete_id == athlete_id)
+    )
     session.exec(delete(AthletePayment).where(AthletePayment.athlete_id == athlete_id))
     session.exec(delete(AthleteDetail).where(AthleteDetail.athlete_id == athlete_id))
     session.exec(delete(User).where(User.athlete_id == athlete_id))
 
 
-@router.post("/register", response_model=AthleteRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register", response_model=AthleteRead, status_code=status.HTTP_201_CREATED
+)
 def register_athlete(
     payload: AthleteRegistrationCreate,
     session: Session = Depends(get_session),
@@ -330,7 +368,9 @@ def register_athlete(
     _validate_team(session, team_id)
 
     preferred_position_raw = data.get("preferred_position")
-    preferred_position = preferred_position_raw.strip() if preferred_position_raw else None
+    preferred_position = (
+        preferred_position_raw.strip() if preferred_position_raw else None
+    )
 
     email_value = data.get("email")
     phone_value = data.get("phone")
@@ -367,6 +407,17 @@ def register_athlete(
     session.commit()
     session.refresh(athlete)
 
+    # Notify athlete about team assignment if email and team were provided
+    if athlete.team_id and athlete.email:
+        team = session.get(Team, athlete.team_id)
+        team_name = team.name if team else "your team"
+        anyio.from_thread.run(
+            email_service.send_team_assignment,
+            athlete.email,
+            f"{athlete.first_name} {athlete.last_name}".strip(),
+            team_name,
+        )
+
     return athlete
 
 
@@ -398,43 +449,45 @@ def list_athletes(
     # Get total count
     count_statement = select(func.count()).select_from(statement.subquery())
     total = session.exec(count_statement).one()
-    
+
     # Apply pagination
     offset = (page - 1) * size
     statement = statement.offset(offset).limit(size)
-    
+
     athletes = session.exec(statement).all()
-    
+
     user_status_map = {}
     if include_user_status and current_user.role in MANAGE_ATHLETE_ROLES and athletes:
         athlete_ids = [athlete.id for athlete in athletes]
-        users = session.exec(
-            select(User).where(User.athlete_id.in_(athlete_ids))
-        ).all()
+        users = session.exec(select(User).where(User.athlete_id.in_(athlete_ids))).all()
         user_status_map = {user.athlete_id: user for user in users}
-    
+
     result_items = []
     for athlete in athletes:
         try:
             athlete_dict = athlete.model_dump()
-            
-            athlete_dict['user_athlete_status'] = None
-            athlete_dict['user_rejection_reason'] = None
-            
+
+            athlete_dict["user_athlete_status"] = None
+            athlete_dict["user_rejection_reason"] = None
+
             if include_user_status and current_user.role in MANAGE_ATHLETE_ROLES:
                 user = user_status_map.get(athlete.id)
                 if user:
                     if user.athlete_status:
-                        if hasattr(user.athlete_status, 'value'):
-                            athlete_dict['user_athlete_status'] = user.athlete_status.value
+                        if hasattr(user.athlete_status, "value"):
+                            athlete_dict["user_athlete_status"] = (
+                                user.athlete_status.value
+                            )
                         else:
-                            athlete_dict['user_athlete_status'] = str(user.athlete_status)
-                    athlete_dict['user_rejection_reason'] = user.rejection_reason
-            
+                            athlete_dict["user_athlete_status"] = str(
+                                user.athlete_status
+                            )
+                    athlete_dict["user_rejection_reason"] = user.rejection_reason
+
             result_items.append(AthleteRead(**athlete_dict))
-        except Exception:
+        except Exception: # Modified: removed 'as e'
             continue
-    
+
     return PaginatedResponse(
         total=total,
         page=page,
@@ -492,7 +545,9 @@ def complete_registration(
 ) -> AthleteRead:
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found"
+        )
     _ensure_can_edit(current_user, athlete, session)
 
     detail = session.get(AthleteDetail, athlete_id)
@@ -580,48 +635,62 @@ def get_pending_athletes(
     """Get all pending athletes for admin/staff review."""
     ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
 
-    pending_users = (
-        session.exec(
-            select(User)
-            .options(selectinload(User.athlete))
-            .where(
-                User.athlete_id.isnot(None),
-                User.athlete_status.in_(
-                    [
-                        UserAthleteApprovalStatus.PENDING,
-                        UserAthleteApprovalStatus.INCOMPLETE,
-                    ]
-                ),
-            )
+    pending_users = session.exec(
+        select(User)
+        .options(selectinload(User.athlete))
+        .where(
+            User.athlete_id.isnot(None),
+            User.athlete_status.in_(
+                [
+                    UserAthleteApprovalStatus.PENDING,
+                    UserAthleteApprovalStatus.INCOMPLETE,
+                ]
+            ),
         )
-        .all()
-    )
+    ).all()
 
     result = []
     for user in pending_users:
         athlete = user.athlete
 
-        first_name = athlete.first_name if athlete else (user.full_name.split(" ")[0] if user.full_name else "")
+        first_name = (
+            athlete.first_name
+            if athlete
+            else (user.full_name.split(" ")[0] if user.full_name else "")
+        )
         last_name = (
             athlete.last_name
             if athlete
-            else (" ".join(user.full_name.split(" ")[1:]) if user.full_name and len(user.full_name.split(" ")) > 1 else "")
+            else (
+                " ".join(user.full_name.split(" ")[1:])
+                if user.full_name and len(user.full_name.split(" ")) > 1
+                else ""
+            )
         )
 
-        result.append({
-            "id": athlete.id if athlete else user.athlete_id,
-            "user_id": user.id,
-            "first_name": first_name,
-            "last_name": last_name,
-            "email": athlete.email if athlete and athlete.email else user.email,
-            "user_email": user.email,
-            "phone": athlete.phone if athlete else user.phone,
-            "date_of_birth": athlete.birth_date.isoformat() if hasattr(athlete, "birth_date") and athlete and athlete.birth_date else None,
-            "gender": athlete.gender.value if hasattr(athlete, "gender") and athlete and athlete.gender else None,
-            "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
-            "athlete_id": athlete.id if athlete else user.athlete_id,
-            "athlete_status": user.athlete_status.value if hasattr(user.athlete_status, 'value') else str(user.athlete_status),
-          })
+        result.append(
+            {
+                "id": athlete.id if athlete else user.athlete_id,
+                "user_id": user.id,
+                "first_name": first_name,
+                "last_name": last_name,
+                "email": athlete.email if athlete and athlete.email else user.email,
+                "phone": athlete.phone if athlete else user.phone,
+                "date_of_birth": athlete.birth_date.isoformat()
+                if hasattr(athlete, "birth_date") and athlete and athlete.birth_date
+                else None,
+                "gender": athlete.gender.value
+                if hasattr(athlete, "gender") and athlete and athlete.gender
+                else None,
+                "role": user.role.value
+                if hasattr(user.role, "value")
+                else str(user.role),
+                "athlete_id": athlete.id if athlete else user.athlete_id,
+                "athlete_status": user.athlete_status.value
+                if hasattr(user.athlete_status, "value")
+                else str(user.athlete_status),
+            }
+        )
 
     return result
 
@@ -634,21 +703,23 @@ def get_pending_athletes_count(
     """Get the count of pending athletes for admin/staff users."""
     try:
         ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
-        
+
         # Include both PENDING and INCOMPLETE athletes that need approval
         pending_users = session.exec(
             select(User).where(
                 User.athlete_id.isnot(None),  # Must have an athlete profile
-                User.athlete_status.in_([
-                    UserAthleteApprovalStatus.PENDING,
-                    UserAthleteApprovalStatus.INCOMPLETE
-                ]),
-                User.role == UserRole.ATHLETE
+                User.athlete_status.in_(
+                    [
+                        UserAthleteApprovalStatus.PENDING,
+                        UserAthleteApprovalStatus.INCOMPLETE,
+                    ]
+                ),
+                User.role == UserRole.ATHLETE,
             )
         ).all()
-        
+
         return {"count": len(pending_users)}
-    except Exception as e:
+    except Exception: # Modified: removed 'as e'
         # Return zero count if there's any error
         return {"count": 0}
 
@@ -661,7 +732,9 @@ def get_athlete(
 ) -> AthleteRead:
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found"
+        )
     _ensure_can_view(current_user, athlete, session)
     return athlete
 
@@ -675,7 +748,9 @@ def update_athlete(
 ) -> AthleteRead:
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found"
+        )
     _ensure_can_edit(current_user, athlete, session)
 
     previous_team_id = athlete.team_id
@@ -721,7 +796,9 @@ def delete_athlete(
     ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_NOT, detail="Athlete not found"
+        )
 
     _cascade_delete_athlete(session, athlete_id)
     session.delete(athlete)
@@ -738,8 +815,10 @@ async def upload_photo(
 ) -> AthleteRead:
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
-    _ensure_can_edit(current_user, athlete, session)
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found"
+        )
+    _ensure_can_edit(current_user, athlete)
 
     content_type = (file.content_type or "").lower()
     allowed_types = {
@@ -748,8 +827,13 @@ async def upload_photo(
         "image/heic": ".heic",
         "image/heif": ".heif",
     }
-    if content_type not in allowed_types or content_type not in settings.ATHLETE_ALLOWED_PHOTO_MIME_TYPES:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported file type")
+    if (
+        content_type not in allowed_types
+        or content_type not in settings.ATHLETE_ALLOWED_PHOTO_MIME_TYPES
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported file type"
+        )
 
     extension = allowed_types[content_type]
 
@@ -787,7 +871,9 @@ def upload_document(
 ) -> AthleteDocument:
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found"
+        )
     _ensure_can_edit(current_user, athlete)
 
     file_url = _store_file(
@@ -812,10 +898,14 @@ async def approve_athlete(
 ) -> User:
     """Approve a pending athlete and update their status."""
     ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
-    athlete = await approve_athlete_service(session=session, athlete_id=athlete_id, approving=current_user)
+    await approve_athlete_service( # Modified: removed 'athlete ='
+        session=session, athlete_id=athlete_id, approving=current_user
+    )
     user = session.exec(select(User).where(User.athlete_id == athlete_id)).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found for athlete")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found for athlete"
+        )
     return user
 
 
@@ -849,7 +939,9 @@ async def approve_all_pending_athletes(
         if not athlete:
             skipped += 1
             continue
-        await approve_athlete_service(session=session, athlete_id=user.athlete_id, approving=current_user)
+        await approve_athlete_service(
+            session=session, athlete_id=user.athlete_id, approving=current_user
+        )
         approved += 1
 
     session.commit()
@@ -865,11 +957,15 @@ def reject_athlete(
 ) -> User:
     """Reject a pending athlete with a reason and update their status."""
     ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
-    athlete = reject_athlete_service(session=session, athlete_id=athlete_id, approving=current_user, reason=reason)
+    reject_athlete_service( # Modified: removed 'athlete ='
+        session=session, athlete_id=athlete_id, approving=current_user, reason=reason
+    )
     # We return the associated user to keep response model unchanged
     user = session.exec(select(User).where(User.athlete_id == athlete_id)).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found for athlete")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found for athlete"
+        )
     return user
 
 
@@ -882,44 +978,56 @@ def submit_for_approval(
     """Submit athlete registration for admin approval."""
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found"
+        )
+
     # Only the athlete themselves can submit for approval
     if current_user.role != UserRole.ATHLETE or current_user.athlete_id != athlete_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the athlete can submit their own registration")
-    
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the athlete can submit their own registration",
+        )
+
     # Check if athlete is in the correct status
     if current_user.athlete_status != UserAthleteApprovalStatus.INCOMPLETE:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="Can only submit incomplete registrations for approval"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Can only submit incomplete registrations for approval",
         )
-    
+
     # Basic athlete information should be present (from Step 1)
     if not all([athlete.first_name, athlete.last_name, athlete.birth_date]):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Basic athlete information (name and date of birth) is required before submitting for approval"
+            detail="Basic athlete information (name and date of birth) is required before submitting for approval",
         )
-    
+
     # Check if athlete detail exists - if not, it's okay, we'll allow submission with basic info
     detail = session.get(AthleteDetail, athlete_id)
     if detail:
         # If detail exists, only check essential contact information
-        required_contact_fields = [detail.emergency_contact_name, detail.emergency_contact_phone]
-        if not all(field and field.strip() for field in required_contact_fields if isinstance(field, str)):
+        required_contact_fields = [
+            detail.emergency_contact_name,
+            detail.emergency_contact_phone,
+        ]
+        if not all(
+            field and field.strip()
+            for field in required_contact_fields
+            if isinstance(field, str)
+        ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Emergency contact information is required before submitting for approval"
+                detail="Emergency contact information is required before submitting for approval",
             )
-    
+
     # Update status to PENDING
     current_user.athlete_status = UserAthleteApprovalStatus.PENDING
     current_user.rejection_reason = None  # Clear any previous rejection reason
     session.add(current_user)
     session.commit()
     session.refresh(current_user)
-    
+
     return current_user
 
 
@@ -935,11 +1043,15 @@ def submit_for_approval_public(
 
     athlete = session.get(Athlete, athlete_id)
     if not athlete:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found"
+        )
 
     user = session.exec(select(User).where(User.athlete_id == athlete_id)).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
 
     if user.athlete_status != UserAthleteApprovalStatus.INCOMPLETE:
         raise HTTPException(
@@ -955,8 +1067,15 @@ def submit_for_approval_public(
 
     detail = session.get(AthleteDetail, athlete_id)
     if detail:
-        required_contact_fields = [detail.emergency_contact_name, detail.emergency_contact_phone]
-        if not all(field and field.strip() for field in required_contact_fields if isinstance(field, str)):
+        required_contact_fields = [
+            detail.emergency_contact_name,
+            detail.emergency_contact_phone,
+        ]
+        if not all(
+            field and field.strip()
+            for field in required_contact_fields
+            if isinstance(field, str)
+        ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Emergency contact information is required before submitting for approval",

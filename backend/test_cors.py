@@ -2,6 +2,7 @@
 Script para testar a configuração de CORS do backend.
 Execute este script no servidor para ver quais origens estão configuradas.
 """
+
 import os
 import sys
 

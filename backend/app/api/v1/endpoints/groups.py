@@ -24,7 +24,9 @@ def _load_memberships(
     mapping: dict[int, list[int]] = {}
     if not group_ids:
         return mapping
-    statement = select(GroupMembership).where(GroupMembership.group_id.in_(tuple(group_ids)))
+    statement = select(GroupMembership).where(
+        GroupMembership.group_id.in_(tuple(group_ids))
+    )
     for membership in session.exec(statement):
         mapping.setdefault(membership.group_id, []).append(membership.athlete_id)
     return mapping
@@ -53,7 +55,7 @@ def list_groups(
     size: int = 50,
 ) -> PaginatedResponse[GroupRead]:
     """List groups with optional pagination.
-    
+
     Args:
         page: Page number (1-indexed), default 1
         size: Items per page, default 50, max 100
@@ -65,7 +67,7 @@ def list_groups(
         size = 50
     if size > 100:
         size = 100
-        
+
     total = session.exec(select(func.count()).select_from(Group)).one()
 
     statement = select(Group).order_by(Group.name).offset((page - 1) * size).limit(size)
@@ -140,7 +142,9 @@ def update_group(
 ) -> GroupRead:
     group = session.get(Group, group_id)
     if not group:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Group not found"
+        )
 
     ensure_roles(current_user, MANAGE_GROUP_ROLES)
 
@@ -151,7 +155,9 @@ def update_group(
 
     if payload.member_ids is not None:
         _validate_athletes(session, payload.member_ids)
-        session.exec(delete(GroupMembership).where(GroupMembership.group_id == group.id))
+        session.exec(
+            delete(GroupMembership).where(GroupMembership.group_id == group.id)
+        )
         if payload.member_ids:
             session.add_all(
                 [
@@ -189,7 +195,9 @@ def delete_group(
 ) -> None:
     group = session.get(Group, group_id)
     if not group:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Group not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Group not found"
+        )
 
     ensure_roles(current_user, MANAGE_GROUP_ROLES)
 

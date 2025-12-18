@@ -1,15 +1,19 @@
+
 """
-Tests for event participant management.
+Tests for event CRUD operations.
 """
-from datetime import date, time
+from datetime import date, time, timedelta
 
 from fastapi.testclient import TestClient
 from sqlmodel import Session, select
 
 from app.core.security import get_password_hash
-from app.models.event import Event, EventParticipant, ParticipantStatus
-from app.models.user import User, UserRole
+from app.models.athlete import Athlete, AthleteGender, AthleteStatus
+from app.models.event import Event
+from app.models.event_participant import EventParticipant, ParticipantStatus
+from app.models.user import User, UserRole, UserAthleteApprovalStatus
 from tests.conftest import get_auth_token
+
 
 
 def _create_coach(session: Session) -> User:

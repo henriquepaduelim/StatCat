@@ -7,7 +7,8 @@ from sqlmodel import Session, select
 
 from app.api.v1.endpoints.auth import _generate_password_reset_token  # noqa: PLC2701
 from app.models.team import Team
-from app.models.event import EventParticipant, ParticipantStatus
+from app.models.event import Event
+from app.models.event_participant import EventParticipant, ParticipantStatus
 from app.models.athlete import Athlete, AthleteGender
 from tests.conftest import get_auth_token
 
@@ -247,6 +248,7 @@ def test_report_ready_email_on_approval(
         email="report.target@example.com",
         gender=AthleteGender.male,
         birth_date=date(2005, 1, 1),
+        primary_position="forward",
     )
     session.add(athlete)
     session.commit()

@@ -23,7 +23,9 @@ class EventParticipant(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     event_id: int = Field(foreign_key="event.id", index=True)
     user_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
-    athlete_id: Optional[int] = Field(default=None, foreign_key="athlete.id", index=True)
+    athlete_id: Optional[int] = Field(
+        default=None, foreign_key="athlete.id", index=True
+    )
     status: Optional[ParticipantStatus] = Field(default=None)
     invited_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     responded_at: Optional[datetime] = None

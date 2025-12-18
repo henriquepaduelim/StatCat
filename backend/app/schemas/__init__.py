@@ -1,4 +1,7 @@
-from app.schemas.assessment_session import AssessmentSessionCreate, AssessmentSessionRead
+from app.schemas.assessment_session import (
+    AssessmentSessionCreate,
+    AssessmentSessionRead,
+)
 from app.schemas.athlete import (
     AthleteCreate,
     AthleteDocumentRead,
@@ -21,7 +24,13 @@ from app.schemas.report import AthleteReport, MetricResult, SessionReport
 from app.schemas.session_result import SessionResultCreate, SessionResultRead
 from app.schemas.team import TeamCreate, TeamRead
 from app.schemas.test_definition import TestDefinitionCreate, TestDefinitionRead
-from app.schemas.user import Token, TokenPayload, UserCreate, UserRead, UserReadWithToken
+from app.schemas.user import (
+    Token,
+    TokenPayload,
+    UserCreate,
+    UserRead,
+    UserReadWithToken,
+)
 
 __all__ = [
     "AthleteCreate",

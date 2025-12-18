@@ -24,9 +24,16 @@ def upgrade() -> None:
     op.execute("ALTER TYPE reportsubmissionstatus ADD VALUE IF NOT EXISTS 'REOPENED'")
 
     # New fields for report cards
-    op.add_column("report_submission", sa.Column("coach_report", sa.Text(), nullable=True))
-    op.add_column("report_submission", sa.Column("report_card_categories", sa.JSON(), nullable=True))
-    op.add_column("report_submission", sa.Column("overall_average", sa.Float(), nullable=True))
+    op.add_column(
+        "report_submission", sa.Column("coach_report", sa.Text(), nullable=True)
+    )
+    op.add_column(
+        "report_submission",
+        sa.Column("report_card_categories", sa.JSON(), nullable=True),
+    )
+    op.add_column(
+        "report_submission", sa.Column("overall_average", sa.Float(), nullable=True)
+    )
 
 
 def downgrade() -> None:

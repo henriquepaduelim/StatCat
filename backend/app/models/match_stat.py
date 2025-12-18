@@ -11,8 +11,12 @@ class MatchStat(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     athlete_id: int = Field(foreign_key="athlete.id", index=True)
     team_id: int | None = Field(default=None, foreign_key="team.id", index=True)
-    report_submission_id: int | None = Field(default=None, foreign_key="report_submission.id", index=True)
-    match_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+    report_submission_id: int | None = Field(
+        default=None, foreign_key="report_submission.id", index=True
+    )
+    match_date: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc), index=True
+    )
     competition: str | None = None
     opponent: str | None = None
     venue: str | None = None

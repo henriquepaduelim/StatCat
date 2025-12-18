@@ -4,7 +4,7 @@ import sys
 
 athlete_id = 41 if len(sys.argv) < 2 else int(sys.argv[1])
 
-conn = sqlite3.connect('combine.db')
+conn = sqlite3.connect("combine.db")
 cursor = conn.cursor()
 
 query = """

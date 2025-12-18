@@ -8,7 +8,9 @@ from pydantic import BaseModel, Field, field_validator
 
 class GoalScorerInput(BaseModel):
     athlete_id: int
-    goals: int = Field(..., ge=1, description="Number of goals scored by the athlete in the match")
+    goals: int = Field(
+        ..., ge=1, description="Number of goals scored by the athlete in the match"
+    )
     shootout_goals: int = Field(
         default=0,
         ge=0,
@@ -18,7 +20,9 @@ class GoalScorerInput(BaseModel):
 
 class GoalkeeperInput(BaseModel):
     athlete_id: int
-    conceded: int = Field(default=0, ge=0, description="Goals conceded while this athlete was in goal")
+    conceded: int = Field(
+        default=0, ge=0, description="Goals conceded while this athlete was in goal"
+    )
 
 
 class GameReportCreate(BaseModel):

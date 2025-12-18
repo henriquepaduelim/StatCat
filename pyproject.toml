@@ -47,3 +47,8 @@ package-dir = {"" = "backend"}
 [build-system]
 requires = ["setuptools>=65", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+exclude = [
+    "backend/statcat-storage/google-cloud-sdk/",
+]

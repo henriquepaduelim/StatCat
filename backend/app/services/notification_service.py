@@ -1,4 +1,5 @@
 """Notification service for coordinating email and push notifications."""
+
 import logging
 from typing import List
 from datetime import datetime, timezone
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class NotificationService:
     """Service for managing event notifications."""
-    
+
     async def notify_event_created(
         self,
         db: Session,
@@ -28,12 +29,12 @@ class NotificationService:
         if not organizer:
             logger.error(f"Organizer not found for event {event.id}")
             return
-        
+
         for user_id in invitee_ids:
             user = db.get(User, user_id)
             if not user:
                 continue
-            
+
             # Send email
             if send_email and user.email:
                 success = await email_service.send_event_invitation(
@@ -48,9 +49,9 @@ class NotificationService:
                     event_notes=event.notes,
                     organizer_name=organizer.full_name,
                     user_id=user.id,
-                    event_id=event.id
+                    event_id=event.id,
                 )
-                
+
                 # Log notification
                 notification = Notification(
                     user_id=user_id,
@@ -58,20 +59,23 @@ class NotificationService:
                     type="event_invite",
                     channel="email" if not send_push else "both",
                     title=f"You're invited: {event.name}",
-                    body=f"Event on {event.event_date}" + (f" at {event.start_time}" if event.start_time else ""),
+                    body=f"Event on {event.event_date}"
+                    + (f" at {event.start_time}" if event.start_time else ""),
                     sent=success,
                     sent_at=datetime.now(timezone.utc) if success else None,
                 )
                 db.add(notification)
-        
+
         # Mark event as notified
         event.email_sent = send_email
         event.push_sent = send_push
         db.add(event)
         db.commit()
-        
-        logger.info(f"Sent event invitations for event {event.id} to {len(invitee_ids)} users")
-    
+
+        logger.info(
+            f"Sent event invitations for event {event.id} to {len(invitee_ids)} users"
+        )
+
     async def notify_event_updated(
         self,
         db: Session,
@@ -82,19 +86,19 @@ class NotificationService:
         """Notify confirmed participants about event update."""
         if not send_notification:
             return
-        
+
         # Get confirmed participants
         stmt = select(EventParticipant).where(
             EventParticipant.event_id == event.id,
             EventParticipant.status == ParticipantStatus.CONFIRMED,
         )
         participants = db.exec(stmt).all()
-        
+
         for participant in participants:
             user = db.get(User, participant.user_id)
             if not user or not user.email:
                 continue
-            
+
             # NOTE: Assumes send_event_update has a similar updated signature
             success = await email_service.send_event_update(
                 to_email=user.email,
@@ -106,7 +110,7 @@ class NotificationService:
                 changes=changes,
                 event_id=event.id,
             )
-            
+
             # Log notification
             notification = Notification(
                 user_id=user.id,
@@ -119,12 +123,14 @@ class NotificationService:
                 sent_at=datetime.now(timezone.utc) if success else None,
             )
             db.add(notification)
-        
+
         event.updated_at = datetime.now(timezone.utc)
         db.add(event)
         db.commit()
-        
-        logger.info(f"Sent event update for event {event.id} to {len(participants)} confirmed participants")
+
+        logger.info(
+            f"Sent event update for event {event.id} to {len(participants)} confirmed participants"
+        )
 
     async def send_event_reminders(
         self,
@@ -143,7 +149,7 @@ class NotificationService:
             user = db.get(User, participant.user_id)
             if not user or not user.email:
                 continue
-                
+
             # NOTE: Assumes send_event_reminder has a similar updated signature
             success = await email_service.send_event_reminder(
                 to_email=user.email,
@@ -171,7 +177,7 @@ class NotificationService:
         db.commit()
         logger.info("Sent %s reminders for event %s", sent, event.id)
         return sent
-    
+
     async def notify_confirmation_received(
         self,
         db: Session,
@@ -182,10 +188,10 @@ class NotificationService:
         """Notify organizer that someone confirmed/declined."""
         organizer = db.get(User, event.created_by_id)
         participant_user = db.get(User, participant.user_id)
-        
+
         if not organizer or not organizer.email or not participant_user:
             return
-        
+
         success = await email_service.send_confirmation_receipt(
             to_email=organizer.email,
             to_name=organizer.full_name,
@@ -194,9 +200,11 @@ class NotificationService:
             status=status,
             event_id=event.id,
         )
-        
+
         # Log notification
-        status_enum = ParticipantStatus(status.upper()) if isinstance(status, str) else status
+        status_enum = (
+            ParticipantStatus(status.upper()) if isinstance(status, str) else status
+        )
         notification = Notification(
             user_id=organizer.id,
             event_id=event.id,
@@ -209,8 +217,10 @@ class NotificationService:
         )
         db.add(notification)
         db.commit()
-        
-        logger.info(f"Notified organizer about {status} from {participant_user.full_name}")
+
+        logger.info(
+            f"Notified organizer about {status} from {participant_user.full_name}"
+        )
 
 
 # Singleton instance

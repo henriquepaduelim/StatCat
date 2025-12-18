@@ -33,6 +33,7 @@ COMBINE_METRIC_CONFIG: dict[str, dict[str, str | None]] = {
     "yoyo_distance_m": {"direction": "higher_is_better", "unit": "m"},
 }
 
+
 @router.get("/athletes/{athlete_id}/metrics", response_model=AthleteMetricsResponse)
 def athlete_metrics(
     athlete_id: int,
@@ -42,14 +43,19 @@ def athlete_metrics(
 ) -> AthleteMetricsResponse:
     athlete = session.get(Athlete, athlete_id)
     if athlete is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found"
+        )
     if current_user.role == UserRole.ATHLETE and current_user.athlete_id != athlete.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed")
     engine = MetricEngine(session)
     try:
         return engine.build_metric_response(athlete, metric_ids)
     except KeyError as exc:  # pragma: no cover - defensive
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
+
 
 @router.get("/rankings/metrics/{metric_id}", response_model=MetricRankingResponse)
 def metric_ranking(
@@ -67,19 +73,27 @@ def metric_ranking(
         try:
             return engine.metric_ranking(metric_id, [], limit=limit)
         except KeyError as exc:  # pragma: no cover - defensive
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+            ) from exc
 
-    filtered_athletes = filter_athletes(athletes, age_category=age_category, gender=gender)
+    filtered_athletes = filter_athletes(
+        athletes, age_category=age_category, gender=gender
+    )
     if not filtered_athletes:
         try:
             return engine.metric_ranking(metric_id, [], limit=limit)
         except KeyError as exc:  # pragma: no cover - defensive
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+            ) from exc
 
     try:
         return engine.metric_ranking(metric_id, filtered_athletes, limit=limit)
     except KeyError as exc:  # pragma: no cover - defensive
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
 
 
 @router.get("/leaderboards/scoring", response_model=LeaderboardResponse)
@@ -172,7 +186,9 @@ def scoring_leaderboard(
         entries.sort(
             key=lambda entry: (
                 -entry.clean_sheets,
-                entry.goals_conceded / entry.games_played if entry.games_played else float("inf"),
+                entry.goals_conceded / entry.games_played
+                if entry.games_played
+                else float("inf"),
             ),
         )
     else:
@@ -269,7 +285,9 @@ def combine_leaderboard(
 ) -> CombineLeaderboardResponse:
     config = COMBINE_METRIC_CONFIG.get(metric)
     if config is None:  # pragma: no cover - defensive
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid metric")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid metric"
+        )
 
     metric_column = getattr(TeamCombineMetric, metric)
     aggregate_fn = func.min if config["direction"] == "lower_is_better" else func.max
@@ -302,7 +320,11 @@ def combine_leaderboard(
         Team.age_category,
     )
 
-    order_clause = value_expression.asc() if config["direction"] == "lower_is_better" else value_expression.desc()
+    order_clause = (
+        value_expression.asc()
+        if config["direction"] == "lower_is_better"
+        else value_expression.desc()
+    )
     ranked = grouped.order_by(order_clause).limit(limit)
     rows = session.exec(ranked).all()
 
