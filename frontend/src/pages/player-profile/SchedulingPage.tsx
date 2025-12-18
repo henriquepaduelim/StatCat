@@ -101,11 +101,18 @@ const SchedulingPage = () => {
         </div>
       )}
       {events.map((event) => {
-        const myParticipant = event.participants?.find(
-          (participant) => participant.athlete_id === currentAthleteId,
-        );
+        const myParticipant =
+          event.participants?.find((participant) => participant.athlete_id === currentAthleteId) ??
+          event.participants?.find(
+            (participant) => participant.user_id != null && participant.user_id === currentUser?.id,
+          );
         const currentStatus = (myParticipant?.status ?? "invited") as keyof typeof t.playerProfile.schedulingStatus;
-        const canRespond = Boolean(isSelfView && myParticipant);
+        const isInviteeByUser = event.participants?.some((p) => p.user_id === currentUser?.id) ?? false;
+        const isInviteeByAthlete =
+          currentAthleteId != null &&
+          (event.participants?.some((p) => p.athlete_id === currentAthleteId) ?? false);
+        const canRespond =
+          currentUser?.role === "athlete" && (isInviteeByUser || isInviteeByAthlete || isSelfView);
 
         return (
           <article
@@ -126,7 +133,7 @@ const SchedulingPage = () => {
           </div>
           <p className="text-sm text-muted">{event.notes || "No additional notes."}</p>
 
-          {currentAthleteId && myParticipant && (
+          {currentAthleteId && canRespond && (
             <div className="mt-4 flex w-full flex-wrap items-center justify-end gap-2">
               <span className="text-xs font-semibold uppercase tracking-wide inline-flex items-center rounded-full border-action-primary bg-action-primary/5 px-3 py-1 text-container-foreground">
                 {t.playerProfile.schedulingStatus[currentStatus]}

@@ -359,6 +359,8 @@ def request_report_card(
         submitted_by_id=current_user.id,
         team_id=payload.team_id,
         athlete_id=payload.athlete_id,
+        approved_by_id=None,
+        approved_at=None,
         coach_report=coach_report,
         general_notes=coach_report,
         report_card_categories=report_payload,

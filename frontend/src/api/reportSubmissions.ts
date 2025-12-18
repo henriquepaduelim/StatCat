@@ -28,14 +28,39 @@ export type ReportSubmissionSummary = {
   created_at: string;
 };
 
+const normalizeStatus = (status: string): ReportSubmissionStatus => {
+  switch (status.toLowerCase()) {
+    case "approved":
+      return "approved";
+    case "rejected":
+      return "rejected";
+    case "reopened":
+      return "reopened";
+    case "pending":
+    default:
+      return "pending";
+  }
+};
+
+const normalizeReportType = (value: string): "game_report" | "report_card" => {
+  const normalized = value.toLowerCase();
+  return normalized === "game" || normalized === "game_report" ? "game_report" : "report_card";
+};
+
+const normalizeSubmission = (raw: ReportSubmissionSummary): ReportSubmissionSummary => ({
+  ...raw,
+  status: normalizeStatus(raw.status as string),
+  report_type: normalizeReportType(raw.report_type as string),
+});
+
 export const fetchPendingReportSubmissions = async (): Promise<ReportSubmissionSummary[]> => {
   const { data } = await api.get<ReportSubmissionSummary[]>("/report-submissions/pending");
-  return data;
+  return data.map(normalizeSubmission);
 };
 
 export const fetchMyReportSubmissions = async (): Promise<ReportSubmissionSummary[]> => {
   const { data } = await api.get<ReportSubmissionSummary[]>("/report-submissions/mine");
-  return data;
+  return data.map(normalizeSubmission);
 };
 
 export const fetchAthleteReportSubmissions = async (
@@ -44,12 +69,12 @@ export const fetchAthleteReportSubmissions = async (
   const { data } = await api.get<ReportSubmissionSummary[]>(
     `/report-submissions/athlete/${athleteId}`,
   );
-  return data;
+  return data.map(normalizeSubmission);
 };
 
 export const fetchApprovedReportSubmissions = async (): Promise<ReportSubmissionSummary[]> => {
   const { data } = await api.get<ReportSubmissionSummary[]>("/report-submissions/approved");
-  return data;
+  return data.map(normalizeSubmission);
 };
 
 export const approveReportSubmission = async (submissionId: number) => {

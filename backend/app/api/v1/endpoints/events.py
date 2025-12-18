@@ -126,22 +126,44 @@ async def create_event(
         requested_user_ids=event_in.invitee_ids,
         coach_id=event.coach_id,
     )
-    _ensure_user_participants(db, event, invitee_user_ids)
-    
+    # Map invited athletes to their user accounts (if they have one) so they can receive emails
     team_roster_ids = get_team_roster_athlete_ids(db, team_ids)
     explicit_athlete_ids = set(event_in.athlete_ids)
     all_athlete_ids = sorted(explicit_athlete_ids.union(team_roster_ids))
-    
-    # Create participants for athletes
-    # Athletes don't have user accounts, so user_id is None
+    athlete_user_rows = db.exec(
+        select(User.athlete_id, User.id).where(User.athlete_id.in_(all_athlete_ids))
+    ).all()
+    athlete_user_map = {row[0]: row[1] for row in athlete_user_rows if row[0] is not None and row[1] is not None}
+    invitee_user_ids.update(athlete_user_map.values())
+
+    _ensure_user_participants(db, event, invitee_user_ids)
+
+    existing_participants = db.exec(
+        select(EventParticipant).where(EventParticipant.event_id == event.id, EventParticipant.user_id != None)
+    ).all()
+    participants_by_user: dict[int, EventParticipant] = {
+        ep.user_id: ep for ep in existing_participants if ep.user_id is not None
+    }
+
+    # Create or update participants for athletes (link user_id when available)
     for athlete_id in all_athlete_ids:
-        participant = EventParticipant(
-            event_id=event.id,
-            user_id=None,  # Athletes don't have user accounts
-            athlete_id=athlete_id,
-            status=ParticipantStatus.INVITED,
+        linked_user_id = athlete_user_map.get(athlete_id)
+        if linked_user_id and linked_user_id in participants_by_user:
+            participant = participants_by_user[linked_user_id]
+            if participant.athlete_id is None:
+                participant.athlete_id = athlete_id
+            if participant.status is None:
+                participant.status = ParticipantStatus.INVITED
+            db.add(participant)
+            continue
+        db.add(
+            EventParticipant(
+                event_id=event.id,
+                user_id=linked_user_id,
+                athlete_id=athlete_id,
+                status=ParticipantStatus.INVITED,
+            )
         )
-        db.add(participant)
     
     db.commit()
     db.refresh(event)

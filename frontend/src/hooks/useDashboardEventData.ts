@@ -58,12 +58,20 @@ export const useDashboardEventData = ({
   const eventAvailabilityData = useMemo(() => {
     if (!selectedEventDate) return [];
     return eventsOnSelectedDate.map((event) => {
-      const teamIds = getEventTeamIds(event);
+      let teamIds = getEventTeamIds(event);
       const participants = event.participants ?? [];
+      const hasTeams = teamIds.length > 0;
+
+      // Se não houver times, cria um grupo fictício para listar todos os convidados
+      if (!hasTeams) {
+        teamIds = [-1];
+      }
+
       const teamMap = teamIds.reduce<Record<number, Athlete[]>>((acc, id) => {
         acc[id] = [];
         return acc;
       }, {});
+
       const guests: Athlete[] = [];
       const participantStatusByUserId = new Map<number, ParticipantStatus>();
 
@@ -75,7 +83,11 @@ export const useDashboardEventData = ({
         if (!athleteId) return;
         const athlete = athleteById.get(athleteId);
         if (!athlete) return;
-        if (typeof athlete.team_id === "number" && teamMap[athlete.team_id]) {
+        const targetTeamId =
+          typeof athlete.team_id === "number" && teamMap[athlete.team_id] ? athlete.team_id : hasTeams ? null : -1;
+        if (targetTeamId !== null && teamMap[targetTeamId]) {
+          teamMap[targetTeamId].push(athlete);
+        } else if (hasTeams) {
           teamMap[athlete.team_id].push(athlete);
         } else {
           guests.push(athlete);
@@ -90,7 +102,10 @@ export const useDashboardEventData = ({
             meta?.coachUserId != null ? participantStatusByUserId.get(meta.coachUserId) ?? null : null;
           return {
             teamId,
-            teamName: teamNameById[teamId] ?? summaryLabels.teamPlaceholder,
+            teamName:
+              teamId === -1
+                ? summaryLabels.teamPlaceholder
+                : teamNameById[teamId] ?? summaryLabels.teamPlaceholder,
             athletes: teamMap[teamId] ?? [],
             coachName: meta?.coachName ?? null,
             coachStatus,
