@@ -122,6 +122,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+if (
+    settings.ENVIRONMENT.lower() not in {"dev", "development", "local"}
+    and not settings.FRONTEND_ORIGIN
+    and not settings.CORS_ORIGINS
+):
+    logger.warning(
+        "CORS: no production origin set (FRONTEND_ORIGIN or CORS_ORIGINS). "
+        "Only localhost origins are allowed."
+    )
 
 media_path = Path(settings.MEDIA_ROOT)
 media_path.mkdir(parents=True, exist_ok=True)

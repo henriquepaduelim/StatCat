@@ -35,6 +35,7 @@ class Settings(BaseSettings):
             "http://localhost:4173",  # Vite preview
         ]
     )
+    CORS_ORIGINS: str | None = None  # comma-separated list for production
     FRONTEND_ORIGIN: str | None = None
     ADMIN_EMAIL: str | None = None
     ADMIN_PASSWORD: str | None = None
@@ -127,9 +128,23 @@ class Settings(BaseSettings):
     def resolved_cors_origins(self) -> list[str]:
         """Return CORS origins including optional production origin."""
         origins = list(self.BACKEND_CORS_ORIGINS)
+        if self.CORS_ORIGINS:
+            extra = [
+                item.rstrip("/")
+                for item in (value.strip() for value in self.CORS_ORIGINS.split(","))
+                if item
+            ]
+            origins.extend(extra)
         if self.FRONTEND_ORIGIN:
             origins.append(self.FRONTEND_ORIGIN.rstrip("/"))
-        return origins
+        # Remove duplicates while preserving order
+        seen: set[str] = set()
+        deduped: list[str] = []
+        for origin in origins:
+            if origin and origin not in seen:
+                seen.add(origin)
+                deduped.append(origin)
+        return deduped
 
 
 @lru_cache
