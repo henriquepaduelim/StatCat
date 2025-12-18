@@ -32,22 +32,18 @@ const ReportSubmissionListModal = ({
 }: ReportSubmissionListModalProps) => {
   const [activeTab, setActiveTab] = useState<"report_card" | "game_report">("report_card");
 
-  const safePendingReports = pendingReports ?? [];
-  const safeApprovedReports = approvedReports ?? [];
-  const safeMySubmissions = mySubmissions ?? [];
-
   const filteredPending = useMemo(
-    () => safePendingReports.filter((report) => report.report_type === activeTab),
-    [safePendingReports, activeTab],
+    () => (pendingReports ?? []).filter((report) => report.report_type === activeTab),
+    [pendingReports, activeTab],
   );
   const filteredApproved = useMemo(
     () => {
-      const source = canApproveReports ? safeApprovedReports : safeMySubmissions;
+      const source = canApproveReports ? (approvedReports ?? []) : (mySubmissions ?? []);
       return source.filter(
         (submission) => submission.report_type === activeTab && submission.status === "approved",
       );
     },
-    [safeApprovedReports, safeMySubmissions, activeTab, canApproveReports],
+    [approvedReports, mySubmissions, activeTab, canApproveReports],
   );
 
   const totalByTab = useMemo(() => {
@@ -98,8 +94,8 @@ const ReportSubmissionListModal = ({
           </div>
           <div className="flex gap-2 border-t border-border-muted px-4 py-2 text-xs font-semibold text-muted sm:px-6">
             {tabs.map((tab) => {
-              const pendingCount = safePendingReports.filter((r) => r.report_type === tab.id).length;
-              const approvedCount = (canApproveReports ? safeApprovedReports : safeMySubmissions).filter(
+              const pendingCount = (pendingReports ?? []).filter((r) => r.report_type === tab.id).length;
+              const approvedCount = (canApproveReports ? (approvedReports ?? []) : (mySubmissions ?? [])).filter(
                 (r) => r.report_type === tab.id && r.status === "approved",
               ).length;
               const total = pendingCount + approvedCount;

@@ -87,7 +87,7 @@ export const useDashboardEventData = ({
           typeof athlete.team_id === "number" && teamMap[athlete.team_id] ? athlete.team_id : hasTeams ? null : -1;
         if (targetTeamId !== null && teamMap[targetTeamId]) {
           teamMap[targetTeamId].push(athlete);
-        } else if (hasTeams) {
+        } else if (hasTeams && typeof athlete.team_id === "number" && teamMap[athlete.team_id]) {
           teamMap[athlete.team_id].push(athlete);
         } else {
           guests.push(athlete);

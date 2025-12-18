@@ -1,6 +1,6 @@
 import { PropsWithChildren, useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faRightFromBracket, faGear, faMoon, faSun } from "@fortawesome/free-solid-svg-icons";
+import { faRightFromBracket, faGear } from "@fortawesome/free-solid-svg-icons";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import SideNav from "./SideNav";
@@ -14,7 +14,7 @@ const AppShell = ({ children }: PropsWithChildren) => {
   const location = useLocation();
   const user = useAuthStore((state) => state.user);
   const navigate = useNavigate();
-  const { themeId, toggleTheme } = useTheme();
+  useTheme();
   const [hasModalTarget, setHasModalTarget] = useState(false);
 
   useEffect(() => {
