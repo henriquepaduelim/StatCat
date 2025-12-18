@@ -122,7 +122,7 @@ class Settings(BaseSettings):
             )
         if is_prod_env and self.AUTO_SEED_DATABASE:
             raise ValueError("AUTO_SEED_DATABASE must be disabled in production.")
-            return self
+        return self
 
     @property
     def resolved_cors_origins(self) -> list[str]:
