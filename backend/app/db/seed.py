@@ -2,17 +2,20 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
 from random import choice, randint, uniform
+from typing import Optional
 
+from app.core.config import settings
 from sqlmodel import Session, select
 
+from app.core.config import settings
 from app.core.security import get_password_hash
 from app.models import (
-    AssessmentSession,
+    AssessmentSession,  # noqa: F401
     Athlete,
-    SessionResult,
+    SessionResult,  # noqa: F401
     Team,
     TeamCombineMetric,
-    TestDefinition,
+    TestDefinition,  # noqa: F401
     User,
 )
 from app.models.athlete import (
@@ -140,8 +143,37 @@ def _combine_payload(team_id: int, athlete_id: int, recorded_at: datetime) -> Te
     )
 
 
+def create_admin_from_env(session: Session) -> Optional[User]:
+    """Idempotent admin bootstrap from env; returns user if created/found."""
+    admin_email = (settings.ADMIN_EMAIL or "").strip()
+    admin_password = settings.ADMIN_PASSWORD or ""
+    if not admin_email or not admin_password:
+        return None
+
+    existing = session.exec(
+        select(User).where(User.email == admin_email, User.role == UserRole.ADMIN)
+    ).first()
+    if existing:
+        return existing
+
+    admin_name = (settings.ADMIN_NAME or "StatCat Admin").strip()
+    admin = User(
+        email=admin_email,
+        hashed_password=get_password_hash(admin_password),
+        full_name=admin_name,
+        role=UserRole.ADMIN,
+        is_active=True,
+        must_change_password=False,
+    )
+    session.add(admin)
+    session.commit()
+    session.refresh(admin)
+    return admin
+
+
 def seed_database(session: Session) -> None:
-    """Seed básico de usuários admin/staff/coach (modo antigo)."""
+    """Seed básico: bootstrap admin via env (se fornecido) e contas padrão."""
+    create_admin_from_env(session)
     if session.exec(select(User.id)).first():
         return
 
