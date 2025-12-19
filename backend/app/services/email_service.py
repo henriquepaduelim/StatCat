@@ -488,6 +488,54 @@ class EmailService:
         )
         return await self._send_email(to_email, subject, text_body, html_body)
 
+    async def send_password_code(
+        self, to_email: str, to_name: str, code: str, expires_minutes: int
+    ) -> bool:
+        """Send a 6-digit one-time code for password setup."""
+        if not self._require_configured("send password code"):
+            return False
+        subject = "Set your StatCat password"
+        reset_url = f"{self.frontend_url}/reset-password"
+        text_body = (
+            f"Hello {to_name or 'there'},\n\n"
+            f"Use this code to set your password (expires in {expires_minutes} minutes): {code}\n"
+            f"Then visit: {reset_url}\n\n"
+            f"Best regards,\nThe {self.from_name} Team"
+        )
+        content_html = (
+            f"<p>Use this code to set your password. It expires in <strong>{expires_minutes} minutes</strong>.</p>"
+            f"<p style=\"font-size:20px;font-weight:bold;letter-spacing:2px;\">{code}</p>"
+            f"<p>Then go to <a href=\"{reset_url}\">{reset_url}</a> to finish setting your password.</p>"
+        )
+        html_body = self._generate_html_body(
+            f"Hello {to_name or 'there'},",
+            content_html,
+            [{"text": "Set Password", "url": reset_url}],
+        )
+        return await self._send_email(to_email, subject, text_body, html_body)
+
+    async def send_account_created_confirmation(
+        self, to_email: str, to_name: Optional[str] = None
+    ) -> bool:
+        """Notify self-signup users their account was created."""
+        if not self._require_configured("send account confirmation"):
+            return False
+        subject = "Your StatCat account was created"
+        login_url = f"{self.frontend_url}/login"
+        text_body = (
+            f"Hello {to_name or 'there'},\n\n"
+            f"Your StatCat account has been created. You can sign in now with the password you set.\n\n"
+            f"Sign in: {login_url}\n\n"
+            f"Best regards,\nThe {self.from_name} Team"
+        )
+        content_html = "<p>Your StatCat account has been created. You can sign in now with the password you set.</p>"
+        html_body = self._generate_html_body(
+            f"Hello {to_name or 'there'},",
+            content_html,
+            [{"text": "Sign In", "url": login_url}],
+        )
+        return await self._send_email(to_email, subject, text_body, html_body)
+
     async def send_account_invite(
         self, to_email: str, to_name: str, reset_token: str, expires_minutes: int
     ) -> bool:

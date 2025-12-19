@@ -43,6 +43,7 @@ class UserBase(SQLModel):
     athlete_status: UserAthleteApprovalStatus | None = None
     rejection_reason: str | None = None
     is_active: bool = True
+    must_change_password: bool | None = None
 
 
 class UserCreate(UserBase):
@@ -96,6 +97,7 @@ class UserSelfUpdate(SQLModel):
 class Token(SQLModel):
     access_token: str
     token_type: str = "bearer"
+    must_change_password: bool = False
 
 
 class TokenPayload(SQLModel):
@@ -114,3 +116,18 @@ class PasswordResetConfirm(SQLModel):
 
 class PasswordResetResponse(SQLModel):
     detail: str
+
+
+class PasswordCodeRequest(SQLModel):
+    email: LocalEmailStr
+
+
+class PasswordCodeVerify(SQLModel):
+    email: LocalEmailStr
+    code: str
+
+
+class PasswordCodeConfirm(SQLModel):
+    email: LocalEmailStr
+    code: str
+    new_password: str

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import logging
 import secrets
 from pathlib import Path
@@ -25,6 +25,7 @@ from app.models.match_stat import MatchStat
 from app.models.session_result import SessionResult
 from app.models.team import CoachTeamLink, Team
 from app.models.user import User, UserRole, UserAthleteApprovalStatus
+from app.models.password_setup_code import PasswordSetupCode
 # from app.core.security import create_signup_token # Removed F401
 from jose import jwt, JWTError
 from app.services.email_service import email_service
@@ -53,6 +54,28 @@ athlete_media_root = media_root / "athletes"
 athlete_media_root.mkdir(parents=True, exist_ok=True)
 documents_root = athlete_media_root / "documents"
 documents_root.mkdir(parents=True, exist_ok=True)
+
+PASSWORD_CODE_EXPIRY_MINUTES = 45
+
+def _generate_password_code(session: Session, user: User) -> str:
+    """Generate a single-use 6-digit code for password setup."""
+    code = f"{secrets.randbelow(900000) + 100000:06d}"
+    code_hash = get_password_hash(code)
+    expires_at = datetime.now(timezone.utc) + timedelta(
+        minutes=PASSWORD_CODE_EXPIRY_MINUTES
+    )
+    existing = session.exec(
+        select(PasswordSetupCode).where(PasswordSetupCode.user_id == user.id)
+    ).all()
+    for item in existing:
+        session.delete(item)
+    password_code = PasswordSetupCode(
+        user_id=user.id, code_hash=code_hash, expires_at=expires_at
+    )
+    session.add(password_code)
+    session.commit()
+    session.refresh(password_code)
+    return code
 
 
 def _safe_filename(filename: str | None) -> str:
@@ -568,17 +591,14 @@ def create_athlete(
         session.rollback()
         raise
 
-    token = security_token_manager.generate_token(
-        {"sub": user.id, "scope": "password_reset"},
-        salt=settings.PASSWORD_RESET_TOKEN_SALT,
-    )
+    code = _generate_password_code(session, user)
     try:
         sent = anyio.from_thread.run(
-            email_service.send_account_invite,
+            email_service.send_password_code,
             email_normalized,
             user.full_name or athlete.first_name,
-            token,
-            settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES,
+            code,
+            PASSWORD_CODE_EXPIRY_MINUTES,
         )
         invite_status = "sent" if sent else "failed"
     except Exception:

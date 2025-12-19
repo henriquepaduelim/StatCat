@@ -1,6 +1,7 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import anyio
 from pathlib import Path
+import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from fastapi.security import OAuth2PasswordRequestForm
@@ -12,11 +13,13 @@ from app.core.security import (
     create_access_token,
     create_signup_token,
     get_password_hash,
+    verify_password,
 )
 from app.core.security_token import security_token_manager
 from app.db.session import get_session
 from app.models.athlete import Athlete, AthleteGender
 from app.models.user import User, UserRole, UserAthleteApprovalStatus
+from app.models.password_setup_code import PasswordSetupCode
 from app.schemas.user import (
     PasswordResetConfirm,
     PasswordResetRequest,
@@ -29,6 +32,9 @@ from app.schemas.user import (
     UserSelfUpdate,
     AthleteSignup,
     AthleteSignupResponse,
+    PasswordCodeRequest,
+    PasswordCodeVerify,
+    PasswordCodeConfirm,
 )
 from app.services.email_service import EmailService
 
@@ -37,6 +43,7 @@ email_service = EmailService()
 PASSWORD_RESET_ALLOWED_ROLES = set(UserRole)
 user_media_root = Path(settings.MEDIA_ROOT) / "users"
 user_media_root.mkdir(parents=True, exist_ok=True)
+PASSWORD_CODE_EXPIRY_MINUTES = 45
 
 
 def _generate_password_reset_token(user_id: int) -> str:
@@ -44,6 +51,63 @@ def _generate_password_reset_token(user_id: int) -> str:
     return security_token_manager.generate_token(
         payload, salt=settings.PASSWORD_RESET_TOKEN_SALT
     )
+
+
+def _generate_password_code(session: Session, user: User) -> str:
+    """Generate a single-use 6-digit code for password setup."""
+    code = f"{secrets.randbelow(900000) + 100000:06d}"
+    code_hash = get_password_hash(code)
+    expires_at = datetime.now(timezone.utc) + timedelta(
+        minutes=PASSWORD_CODE_EXPIRY_MINUTES
+    )
+    # Invalidate previous codes for this user
+    existing = session.exec(
+        select(PasswordSetupCode).where(PasswordSetupCode.user_id == user.id)
+    ).all()
+    for item in existing:
+        session.delete(item)
+    password_code = PasswordSetupCode(
+        user_id=user.id, code_hash=code_hash, expires_at=expires_at
+    )
+    session.add(password_code)
+    session.commit()
+    session.refresh(password_code)
+    return code
+
+
+def _validate_password_code(session: Session, email: str, code: str) -> User:
+    user = session.exec(select(User).where(User.email == email)).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    record = session.exec(
+        select(PasswordSetupCode)
+        .where(PasswordSetupCode.user_id == user.id)
+        .order_by(PasswordSetupCode.created_at.desc())
+    ).first()
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired code",
+        )
+    now = datetime.now(timezone.utc)
+    expires_at = (
+        record.expires_at
+        if record.expires_at.tzinfo
+        else record.expires_at.replace(tzinfo=timezone.utc)
+    )
+    if record.used_at or expires_at < now:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired code",
+        )
+    if not verify_password(code, record.code_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired code",
+        )
+    return user
 
 
 async def _handle_first_login(session: Session, user: User) -> None:
@@ -136,7 +200,7 @@ async def login_access_token(
     await _handle_first_login(session, user)
 
     token = create_access_token(user.email)
-    return Token(access_token=token)
+    return Token(access_token=token, must_change_password=user.must_change_password)
 
 
 @router.get("/me", response_model=UserRead)
@@ -364,33 +428,57 @@ def register_user(
         else:
             full_name = f"Coach {payload.full_name}"
 
-    user = User(
-        email=payload.email,
-        hashed_password=get_password_hash(payload.password),
-        full_name=full_name,
-        phone=payload.phone,
-        role=payload.role,
-        athlete_id=payload.athlete_id,
-        is_active=payload.is_active,
-        must_change_password=True,  # force update on first login
-        athlete_status=UserAthleteApprovalStatus.APPROVED
-        if payload.role == UserRole.ATHLETE
-        else payload.athlete_status,
-    )
+    # Coaches: use provided temp password and enforce must_change_password
+    if payload.role == UserRole.COACH:
+        hashed_password = get_password_hash(payload.password)
+        user = User(
+            email=payload.email,
+            hashed_password=hashed_password,
+            full_name=full_name,
+            phone=payload.phone,
+            role=payload.role,
+            athlete_id=payload.athlete_id,
+            is_active=payload.is_active,
+            must_change_password=True,
+            athlete_status=payload.athlete_status,
+        )
+    else:
+        # Admin-created non-coach users get a password setup code
+        hashed_password = get_password_hash(secrets.token_urlsafe(16))
+        user = User(
+            email=payload.email,
+            hashed_password=hashed_password,
+            full_name=full_name,
+            phone=payload.phone,
+            role=payload.role,
+            athlete_id=payload.athlete_id,
+            is_active=payload.is_active,
+            must_change_password=True,
+            athlete_status=UserAthleteApprovalStatus.APPROVED
+            if payload.role == UserRole.ATHLETE
+            else payload.athlete_status,
+        )
     session.add(user)
     session.commit()
     session.refresh(user)
 
-    # Send account invite email so the user can set their password
     if user.email:
-        token = _generate_password_reset_token(user.id)
-        anyio.from_thread.run(
-            email_service.send_account_invite,
-            user.email,
-            user.full_name or None,
-            token,
-            settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES,
-        )
+        if payload.role == UserRole.COACH:
+            anyio.from_thread.run(
+                email_service.send_temp_password,
+                user.email,
+                user.full_name or None,
+                payload.password,
+            )
+        else:
+            code = _generate_password_code(session, user)
+            anyio.from_thread.run(
+                email_service.send_password_code,
+                user.email,
+                user.full_name or None,
+                code,
+                PASSWORD_CODE_EXPIRY_MINUTES,
+            )
     return user
 
 
@@ -449,8 +537,8 @@ async def signup_user(
         session.commit()
         session.refresh(user)
 
-        # Notify user their signup is pending approval
-        await email_service.send_registration_pending(
+        # Notify user their signup is pending approval / account created
+        await email_service.send_account_created_confirmation(
             to_email=user.email,
             to_name=user.full_name or None,
         )
@@ -505,6 +593,7 @@ async def login_with_profile(
         phone=user.phone,
         athlete_id=user.athlete_id,
         is_active=user.is_active,
+        must_change_password=user.must_change_password,
         access_token=token,
     )
 
@@ -541,6 +630,70 @@ async def request_password_reset(
     )
 
     return PasswordResetResponse(detail=generic_detail)
+
+
+@router.post(
+    "/password-code/request",
+    response_model=PasswordResetResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+async def request_password_code(
+    payload: PasswordCodeRequest,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_active_user),
+) -> PasswordResetResponse:
+    """Admin-triggered password setup code generation."""
+    ensure_admin = current_user.role == UserRole.ADMIN
+    if not ensure_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed"
+        )
+    user = session.exec(select(User).where(User.email == payload.email)).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+    code = _generate_password_code(session, user)
+    await email_service.send_password_code(
+        to_email=user.email,
+        to_name=user.full_name or "",
+        code=code,
+        expires_minutes=PASSWORD_CODE_EXPIRY_MINUTES,
+    )
+    return PasswordResetResponse(detail="Password setup code sent.")
+
+
+@router.post("/password-code/verify", response_model=PasswordResetResponse)
+async def verify_password_code(
+    payload: PasswordCodeVerify,
+    session: Session = Depends(get_session),
+) -> PasswordResetResponse:
+    """Verify a 6-digit code without changing password."""
+    user = _validate_password_code(session, payload.email, payload.code)
+    token = _generate_password_reset_token(user.id)
+    return PasswordResetResponse(detail=token)
+
+
+@router.post("/password-code/confirm", response_model=PasswordResetResponse)
+async def confirm_password_code(
+    payload: PasswordCodeConfirm,
+    session: Session = Depends(get_session),
+) -> PasswordResetResponse:
+    """Confirm password using a 6-digit code and set a new password."""
+    user = _validate_password_code(session, payload.email, payload.code)
+    record = session.exec(
+        select(PasswordSetupCode)
+        .where(PasswordSetupCode.user_id == user.id)
+        .order_by(PasswordSetupCode.created_at.desc())
+    ).first()
+    now = datetime.now(timezone.utc)
+    record.used_at = now
+    user.hashed_password = get_password_hash(payload.new_password)
+    user.must_change_password = False
+    session.add_all([user, record])
+    session.commit()
+    session.refresh(user)
+    return PasswordResetResponse(detail="Your password has been updated.")
 
 
 @router.post(
