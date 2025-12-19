@@ -495,17 +495,17 @@ class EmailService:
         if not self._require_configured("send password code"):
             return False
         subject = "Set your StatCat password"
-        reset_url = f"{self.frontend_url}/reset-password"
+        reset_url = f"{self.frontend_url}/reset-password?mode=code&email={quote(to_email)}"
         text_body = (
             f"Hello {to_name or 'there'},\n\n"
             f"Use this code to set your password (expires in {expires_minutes} minutes): {code}\n"
-            f"Then visit: {reset_url}\n\n"
+            f"Then visit: {reset_url} and enter the same 6-digit code.\n\n"
             f"Best regards,\nThe {self.from_name} Team"
         )
         content_html = (
             f"<p>Use this code to set your password. It expires in <strong>{expires_minutes} minutes</strong>.</p>"
             f"<p style=\"font-size:20px;font-weight:bold;letter-spacing:2px;\">{code}</p>"
-            f"<p>Then go to <a href=\"{reset_url}\">{reset_url}</a> to finish setting your password.</p>"
+            f"<p>Then go to <a href=\"{reset_url}\">{reset_url}</a> to finish setting your password with this code.</p>"
         )
         html_body = self._generate_html_body(
             f"Hello {to_name or 'there'},",

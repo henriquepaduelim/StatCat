@@ -400,40 +400,77 @@ def register_athlete(
         preferred_position_raw.strip() if preferred_position_raw else None
     )
 
-    email_value = data.get("email")
-    phone_value = data.get("phone")
-    if not email_value or not phone_value:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="email and phone are required",
-        )
-    email_value = email_value.strip()
-    phone_value = phone_value.strip()
+    email_value = (data.get("email") or "").strip().lower()
+    phone_value = (data.get("phone") or "").strip()
     if not email_value or not phone_value:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="email and phone are required",
         )
 
-    athlete = Athlete(
-        team_id=team_id,
-        first_name=data["first_name"].strip(),
-        last_name=data["last_name"].strip(),
-        email=email_value,
-        phone=phone_value,
-        birth_date=data["birth_date"],
-        gender=data["gender"],
-        registration_year=data.get("registration_year"),
-        registration_category=data.get("registration_category"),
-        player_registration_status=data.get("player_registration_status"),
-        primary_position=preferred_position,
-        preferred_position=preferred_position,
-        desired_shirt_number=data.get("desired_shirt_number"),
-    )
+    existing_user = session.exec(
+        select(User).where(func.lower(User.email) == email_value)
+    ).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A user with this email already exists. Please use a different email for the athlete.",
+        )
 
-    session.add(athlete)
-    session.commit()
-    session.refresh(athlete)
+    try:
+        athlete = Athlete(
+            team_id=team_id,
+            first_name=data["first_name"].strip(),
+            last_name=data["last_name"].strip(),
+            email=email_value,
+            phone=phone_value,
+            birth_date=data["birth_date"],
+            gender=data["gender"],
+            registration_year=data.get("registration_year"),
+            registration_category=data.get("registration_category"),
+            player_registration_status=data.get("player_registration_status"),
+            primary_position=preferred_position,
+            preferred_position=preferred_position,
+            desired_shirt_number=data.get("desired_shirt_number"),
+        )
+
+        session.add(athlete)
+        session.flush()
+
+        user = User(
+            email=email_value,
+            hashed_password=get_password_hash(secrets.token_urlsafe(16)),
+            full_name=f"{athlete.first_name} {athlete.last_name}".strip(),
+            phone=phone_value,
+            role=UserRole.ATHLETE,
+            athlete_id=athlete.id,
+            is_active=True,
+            must_change_password=True,
+            athlete_status=UserAthleteApprovalStatus.APPROVED,
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(athlete)
+        session.refresh(user)
+    except Exception:
+        session.rollback()
+        raise
+
+    try:
+        code = _generate_password_code(session, user)
+        anyio.from_thread.run(
+            email_service.send_password_code,
+            user.email,
+            user.full_name or f"{athlete.first_name} {athlete.last_name}".strip(),
+            code,
+            PASSWORD_CODE_EXPIRY_MINUTES,
+        )
+    except Exception:
+        logger.warning(
+            "Failed to send password setup email for athlete %s",
+            athlete.id,
+            exc_info=True,
+        )
 
     # Notify athlete about team assignment if email and team were provided
     if athlete.team_id and athlete.email:

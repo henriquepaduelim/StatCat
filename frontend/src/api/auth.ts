@@ -102,6 +102,18 @@ export const confirmPasswordReset = async (token: string, newPassword: string): 
   });
 };
 
+export const confirmPasswordWithCode = async (
+  email: string,
+  code: string,
+  newPassword: string
+): Promise<void> => {
+  await api.post("/auth/password-code/confirm", {
+    email,
+    code,
+    new_password: newPassword,
+  });
+};
+
 export const updateSelf = async (payload: {
   full_name?: string;
   phone?: string;
