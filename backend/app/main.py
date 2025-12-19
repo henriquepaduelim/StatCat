@@ -1,9 +1,12 @@
-import logging
 from pathlib import Path
 from datetime import datetime, date, time
 import json
+import logging
 
 from app.core.config import settings
+from alembic.config import Config
+from alembic.script import ScriptDirectory
+from alembic.runtime.migration import MigrationContext
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -95,6 +98,7 @@ def on_startup() -> None:
     # Evite criar/migrar DB automaticamente em produção; use alembic upgrade no deploy.
     if settings.AUTO_SEED_DATABASE:
         init_db()
+    _check_migration_drift()
 
 
 @app.get("/sentry-debug", include_in_schema=False)
@@ -111,3 +115,34 @@ def healthcheck() -> dict[str, str]:
 
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+
+
+def _check_migration_drift() -> None:
+    """Log if the database revision is behind Alembic head."""
+    try:
+        backend_root = Path(__file__).resolve().parent.parent
+        alembic_cfg = Config(str(backend_root / "alembic.ini"))
+        alembic_cfg.set_main_option("script_location", str(backend_root / "alembic"))
+        alembic_cfg.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+
+        script = ScriptDirectory.from_config(alembic_cfg)
+        head_revision = script.get_current_head()
+
+        with engine.connect() as connection:
+            context = MigrationContext.configure(connection)
+            current_revision = context.get_current_revision()
+    except Exception as exc:  # pragma: no cover - observational guard
+        logger.warning("Could not check Alembic migration status: %s", exc)
+        return
+
+    if current_revision != head_revision:
+        env = settings.ENVIRONMENT.lower()
+        log_level = logging.ERROR
+        if env in {"dev", "development", "local"}:
+            log_level = logging.WARNING
+        logger.log(
+            log_level,
+            "Alembic revision mismatch detected (database=%s, head=%s). Run migrations.",
+            current_revision,
+            head_revision,
+        )
