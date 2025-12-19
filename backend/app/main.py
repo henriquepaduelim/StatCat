@@ -14,50 +14,6 @@ from fastapi.exceptions import RequestValidationError
 from starlette.requests import Request
 
 
-def _maybe_verify_gcs() -> None:
-    """Optionally verify GCS credentials; skipped unless explicitly enabled."""
-    env = settings.ENVIRONMENT.lower()
-    provider = settings.STORAGE_PROVIDER.lower()
-    if provider != "gcs":
-        logging.getLogger(__name__).info(
-            "GCS check skipped (STORAGE_PROVIDER=%s)", settings.STORAGE_PROVIDER
-        )
-        return
-    if env in {"dev", "development", "local"}:
-        logging.getLogger(__name__).info(
-            "Running in local environment, skipping GCS authentication at startup."
-        )
-        return
-
-    try:
-        from google.cloud import storage  # type: ignore
-        from google.api_core.exceptions import GoogleAPICallError  # type: ignore
-    except ImportError:
-        logging.getLogger(__name__).warning(
-            "GCS provider selected but 'google-cloud-storage' is not installed; skipping check."
-        )
-        return
-
-    try:
-        logger = logging.getLogger(__name__)
-        logger.info("Attempting to authenticate with Google Cloud Storage...")
-        storage_client = storage.Client()
-        _ = storage_client.list_buckets()
-        logger.info("✅ Google Cloud Storage authentication successful.")
-    except GoogleAPICallError as exc:
-        logger.error(
-            "❌ Google Cloud Storage authentication failed. "
-            "Check GOOGLE_APPLICATION_CREDENTIALS and permissions.",
-            exc_info=True,
-        )
-        raise exc
-    except Exception as exc:  # pragma: no cover - unexpected runtime errors
-        logger.error(
-            "❌ Unexpected error during GCS authentication.", exc_info=True
-        )
-        raise exc
-
-
 from app.api.v1.router import api_router
 from app.core.observability import (
     RequestContextMiddleware,
@@ -71,9 +27,6 @@ from app.db.session import engine, init_db
 configure_logging(settings.LOG_LEVEL)
 setup_sentry(settings)
 logger = logging.getLogger(__name__)
-
-# Optional GCS check (disabled unless STORAGE_PROVIDER=gcs)
-_maybe_verify_gcs()
 
 app = FastAPI(title=settings.PROJECT_NAME, version=settings.VERSION)
 app.add_middleware(RequestContextMiddleware)
