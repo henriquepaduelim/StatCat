@@ -488,7 +488,7 @@ const handlePendingReviewClose = () => {
             </a>
             and
             <a
-              href={import.meta.env.VITE_PRIVACY_POLICY_URL || "#"}
+              href={import.meta.env.VITE_PRIVACY_POLICY_URL || "/privacy.html"}
               target="_blank"
               rel="noopener noreferrer"
               className="mx-1 underline underline-offset-4"
