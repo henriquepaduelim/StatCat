@@ -46,26 +46,15 @@ test('admin cria atleta via modal', async ({ page }) => {
   await page.goto(`${BASE_URL}/athletes`);
   await page.getByRole('button', { name: /new athlete/i }).click();
 
-  const stepOneModal = page.getByRole('dialog');
-  await stepOneModal.getByLabel(/first name/i).fill('E2E');
-  await stepOneModal.getByLabel(/last name/i).fill('Playwright');
-  await stepOneModal.getByLabel(/^email/i).fill(uniqueEmail);
-  await stepOneModal.getByLabel(/phone/i).fill(uniquePhone);
-  await stepOneModal.getByRole('button', { name: /continue/i }).click();
-
-  // Step 2 abre; preencher campos obrigatórios e concluir
-  const stepTwoDialog = page.getByRole('dialog');
-  await stepTwoDialog.locator('#birth_date').fill(today);
-  await stepTwoDialog.locator('#gender').selectOption('male');
-  await stepTwoDialog.locator('#address_line1').fill('123 E2E Street');
-  await stepTwoDialog.locator('#city').fill('Test City');
-  await stepTwoDialog.locator('#province').fill('Test State');
-  await stepTwoDialog.locator('#postal_code').fill('12345');
-  await stepTwoDialog.locator('#country').fill('Testland');
-  await stepTwoDialog.locator('#emergency_contact_name').fill('E2E Contact');
-  await stepTwoDialog.locator('#emergency_contact_relationship').fill('Tester');
-  await stepTwoDialog.locator('#emergency_contact_phone').fill('+15551112222');
-  await stepTwoDialog.getByRole('button', { name: /complete registration/i }).click();
+  const modal = page.getByRole('dialog', { name: /new athlete/i });
+  await modal.getByLabel(/first name/i).fill('E2E');
+  await modal.getByLabel(/last name/i).fill('Playwright');
+  await modal.getByLabel(/birthday/i).fill(today);
+  await modal.getByLabel(/^email/i).fill(uniqueEmail);
+  await modal.getByLabel(/phone/i).fill(uniquePhone);
+  await modal.getByLabel(/season|year/i).fill('2025');
+  await modal.getByLabel(/preferred position/i).fill('midfielder');
+  await modal.getByRole('button', { name: /continue|save|submit/i }).click();
 
   // Verifica se o atleta aparece na lista
   await expect(page.getByText(uniqueEmail)).toBeVisible({ timeout: 15000 });
