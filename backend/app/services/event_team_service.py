@@ -129,7 +129,7 @@ def ensure_roster_participants(
     existing_rows = db.exec(
         select(EventParticipant.athlete_id).where(
             EventParticipant.event_id == event.id,
-            EventParticipant.athlete_id != None,
+            EventParticipant.athlete_id.is_not(None),
         )
     ).all()
     existing_ids = {row[0] for row in existing_rows if row and row[0] is not None}

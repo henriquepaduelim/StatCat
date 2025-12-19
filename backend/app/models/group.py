@@ -1,10 +1,7 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
-from sqlmodel import Field, Relationship, SQLModel
-
-if TYPE_CHECKING:
-    from .user import User
+from sqlmodel import Field, SQLModel
 
 
 class Group(SQLModel, table=True):

@@ -1,4 +1,6 @@
 from datetime import datetime, timezone
+import logging
+import secrets
 from pathlib import Path
 import anyio
 
@@ -9,7 +11,8 @@ from sqlalchemy.orm import selectinload
 from app.api.deps import ensure_roles, get_current_active_user
 from app.core.config import settings
 from app.core.crypto import encrypt_text
-# from app.core.security import get_password_hash # Removed F401
+from app.core.security import get_password_hash
+from app.core.security_token import security_token_manager
 from app.db.session import get_session
 from app.models.athlete import Athlete, AthleteGender
 from app.models.athlete_detail import AthleteDetail
@@ -34,6 +37,7 @@ from app.services.athlete_service import (
 from app.schemas.athlete import (
     AthleteCreate,
     AthleteRead,
+    AthleteCreateResponse,
     AthleteDocumentRead,
     AthleteRegistrationCompletion,
     AthleteRegistrationCreate,
@@ -105,6 +109,7 @@ def _store_file(
 
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 def _decode_signup_token(token: str, athlete_id: int) -> None:
@@ -496,29 +501,93 @@ def list_athletes(
     )
 
 
-@router.post("/", response_model=AthleteRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/", response_model=AthleteCreateResponse, status_code=status.HTTP_201_CREATED
+)
 def create_athlete(
     payload: AthleteCreate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_active_user),
-) -> AthleteRead:
+) -> AthleteCreateResponse:
     ensure_roles(current_user, MANAGE_ATHLETE_ROLES)
     data = payload.model_dump()
+    email_raw = (data.get("email") or "").strip()
+    email_normalized = email_raw.lower()
+
+    if not email_normalized:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Athletes must have an email address to create an account.",
+        )
+
     if not data.get("primary_position"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="primary_position is required",
         )
+
+    if email_normalized:
+        existing_user = session.exec(
+            select(User).where(func.lower(User.email) == email_normalized)
+        ).first()
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A user with this email already exists. Please use a different email for the athlete.",
+            )
+
     _validate_team(session, data.get("team_id"))
+    data["email"] = email_normalized
     data["primary_position"] = data["primary_position"].strip()
     if data.get("secondary_position"):
         data["secondary_position"] = data["secondary_position"].strip()
+    data["athlete_status"] = UserAthleteApprovalStatus.APPROVED
     athlete = Athlete.model_validate(data)
-    session.add(athlete)
-    session.commit()
-    session.refresh(athlete)
+    invite_status = "failed"
+    try:
+        session.add(athlete)
+        session.flush()
 
-    # Notify athlete about team assignment if email and team were provided
+        user = User(
+            email=email_normalized,
+            hashed_password=get_password_hash(secrets.token_urlsafe(16)),
+            full_name=f"{athlete.first_name} {athlete.last_name}".strip()
+            or email_normalized,
+            role=UserRole.ATHLETE,
+            athlete_id=athlete.id,
+            is_active=True,
+            must_change_password=True,
+            athlete_status=UserAthleteApprovalStatus.APPROVED,
+        )
+        session.add(user)
+        session.flush()
+        session.commit()
+        session.refresh(athlete)
+        session.refresh(user)
+    except Exception:
+        session.rollback()
+        raise
+
+    token = security_token_manager.generate_token(
+        {"sub": user.id, "scope": "password_reset"},
+        salt=settings.PASSWORD_RESET_TOKEN_SALT,
+    )
+    try:
+        sent = anyio.from_thread.run(
+            email_service.send_account_invite,
+            email_normalized,
+            user.full_name or athlete.first_name,
+            token,
+            settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES,
+        )
+        invite_status = "sent" if sent else "failed"
+    except Exception:
+        logger.warning(
+            "Failed to send password setup email for athlete %s",
+            athlete.id,
+            exc_info=True,
+        )
+
     if athlete.team_id and athlete.email:
         team = session.get(Team, athlete.team_id)
         team_name = team.name if team else "your team"
@@ -529,7 +598,11 @@ def create_athlete(
             team_name,
         )
 
-    return athlete
+    return AthleteCreateResponse(
+        athlete=athlete,
+        athlete_user_created=True,
+        invite_status=invite_status,
+    )
 
 
 @router.post(

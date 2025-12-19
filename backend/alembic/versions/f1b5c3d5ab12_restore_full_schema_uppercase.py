@@ -79,10 +79,13 @@ def upgrade() -> None:
     participant_enum = sa.Enum(
         "INVITED", "CONFIRMED", "DECLINED", "MAYBE", name="participantstatus"
     )
+    participant_enum.create(bind, checkfirst=True)
     report_status_enum = sa.Enum(
         "PENDING", "APPROVED", "REJECTED", "REOPENED", name="reportsubmissionstatus"
     )
     report_type_enum = sa.Enum("GAME", "REPORT_CARD", name="reportsubmissiontype")
+    report_status_enum.create(bind, checkfirst=True)
+    report_type_enum.create(bind, checkfirst=True)
     combine_status_enum = sa.Enum(
         "PENDING", "APPROVED", "REJECTED", name="combinemetricstatus"
     )
@@ -90,6 +93,8 @@ def upgrade() -> None:
     event_status_enum = sa.Enum(
         "SCHEDULED", "CANCELLED", "COMPLETED", name="eventstatus"
     )
+    event_status_enum.create(bind, checkfirst=True)
+    event_status_enum.create(bind, checkfirst=True)
 
     # Re-apply enum types to existing columns
     op.execute(

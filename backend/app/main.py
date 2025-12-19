@@ -11,7 +11,6 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exceptions import RequestValidationError
-from starlette.requests import Request
 
 
 from app.api.v1.router import api_router

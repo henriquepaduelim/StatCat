@@ -49,6 +49,12 @@ class AthleteRead(AthleteBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class AthleteCreateResponse(SQLModel):
+    athlete: AthleteRead
+    athlete_user_created: bool
+    invite_status: str
+
+
 class AthleteUpdate(SQLModel):
     first_name: str | None = None
     last_name: str | None = None

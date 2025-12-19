@@ -188,12 +188,15 @@ class EmailService:
                 f"- I can't make it: {self.api_url}/events/rsvp?token={decline_token}\n"
             )
 
+        location_line = f" Location: {event_location}." if event_location else ""
+        notes_line = f"Notes: {event_notes}\n" if event_notes else ""
+
         text_body = (
             f"Hello {to_name or 'there'},\n\n"
             f'You have been invited to the event "{event_name}" by {organizer_name} on {event_date}'
             f"{f' at {event_time}' if event_time else ''}."
-            f"{f' Location: {event_location}.' if event_location else ''}\n"
-            f"{f'Notes: {event_notes}\\n' if event_notes else ''}\n"
+            f"{location_line}\n"
+            f"{notes_line}"
             f"{'View details: ' + event_url if event_url else ''}"
             f"{text_body_rsvp_links}"
         )
@@ -295,12 +298,14 @@ class EmailService:
             f"{self.frontend_url}/events/{event_id}" if event_id else self.frontend_url
         )
 
+        location_line = f"Location: {event_location}\n" if event_location else ""
+
         text_body = (
             f"Hello {to_name or 'there'},\n\n"
             f'The event "{event_name}" has been updated.\n'
             f"Changes: {changes}\n"
             f"Date: {event_date} at {event_time}\n"
-            f"{f'Location: {event_location}\\n' if event_location else ''}"
+            f"{location_line}"
             f"{'View details: ' + event_url if event_url else ''}"
         )
         content_html = (
@@ -400,11 +405,12 @@ class EmailService:
         event_url = (
             f"{self.frontend_url}/events/{event_id}" if event_id else self.frontend_url
         )
+        location_line = f"Location: {event_location}\n" if event_location else ""
         text_body = (
             f"Hello {to_name or 'there'},\n\n"
             f'This is a reminder that the event "{event_name}" starts in {hours_until} hours.\n'
             f"Date: {event_date} at {event_time}\n"
-            f"{f'Location: {event_location}\\n' if event_location else ''}"
+            f"{location_line}"
             f"{'View details: ' + event_url if event_url else ''}"
         )
         content_html = (
@@ -482,6 +488,31 @@ class EmailService:
         )
         return await self._send_email(to_email, subject, text_body, html_body)
 
+    async def send_account_invite(
+        self, to_email: str, to_name: str, reset_token: str, expires_minutes: int
+    ) -> bool:
+        """Invite a newly created user to set their password."""
+        if not self._require_configured("send account invite"):
+            return False
+        subject = "Your StatCat account is ready"
+        reset_url = f"{self.frontend_url}/reset-password?token={reset_token}"
+        text_body = (
+            f"Hello {to_name or 'there'},\n\n"
+            f"Your StatCat account is ready. Please use the link below within {expires_minutes} minutes "
+            f"to set your password and sign in.\n\n"
+            f"Set password: {reset_url}\n\n"
+            f"Best regards,\nThe {self.from_name} Team"
+        )
+        content_html = (
+            f"<p>Your StatCat account is ready. Use the link below within <strong>{expires_minutes} minutes</strong> to set your password.</p>"
+        )
+        html_body = self._generate_html_body(
+            f"Hello {to_name or 'there'},",
+            content_html,
+            [{"text": "Set Password", "url": reset_url}],
+        )
+        return await self._send_email(to_email, subject, text_body, html_body)
+
     async def send_registration_pending(
         self, to_email: str, to_name: Optional[str] = None
     ) -> bool:
@@ -519,8 +550,8 @@ class EmailService:
             f"Best regards,\nThe {self.from_name} Team"
         )
         content_html = (
-            f"<p>Good news! Your account has been approved by an administrator. "
-            f"You can now sign in and start using the platform.</p>"
+            "<p>Good news! Your account has been approved by an administrator. "
+            "You can now sign in and start using the platform.</p>"
         )
         html_body = self._generate_html_body(
             f"Hello {to_name or 'there'},",
@@ -567,10 +598,10 @@ class EmailService:
             f"Best regards,\nThe {self.from_name} Team"
         )
         content_html = (
-            f"<p>This is a confirmation that your StatCat password was just updated. "
-            f"If you made this change, no action is needed. "
-            f"If you did not authorize this change, "
-            f"please reset your password immediately and contact support.</p>"
+            "<p>This is a confirmation that your StatCat password was just updated. "
+            "If you made this change, no action is needed. "
+            "If you did not authorize this change, "
+            "please reset your password immediately and contact support.</p>"
         )
         html_body = self._generate_html_body(
             f"Hello {to_name or 'there'},",

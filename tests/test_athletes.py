@@ -34,7 +34,7 @@ def _create_user(session: Session, *, email: str, role: UserRole) -> User:
 def test_create_athlete(client: TestClient, admin_user: User):
     """Test creating an athlete."""
     token = get_auth_token(client, admin_user.email, "adminpass123")
-    
+
     response = client.post(
         "/api/v1/athletes/",
         headers={"Authorization": f"Bearer {token}"},
@@ -49,10 +49,17 @@ def test_create_athlete(client: TestClient, admin_user: User):
     )
     assert response.status_code == 201
     data = response.json()
-    assert data["first_name"] == "John"
-    assert data["last_name"] == "Doe"
-    assert data["email"] == "john.doe@example.com"
-    assert "id" in data
+    
+    # Assertions for the nested athlete data
+    athlete_data = data["athlete"]
+    assert athlete_data["first_name"] == "John"
+    assert athlete_data["last_name"] == "Doe"
+    assert athlete_data["email"] == "john.doe@example.com"
+    assert "id" in athlete_data
+    
+    # Assertions for the top-level fields
+    assert data["athlete_user_created"] is True
+    assert data["invite_status"] in ["sent", "failed", "already_exists"]
 
 
 def test_create_athlete_unauthorized(client: TestClient):

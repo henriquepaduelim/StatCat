@@ -328,8 +328,14 @@ export const useDashboardTeamManagement = ({
       closeCoachFormModal();
     },
     onError: (error) => {
-      const message =
+      let message =
         error instanceof Error ? error.message : coachDirectoryLabels.createError;
+      if (axios.isAxiosError(error)) {
+        const detail = error.response?.data?.detail;
+        if (typeof detail === "string") {
+          message = detail;
+        }
+      }
       setCoachFormSuccess(null);
       setCoachFormError(message);
     },
@@ -355,8 +361,14 @@ export const useDashboardTeamManagement = ({
       closeCoachFormModal();
     },
     onError: (error) => {
-      const message =
+      let message =
         error instanceof Error ? error.message : "Unable to update coach.";
+      if (axios.isAxiosError(error)) {
+        const detail = error.response?.data?.detail;
+        if (typeof detail === "string") {
+          message = detail;
+        }
+      }
       setCoachFormError(message);
     },
   });

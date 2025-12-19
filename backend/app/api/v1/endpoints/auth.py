@@ -120,6 +120,11 @@ async def login_access_token(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user"
         )
+    if user.must_change_password:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You must set your password before logging in.",
+        )
     if (
         user.role == UserRole.ATHLETE
         and user.athlete_status != UserAthleteApprovalStatus.APPROVED
@@ -368,23 +373,23 @@ def register_user(
         athlete_id=payload.athlete_id,
         is_active=payload.is_active,
         must_change_password=True,  # force update on first login
+        athlete_status=UserAthleteApprovalStatus.APPROVED
+        if payload.role == UserRole.ATHLETE
+        else payload.athlete_status,
     )
     session.add(user)
     session.commit()
     session.refresh(user)
 
-    # Send temp password email so the user can sign in and change it
+    # Send account invite email so the user can set their password
     if user.email:
+        token = _generate_password_reset_token(user.id)
         anyio.from_thread.run(
-            email_service.send_temp_password,
+            email_service.send_account_invite,
             user.email,
             user.full_name or None,
-            payload.password,
-        )
-        anyio.from_thread.run(
-            email_service.send_account_approved,
-            user.email,
-            user.full_name or None,
+            token,
+            settings.PASSWORD_RESET_TOKEN_EXPIRE_MINUTES,
         )
     return user
 
@@ -474,6 +479,11 @@ async def login_with_profile(
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user"
+        )
+    if user.must_change_password:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You must set your password before logging in.",
         )
     if (
         user.role == UserRole.ATHLETE

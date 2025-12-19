@@ -32,7 +32,7 @@ class Team(SQLModel, table=True):
         sa_column_kwargs={"onupdate": datetime.now(timezone.utc)},
     )
 
-    coaches: Mapped[List["app.models.user.User"]] = Relationship(
+    coaches: Mapped[List["User"]] = Relationship(
         back_populates="teams",
         link_model=CoachTeamLink,
     )

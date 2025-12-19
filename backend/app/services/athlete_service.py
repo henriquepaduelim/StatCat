@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-from typing import Iterable
-from datetime import datetime
-
 from fastapi import HTTPException, status
 from sqlmodel import Session, select
 

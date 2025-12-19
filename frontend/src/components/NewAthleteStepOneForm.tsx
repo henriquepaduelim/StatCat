@@ -1,4 +1,5 @@
 import { useState } from "react";
+import axios from "axios";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { registerAthlete } from "../api/athletes";
@@ -66,6 +67,15 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
       }
     },
   });
+
+  const mutationErrorMessage =
+    mutation.isError && axios.isAxiosError(mutation.error)
+      ? typeof mutation.error.response?.data?.detail === "string"
+        ? mutation.error.response?.data?.detail
+        : t.newAthlete.error
+      : mutation.isError
+        ? t.newAthlete.error
+        : null;
 
   const handleInputChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -317,8 +327,8 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
         </div>
       </section>
 
-      {mutation.isError ? (
-        <p className="text-sm text-red-600">{t.newAthlete.error}</p>
+      {mutationErrorMessage ? (
+        <p className="text-sm text-red-600">{mutationErrorMessage}</p>
       ) : null}
 
       <div className="flex justify-end px-4 sm:px-0">

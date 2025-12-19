@@ -7,7 +7,6 @@ from typing import Optional
 from app.core.config import settings
 from sqlmodel import Session, select
 
-from app.core.config import settings
 from app.core.security import get_password_hash
 from app.models import (
     AssessmentSession,  # noqa: F401

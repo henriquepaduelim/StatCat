@@ -2,6 +2,7 @@ from functools import lru_cache
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine.url import make_url
 
 
 class Settings(BaseSettings):
@@ -25,6 +26,7 @@ class Settings(BaseSettings):
     AWS_S3_BUCKET: str | None = None
     AWS_REGION: str | None = None
     STORAGE_PROVIDER: str = "local"  # options: local, gcs
+    ALLOW_REMOTE_DB_IN_LOCAL: bool = False
     SECRET_KEY: str = "change-me"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
     SECURITY_ALGORITHM: str = "HS256"
@@ -99,12 +101,37 @@ class Settings(BaseSettings):
     def _validate_security_basics(self) -> "Settings":
         """Prevent weak defaults from being used in production-like environments."""
 
+        env_lower = self.ENVIRONMENT.lower()
+        is_local_env = env_lower in {"dev", "development", "local"}
+        is_prod_env = not is_local_env
+
+        is_sqlite_db = self.DATABASE_URL.startswith("sqlite")
+        is_loopback_db = False
+        if not is_sqlite_db:
+            try:
+                parsed = make_url(self.DATABASE_URL)
+                host = (parsed.host or "").lower()
+                is_loopback_db = host in {"127.0.0.1", "localhost"}
+            except Exception:
+                # If parsing fails, fall through to stricter validation below.
+                is_loopback_db = False
+
+        if is_local_env and not (
+            is_sqlite_db or is_loopback_db or self.ALLOW_REMOTE_DB_IN_LOCAL
+        ):
+            raise ValueError(
+                "ENVIRONMENT=local/dev requer DATABASE_URL apontando para SQLite ou loopback. "
+                "Para usar um host remoto em local, defina ALLOW_REMOTE_DB_IN_LOCAL=true explicitamente."
+            )
+
+        if is_prod_env and is_sqlite_db:
+            raise ValueError("DATABASE_URL não pode ser SQLite em ambientes não-locais.")
+
         is_default_secret = self.SECRET_KEY in {
             "change-me",
             "your-secret-key-here",
             "your-secret-key-here-change-in-production",
         }
-        is_prod_env = self.ENVIRONMENT.lower() not in {"dev", "development", "local"}
 
         if is_prod_env and is_default_secret:
             raise ValueError("SECRET_KEY must be set to a strong value in production.")
