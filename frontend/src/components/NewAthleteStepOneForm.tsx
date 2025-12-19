@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { registerAthlete } from "../api/athletes";
 import { useTeams } from "../hooks/useTeams";
 import { useTranslation } from "../i18n/useTranslation";
+import { POSITION_OPTIONS } from "../constants/positions";
 import type {
   Athlete,
   AthleteRegistrationPayload,
@@ -104,7 +105,8 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
     !form.first_name.trim() ||
     !form.last_name.trim() ||
     !form.email.trim() ||
-    !form.phone.trim();
+    !form.phone.trim() ||
+    !form.preferred_position.trim();
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -268,12 +270,20 @@ const NewAthleteStepOneForm = ({ onSuccess }: NewAthleteStepOneFormProps) => {
           </label>
           <label className="text-sm font-medium text-muted">
             {t.newAthlete.preferredPosition}
-            <input
+            <select
+              required
               name="preferred_position"
               value={form.preferred_position}
               onChange={handleInputChange}
               className="mt-1 w-full rounded-md border border-black/10 px-3 py-2"
-            />
+            >
+              <option value="">{t.common.select}</option>
+              {POSITION_OPTIONS.map((position) => (
+                <option key={position} value={position}>
+                  {position}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="text-sm font-medium text-muted">
             {t.newAthlete.desiredNumber}

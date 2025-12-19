@@ -3,6 +3,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "../i18n/useTranslation";
 import type { AthletePayload } from "../types/athlete";
 import { useTeams } from "../hooks/useTeams";
+import { POSITION_OPTIONS } from "../constants/positions";
 
 type FormState = {
   first_name: string;
@@ -28,20 +29,6 @@ type AthleteFormProps = {
 };
 
 const DEFAULT_BIRTH_DATE = "2000-01-01";
-const POSITION_OPTIONS = [
-  "Goalkeeper",
-  "Right Back",
-  "Center Back",
-  "Left Back",
-  "Defensive Midfielder",
-  "Central Midfielder",
-  "Attacking Midfielder",
-  "Right Winger",
-  "Left Winger",
-  "Striker",
-  "Center Forward",
-];
-
 const INITIAL_STATE: FormState = {
   first_name: "",
   last_name: "",
@@ -217,6 +204,7 @@ const AthleteForm = ({
               <label className="block text-sm font-medium text-muted">
                 {t.newAthlete.primaryPosition}*
                 <select
+                  required
                   name="primary_position"
                   value={formState.primary_position}
                   onChange={handleChange}
