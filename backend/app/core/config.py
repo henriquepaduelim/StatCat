@@ -60,6 +60,11 @@ class Settings(BaseSettings):
     SMTP_FROM_NAME: str | None = "StatCat - No Reply"
     RESEND_API_KEY: str | None = None
     RESEND_FROM_EMAIL: str | None = None
+
+    # Supabase Storage
+    SUPABASE_URL: str | None = None
+    SUPABASE_SERVICE_ROLE_KEY: str | None = None
+    SUPABASE_STORAGE_BUCKET: str | None = None
     PASSWORD_RESET_TOKEN_EXPIRE_MINUTES: int = 30
     PASSWORD_RESET_TOKEN_SALT: str = "password-reset"
     ENCRYPTION_KEY_CURRENT: str | None = None
@@ -72,20 +77,36 @@ class Settings(BaseSettings):
         "image/png",
         "image/jpeg",
     }
-    ATHLETE_ALLOWED_PHOTO_EXTENSIONS: set[str] = {".png", ".jpg", ".jpeg"}
+    ATHLETE_ALLOWED_PHOTO_EXTENSIONS: set[str] = {
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".webp",
+        ".heic",
+        ".heif",
+    }
     ATHLETE_ALLOWED_PHOTO_MIME_TYPES: set[str] = {
         "image/png",
         "image/jpeg",
         "image/heic",
         "image/heif",
+        "image/webp",
     }
     USER_PHOTO_MAX_BYTES: int = 5 * 1024 * 1024
-    USER_ALLOWED_PHOTO_EXTENSIONS: set[str] = {".png", ".jpg", ".jpeg"}
+    USER_ALLOWED_PHOTO_EXTENSIONS: set[str] = {
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".webp",
+        ".heic",
+        ".heif",
+    }
     USER_ALLOWED_PHOTO_MIME_TYPES: set[str] = {
         "image/png",
         "image/jpeg",
         "image/heic",
         "image/heif",
+        "image/webp",
     }
 
     # Observability

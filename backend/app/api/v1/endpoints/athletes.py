@@ -3,6 +3,7 @@ import logging
 import secrets
 from pathlib import Path
 import anyio
+import mimetypes
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlmodel import Session, delete, select, func
@@ -34,6 +35,12 @@ from app.services.athlete_service import (
     MANAGE_ATHLETE_ROLES,
     approve_athlete as approve_athlete_service,
     reject_athlete as reject_athlete_service,
+)
+from app.services.storage_service import (
+    StorageServiceError,
+    athlete_document_key,
+    athlete_photo_key,
+    storage_service,
 )
 from app.schemas.athlete import (
     AthleteCreate,
@@ -84,51 +91,48 @@ def _safe_filename(filename: str | None) -> str:
     return stem
 
 
-def _validate_upload(
-    file: UploadFile, allowed_exts: set[str], allowed_mimes: set[str]
-) -> None:
-    suffix = Path(file.filename or "").suffix.lower()
-    if suffix not in allowed_exts or (
-        file.content_type and file.content_type.lower() not in allowed_mimes
-    ):
+async def _upload_document_to_storage(
+    athlete_id: int, label: str, file: UploadFile, max_size: int
+) -> str:
+    """Validate and upload an athlete document to Supabase Storage."""
+    allowed_exts = settings.ATHLETE_ALLOWED_DOCUMENT_EXTENSIONS
+    allowed_mimes = settings.ATHLETE_ALLOWED_DOCUMENT_MIME_TYPES
+    ext = Path(file.filename or "").suffix.lower()
+    content_type = (file.content_type or "").lower()
+    if ext not in allowed_exts or (content_type and content_type not in allowed_mimes):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unsupported file type.",
         )
-
-
-def _store_file(
-    athlete_id: int, file: UploadFile, base_dir: Path, max_size: int
-) -> str:
-    if base_dir is documents_root:
-        _validate_upload(
-            file,
-            settings.ATHLETE_ALLOWED_DOCUMENT_EXTENSIONS,
-            settings.ATHLETE_ALLOWED_DOCUMENT_MIME_TYPES,
-        )
-    else:
-        _validate_upload(
-            file,
-            settings.ATHLETE_ALLOWED_PHOTO_EXTENSIONS,
-            settings.ATHLETE_ALLOWED_PHOTO_MIME_TYPES,
-        )
-    file.file.seek(0)
-    data = file.file.read()
+    data = await file.read()
     if len(data) > max_size:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail="Uploaded file exceeds allowed size",
         )
-
-    destination_dir = base_dir / str(athlete_id)
-    destination_dir.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
-    safe_name = _safe_filename(file.filename)
-    destination = destination_dir / f"{timestamp}_{safe_name}"
-    destination.write_bytes(data)
-
-    relative_path = destination.relative_to(media_root)
-    return f"/media/{relative_path.as_posix()}"
+    if not storage_service.is_configured:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="File storage not configured",
+        )
+    resolved_content_type = content_type or (
+        mimetypes.guess_type(f"file{ext}")[0] or "application/octet-stream"
+    )
+    key = athlete_document_key(athlete_id, label, ext)
+    try:
+        return await storage_service.upload_bytes(key, data, resolved_content_type)
+    except StorageServiceError as exc:
+        logger.error(
+            "Failed to upload athlete document to storage (athlete=%s, key=%s): %s",
+            athlete_id,
+            key,
+            exc,
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to store file",
+        )
 
 
 router = APIRouter()
@@ -948,7 +952,7 @@ async def upload_photo(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found"
         )
-    _ensure_can_edit(current_user, athlete)
+    _ensure_can_edit(current_user, athlete, session)
 
     content_type = (file.content_type or "").lower()
     allowed_types = {
@@ -956,6 +960,7 @@ async def upload_photo(
         "image/png": ".png",
         "image/heic": ".heic",
         "image/heif": ".heif",
+        "image/webp": ".webp",
     }
     if (
         content_type not in allowed_types
@@ -967,20 +972,36 @@ async def upload_photo(
 
     extension = allowed_types[content_type]
 
-    athlete_dir = athlete_media_root / str(athlete_id)
-    athlete_dir.mkdir(parents=True, exist_ok=True)
-    destination = athlete_dir / f"profile{extension}"
-
     data = await file.read()
     if len(data) > settings.ATHLETE_PHOTO_MAX_BYTES:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail="Image exceeds 5MB limit",
         )
-    destination.write_bytes(data)
 
-    relative_path = destination.relative_to(media_root)
-    athlete.photo_url = f"/media/{relative_path.as_posix()}"
+    if not storage_service.is_configured:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="File storage not configured",
+        )
+
+    key = athlete_photo_key(athlete_id, extension)
+    try:
+        photo_url = await storage_service.upload_bytes(key, data, content_type)
+    except StorageServiceError as exc:
+        logger.error(
+            "Failed to upload athlete photo to storage (athlete=%s, key=%s): %s",
+            athlete_id,
+            key,
+            exc,
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to store file",
+        )
+
+    athlete.photo_url = photo_url
     session.add(athlete)
     session.commit()
     session.refresh(athlete)
@@ -992,7 +1013,7 @@ async def upload_photo(
     status_code=status.HTTP_201_CREATED,
     response_model=AthleteDocumentRead,
 )
-def upload_document(
+async def upload_document(
     athlete_id: int,
     label: str = Form(...),
     file: UploadFile = File(...),
@@ -1004,13 +1025,10 @@ def upload_document(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Athlete not found"
         )
-    _ensure_can_edit(current_user, athlete)
+    _ensure_can_edit(current_user, athlete, session)
 
-    file_url = _store_file(
-        athlete_id,
-        file,
-        documents_root,
-        settings.ATHLETE_DOCUMENT_MAX_BYTES,
+    file_url = await _upload_document_to_storage(
+        athlete_id, label, file, settings.ATHLETE_DOCUMENT_MAX_BYTES
     )
 
     document = AthleteDocument(athlete_id=athlete_id, label=label, file_url=file_url)

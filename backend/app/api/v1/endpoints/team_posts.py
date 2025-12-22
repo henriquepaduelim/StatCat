@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import logging
 from pathlib import Path
 from typing import Iterable
 import io
@@ -19,8 +20,14 @@ from app.models.team import CoachTeamLink, Team
 from app.models.team_post import TeamPost
 from app.models.user import User, UserRole
 from app.schemas.team_post import TeamPostRead
+from app.services.storage_service import (
+    StorageServiceError,
+    storage_service,
+    team_post_media_key,
+)
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 media_root = Path(settings.MEDIA_ROOT)
 team_posts_root = media_root / "team_posts"
@@ -41,7 +48,7 @@ def _safe_filename(filename: str | None) -> str:
     return stem or "upload"
 
 
-def _store_media(team_id: int, file: UploadFile) -> str:
+async def _store_media(team_id: int, file: UploadFile) -> str:
     suffix = Path(file.filename or "").suffix.lower()
     if suffix not in ALLOWED_MEDIA_EXTENSIONS or (
         file.content_type and file.content_type.lower() not in ALLOWED_MEDIA_MIME_TYPES
@@ -57,13 +64,27 @@ def _store_media(team_id: int, file: UploadFile) -> str:
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail="Uploaded file exceeds allowed size",
         )
-    destination_dir = team_posts_root / str(team_id)
-    destination_dir.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
-    destination = destination_dir / f"{timestamp}_{_safe_filename(file.filename)}"
-    destination.write_bytes(data)
-    relative_path = destination.relative_to(media_root)
-    return f"/media/{relative_path.as_posix()}"
+    if not storage_service.is_configured:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="File storage not configured",
+        )
+    content_type = (file.content_type or "").lower() or "application/octet-stream"
+    key = team_post_media_key(team_id, suffix)
+    try:
+        return await storage_service.upload_bytes(key, data, content_type)
+    except StorageServiceError as exc:
+        logger.error(
+            "Failed to upload team post media (team=%s, key=%s): %s",
+            team_id,
+            key,
+            exc,
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to store file",
+        )
 
 
 def _get_team(session: Session, team_id: int) -> Team:
@@ -166,7 +187,7 @@ def list_team_posts(
     response_model=TeamPostRead,
     status_code=status.HTTP_201_CREATED,
 )
-def create_team_post(
+async def create_team_post(
     team_id: int,
     session: SessionDep,
     current_user: User = Depends(get_current_active_user),
@@ -183,7 +204,7 @@ def create_team_post(
 
     media_url = None
     if media is not None:
-        media_url = _store_media(team_id, media)
+        media_url = await _store_media(team_id, media)
 
     post = TeamPost(
         team_id=team_id,

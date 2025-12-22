@@ -37,6 +37,11 @@ from app.schemas.user import (
     PasswordCodeConfirm,
 )
 from app.services.email_service import EmailService
+from app.services.storage_service import (
+    StorageServiceError,
+    storage_service,
+    user_photo_key,
+)
 
 router = APIRouter()
 email_service = EmailService()
@@ -292,14 +297,29 @@ async def upload_user_photo(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail="Image exceeds size limit",
         )
+    if not storage_service.is_configured:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="File storage not configured",
+        )
+    content_type = (file.content_type or "").lower() or "application/octet-stream"
+    key = user_photo_key(current_user.id, ext)
+    try:
+        photo_url = await storage_service.upload_bytes(key, data, content_type)
+    except StorageServiceError as exc:
+        logger.error(
+            "Failed to upload user photo to storage (user=%s, key=%s): %s",
+            current_user.id,
+            key,
+            exc,
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to store file",
+        )
 
-    user_dir = user_media_root / str(current_user.id)
-    user_dir.mkdir(parents=True, exist_ok=True)
-    destination = user_dir / f"profile{ext}"
-    destination.write_bytes(data)
-
-    relative_path = destination.relative_to(Path(settings.MEDIA_ROOT))
-    current_user.photo_url = f"/media/{relative_path.as_posix()}"
+    current_user.photo_url = photo_url
     session.add(current_user)
     session.commit()
     session.refresh(current_user)
