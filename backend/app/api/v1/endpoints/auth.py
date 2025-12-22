@@ -320,6 +320,14 @@ async def upload_user_photo(
         )
 
     current_user.photo_url = photo_url
+
+    # If this user is an athlete, mirror the photo_url to the athlete record
+    if current_user.athlete_id:
+        athlete = session.get(Athlete, current_user.athlete_id)
+        if athlete:
+            athlete.photo_url = photo_url
+            session.add(athlete)
+
     session.add(current_user)
     session.commit()
     session.refresh(current_user)
