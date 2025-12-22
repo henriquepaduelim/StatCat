@@ -12,9 +12,17 @@ const resolveMediaUrl = (url?: string | null) => {
   return `${base.replace(/\/$/, "")}${url.startsWith("/") ? url : `/${url}`}`;
 };
 
+const resolvePhotoUrl = (url?: string | null) => {
+  if (!url) return null;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const base = import.meta.env.VITE_API_BASE_URL ?? "";
+  return `${base.replace(/\/$/, "")}${url.startsWith("/") ? url : `/${url}`}`;
+};
+
 const TeamPostCard = ({ post, currentUserId }: Props) => {
   const isMine = currentUserId === post.author_id;
   const mediaSrc = resolveMediaUrl(post.media_url);
+  const photoSrc = resolvePhotoUrl(post.author_photo_url);
   const initials = (post.author_name || "?")
     .split(" ")
     .map((part) => part[0])
@@ -28,9 +36,15 @@ const TeamPostCard = ({ post, currentUserId }: Props) => {
       className={`flex items-start gap-3 ${isMine ? "flex-row-reverse text-right" : ""}`}
       aria-label={`Post by ${post.author_name}`}
     >
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-action-primary/10 text-sm font-semibold text-action-primary">
-        {initials}
-      </div>
+      {photoSrc ? (
+        <div className="h-10 w-10 overflow-hidden rounded-full border border-white/10 bg-neutral-800">
+          <img src={photoSrc} alt={post.author_name} className="h-full w-full object-cover" />
+        </div>
+      ) : (
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-action-primary/10 text-sm font-semibold text-action-primary">
+          {initials}
+        </div>
+      )}
       <div
         className={`max-w-[75%] space-y-2 rounded-2xl border border-black/5 p-3 shadow-sm ${
           isMine

@@ -12,6 +12,7 @@ import { completeAthleteRegistration, updateAthlete, uploadAthletePhoto } from "
 import { updateSelf, uploadUserPhoto } from "../api/auth";
 import { exportTeamPostsArchive } from "../api/teamPosts";
 import Spinner from "../components/Spinner";
+import { getMediaUrl } from "../utils/media";
 
 const registrationCategories: Array<{ value: RegistrationCategory; label: string }> = [
   { value: "youth", label: "Youth" },
@@ -225,7 +226,7 @@ const Settings = () => {
 
   useEffect(() => {
     if (!avatarFile) {
-      setAvatarPreview(null);
+      setAvatarPreview(getMediaUrl(user?.photo_url) ?? null);
       return undefined;
     }
 
@@ -233,7 +234,7 @@ const Settings = () => {
     setAvatarPreview(previewUrl);
 
     return () => URL.revokeObjectURL(previewUrl);
-  }, [avatarFile]);
+  }, [avatarFile, user?.photo_url]);
 
   useEffect(() => {
     if (!isAdminOrStaff) return;
