@@ -139,6 +139,7 @@ def _build_post_response(
         author = author_map.get(post.author_id)
         author_name = author.full_name if author else "Unknown user"
         author_role = author.role.value if author else "unknown"
+        author_photo_url = author.photo_url if author else None
         response.append(
             TeamPostRead(
                 id=post.id,
@@ -146,6 +147,7 @@ def _build_post_response(
                 author_id=post.author_id,
                 author_name=author_name,
                 author_role=author_role,
+                author_photo_url=author_photo_url,
                 content=post.content,
                 media_url=post.media_url,
                 created_at=post.created_at,
