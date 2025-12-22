@@ -331,11 +331,30 @@ const Settings = () => {
     }
     try {
       setIsUploadingPhoto(true);
+      let newPhotoUrl: string | null = null;
+
       if (athleteId) {
-        await uploadAthletePhoto(athleteId, avatarFile);
+        const updatedAthlete = await uploadAthletePhoto(athleteId, avatarFile);
+        newPhotoUrl = updatedAthlete.photo_url ?? null;
+        if (user && token) {
+          setCredentials({
+            user: { ...user, photo_url: newPhotoUrl ?? user.photo_url },
+            token,
+          });
+        }
       } else {
-        await uploadUserPhoto(avatarFile);
+        const updatedUser = await uploadUserPhoto(avatarFile);
+        newPhotoUrl = updatedUser.photo_url ?? null;
+        if (token) {
+          setCredentials({ user: updatedUser, token });
+        }
       }
+
+      // Atualiza o preview imediatamente com a URL final (resolve relativa/absoluta)
+      if (newPhotoUrl) {
+        setAvatarPreview(getMediaUrl(newPhotoUrl));
+      }
+
       setFeedback("Photo updated! Once it syncs, it will appear on your profile.");
     } catch (error) {
       console.error("Photo upload failed", error);
