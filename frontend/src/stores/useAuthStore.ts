@@ -7,8 +7,8 @@ export type AuthUser = {
   id: number;
   email: string;
   full_name: string;
-  phone?: string | null;
   photo_url?: string | null;
+  phone?: string | null;
   role: "admin" | "staff" | "coach" | "athlete" | string;
   athlete_id?: number | null;
   team_id?: number | null;

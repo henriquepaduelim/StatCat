@@ -78,7 +78,6 @@ class AthleteSignupResponse(SQLModel):
 class UserRead(UserBase):
     id: int
     team_id: int | None = None
-    photo_url: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

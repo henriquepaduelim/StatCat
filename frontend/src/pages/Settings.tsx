@@ -331,21 +331,10 @@ const Settings = () => {
     }
     try {
       setIsUploadingPhoto(true);
-      let updatedUser = user;
       if (athleteId) {
-        const updatedAthlete = await uploadAthletePhoto(athleteId, avatarFile);
-        if (updatedUser && token) {
-          setCredentials({
-            user: { ...updatedUser, photo_url: updatedAthlete.photo_url ?? updatedUser.photo_url },
-            token,
-          });
-        }
+        await uploadAthletePhoto(athleteId, avatarFile);
       } else {
-        updatedUser = await uploadUserPhoto(avatarFile);
-      }
-      // Atualiza auth store com a nova foto quando o endpoint retorna user (usuários sem athlete_id).
-      if (updatedUser && token) {
-        setCredentials({ user: updatedUser, token });
+        await uploadUserPhoto(avatarFile);
       }
       setFeedback("Photo updated! Once it syncs, it will appear on your profile.");
     } catch (error) {

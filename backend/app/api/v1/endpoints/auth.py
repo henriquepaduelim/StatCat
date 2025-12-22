@@ -230,7 +230,6 @@ def read_users_me(
         "team_id": team_id,
         "is_active": current_user.is_active,
         "rejection_reason": current_user.rejection_reason,
-        "photo_url": current_user.photo_url,
     }
 
     # Ensure athlete_status is properly serialized
