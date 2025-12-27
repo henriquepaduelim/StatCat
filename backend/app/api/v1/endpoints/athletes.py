@@ -1002,6 +1002,11 @@ async def upload_photo(
         )
 
     athlete.photo_url = photo_url
+    # Keep linked user avatar in sync for athlete accounts
+    linked_user = session.exec(select(User).where(User.athlete_id == athlete_id)).first()
+    if linked_user:
+        linked_user.photo_url = photo_url
+        session.add(linked_user)
     session.add(athlete)
     session.commit()
     session.refresh(athlete)

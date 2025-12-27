@@ -780,6 +780,12 @@ class EmailService:
                             else []
                         ),
                     ],
+                    "tracking_settings": {
+                        "click_tracking": {
+                            "enable": False,
+                            "enable_text": False,
+                        }
+                    },
                 }
                 if attachments:
                     payload["attachments"] = [
