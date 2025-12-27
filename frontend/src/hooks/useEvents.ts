@@ -13,6 +13,7 @@ import {
 import * as eventsApi from '../api/events.api';
 import type {
   Event,
+  EventParticipant,
   EventCreatePayload,
   EventUpdatePayload,
   EventConfirmationPayload,
@@ -134,7 +135,7 @@ export const useDeleteEvent = (): UseMutationResult<void, Error, number> => {
  * Hook to confirm/decline event attendance
  */
 export const useConfirmEventAttendance = (): UseMutationResult<
-  Event,
+  EventParticipant,
   Error,
   { eventId: number; payload: EventConfirmationPayload }
 > => {

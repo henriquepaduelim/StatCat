@@ -6,18 +6,45 @@
 import api from './client';
 import type {
   Event,
+  EventParticipant,
   EventCreatePayload,
   EventUpdatePayload,
   EventConfirmationPayload,
   EventFilters,
 } from '../types/event';
 
+type EventStatus = Event['status'];
+type ParticipantStatus = EventParticipant['status'];
+
+const normalizeEventStatus = (status: string | null | undefined): EventStatus => {
+  if (!status) return 'scheduled';
+  return status.toLowerCase() as EventStatus;
+};
+
+const normalizeParticipantStatus = (
+  status: string | null | undefined
+): ParticipantStatus => {
+  if (!status) return 'invited';
+  return status.toLowerCase() as ParticipantStatus;
+};
+
+const normalizeEvent = (event: Event): Event => ({
+  ...event,
+  status: normalizeEventStatus(event.status),
+  participants: event.participants?.map((participant) => ({
+    ...participant,
+    status: normalizeParticipantStatus(participant.status),
+  })) ?? [],
+});
+
+const normalizeEvents = (events: Event[]): Event[] => events.map(normalizeEvent);
+
 /**
  * Create a new event
  */
 export const createEvent = async (payload: EventCreatePayload): Promise<Event> => {
   const response = await api.post<Event>('/events/', payload);
-  return response.data;
+  return normalizeEvent(response.data);
 };
 
 /**
@@ -42,7 +69,7 @@ export const listEvents = async (filters?: EventFilters): Promise<Event[]> => {
   const url = queryString ? `/events/?${queryString}` : '/events/';
   
   const response = await api.get<Event[]>(url);
-  return response.data;
+  return normalizeEvents(response.data);
 };
 
 /**
@@ -50,7 +77,7 @@ export const listEvents = async (filters?: EventFilters): Promise<Event[]> => {
  */
 export const listMyEvents = async (): Promise<Event[]> => {
   const response = await api.get<Event[]>('/events/my-events');
-  return response.data;
+  return normalizeEvents(response.data);
 };
 
 /**
@@ -58,7 +85,7 @@ export const listMyEvents = async (): Promise<Event[]> => {
  */
 export const getEvent = async (eventId: number): Promise<Event> => {
   const response = await api.get<Event>(`/events/${eventId}`);
-  return response.data;
+  return normalizeEvent(response.data);
 };
 
 /**
@@ -69,7 +96,7 @@ export const updateEvent = async (
   payload: EventUpdatePayload
 ): Promise<Event> => {
   const response = await api.put<Event>(`/events/${eventId}`, payload);
-  return response.data;
+  return normalizeEvent(response.data);
 };
 
 /**
@@ -85,9 +112,12 @@ export const deleteEvent = async (eventId: number): Promise<void> => {
 export const confirmEventAttendance = async (
   eventId: number,
   payload: EventConfirmationPayload
-): Promise<Event> => {
-  const response = await api.post<Event>(`/events/${eventId}/confirm`, payload);
-  return response.data;
+): Promise<EventParticipant> => {
+  const response = await api.post<EventParticipant>(`/events/${eventId}/confirm`, payload);
+  return {
+    ...response.data,
+    status: normalizeParticipantStatus(response.data.status),
+  };
 };
 
 /**
@@ -102,7 +132,7 @@ export const addEventParticipants = async (
     user_ids: userIds,
     send_notification: sendNotification,
   });
-  return response.data;
+  return normalizeEvent(response.data);
 };
 
 /**
