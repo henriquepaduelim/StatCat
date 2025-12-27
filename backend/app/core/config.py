@@ -60,6 +60,9 @@ class Settings(BaseSettings):
     SMTP_FROM_NAME: str | None = "StatCat - No Reply"
     RESEND_API_KEY: str | None = None
     RESEND_FROM_EMAIL: str | None = None
+    SENDGRID_API_KEY: str | None = None
+    SENDGRID_FROM_EMAIL: str | None = None
+    SENDGRID_FROM_NAME: str | None = "StatCat - No Reply"
 
     # Supabase Storage
     SUPABASE_URL: str | None = None

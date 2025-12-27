@@ -34,6 +34,11 @@ class EmailService:
         self.from_email = settings.SMTP_FROM_EMAIL or self.smtp_user
         self.from_name = settings.SMTP_FROM_NAME or "StatCat"
 
+        self.sendgrid_api_key = settings.SENDGRID_API_KEY or None
+        self.sendgrid_from_email = settings.SENDGRID_FROM_EMAIL or self.from_email
+        self.sendgrid_from_name = settings.SENDGRID_FROM_NAME or self.from_name
+        self.use_sendgrid = bool(self.sendgrid_api_key and self.sendgrid_from_email)
+
         self.resend_api_key = settings.RESEND_API_KEY or None
         self.resend_from_email = settings.RESEND_FROM_EMAIL or self.from_email
         self.use_resend = bool(self.resend_api_key and self.resend_from_email)
@@ -44,12 +49,12 @@ class EmailService:
         )
         self.api_url = f"{self.frontend_url}/api/v1"
 
-        self.is_configured = self.use_resend or bool(
+        self.is_configured = self.use_sendgrid or self.use_resend or bool(
             self.smtp_user and self.smtp_password
         )
         if not self.is_configured:
             logger.warning(
-                "Email service not configured. Set RESEND_API_KEY or SMTP_USER/SMTP_PASSWORD in .env"
+                "Email service not configured. Set SENDGRID_API_KEY, RESEND_API_KEY, or SMTP_USER/SMTP_PASSWORD in .env"
             )
         if not Calendar:
             logger.warning(
@@ -61,7 +66,7 @@ class EmailService:
         if self.is_configured:
             return True
         logger.error(
-            "Email service not configured; cannot %s. Set RESEND_API_KEY or SMTP_USER/SMTP_PASSWORD.",
+            "Email service not configured; cannot %s. Set SENDGRID_API_KEY, RESEND_API_KEY, or SMTP_USER/SMTP_PASSWORD.",
             action,
         )
         return False
@@ -757,6 +762,58 @@ class EmailService:
     ) -> bool:
         if not self._require_configured("send email"):
             return False
+        # Prefer SendGrid if configured
+        if self.use_sendgrid:
+            try:
+                payload: Dict[str, Any] = {
+                    "from": {
+                        "email": self.sendgrid_from_email,
+                        "name": self.sendgrid_from_name,
+                    },
+                    "personalizations": [{"to": [{"email": to_email}]}],
+                    "subject": subject,
+                    "content": [
+                        {"type": "text/plain", "value": text_body},
+                        *(
+                            [{"type": "text/html", "value": html_body}]
+                            if html_body
+                            else []
+                        ),
+                    ],
+                }
+                if attachments:
+                    payload["attachments"] = [
+                        {
+                            "filename": attachment.get("filename", "attachment"),
+                            "content": attachment.get("content", ""),
+                            "type": attachment.get(
+                                "mime_type", "application/octet-stream"
+                            ),
+                            "disposition": "attachment",
+                        }
+                        for attachment in attachments
+                    ]
+
+                async with httpx.AsyncClient(timeout=10) as client:
+                    resp = await client.post(
+                        "https://api.sendgrid.com/v3/mail/send",
+                        headers={
+                            "Authorization": f"Bearer {self.sendgrid_api_key}",
+                            "Content-Type": "application/json",
+                        },
+                        json=payload,
+                    )
+                if resp.status_code == 202:
+                    logger.info("Email sent successfully via SendGrid to %s", to_email)
+                    return True
+                logger.error(
+                    "Failed to send email via SendGrid to %s: %s %s",
+                    to_email,
+                    resp.status_code,
+                    resp.text,
+                )
+            except Exception as exc:
+                logger.error("Failed to send email via SendGrid to %s: %s", to_email, exc)
         # If Resend is configured, try to use it first
         if self.use_resend:
             try:
