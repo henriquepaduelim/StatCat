@@ -67,15 +67,17 @@ jobs:
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
+        working-directory: frontend
         with:
           name: playwright-report
-          path: frontend/playwright-report
+          path: playwright-report
 
       - name: Upload test results (traces, screenshots, videos)
         if: always()
         uses: actions/upload-artifact@v4
+        working-directory: frontend
         with:
           name: playwright-results
           path: |
-            frontend/test-results
-            frontend/test-results/html-report
+            test-results
+            test-results/html-report
