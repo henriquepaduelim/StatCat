@@ -192,10 +192,8 @@ async def login_access_token(
     if user.must_change_password:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail={
-                "message": "You must set your password before logging in.",
-                "requires_password_setup": True,
-            },
+            detail="You must set your password before logging in.",
+            headers={"X-Requires-Password-Setup": "true"},
         )
     if (
         user.role == UserRole.ATHLETE
