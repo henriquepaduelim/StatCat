@@ -192,7 +192,10 @@ async def login_access_token(
     if user.must_change_password:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="You must set your password before logging in.",
+            detail={
+                "message": "You must set your password before logging in.",
+                "requires_password_setup": True,
+            },
         )
     if (
         user.role == UserRole.ATHLETE
@@ -458,7 +461,7 @@ def register_user(
 
     # Coaches: use provided temp password and enforce must_change_password
     if payload.role == UserRole.COACH:
-        hashed_password = get_password_hash(payload.password)
+        hashed_password = get_password_hash(secrets.token_urlsafe(16))
         user = User(
             email=payload.email,
             hashed_password=hashed_password,
@@ -468,7 +471,7 @@ def register_user(
             athlete_id=payload.athlete_id,
             is_active=payload.is_active,
             must_change_password=True,
-            athlete_status=payload.athlete_status,
+            athlete_status=None,
         )
     else:
         # Admin-created non-coach users get a password setup code
@@ -484,29 +487,21 @@ def register_user(
             must_change_password=True,
             athlete_status=UserAthleteApprovalStatus.APPROVED
             if payload.role == UserRole.ATHLETE
-            else payload.athlete_status,
+            else None,
         )
     session.add(user)
     session.commit()
     session.refresh(user)
 
     if user.email:
-        if payload.role == UserRole.COACH:
-            anyio.from_thread.run(
-                email_service.send_temp_password,
-                user.email,
-                user.full_name or None,
-                payload.password,
-            )
-        else:
-            code = _generate_password_code(session, user)
-            anyio.from_thread.run(
-                email_service.send_password_code,
-                user.email,
-                user.full_name or None,
-                code,
-                PASSWORD_CODE_EXPIRY_MINUTES,
-            )
+        code = _generate_password_code(session, user)
+        anyio.from_thread.run(
+            email_service.send_password_code,
+            user.email,
+            user.full_name or None,
+            code,
+            PASSWORD_CODE_EXPIRY_MINUTES,
+        )
     return user
 
 
