@@ -1,26 +1,47 @@
-/// <reference types="node" />
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
+import path from "node:path";
+import fs from "node:fs";
+import { fileURLToPath } from "node:url";
 
-const baseURL = process.env.APP_URL || 'http://localhost:5173';
+// Load only the E2E env file (local secrets) if present
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const envPath = path.resolve(__dirname, "e2e/.env.local");
+if (fs.existsSync(envPath)) {
+  const content = fs.readFileSync(envPath, "utf-8");
+  for (const raw of content.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line.startsWith("#")) continue;
+    const [key, ...rest] = line.split("=");
+    if (!key) continue;
+    const value = rest.join("=");
+    if (process.env[key] === undefined) {
+      process.env[key] = value;
+    }
+  }
+}
+
+const baseURL = process.env.E2E_BASE_URL || "http://localhost:5173";
 
 export default defineConfig({
-  testDir: './e2e',
-  fullyParallel: true,
-  timeout: 30_000,
+  testDir: "./e2e",
+  timeout: 60_000,
+  expect: { timeout: 10_000 },
+  fullyParallel: false,
+  retries: process.env.CI ? 1 : 0,
+  reporter: [["list"], ...(process.env.CI ? [["html", { outputFolder: "test-results/html-report" }]] : [])],
   use: {
     baseURL,
-    trace: 'retain-on-failure',
-    video: 'retain-on-failure',
-    screenshot: 'only-on-failure',
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
+    actionTimeout: 15_000,
+    navigationTimeout: 20_000,
   },
-  // Se já houver um dev server rodando, exporte PW_WEB_SERVER=skip ao rodar o teste.
-  webServer:
-    process.env.PW_WEB_SERVER === 'skip'
-      ? undefined
-      : {
-          command: 'npm run dev -- --host --port 5173',
-          url: baseURL,
-          reuseExistingServer: true,
-          timeout: 60_000,
-        },
+  projects: [
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
+    },
+  ],
 });
