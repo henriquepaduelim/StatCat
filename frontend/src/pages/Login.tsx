@@ -274,7 +274,19 @@ const Login = () => {
         }
       } else {
         if (status === 403) {
-          setError("Your account is pending approval. Please wait for an admin to approve your access.");
+          const detailObj =
+            typeof detail === "object" && detail !== null
+              ? (detail as Record<string, unknown>)
+              : undefined;
+          const requiresPasswordSetup =
+            detailObj && typeof detailObj["requires_password_setup"] === "boolean"
+              ? (detailObj["requires_password_setup"] as boolean)
+              : false;
+          if (requiresPasswordSetup) {
+            setError("Set your password using the invite/reset link before signing in.");
+          } else {
+            setError("Your account is pending approval. Please wait for an admin to approve your access.");
+          }
         } else if (status === 401) {
           setError("Invalid email or password. Please check your credentials and try again.");
         } else {
