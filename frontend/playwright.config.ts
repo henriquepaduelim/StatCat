@@ -25,11 +25,13 @@ const baseURL = process.env.E2E_BASE_URL || "http://localhost:5173";
 
 export default defineConfig({
   testDir: "./e2e",
+  /* Folder for test artifacts such as screenshots, videos, traces, etc. */
+  outputDir: "test-results",
   timeout: 60_000,
   expect: { timeout: 10_000 },
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,
-  reporter: [["list"], ...(process.env.CI ? [["html", { outputFolder: "test-results/html-report" }]] : [])],
+  reporter: [["list"], ...(process.env.CI ? [["html", { outputFolder: "playwright-report" }]] : [])],
   use: {
     baseURL,
     trace: "on-first-retry",

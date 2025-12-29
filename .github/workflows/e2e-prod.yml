@@ -64,18 +64,11 @@ jobs:
           E2E_EVENT_NAME: ${{ secrets.E2E_EVENT_NAME }}
         run: npm run e2e
 
-      - name: Upload Playwright report
+      - name: Upload E2E test artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
-          path: frontend/playwright-report
-
-      - name: Upload test results (traces, screenshots, videos)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-results
+          name: e2e-artifacts
           path: |
-            frontend/test-results
-            frontend/test-results/html-report
+            frontend/playwright-report/
+            frontend/test-results/
