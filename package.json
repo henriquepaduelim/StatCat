@@ -2,5 +2,8 @@
   "dependencies": {
     "lucide-react": "^0.553.0",
     "ruff": "^1.5.4"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3"
   }
 }

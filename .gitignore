@@ -17,6 +17,9 @@ venv/
 frontend/node_modules/
 frontend/dist/
 frontend/dev-dist/
+frontend/test-results/
+frontend/playwright-report/
+frontend/.playwright-browsers/
 node_modules/
 packages/
 frontend/public/branding/*
@@ -25,6 +28,7 @@ frontend/.env.local
 frontend/.env.development.local
 frontend/.env.test.local
 backend/.env.local
+frontend/e2e/.env.local
 
 # Database files
 *.db
@@ -64,4 +68,3 @@ backend/backend_error.log
 backend/backend_startup.log
 frontend/.env.local
 frontend/src/theme/activeThemeDark.generated.ts
-
