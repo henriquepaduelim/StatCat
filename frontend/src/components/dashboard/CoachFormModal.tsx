@@ -19,7 +19,6 @@ type CoachFormModalProps = {
   onClose: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onFieldChange: <T extends keyof CoachFormState>(field: T, value: CoachFormState[T]) => void;
-  onGeneratePassword: () => void;
 };
 
 const CoachFormModal = ({
@@ -34,7 +33,6 @@ const CoachFormModal = ({
   onClose,
   onSubmit,
   onFieldChange,
-  onGeneratePassword,
 }: CoachFormModalProps) => {
   if (!isOpen) {
     return null;
@@ -123,36 +121,9 @@ const CoachFormModal = ({
           </label>
 
           <div className="space-y-2">
-            <label className="text-xs font-medium text-muted">
-              Password {!editingCoach && "*"}
-              <div className="mt-1 flex gap-2">
-                <input
-                  type="text"
-                  value={coachForm.password}
-                  onChange={(event) => onFieldChange("password", event.target.value)}
-                  className="flex-1 rounded-md border border-black/10 bg-container px-3 py-2 text-sm shadow-sm focus:border-action-primary focus:outline-none focus:ring-1 focus:ring-action-primary"
-                  placeholder={
-                    editingCoach ? "Leave blank to keep current password" : "Enter password"
-                  }
-                  required={!editingCoach}
-                />
-                <button
-                  type="button"
-                  onClick={onGeneratePassword}
-                  className="rounded-md border border-action-primary/40 bg-action-primary px-3 py-2 text-xs font-semibold text-action-primary-foreground shadow-sm transition hover:bg-action-primary/90"
-                >
-                  Generate
-                </button>
-              </div>
-            </label>
-            {coachForm.password && (
-              <p className="text-xs text-muted">
-                Save this password securely.{" "}
-                {editingCoach
-                  ? "This will update the coach's password."
-                  : "The coach will use this to log in."}
-              </p>
-            )}
+            <div className="rounded-md border border-black/10 bg-container px-3 py-2 text-xs text-muted">
+              We will generate a temporary password and email the coach. They can change it after logging in.
+            </div>
           </div>
 
           {editingCoach && coachTeams.length > 0 && (

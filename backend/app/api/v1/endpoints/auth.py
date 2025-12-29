@@ -459,9 +459,10 @@ def register_user(
         else:
             full_name = f"Coach {payload.full_name}"
 
-    # Coaches: use provided temp password and enforce must_change_password
-    if payload.role == UserRole.COACH:
-        hashed_password = get_password_hash(secrets.token_urlsafe(16))
+    # Coaches/Staff: generate a temp password, allow login, and notify via email
+    if payload.role in {UserRole.COACH, UserRole.STAFF}:
+        temp_password = secrets.token_urlsafe(12)
+        hashed_password = get_password_hash(temp_password)
         user = User(
             email=payload.email,
             hashed_password=hashed_password,
@@ -470,7 +471,7 @@ def register_user(
             role=payload.role,
             athlete_id=payload.athlete_id,
             is_active=payload.is_active,
-            must_change_password=True,
+            must_change_password=False,
             athlete_status=None,
         )
     else:
@@ -494,14 +495,22 @@ def register_user(
     session.refresh(user)
 
     if user.email:
-        code = _generate_password_code(session, user)
-        anyio.from_thread.run(
-            email_service.send_password_code,
-            user.email,
-            user.full_name or None,
-            code,
-            PASSWORD_CODE_EXPIRY_MINUTES,
-        )
+        if payload.role in {UserRole.COACH, UserRole.STAFF}:
+            anyio.from_thread.run(
+                email_service.send_temp_password,
+                user.email,
+                user.full_name or None,
+                temp_password,
+            )
+        else:
+            code = _generate_password_code(session, user)
+            anyio.from_thread.run(
+                email_service.send_password_code,
+                user.email,
+                user.full_name or None,
+                code,
+                PASSWORD_CODE_EXPIRY_MINUTES,
+            )
     return user
 
 

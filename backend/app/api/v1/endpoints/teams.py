@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Iterable, Sequence
 
 import anyio
+import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import delete, func, select
@@ -347,14 +348,15 @@ def _create_coach_user(session: Session, payload: TeamCoachCreate) -> User:
             status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
         )
 
+    temp_password = payload.password or secrets.token_urlsafe(12)
     user = User(
         email=payload.email,
         full_name=payload.full_name,
         phone=payload.phone,
-        hashed_password=get_password_hash(payload.password),
+        hashed_password=get_password_hash(temp_password),
         role=UserRole.COACH,
         is_active=True,
-        must_change_password=True,
+        must_change_password=False,
     )
     session.add(user)
     session.commit()
@@ -366,7 +368,7 @@ def _create_coach_user(session: Session, payload: TeamCoachCreate) -> User:
             email_service.send_temp_password,
             user.email,
             user.full_name,
-            payload.password,
+            temp_password,
         )
 
     return user
@@ -477,6 +479,7 @@ def update_coach(
     # Update password if provided
     if payload.password:
         coach.hashed_password = get_password_hash(payload.password)
+        coach.must_change_password = False
 
     session.add(coach)
     session.commit()

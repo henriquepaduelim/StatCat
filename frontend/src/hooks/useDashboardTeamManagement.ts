@@ -44,7 +44,6 @@ const createEmptyCoachForm = (): CoachFormState => ({
   fullName: "",
   email: "",
   phone: "",
-  password: "",
 });
 
 type CoachFormSubmit = CoachFormState & { teamId: number | null };
@@ -305,7 +304,6 @@ export const useDashboardTeamManagement = ({
         full_name: form.fullName,
         email: form.email,
         phone: form.phone || undefined,
-        password: form.password,
       });
       if (form.teamId) {
         await assignCoachToTeam(form.teamId, coach.id);
@@ -351,7 +349,6 @@ export const useDashboardTeamManagement = ({
         full_name: form.fullName,
         email: form.email,
         phone: form.phone || undefined,
-        password: form.password,
       });
     },
     onSuccess: () => {
@@ -395,30 +392,14 @@ export const useDashboardTeamManagement = ({
     },
   });
 
-  const generatePassword = () => {
-    const chars =
-      "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%";
-    let password = "";
-    for (let i = 0; i < 12; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    updateCoachForm("password", password);
-  };
-
   const handleCoachSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmedName = coachForm.fullName.trim();
     const trimmedEmail = coachForm.email.trim();
     const trimmedPhone = coachForm.phone.trim();
-    const trimmedPassword = coachForm.password.trim();
 
     if (!trimmedName || !trimmedEmail) {
       setCoachFormError("Name and email are required.");
-      return;
-    }
-
-    if (!editingCoach && !trimmedPassword) {
-      setCoachFormError("Password is required for new coaches.");
       return;
     }
 
@@ -431,7 +412,6 @@ export const useDashboardTeamManagement = ({
         fullName: trimmedName,
         email: trimmedEmail,
         phone: trimmedPhone,
-        password: trimmedPassword,
         teamId: null,
       });
     } else {
@@ -439,7 +419,6 @@ export const useDashboardTeamManagement = ({
         fullName: trimmedName,
         email: trimmedEmail,
         phone: trimmedPhone,
-        password: trimmedPassword,
         teamId: null,
       });
     }
@@ -458,7 +437,6 @@ export const useDashboardTeamManagement = ({
       fullName: coach.full_name,
       email: coach.email,
       phone: coach.phone || "",
-      password: "",
     });
     setCoachFormError(null);
     setCoachFormSuccess(null);
@@ -635,7 +613,6 @@ export const useDashboardTeamManagement = ({
     onClose: closeCoachFormModal,
     onSubmit: handleCoachSubmit,
     onFieldChange: updateCoachForm,
-    onGeneratePassword: generatePassword,
   };
 
   return {

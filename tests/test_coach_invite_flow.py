@@ -35,14 +35,14 @@ def test_admin_creates_coach_active_and_requires_password_setup(
     assert data["role"] == "COACH"
     assert data["is_active"] is True
     assert data["athlete_status"] is None
-    assert data["must_change_password"] is True
+    assert data["must_change_password"] is False
 
     created = session.exec(select(User).where(User.email == "newcoach@example.com")).first()
     assert created is not None
     assert created.role == UserRole.COACH
     assert created.is_active is True
     assert created.athlete_status is None
-    assert created.must_change_password is True
+    assert created.must_change_password is False
 
 
 def test_login_requires_password_setup_for_coach(client: TestClient, session: Session):
@@ -52,7 +52,7 @@ def test_login_requires_password_setup_for_coach(client: TestClient, session: Se
         full_name="Coach Pending",
         role=UserRole.COACH,
         is_active=True,
-        must_change_password=True,
+        must_change_password=False,
     )
     session.add(coach)
     session.commit()

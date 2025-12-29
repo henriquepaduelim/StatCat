@@ -50,7 +50,6 @@ export interface TeamCoachPayload {
   full_name: string;
   email: string;
   phone?: string;
-  password: string;
 }
 
 export const listTeamCoaches = async (teamId: number) => {

@@ -30,5 +30,5 @@ class TeamRead(TeamBase):
 class TeamCoachCreate(SQLModel):
     full_name: str
     email: EmailStr
-    password: str
+    password: str | None = None
     phone: str | None = None
