@@ -11,13 +11,11 @@ concurrency:
 
 permissions: read-all
 
-env:
-  CI: true
-
 jobs:
   e2e:
     runs-on: ubuntu-latest
     env:
+      CI: true
       E2E_BASE_URL: https://www.statcatsports.net
       E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
       E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
@@ -26,6 +24,7 @@ jobs:
       E2E_COACH_EMAIL: ${{ secrets.E2E_COACH_EMAIL }}
       E2E_COACH_PASSWORD: ${{ secrets.E2E_COACH_PASSWORD }}
       E2E_EVENT_NAME: ${{ secrets.E2E_EVENT_NAME }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -62,10 +61,6 @@ jobs:
         working-directory: frontend
         run: |
           set -euo pipefail
-          if [ -z "${E2E_COACH_EMAIL:-}" ] || [ -z "${E2E_COACH_PASSWORD:-}" ]; then
-            echo "Coach credentials not configured (E2E_COACH_EMAIL/PASSWORD)."
-            exit 1
-          fi
           CODE=$(curl -s -o /tmp/login.json -w "%{http_code}" -X POST "$E2E_BASE_URL/api/v1/auth/login" \
             -H "content-type: application/x-www-form-urlencoded" \
             --data-urlencode "username=$E2E_COACH_EMAIL" \
@@ -76,17 +71,18 @@ jobs:
             exit 1
           fi
           TOKEN=$(python3 - <<'PY'
-import json
-data=json.load(open("/tmp/login.json"))
-print(data.get("access_token",""))
-PY
-)
+          import json
+          with open("/tmp/login.json") as f:
+              data = json.load(f)
+          print(data.get("access_token", ""))
+          PY
+          )
           if [ -z "$TOKEN" ]; then
             echo "Coach login precheck failed: empty token"
             exit 1
           fi
 
-      - name: Run smoke suite only
+      - name: Run smoke suite
         working-directory: frontend
         run: npx playwright test e2e/smoke.spec.ts
 
