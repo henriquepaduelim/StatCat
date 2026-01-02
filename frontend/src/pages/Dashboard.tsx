@@ -47,6 +47,7 @@ const Dashboard = () => {
   const currentUserId = user?.id ?? null;
   const currentUserRole = user?.role ?? null;
   const currentUserAthleteId = user?.athlete_id ?? null;
+  const currentUserName = user?.full_name ?? null;
   const isAthleteView = currentUserRole === "athlete";
   const canRecordCombineMetrics = ["admin", "staff", "coach"].includes(
     (currentUserRole || "").toLowerCase(),
@@ -97,6 +98,7 @@ const Dashboard = () => {
     currentUserId,
     currentUserRole,
     currentUserAthleteId,
+    currentUserName,
     availableCoaches,
     selectedTeamId,
     setSelectedTeamId,

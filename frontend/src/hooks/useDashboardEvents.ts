@@ -46,6 +46,7 @@ type UseDashboardEventsParams = {
   currentUserId: number | null;
   currentUserRole: string | null;
   currentUserAthleteId: number | null;
+  currentUserName: string | null;
   availableCoaches: TeamCoach[];
   selectedTeamId: number | null;
   setSelectedTeamId: React.Dispatch<React.SetStateAction<number | null>>;
@@ -64,6 +65,7 @@ export const useDashboardEvents = ({
   currentUserId,
   currentUserRole,
   currentUserAthleteId,
+  currentUserName,
   availableCoaches,
   selectedTeamId,
   setSelectedTeamId,
@@ -577,6 +579,7 @@ export const useDashboardEvents = ({
       currentUserRole,
       currentUserId,
       currentUserAthleteId,
+      currentUserName,
       onConfirmAttendance: handleConfirmAttendance,
       confirmAttendancePending: confirmAttendanceMutation.isPending,
     },

@@ -49,6 +49,7 @@ type EventAvailabilityPanelProps = {
   currentUserRole: string | null;
   currentUserId: number | null;
   currentUserAthleteId: number | null;
+  currentUserName: string | null;
   onConfirmAttendance: (eventId: number, status: ParticipantStatus) => void;
   confirmAttendancePending: boolean;
 };
@@ -69,6 +70,7 @@ const EventAvailabilityPanel = ({
   currentUserRole,
   currentUserId,
   currentUserAthleteId,
+  currentUserName,
   onConfirmAttendance,
   confirmAttendancePending,
 }: EventAvailabilityPanelProps) => {
@@ -214,11 +216,14 @@ const EventAvailabilityPanel = ({
 
     const event = currentEntry.event;
     const teamAthletes = currentTeam.athletes;
-    const coachStatusBadge = getCoachStatusBadge(currentTeam.coachStatus);
-    const coachName = currentTeam.coachName ?? summaryLabels.coachLine.unknownCoach;
     const coachParticipant = currentEntry.event.participants?.find(
       (participant) => participant.user_id === currentUserId
     );
+    const coachDisplayStatus = coachParticipant?.status ?? currentTeam.coachStatus ?? null;
+    const coachStatusBadge = getCoachStatusBadge(coachDisplayStatus);
+    const coachName =
+      currentTeam.coachName ??
+      (coachParticipant ? currentUserName ?? summaryLabels.coachLine.unknownCoach : summaryLabels.coachLine.unknownCoach);
     const showCoachActions =
       currentUserRole === "coach" && currentUserId != null && Boolean(coachParticipant);
 
