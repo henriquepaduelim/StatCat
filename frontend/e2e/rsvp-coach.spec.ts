@@ -5,7 +5,7 @@ import { requireEventNameOrSkip } from "./helpers/events";
 test.describe("Coach RSVP", () => {
   let eventName: string;
 
-  test.beforeEach(({ }, testInfo) => {
+  test.beforeEach(({}, testInfo) => {
     eventName = requireEventNameOrSkip(testInfo.skip.bind(testInfo));
   });
 
@@ -17,7 +17,10 @@ test.describe("Coach RSVP", () => {
     const upcoming = page.locator("summary", { hasText: /upcoming events/i }).first();
     await expect(upcoming).toBeVisible({ timeout: 15_000 });
     await upcoming.scrollIntoViewIfNeeded();
-    await upcoming.click();
+    const isOpen = await upcoming.evaluate((el) => el.parentElement?.hasAttribute("open"));
+    if (!isOpen) {
+      await upcoming.click();
+    }
 
     // Select the event by name inside the Upcoming Events list
     const upcomingSection = upcoming.locator("xpath=ancestor::details[1]");

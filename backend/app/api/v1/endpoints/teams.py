@@ -119,20 +119,20 @@ def list_teams(
     statement = statement.offset((page - 1) * size).limit(size)
 
     rows = session.exec(statement).all()
-    items = [
-        TeamRead(
-            id=team.id,
-            name=team.name,
-            age_category=team.age_category,
-            description=team.description,
-            coach_name=team.coach_name,
-            created_by_id=team.created_by_id,
-            created_at=team.created_at,
-            updated_at=team.updated_at,
-            athlete_count=athlete_count or 0,
+    items = []
+    for team, athlete_count in rows:
+        items.append(
+            TeamRead(
+                id=team.id,
+                name=team.name,
+                age_category=team.age_category,
+                description=team.description,
+                created_by_id=team.created_by_id,
+                created_at=team.created_at,
+                updated_at=team.updated_at,
+                athlete_count=athlete_count or 0,
+            )
         )
-        for team, athlete_count in rows
-    ]
     return PaginatedResponse(total=total, page=page, size=size, items=items)
 
 
@@ -180,7 +180,6 @@ def get_team(
         name=team.name,
         age_category=team.age_category,
         description=team.description,
-        coach_name=team.coach_name,
         created_by_id=team.created_by_id,
         created_at=team.created_at,
         updated_at=team.updated_at,
@@ -253,34 +252,17 @@ def create_team(
         name=payload.name,
         age_category=payload.age_category,
         description=payload.description,
-        coach_name=payload.coach_name,
         created_by_id=current_user.id,
     )
     session.add(team)
     session.commit()
     session.refresh(team)
 
-    # Notify coach if email provided in payload
-    if payload.coach_name:
-        coach_user = session.exec(
-            select(User).where(
-                User.full_name == payload.coach_name, User.role == UserRole.COACH
-            )
-        ).first()
-        if coach_user and coach_user.email:
-            anyio.from_thread.run(
-                email_service.send_team_assignment,
-                coach_user.email,
-                coach_user.full_name,
-                team.name,
-            )
-
     return TeamRead(
         id=team.id,
         name=team.name,
         age_category=team.age_category,
         description=team.description,
-        coach_name=team.coach_name,
         created_by_id=team.created_by_id,
         created_at=team.created_at,
         updated_at=team.updated_at,
@@ -301,8 +283,6 @@ def update_team(
     team.name = payload.name
     team.age_category = payload.age_category
     team.description = payload.description
-    if payload.coach_name is not None:
-        team.coach_name = payload.coach_name
 
     session.add(team)
     session.commit()
@@ -316,7 +296,6 @@ def update_team(
         name=team.name,
         age_category=team.age_category,
         description=team.description,
-        coach_name=team.coach_name,
         created_by_id=team.created_by_id,
         created_at=team.created_at,
         updated_at=team.updated_at,
@@ -389,9 +368,6 @@ def create_team_coach(
 
     link = CoachTeamLink(user_id=user.id, team_id=team.id)
     session.add(link)
-    if not team.coach_name:
-        team.coach_name = user.full_name
-        session.add(team)
     session.commit()
     # Notify coach of team assignment if email is present
     if user.email:
@@ -443,9 +419,6 @@ def assign_existing_coach(
 
     link = CoachTeamLink(user_id=coach.id, team_id=team.id)
     session.add(link)
-    if not team.coach_name:
-        team.coach_name = coach.full_name
-        session.add(team)
     session.commit()
     if coach.email:
         anyio.from_thread.run(
@@ -532,17 +505,6 @@ def delete_coach(
         # Event tables may not exist in legacy deployments; skip cleanup if so.
         pass
 
-    # Clear coach_name if no other coaches remain for affected teams
-    for team_id in linked_team_ids:
-        remaining = session.exec(
-            select(CoachTeamLink).where(CoachTeamLink.team_id == team_id)
-        ).first()
-        if remaining is None:
-            team = session.get(Team, team_id)
-            if team:
-                team.coach_name = None
-                session.add(team)
-
     session.delete(coach)
     session.commit()
 
@@ -591,7 +553,6 @@ def get_coach_teams(
             name=team.name,
             age_category=team.age_category,
             description=team.description,
-            coach_name=team.coach_name,
             created_by_id=team.created_by_id,
             created_at=team.created_at,
             updated_at=team.updated_at,
@@ -631,8 +592,6 @@ def remove_team_coach(
         select(CoachTeamLink.user_id).where(CoachTeamLink.team_id == team_id)
     ).first()
     if remaining is None:
-        team.coach_name = None
-        session.add(team)
         session.commit()
 
 

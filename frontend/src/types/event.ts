@@ -23,7 +23,8 @@ export interface Event {
   location: string | null;
   notes: string | null;
   status: EventStatus;
-  team_id: number | null;
+  /** legacy, prefer team_ids */
+  team_id?: number | null;
   team_ids: number[];
   coach_id: number | null;
   created_by_id: number;
@@ -40,8 +41,7 @@ export interface EventCreatePayload {
   start_time?: string | null;
   location?: string | null;
   notes?: string | null;
-  team_id?: number | null;
-  team_ids?: number[];
+  team_ids: number[];
   coach_id?: number | null;
   invitee_ids: number[]; // User IDs (coaches, etc.)
   athlete_ids: number[]; // Athlete IDs
@@ -56,7 +56,6 @@ export interface EventUpdatePayload {
   location?: string | null;
   notes?: string | null;
   status?: EventStatus;
-  team_id?: number | null;
   team_ids?: number[];
   coach_id?: number | null;
   send_notification?: boolean;

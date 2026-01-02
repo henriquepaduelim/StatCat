@@ -107,9 +107,6 @@ export const useDashboardEvents = ({
           }
         });
       }
-      if (typeof event.team_id === "number") {
-        ids.add(event.team_id);
-      }
       (event.participants ?? []).forEach((participant) => {
         if (participant.athlete_id) {
           const athlete = athleteById.get(participant.athlete_id);
@@ -479,7 +476,6 @@ export const useDashboardEvents = ({
         start_time: timeValue,
         location: eventForm.location || null,
         notes: notesWithTime || null,
-        team_id: eventForm.teamIds.length === 1 ? eventForm.teamIds[0] : null,
         team_ids: eventForm.teamIds,
         invitee_ids: eventForm.coachIds,
         athlete_ids: eventForm.inviteeIds,

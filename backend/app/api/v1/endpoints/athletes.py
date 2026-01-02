@@ -207,8 +207,8 @@ def complete_registration_public(
     _encrypt_detail_fields(detail, payload)
     detail.updated_at = datetime.now(timezone.utc)
 
-    if payload.email:
-        athlete.email = payload.email
+    if payload.email and athlete.user:
+        athlete.user.email = payload.email
     if payload.phone:
         athlete.phone = payload.phone
 
@@ -477,12 +477,12 @@ def register_athlete(
         )
 
     # Notify athlete about team assignment if email and team were provided
-    if athlete.team_id and athlete.email:
+    if athlete.team_id and user.email:
         team = session.get(Team, athlete.team_id)
         team_name = team.name if team else "your team"
         anyio.from_thread.run(
             email_service.send_team_assignment,
-            athlete.email,
+            user.email,
             f"{athlete.first_name} {athlete.last_name}".strip(),
             team_name,
         )
@@ -533,28 +533,27 @@ def list_athletes(
 
     result_items = []
     for athlete in athletes:
-        try:
-            athlete_dict = athlete.model_dump()
+        athlete_dict = athlete.model_dump()
 
-            athlete_dict["user_athlete_status"] = None
-            athlete_dict["user_rejection_reason"] = None
+        athlete_dict["user_athlete_status"] = None
+        athlete_dict["user_rejection_reason"] = None
+        athlete_dict["email"] = athlete.email
 
+        user = user_status_map.get(athlete.id)
+        if user:
+            if user.email:
+                athlete_dict["email"] = user.email
             if include_user_status and current_user.role in MANAGE_ATHLETE_ROLES:
-                user = user_status_map.get(athlete.id)
-                if user:
-                    if user.athlete_status:
-                        if hasattr(user.athlete_status, "value"):
-                            athlete_dict["user_athlete_status"] = (
-                                user.athlete_status.value
-                            )
-                        else:
-                            athlete_dict["user_athlete_status"] = str(
-                                user.athlete_status
-                            )
-                    athlete_dict["user_rejection_reason"] = user.rejection_reason
+                if user.athlete_status:
+                    if hasattr(user.athlete_status, "value"):
+                        athlete_dict["user_athlete_status"] = user.athlete_status.value
+                    else:
+                        athlete_dict["user_athlete_status"] = str(user.athlete_status)
+                athlete_dict["user_rejection_reason"] = user.rejection_reason
 
+        try:
             result_items.append(AthleteRead(**athlete_dict))
-        except Exception: # Modified: removed 'as e'
+        except Exception:
             continue
 
     return PaginatedResponse(
@@ -649,12 +648,12 @@ def create_athlete(
             exc_info=True,
         )
 
-    if athlete.team_id and athlete.email:
+    if athlete.team_id and email_normalized:
         team = session.get(Team, athlete.team_id)
         team_name = team.name if team else "your team"
         anyio.from_thread.run(
             email_service.send_team_assignment,
-            athlete.email,
+            email_normalized,
             f"{athlete.first_name} {athlete.last_name}".strip(),
             team_name,
         )
@@ -693,8 +692,8 @@ def complete_registration(
     _encrypt_detail_fields(detail, payload)
     detail.updated_at = datetime.now(timezone.utc)
 
-    if payload.email:
-        athlete.email = payload.email
+    if payload.email and athlete.user:
+        athlete.user.email = payload.email
     if payload.phone:
         athlete.phone = payload.phone
 

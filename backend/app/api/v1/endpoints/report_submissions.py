@@ -553,7 +553,10 @@ async def approve_submission(
         athlete = session.get(Athlete, submission.athlete_id)
         if athlete:
             athlete_name = f"{athlete.first_name} {athlete.last_name}".strip()
-            athlete_email = athlete.email
+            user = session.exec(
+                select(User).where(User.athlete_id == submission.athlete_id)
+            ).first()
+            athlete_email = user.email if user and user.email else athlete.email
 
     submission.status = ReportSubmissionStatus.APPROVED
     submission.approved_by_id = current_user.id

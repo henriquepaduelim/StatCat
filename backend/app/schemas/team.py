@@ -10,7 +10,7 @@ class TeamBase(SQLModel):
     name: str
     age_category: str
     description: str | None = None
-    coach_name: str | None = None
+    model_config = ConfigDict(extra="ignore")
 
 
 class TeamCreate(TeamBase):

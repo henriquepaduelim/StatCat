@@ -46,9 +46,6 @@ def resolve_event_team_ids(
 
     resolved.update(_team_ids_from_athletes(db, invited_athlete_ids))
 
-    if event.team_id is not None:
-        resolved.add(event.team_id)
-
     return sorted(resolved)
 
 
