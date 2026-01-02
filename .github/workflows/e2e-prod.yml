@@ -31,6 +31,17 @@ jobs:
             package-lock.json
             frontend/package-lock.json
 
+      - name: Validate E2E secrets
+        run: |
+          set -euo pipefail
+          required=(E2E_BASE_URL E2E_ADMIN_EMAIL E2E_ADMIN_PASSWORD E2E_ATHLETE_EMAIL E2E_ATHLETE_PASSWORD E2E_COACH_EMAIL E2E_COACH_PASSWORD E2E_EVENT_NAME)
+          for var in "${required[@]}"; do
+            if [ -z "${!var:-}" ]; then
+              echo "Missing required secret: $var"
+              exit 1
+            fi
+          done
+
       - name: Install dependencies (frontend)
         working-directory: frontend
         run: npm ci
@@ -47,6 +58,10 @@ jobs:
           E2E_COACH_PASSWORD: ${{ secrets.E2E_COACH_PASSWORD }}
         run: |
           set -euo pipefail
+          if [ -z "${E2E_COACH_EMAIL:-}" ] || [ -z "${E2E_COACH_PASSWORD:-}" ]; then
+            echo "Coach credentials not configured (E2E_COACH_EMAIL/PASSWORD)."
+            exit 1
+          fi
           CODE=$(curl -s -o /tmp/login.json -w "%{http_code}" -X POST "$E2E_BASE_URL/api/v1/auth/login" \
             -H "content-type: application/x-www-form-urlencoded" \
             --data-urlencode "username=$E2E_COACH_EMAIL" \
@@ -56,48 +71,47 @@ jobs:
             cat /tmp/login.json
             exit 1
           fi
-          TOKEN=$(python - <<'PY'
-import json
-import sys
-data=json.load(open("/tmp/login.json"))
-print(data.get("access_token",""))
-PY
-)
-          if [ -z "$TOKEN" ]; then
-            echo "Coach login precheck failed: empty token"
-            exit 1
-          fi
+          TOKEN=$(python3 - <<'PY'
+          import json
+          import sys
+          data=json.load(open("/tmp/login.json"))
+          print(data.get("access_token",""))
+          PY
+          )
+                    if [ -z "$TOKEN" ]; then
+                      echo "Coach login precheck failed: empty token"
+                      exit 1
+                    fi
 
-      - name: Run smoke suite only
-        working-directory: frontend
-        env:
-          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
-          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
-          E2E_ATHLETE_EMAIL: ${{ secrets.E2E_ATHLETE_EMAIL }}
-          E2E_ATHLETE_PASSWORD: ${{ secrets.E2E_ATHLETE_PASSWORD }}
-          E2E_COACH_EMAIL: ${{ secrets.E2E_COACH_EMAIL }}
-          E2E_COACH_PASSWORD: ${{ secrets.E2E_COACH_PASSWORD }}
-          E2E_EVENT_NAME: ${{ secrets.E2E_EVENT_NAME }}
-        run: npx playwright test e2e/smoke.spec.ts
+                - name: Run smoke suite only
+                  working-directory: frontend
+                  env:
+                    E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+                    E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+                    E2E_ATHLETE_EMAIL: ${{ secrets.E2E_ATHLETE_EMAIL }}
+                    E2E_ATHLETE_PASSWORD: ${{ secrets.E2E_ATHLETE_PASSWORD }}
+                    E2E_COACH_EMAIL: ${{ secrets.E2E_COACH_EMAIL }}
+                    E2E_COACH_PASSWORD: ${{ secrets.E2E_COACH_PASSWORD }}
+                    E2E_EVENT_NAME: ${{ secrets.E2E_EVENT_NAME }}
+                  run: npx playwright test e2e/smoke.spec.ts
+          - name: Run full suite
+                  if: success()
+                  working-directory: frontend
+                  env:
+                    E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+                    E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+                    E2E_ATHLETE_EMAIL: ${{ secrets.E2E_ATHLETE_EMAIL }}
+                    E2E_ATHLETE_PASSWORD: ${{ secrets.E2E_ATHLETE_PASSWORD }}
+                    E2E_COACH_EMAIL: ${{ secrets.E2E_COACH_EMAIL }}
+                    E2E_COACH_PASSWORD: ${{ secrets.E2E_COACH_PASSWORD }}
+                    E2E_EVENT_NAME: ${{ secrets.E2E_EVENT_NAME }}
+                  run: npm run e2e
 
-      - name: Run full suite
-        if: success()
-        working-directory: frontend
-        env:
-          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
-          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
-          E2E_ATHLETE_EMAIL: ${{ secrets.E2E_ATHLETE_EMAIL }}
-          E2E_ATHLETE_PASSWORD: ${{ secrets.E2E_ATHLETE_PASSWORD }}
-          E2E_COACH_EMAIL: ${{ secrets.E2E_COACH_EMAIL }}
-          E2E_COACH_PASSWORD: ${{ secrets.E2E_COACH_PASSWORD }}
-          E2E_EVENT_NAME: ${{ secrets.E2E_EVENT_NAME }}
-        run: npm run e2e
-
-      - name: Upload E2E test artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: e2e-artifacts
-          path: |
-            frontend/playwright-report/
-            frontend/test-results/
+                - name: Upload E2E test artifacts
+                  if: always()
+                  uses: actions/upload-artifact@v4
+                  with:
+                    name: e2e-artifacts
+                    path: |
+                      frontend/playwright-report/
+                      frontend/test-results/
