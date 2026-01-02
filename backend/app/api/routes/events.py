@@ -1,15 +1,17 @@
 """API endpoints for events management."""
 
 from datetime import date as date_type, datetime, time as time_type, timezone
+import logging
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import delete, or_
 from sqlmodel import select
 
 from app.api.deps import SessionDep, get_current_active_user
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.event import Event, EventParticipant, ParticipantStatus
 from app.models.event_team_link import EventTeamLink
+from app.models.team import CoachTeamLink
 from app.schemas.event import (
     EventCreate,
     EventUpdate,
@@ -28,6 +30,20 @@ from app.services.event_team_service import (
 )
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
+
+def _coach_team_ids(db: SessionDep, coach_id: int) -> set[int]:
+    """Return team ids linked to the given coach."""
+    rows = db.exec(
+        select(CoachTeamLink.team_id).where(CoachTeamLink.user_id == coach_id)
+    ).all()
+    ids: set[int] = set()
+    for row in rows:
+        value = row[0] if isinstance(row, tuple) else row
+        if value is not None:
+            ids.add(int(value))
+    return ids
 
 
 def _parse_time_str(value: Optional[str]) -> Optional[time_type]:
@@ -141,11 +157,11 @@ def list_events(
     parsed_from = _parse_date_str(date_from)
     parsed_to = _parse_date_str(date_to)
     if parsed_from:
-        stmt = stmt.where(Event.date >= parsed_from)
+        stmt = stmt.where(Event.event_date >= parsed_from)
     if parsed_to:
-        stmt = stmt.where(Event.date <= parsed_to)
+        stmt = stmt.where(Event.event_date <= parsed_to)
 
-    stmt = stmt.order_by(Event.date.desc(), Event.start_time.desc())
+    stmt = stmt.order_by(Event.event_date.desc(), Event.start_time.desc())
 
     events = db.exec(stmt).all()
     attach_team_ids(db, events)
@@ -159,30 +175,75 @@ def list_my_events(
     current_user: User = Depends(get_current_active_user),
 ) -> List[Event]:
     """List events where current user is invited or organizer."""
-    # Get events where user is organizer
-    stmt_created = select(Event).where(Event.created_by_id == current_user.id)
-    created_events = db.exec(stmt_created).all()
+    log_payload: dict[str, object] = {
+        "user_id": current_user.id,
+        "role": getattr(current_user, "role", None),
+    }
 
-    # Get events where user is invited
-    stmt_invited = (
-        select(Event)
-        .join(EventParticipant)
-        .where(EventParticipant.user_id == current_user.id)
+    def _add_events(store: dict[int, Event], items: list[Event]) -> None:
+        for event in items:
+            if event.id is None:
+                continue
+            if event.id not in store:
+                store[event.id] = event
+
+    all_events: dict[int, Event] = {}
+
+    created_events = db.exec(
+        select(Event).where(Event.created_by_id == current_user.id)
+    ).all()
+    _add_events(all_events, created_events)
+    log_payload["created_count"] = len(created_events)
+
+    invited_events = (
+        db.exec(
+            select(Event)
+            .join(EventParticipant)
+            .where(EventParticipant.user_id == current_user.id)
+        ).all()
     )
-    invited_events = db.exec(stmt_invited).all()
+    _add_events(all_events, invited_events)
+    log_payload["invited_count"] = len(invited_events)
 
-    # Combine and deduplicate
-    all_events = {e.id: e for e in created_events}
-    for e in invited_events:
-        if e.id not in all_events:
-            all_events[e.id] = e
+    if current_user.role == UserRole.COACH:
+        coach_team_ids = _coach_team_ids(db, current_user.id)
+        log_payload["coach_team_ids"] = sorted(coach_team_ids)
 
-    # Sort by date
+        if coach_team_ids:
+            team_events = db.exec(
+                select(Event).where(Event.team_id.in_(coach_team_ids))
+            ).all()
+            _add_events(all_events, team_events)
+            log_payload["team_events_count"] = len(team_events)
+
+            linked_team_events = db.exec(
+                select(Event)
+                .join(EventTeamLink)
+                .where(EventTeamLink.team_id.in_(coach_team_ids))
+            ).all()
+            _add_events(all_events, linked_team_events)
+            log_payload["linked_team_events_count"] = len(linked_team_events)
+
+        coached_events = db.exec(
+            select(Event).where(Event.coach_id == current_user.id)
+        ).all()
+        _add_events(all_events, coached_events)
+        log_payload["coach_id_events_count"] = len(coached_events)
+
     events = sorted(
         all_events.values(),
-        key=lambda e: (e.date or date_type.min, e.start_time or time_type.min),
+        key=lambda e: (e.event_date or date_type.min, e.start_time or time_type.min),
         reverse=True,
     )
+    log_payload["total_returned"] = len(events)
+    log_payload["query_summary"] = {
+        "created_by": f"Event.created_by_id == {current_user.id}",
+        "invited": "EventParticipant.user_id join",
+        "team_id": "Event.team_id in coach_team_ids",
+        "event_team_link": "EventTeamLink.team_id in coach_team_ids",
+        "coach_id": f"Event.coach_id == {current_user.id}",
+    }
+    logger.info("my-events lookup: %s", log_payload)
     attach_team_ids(db, events)
     return events
 

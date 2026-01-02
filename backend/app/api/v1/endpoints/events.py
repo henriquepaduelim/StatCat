@@ -1,6 +1,7 @@
 """API endpoints for events management."""
 
 from datetime import date as date_type, datetime, time as time_type, timezone
+import logging
 from typing import Iterable, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -36,6 +37,7 @@ from app.services.event_team_service import (
 
 router = APIRouter()
 MANAGE_EVENT_ROLES = {UserRole.ADMIN, UserRole.STAFF, UserRole.COACH}
+logger = logging.getLogger(__name__)
 
 
 def _get_team_coach_user_ids(db: Session, team_ids: Iterable[int]) -> set[int]:
@@ -287,68 +289,77 @@ def list_my_events(
     current_user: User = Depends(get_current_active_user),
 ) -> List[Event]:
     """List events where current user is invited or organizer."""
-    coach_team_ids = (
-        _coach_team_ids(db, current_user.id)
-        if current_user.role == UserRole.COACH
-        else set()
-    )
-    # Get events where user is organizer
-    stmt_created = select(Event).where(Event.created_by_id == current_user.id)
-    created_events = db.exec(stmt_created).all()
+    log_payload: dict[str, object] = {
+        "user_id": current_user.id,
+        "role": getattr(current_user, "role", None),
+    }
 
-    # Get events where user is invited (not as athlete placeholder)
-    stmt_invited = (
-        select(Event)
-        .join(EventParticipant)
-        .where(
-            EventParticipant.user_id == current_user.id,
-            EventParticipant.athlete_id is None,  # Changed == None to is None
-        )
+    def _add(store: dict[int, Event], items: list[Event]) -> None:
+        for event in items:
+            if event.id is None:
+                continue
+            store.setdefault(event.id, event)
+
+    all_events: dict[int, Event] = {}
+
+    created_events = db.exec(
+        select(Event).where(Event.created_by_id == current_user.id)
+    ).all()
+    _add(all_events, created_events)
+    log_payload["created_count"] = len(created_events)
+
+    invited_events = (
+        db.exec(
+            select(Event)
+            .join(EventParticipant)
+            .where(
+                EventParticipant.user_id == current_user.id,
+                EventParticipant.athlete_id.is_(None),
+            )
+        ).all()
     )
-    invited_events = db.exec(stmt_invited).all()
+    _add(all_events, invited_events)
+    log_payload["invited_count"] = len(invited_events)
 
     athlete_events: list[Event] = []
     if current_user.athlete_id is not None:
-        stmt_athlete = (
+        athlete_events = db.exec(
             select(Event)
             .join(EventParticipant)
             .where(EventParticipant.athlete_id == current_user.athlete_id)
-        )
-        athlete_events = db.exec(stmt_athlete).all()
+        ).all()
+        _add(all_events, athlete_events)
+    log_payload["athlete_count"] = len(athlete_events)
 
-    # Combine and deduplicate
-    all_events = {e.id: e for e in created_events}
-    for e in invited_events:
-        if e.id not in all_events:
-            all_events[e.id] = e
-    for e in athlete_events:
-        if e.id not in all_events:
-            all_events[e.id] = e
+    coach_owned_events: list[Event] = []
+    coach_team_ids: set[int] = set()
+    team_events: list[Event] = []
+    linked_team_events: list[Event] = []
+    if current_user.role == UserRole.COACH:
+        coach_owned_events = db.exec(
+            select(Event).where(Event.coach_id == current_user.id)
+        ).all()
+        _add(all_events, coach_owned_events)
 
-    # If coach, restrict to own teams (direct or linked), but keep events without team
-    if current_user.role == UserRole.COACH and coach_team_ids:
-        filtered: dict[int, Event] = {}
-        for event in all_events.values():
-            if event.team_id and event.team_id in coach_team_ids:
-                filtered[event.id] = event
-                continue
-            linked_ids = db.exec(
-                select(EventTeamLink.team_id).where(EventTeamLink.event_id == event.id)
+        coach_team_ids = _coach_team_ids(db, current_user.id)
+        log_payload["coach_team_ids"] = sorted(coach_team_ids)
+
+        if coach_team_ids:
+            team_events = db.exec(
+                select(Event).where(Event.team_id.in_(coach_team_ids))
             ).all()
-            linked_set = {
-                row[0] if isinstance(row, tuple) else row
-                for row in linked_ids
-                if row is not None
-            }
-            if linked_set.intersection(coach_team_ids):
-                filtered[event.id] = event
-                continue
-            # eventos sem time também ficam visíveis para coaches convidados/organizadores
-            if event.team_id is None:
-                filtered[event.id] = event
-        all_events = filtered
-    elif current_user.role == UserRole.COACH and not coach_team_ids:
-        all_events = {}
+            _add(all_events, team_events)
+
+            linked_team_events = db.exec(
+                select(Event)
+                .join(EventTeamLink)
+                .where(EventTeamLink.team_id.in_(coach_team_ids))
+            ).all()
+            _add(all_events, linked_team_events)
+
+    log_payload["coach_owned_count"] = len(coach_owned_events)
+    log_payload["team_events_count"] = len(team_events)
+    log_payload["linked_team_events_count"] = len(linked_team_events)
 
     # Sort by date
     events = sorted(
@@ -356,6 +367,26 @@ def list_my_events(
         key=lambda e: (e.event_date or date_type.min, e.start_time or time_type.min),
         reverse=True,
     )
+    log_payload["total_returned"] = len(events)
+    log_payload["query_summary"] = {
+        "created_by": f"Event.created_by_id == {current_user.id}",
+        "invited": "JOIN EventParticipant.user_id == current_user.id",
+        "athlete": (
+            f"JOIN EventParticipant.athlete_id == {current_user.athlete_id}"
+            if current_user.athlete_id is not None
+            else None
+        ),
+        "coach_id": f"Event.coach_id == {current_user.id}",
+        "team_id": (
+            f"Event.team_id IN {sorted(coach_team_ids)}" if coach_team_ids else None
+        ),
+        "event_team_link": (
+            f"EventTeamLink.team_id IN {sorted(coach_team_ids)}"
+            if coach_team_ids
+            else None
+        ),
+    }
+    logger.info("my-events lookup: %s", log_payload)
     attach_team_ids(db, events)
     return events
 
