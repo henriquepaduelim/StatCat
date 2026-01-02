@@ -75,7 +75,8 @@ jobs:
             cat /tmp/login.json
             exit 1
           fi
-          TOKEN=$(python3 - <<'PY' import json
+          TOKEN=$(python3 - <<'PY'
+import json
 data=json.load(open("/tmp/login.json"))
 print(data.get("access_token",""))
 PY
