@@ -2,18 +2,6 @@ import { test, expect } from "@playwright/test";
 import { loginAsCoach } from "./helpers/auth";
 import { requireEventNameOrSkip } from "./helpers/events";
 
-const selectEventCard = (page: Parameters<typeof test>[0]["page"], eventName: string) =>
-  page.getByRole("article").filter({ hasText: eventName }).first();
-
-const rsvpButtons = (card: ReturnType<typeof selectEventCard>) => ({
-  confirm: card.getByRole("button", { name: /confirm/i }),
-  maybe: card.getByRole("button", { name: /maybe/i }),
-  decline: card.getByRole("button", { name: /decline/i }),
-});
-
-const statusBadge = (card: ReturnType<typeof selectEventCard>) =>
-  card.getByText(/confirmed|maybe|declined|awaiting response/i, { exact: false });
-
 test.describe("Coach RSVP", () => {
   let eventName: string;
 
@@ -25,13 +13,26 @@ test.describe("Coach RSVP", () => {
     await loginAsCoach(page);
     await page.goto("/dashboard");
 
-    const card = selectEventCard(page, eventName);
-    await expect(card).toBeVisible({ timeout: 20_000 });
+    // Expand Upcoming Events accordion (summary element)
+    const upcoming = page.locator("summary", { hasText: /upcoming events/i }).first();
+    await expect(upcoming).toBeVisible({ timeout: 15_000 });
+    await upcoming.scrollIntoViewIfNeeded();
+    await upcoming.click();
 
-    const buttons = rsvpButtons(card);
-    await expect(buttons.maybe.or(buttons.confirm).or(buttons.decline)).toBeVisible();
+    // Select the event by name inside the Upcoming Events list
+    const upcomingSection = upcoming.locator("xpath=ancestor::details[1]");
+    const eventRow = upcomingSection.getByRole("button", { name: new RegExp(eventName, "i") }).first();
+    await expect(eventRow).toBeVisible({ timeout: 20_000 });
+    await eventRow.click();
 
-    await buttons.maybe.click();
-    await expect(statusBadge(card)).toContainText(/maybe/i, { timeout: 10_000 });
+    // Coach RSVP controls live inside the Team Availability panel
+    const availabilitySection = page
+      .getByRole("heading", { name: /team availability/i })
+      .locator("xpath=ancestor::section[1]");
+    await availabilitySection.scrollIntoViewIfNeeded();
+    const maybeButton = availabilitySection.getByRole("button", { name: /maybe/i }).last();
+    await expect(maybeButton).toBeVisible({ timeout: 10_000 });
+    await maybeButton.click();
+    await expect(availabilitySection.getByText(/maybe/i)).toBeVisible({ timeout: 10_000 });
   });
 });
