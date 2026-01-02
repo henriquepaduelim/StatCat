@@ -39,6 +39,35 @@ jobs:
         working-directory: frontend
         run: npx playwright install --with-deps
 
+      - name: Verify coach credentials before E2E
+        working-directory: frontend
+        env:
+          E2E_BASE_URL: https://www.statcatsports.net
+          E2E_COACH_EMAIL: ${{ secrets.E2E_COACH_EMAIL }}
+          E2E_COACH_PASSWORD: ${{ secrets.E2E_COACH_PASSWORD }}
+        run: |
+          set -euo pipefail
+          CODE=$(curl -s -o /tmp/login.json -w "%{http_code}" -X POST "$E2E_BASE_URL/api/v1/auth/login" \
+            -H "content-type: application/x-www-form-urlencoded" \
+            --data-urlencode "username=$E2E_COACH_EMAIL" \
+            --data-urlencode "password=$E2E_COACH_PASSWORD")
+          if [ "$CODE" -ne 200 ]; then
+            echo "Coach login precheck failed with status $CODE"
+            cat /tmp/login.json
+            exit 1
+          fi
+          TOKEN=$(python - <<'PY'
+import json
+import sys
+data=json.load(open("/tmp/login.json"))
+print(data.get("access_token",""))
+PY
+)
+          if [ -z "$TOKEN" ]; then
+            echo "Coach login precheck failed: empty token"
+            exit 1
+          fi
+
       - name: Run smoke suite only
         working-directory: frontend
         env:
