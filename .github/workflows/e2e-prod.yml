@@ -17,6 +17,8 @@ jobs:
     env:
       CI: true
       E2E_BASE_URL: ${{ secrets.E2E_BASE_URL }}
+      # Allow auth/API to live on a different host than the UI base.
+      E2E_AUTH_BASE_URL: ${{ secrets.E2E_AUTH_BASE_URL || secrets.E2E_BASE_URL }}
       E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
       E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
       E2E_ATHLETE_EMAIL: ${{ secrets.E2E_ATHLETE_EMAIL }}
@@ -41,7 +43,7 @@ jobs:
       - name: Validate E2E secrets
         run: |
           set -euo pipefail
-          required=(E2E_BASE_URL E2E_ADMIN_EMAIL E2E_ADMIN_PASSWORD E2E_ATHLETE_EMAIL E2E_ATHLETE_PASSWORD E2E_COACH_EMAIL E2E_COACH_PASSWORD E2E_EVENT_NAME)
+          required=(E2E_BASE_URL E2E_AUTH_BASE_URL E2E_ADMIN_EMAIL E2E_ADMIN_PASSWORD E2E_ATHLETE_EMAIL E2E_ATHLETE_PASSWORD E2E_COACH_EMAIL E2E_COACH_PASSWORD E2E_EVENT_NAME)
           for var in "${required[@]}"; do
             if [ -z "${!var:-}" ]; then
               echo "Missing required secret: $var"
@@ -61,7 +63,7 @@ jobs:
         working-directory: frontend
         run: |
           set -euo pipefail
-          CODE=$(curl -s -o /tmp/login.json -w "%{http_code}" -X POST "$E2E_BASE_URL/api/v1/auth/login" \
+          CODE=$(curl -s -o /tmp/login.json -w "%{http_code}" -X POST "$E2E_AUTH_BASE_URL/api/v1/auth/login" \
             -H "content-type: application/x-www-form-urlencoded" \
             --data-urlencode "username=$E2E_COACH_EMAIL" \
             --data-urlencode "password=$E2E_COACH_PASSWORD")
