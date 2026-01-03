@@ -3,7 +3,7 @@
 from datetime import date as date_type, datetime, time as time_type, timezone
 import logging
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy import delete, or_
 from sqlmodel import select
 
@@ -70,6 +70,7 @@ async def create_event(
     db: SessionDep,
     current_user: User = Depends(get_current_active_user),
     event_in: EventCreate,
+    background_tasks: BackgroundTasks,
 ) -> Event:
     """Create a new event and notify invitees."""
     # Create event
@@ -127,6 +128,7 @@ async def create_event(
             invitee_ids=event_in.invitee_ids,
             send_email=event_in.send_email,
             send_push=event_in.send_push,
+            background_tasks=background_tasks,
         )
 
     # Refresh to get participants
@@ -270,6 +272,7 @@ async def update_event(
     current_user: User = Depends(get_current_active_user),
     event_id: int,
     event_in: EventUpdate,
+    background_tasks: BackgroundTasks,
 ) -> Event:
     """Update an event and notify participants if requested."""
     event = db.get(Event, event_id)
@@ -344,6 +347,7 @@ async def update_event(
             event=event,
             changes=", ".join(changes),
             send_notification=True,
+            background_tasks=background_tasks,
         )
 
     return event

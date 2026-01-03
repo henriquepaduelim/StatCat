@@ -810,16 +810,19 @@ class EmailService:
                         json=payload,
                     )
                 if resp.status_code == 202:
-                    logger.info("Email sent successfully via SendGrid to %s", to_email)
+                    logger.info(
+                        "email_sent",
+                        extra={"provider": "sendgrid", "status": resp.status_code},
+                    )
                     return True
                 logger.error(
-                    "Failed to send email via SendGrid to %s: %s %s",
-                    to_email,
-                    resp.status_code,
-                    resp.text,
+                    "Failed to send email via SendGrid",
+                    extra={"status": resp.status_code},
                 )
             except Exception as exc:
-                logger.error("Failed to send email via SendGrid to %s: %s", to_email, exc)
+                logger.error(
+                    "Failed to send email via SendGrid", extra={"error": str(exc)}
+                )
         # If Resend is configured, try to use it first
         if self.use_resend:
             try:
@@ -838,17 +841,20 @@ class EmailService:
                         json=json_payload,
                     )
                 if resp.status_code < 400:
-                    logger.info("Email sent successfully via Resend to %s", to_email)
+                    logger.info(
+                        "email_sent",
+                        extra={"provider": "resend", "status": resp.status_code},
+                    )
                     return True
                 logger.error(
-                    "Failed to send email via Resend to %s: %s %s",
-                    to_email,
-                    resp.status_code,
-                    resp.text,
+                    "Failed to send email via Resend",
+                    extra={"status": resp.status_code},
                 )
                 # Fall through to SMTP if Resend fails
             except Exception as exc:
-                logger.error("Failed to send email via Resend to %s: %s", to_email, exc)
+                logger.error(
+                    "Failed to send email via Resend", extra={"error": str(exc)}
+                )
                 # Fall through to SMTP if Resend fails
 
         # Fallback to SMTP if configured or Resend failed
@@ -911,11 +917,13 @@ class EmailService:
                             server.starttls()
                         server.login(self.smtp_user, self.smtp_password)
                         server.send_message(msg_root)
-                    logger.info("Email sent successfully via SMTP to %s", to_email)
+                    logger.info(
+                        "email_sent", extra={"provider": "smtp", "status": 250}
+                    )
                     return True
                 except Exception as exc:
                     logger.error(
-                        "Failed to send email via SMTP to %s: %s", to_email, exc
+                        "Failed to send email via SMTP", extra={"error": str(exc)}
                     )
                     return False
 

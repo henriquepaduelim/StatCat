@@ -4,7 +4,7 @@ from datetime import date as date_type, datetime, time as time_type, timezone
 import logging
 from typing import Iterable, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy import delete, or_
 from sqlmodel import Session, select
@@ -108,6 +108,7 @@ async def create_event(
     db: SessionDep,
     current_user: User = Depends(get_current_active_user),
     event_in: EventCreate,
+    background_tasks: BackgroundTasks,
 ) -> Event:
     """Create a new event and notify invitees."""
     ensure_roles(current_user, MANAGE_EVENT_ROLES)
@@ -201,6 +202,7 @@ async def create_event(
             invitee_ids=user_invitees_list,
             send_email=event_in.send_email,
             send_push=event_in.send_push,
+            background_tasks=background_tasks,
         )
 
     # Refresh to get participants
@@ -449,6 +451,7 @@ def get_event(
 async def handle_rsvp_from_token(
     token: str,
     db: SessionDep,
+    background_tasks: BackgroundTasks,
 ) -> RedirectResponse:
     """
     Handles one-click RSVP confirmation from email links.
@@ -520,6 +523,7 @@ async def handle_rsvp_from_token(
         event=event,
         participant=participant,
         status=new_status.value,  # Pass the enum value
+        background_tasks=background_tasks,
     )
 
     return RedirectResponse(
@@ -535,6 +539,7 @@ async def update_event(
     current_user: User = Depends(get_current_active_user),
     event_id: int,
     event_in: EventUpdate,
+    background_tasks: BackgroundTasks,
 ) -> Event:
     """Update an event and notify participants if requested."""
     ensure_roles(current_user, MANAGE_EVENT_ROLES)
@@ -631,6 +636,7 @@ async def update_event(
             event=event,
             changes=", ".join(changes),
             send_notification=True,
+            background_tasks=background_tasks,
         )
 
     return event
@@ -671,6 +677,7 @@ async def send_event_reminder(
     current_user: User = Depends(get_current_active_user),
     event_id: int,
     hours_until: int = 24,
+    background_tasks: BackgroundTasks,
 ) -> dict[str, int]:
     """Send reminder emails to confirmed participants for a specific event."""
     ensure_roles(current_user, MANAGE_EVENT_ROLES)
@@ -681,6 +688,7 @@ async def send_event_reminder(
         db=db,
         event=event,
         hours_until=hours_until,
+        background_tasks=background_tasks,
     )
     return {"reminders_sent": sent}
 
@@ -692,6 +700,7 @@ async def add_event_participants(
     current_user: User = Depends(get_current_active_user),
     event_id: int,
     payload: EventParticipantsAdd,
+    background_tasks: BackgroundTasks,
 ) -> Event:
     """Add manual participants to an existing event."""
     ensure_roles(current_user, MANAGE_EVENT_ROLES)
@@ -728,6 +737,7 @@ async def add_event_participants(
             invitee_ids=new_user_ids,
             send_email=True,
             send_push=False,
+            background_tasks=background_tasks,
         )
         db.refresh(event)
 
@@ -774,6 +784,7 @@ async def confirm_event_attendance(
     current_user: User = Depends(get_current_active_user),
     event_id: int,
     confirmation: EventConfirmation,
+    background_tasks: BackgroundTasks,
 ) -> EventParticipant:
     """Confirm, decline, or mark maybe for event attendance."""
     event = db.get(Event, event_id)
@@ -821,6 +832,7 @@ async def confirm_event_attendance(
         event=event,
         participant=participant,
         status=status_enum.value,  # Pass the enum value
+        background_tasks=background_tasks,
     )
 
     return participant
