@@ -75,12 +75,16 @@ const TeamDashboard = () => {
   });
   const allCoachesQuery = useQuery({
     queryKey: ["all-team-coaches"],
-    queryFn: listAllCoaches,
+    enabled: role !== "athlete",
+    queryFn: () => (role === "athlete" ? Promise.resolve([]) : listAllCoaches()),
   });
   const teamCoachesQuery = useQuery({
     queryKey: ["team-coaches", selectedTeamId],
-    enabled: Boolean(selectedTeamId),
-    queryFn: () => (selectedTeamId ? listTeamCoaches(selectedTeamId) : Promise.resolve([])),
+    enabled: Boolean(selectedTeamId) && role !== "athlete",
+    queryFn: () =>
+      selectedTeamId && role !== "athlete"
+        ? listTeamCoaches(selectedTeamId)
+        : Promise.resolve([]),
   });
 
   const availableTeams = useMemo(() => {
@@ -156,16 +160,20 @@ const TeamDashboard = () => {
 
   const combineMetricsQuery = useQuery({
     queryKey: ["team-combine-metrics", selectedTeamId],
-    enabled: Boolean(selectedTeamId),
+    enabled: Boolean(selectedTeamId) && role !== "athlete",
     queryFn: () =>
-      selectedTeamId ? listTeamCombineMetrics(selectedTeamId, { limit: 12 }) : Promise.resolve([]),
+      selectedTeamId && role !== "athlete"
+        ? listTeamCombineMetrics(selectedTeamId, { limit: 12 })
+        : Promise.resolve([]),
   });
 
   const postsQuery = useQuery({
     queryKey: ["team-feed-preview", selectedTeamId],
-    enabled: Boolean(selectedTeamId),
+    enabled: Boolean(selectedTeamId) && role !== "athlete",
     queryFn: () =>
-      selectedTeamId ? getTeamPosts(selectedTeamId, { size: 6 }) : Promise.resolve<TeamPost[]>([]),
+      selectedTeamId && role !== "athlete"
+        ? getTeamPosts(selectedTeamId, { size: 6 })
+        : Promise.resolve<TeamPost[]>([]),
   });
   const loadErrorMessage = useMemo(() => {
     if (teamsQuery.isError) return "Unable to load teams. Please try again.";
@@ -486,4 +494,3 @@ const TeamDashboard = () => {
 };
 
 export default TeamDashboard;
-
