@@ -502,6 +502,23 @@ async def handle_rsvp_from_token(
 
     if not participant:
         # Create participant if not already existing (e.g., direct RSVP link)
+        allowed = False
+        if user.role == UserRole.COACH:
+            allowed_team_ids = _coach_team_ids(db, user.id)
+            event_team_ids = _event_team_ids(db, event_id)
+            allowed = bool(event_team_ids.intersection(allowed_team_ids))
+        elif user.role == UserRole.ATHLETE:
+            event_team_ids = _event_team_ids(db, event_id)
+            athlete_team_id = _athlete_team_id(db, user)
+            allowed = bool(athlete_team_id and athlete_team_id in event_team_ids)
+        else:
+            allowed = True
+
+        if not allowed:
+            return RedirectResponse(
+                url=f"{settings.FRONTEND_URL}/rsvp-error?message=not_allowed",
+                status_code=status.HTTP_302_FOUND,
+            )
         participant = EventParticipant(
             event_id=event_id,
             user_id=user_id,
@@ -807,6 +824,19 @@ async def confirm_event_attendance(
         if participant:
             participant.user_id = current_user.id
 
+    # Permission check: must be invited or linked to the event
+    if current_user.role == UserRole.COACH:
+        allowed_team_ids = _coach_team_ids(db, current_user.id)
+        event_team_ids = _event_team_ids(db, event_id)
+        if not participant and not (allowed_team_ids and event_team_ids.intersection(allowed_team_ids)):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed to RSVP")
+    if current_user.role == UserRole.ATHLETE:
+        event_team_ids = _event_team_ids(db, event_id)
+        if not participant:
+            athlete_team_id = _athlete_team_id(db, current_user)
+            if not (athlete_team_id and athlete_team_id in event_team_ids):
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not invited")
+
     status_enum = ParticipantStatus(confirmation.status.upper())
 
     if not participant:
@@ -854,6 +884,21 @@ def get_event_participants(
     stmt = select(EventParticipant).where(EventParticipant.event_id == event_id)
     participants = db.exec(stmt).all()
     return participants
+
+
+def _event_team_ids(db: SessionDep, event_id: int) -> set[int]:
+    rows = db.exec(
+        select(EventTeamLink.team_id).where(EventTeamLink.event_id == event_id)
+    ).all()
+    return {row for row in rows if row is not None}
+
+
+def _athlete_team_id(db: SessionDep, user: User) -> int | None:
+    if user.athlete_id:
+        athlete = db.get(Athlete, user.athlete_id)
+        if athlete:
+            return athlete.team_id
+    return None
 
 
 def _parse_date_str(value: Optional[str]) -> Optional[date_type]:
