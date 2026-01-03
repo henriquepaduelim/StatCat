@@ -192,9 +192,9 @@ const TeamDashboard = () => {
 
   const isInitialLoading =
     teamsQuery.isLoading ||
-    coachTeamsQuery.isLoading ||
+    (role === "coach" && coachTeamsQuery.isLoading) ||
     athletesQuery.isLoading ||
-    allCoachesQuery.isLoading;
+    (role !== "athlete" && allCoachesQuery.isLoading);
 
   if (isInitialLoading) {
     return (
@@ -362,23 +362,25 @@ const TeamDashboard = () => {
               </button>
             </div>
           ) : null}
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-            <LeaderboardCard
-              presetType="scorers"
-              title={leaderboardLabels.scorersTitle}
-              description={leaderboardLabels.scorersDescription}
-              limit={5}
-              teamId={selectedTeamId ?? null}
-            />
-            <CombineLeaderboardCard teamId={selectedTeamId ?? null} limit={5} />
-            <LeaderboardCard
-              presetType="clean_sheets"
-              title={leaderboardLabels.cleanSheetsTitle}
-              description={leaderboardLabels.cleanSheetsDescription}
-              limit={5}
-              teamId={selectedTeamId ?? null}
-            />
-          </div>
+          {role !== "athlete" ? (
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+              <LeaderboardCard
+                presetType="scorers"
+                title={leaderboardLabels.scorersTitle}
+                description={leaderboardLabels.scorersDescription}
+                limit={5}
+                teamId={selectedTeamId ?? null}
+              />
+              <CombineLeaderboardCard teamId={selectedTeamId ?? null} limit={5} />
+              <LeaderboardCard
+                presetType="clean_sheets"
+                title={leaderboardLabels.cleanSheetsTitle}
+                description={leaderboardLabels.cleanSheetsDescription}
+                limit={5}
+                teamId={selectedTeamId ?? null}
+              />
+            </div>
+          ) : null}
 
           <section className="rounded-xl border border-action-primary/25 bg-container-gradient p-4 sm:p-6 shadow-xl backdrop-blur">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
