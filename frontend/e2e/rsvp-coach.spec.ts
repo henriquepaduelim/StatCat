@@ -33,9 +33,9 @@ test.describe("Coach RSVP", () => {
       .getByRole("heading", { name: /team availability/i })
       .locator("xpath=ancestor::section[1]");
     await availabilitySection.scrollIntoViewIfNeeded();
-    const maybeButton = availabilitySection.getByRole("button", { name: /maybe/i }).last();
+    const maybeButton = availabilitySection.getByRole("button", { name: /^Maybe$/ }).first();
     await expect(maybeButton).toBeVisible({ timeout: 10_000 });
     await maybeButton.click();
-    await expect(availabilitySection.getByText(/maybe/i)).toBeVisible({ timeout: 10_000 });
+    await expect(maybeButton).toHaveClass(/bg-action-primary/, { timeout: 10_000 });
   });
 });
