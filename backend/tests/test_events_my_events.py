@@ -136,6 +136,30 @@ def test_coach_sees_events_linked_by_team_without_direct_invite(test_engine, cli
     assert data[0]["id"] == event_id
 
 
+def test_coach_does_not_see_events_from_unrelated_team(test_engine, client):
+    with Session(test_engine) as session:
+        coach, creator, team = _make_users_and_team(session)
+        unrelated_team = Team(name="Other Team", age_category="U14", description=None)
+        session.add(unrelated_team)
+        session.commit()
+        session.refresh(unrelated_team)
+        event = _make_team_event(session, creator)
+        session.add(EventTeamLink(event_id=event.id, team_id=unrelated_team.id))
+        session.commit()
+        coach_id = coach.id
+        unrelated_event_id = event.id
+
+    app.dependency_overrides[get_current_active_user] = _current_user_override(
+        test_engine, coach_id
+    )
+
+    response = client.get("/api/v1/events/my-events")
+    assert response.status_code == 200
+    data = response.json()
+    returned_ids = [item["id"] for item in data]
+    assert unrelated_event_id not in returned_ids
+
+
 def test_coach_event_not_duplicated_when_team_link_and_invite(test_engine, client):
     with Session(test_engine) as session:
         coach, creator, team = _make_users_and_team(session)
