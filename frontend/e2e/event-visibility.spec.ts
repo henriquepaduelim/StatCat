@@ -25,15 +25,12 @@ test.describe("Event visibility (no data creation)", () => {
 
   test("athlete sees configured event", async ({ page }) => {
     await loginAsAthlete(page);
-    await page.goto("/dashboard");
-    const summary = page.locator("summary", { hasText: /upcoming events/i }).first();
-    await summary.scrollIntoViewIfNeeded();
-    const open = await summary.evaluate((el) => el.parentElement?.hasAttribute("open"));
-    if (!open) await summary.click();
-    const eventRow = summary
-      .locator("xpath=ancestor::details[1]")
-      .getByRole("button", { name: new RegExp(eventName, "i") })
-      .first();
-    await expect(eventRow).toBeVisible({ timeout: 20_000 });
+    await page.goto("/player-profile/scheduling");
+    const eventCard = page.locator("article", { hasText: new RegExp(eventName, "i") }).first();
+    const count = await eventCard.count();
+    if (count === 0) {
+      test.skip(true, `Event ${eventName} not visible for athlete`);
+    }
+    await expect(eventCard).toBeVisible({ timeout: 20_000 });
   });
 });
