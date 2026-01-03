@@ -46,7 +46,7 @@ type UseDashboardEventsParams = {
   currentUserId: number | null;
   currentUserRole: string | null;
   currentUserAthleteId: number | null;
-  currentUserName: string | null;
+  currentUserName?: string | null;
   availableCoaches: TeamCoach[];
   selectedTeamId: number | null;
   setSelectedTeamId: React.Dispatch<React.SetStateAction<number | null>>;
@@ -65,7 +65,7 @@ export const useDashboardEvents = ({
   currentUserId,
   currentUserRole,
   currentUserAthleteId,
-  currentUserName,
+  currentUserName = null,
   availableCoaches,
   selectedTeamId,
   setSelectedTeamId,
@@ -81,9 +81,29 @@ export const useDashboardEvents = ({
     [shouldUseGlobalEvents, allEventsQuery.data, myEventsQuery.data],
   );
 
+  const coachById = useMemo(() => {
+    const map = new Map<number, string>();
+    availableCoaches.forEach((coach) => {
+      if (typeof coach.id === "number") {
+        map.set(coach.id, coach.full_name ?? coach.email ?? `Coach ${coach.id}`);
+      }
+    });
+    return map;
+  }, [availableCoaches]);
+
   const teamCoachMetaById = useMemo(() => {
     const map = new Map<number, { coachName: string | null; coachUserId: number | null }>();
     teams.forEach((team) => {
+      const coachUserId = team.coach_user_id ?? null;
+      const coachName = team.coach_full_name ?? team.coach_name ?? null;
+      if (coachUserId || coachName) {
+        map.set(team.id, {
+          coachName,
+          coachUserId,
+        });
+        return;
+      }
+      // Fallback: try to infer from available coaches by matching name
       const normalizedCoachName = (team.coach_name || "").trim().toLowerCase();
       const matchedCoach =
         normalizedCoachName && availableCoaches.length
@@ -92,7 +112,7 @@ export const useDashboardEvents = ({
             )
           : null;
       map.set(team.id, {
-        coachName: team.coach_name ?? null,
+        coachName: coachName ?? (normalizedCoachName || null),
         coachUserId: matchedCoach?.id ?? null,
       });
     });
@@ -191,6 +211,7 @@ export const useDashboardEvents = ({
     summaryLabels,
     teamCoachMetaById,
     getEventTeamIds,
+    coachById,
   });
 
   const loadErrorMessage = useMemo(() => {

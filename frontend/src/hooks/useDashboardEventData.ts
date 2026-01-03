@@ -16,6 +16,7 @@ type Args = {
   summaryLabels: SummaryLabels;
   teamCoachMetaById: Map<number, TeamCoachMeta>;
   getEventTeamIds: (event: Event) => number[];
+  coachById: Map<number, string>;
 };
 
 export const useDashboardEventData = ({
@@ -26,6 +27,7 @@ export const useDashboardEventData = ({
   summaryLabels,
   teamCoachMetaById,
   getEventTeamIds,
+  coachById,
 }: Args) => {
   const eventsByDate = useMemo(() => {
     const map = new Map<string, Event[]>();
@@ -98,8 +100,21 @@ export const useDashboardEventData = ({
         event,
         teams: teamIds.map((teamId) => {
           const meta = teamCoachMetaById.get(teamId);
-          const coachStatus =
-            meta?.coachUserId != null ? participantStatusByUserId.get(meta.coachUserId) ?? null : null;
+          let coachUserId = meta?.coachUserId ?? null;
+          let coachName = meta?.coachName ?? null;
+
+          // Fallback: find a coach participant by user_id if meta is missing
+          if (coachUserId == null) {
+            const coachParticipant = participants.find(
+              (participant) => participant.user_id != null && coachById.has(participant.user_id),
+            );
+            if (coachParticipant?.user_id != null) {
+              coachUserId = coachParticipant.user_id;
+              coachName = coachName ?? coachById.get(coachParticipant.user_id) ?? null;
+            }
+          }
+
+          const coachStatus = coachUserId != null ? participantStatusByUserId.get(coachUserId) ?? null : null;
           return {
             teamId,
             teamName:
@@ -107,7 +122,7 @@ export const useDashboardEventData = ({
                 ? summaryLabels.teamPlaceholder
                 : teamNameById[teamId] ?? summaryLabels.teamPlaceholder,
             athletes: teamMap[teamId] ?? [],
-            coachName: meta?.coachName ?? null,
+            coachName: coachName,
             coachStatus,
           };
         }),
@@ -122,6 +137,7 @@ export const useDashboardEventData = ({
     teamNameById,
     summaryLabels.teamPlaceholder,
     teamCoachMetaById,
+    coachById,
   ]);
 
   const availabilityPages = useMemo(() => {

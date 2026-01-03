@@ -23,6 +23,8 @@ class TeamRead(TeamBase):
     created_at: datetime
     updated_at: datetime
     athlete_count: int
+    coach_user_id: int | None = None
+    coach_full_name: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -58,6 +58,24 @@ def _load_roster_counts(session: Session, team_ids: Iterable[int]) -> dict[int, 
     return {team_id: total for team_id, total in session.exec(statement)}
 
 
+def _load_primary_coaches(session: Session, team_ids: Iterable[int]) -> dict[int, tuple[int | None, str | None]]:
+    """Return a mapping of team_id -> (coach_user_id, coach_full_name)."""
+    ids = list(team_ids)
+    if not ids:
+        return {}
+    statement = (
+        select(CoachTeamLink.team_id, User.id, User.full_name)
+        .join(User, User.id == CoachTeamLink.user_id)
+        .where(CoachTeamLink.team_id.in_(tuple(ids)))
+        .order_by(CoachTeamLink.team_id, CoachTeamLink.id)
+    )
+    mapping: dict[int, tuple[int | None, str | None]] = {}
+    for team_id, user_id, full_name in session.exec(statement):
+        if team_id not in mapping:
+            mapping[team_id] = (user_id, full_name)
+    return mapping
+
+
 def _get_team_or_404(session: Session, team_id: int) -> Team:
     team = session.get(Team, team_id)
     if not team:
@@ -119,8 +137,11 @@ def list_teams(
     statement = statement.offset((page - 1) * size).limit(size)
 
     rows = session.exec(statement).all()
+    roster_counts = _load_roster_counts(session, [row[0].id for row in rows])
+    coach_meta = _load_primary_coaches(session, [row[0].id for row in rows])
     items = []
     for team, athlete_count in rows:
+        coach_user_id, coach_full_name = coach_meta.get(team.id, (None, None))
         items.append(
             TeamRead(
                 id=team.id,
@@ -130,7 +151,9 @@ def list_teams(
                 created_by_id=team.created_by_id,
                 created_at=team.created_at,
                 updated_at=team.updated_at,
-                athlete_count=athlete_count or 0,
+                athlete_count=roster_counts.get(team.id, athlete_count or 0),
+                coach_user_id=coach_user_id,
+                coach_full_name=coach_full_name,
             )
         )
     return PaginatedResponse(total=total, page=page, size=size, items=items)
@@ -175,6 +198,8 @@ def get_team(
             )
     team = _get_team_or_404(session, team_id)
     roster_counts = _load_roster_counts(session, [team.id])
+    coach_meta = _load_primary_coaches(session, [team.id])
+    coach_user_id, coach_full_name = coach_meta.get(team.id, (None, None))
     return TeamRead(
         id=team.id,
         name=team.name,
@@ -184,6 +209,8 @@ def get_team(
         created_at=team.created_at,
         updated_at=team.updated_at,
         athlete_count=roster_counts.get(team.id, 0),
+        coach_user_id=coach_user_id,
+        coach_full_name=coach_full_name,
     )
 
 
