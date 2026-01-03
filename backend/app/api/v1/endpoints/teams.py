@@ -67,7 +67,7 @@ def _load_primary_coaches(session: Session, team_ids: Iterable[int]) -> dict[int
         select(CoachTeamLink.team_id, User.id, User.full_name)
         .join(User, User.id == CoachTeamLink.user_id)
         .where(CoachTeamLink.team_id.in_(tuple(ids)))
-        .order_by(CoachTeamLink.team_id, CoachTeamLink.id)
+        .order_by(CoachTeamLink.team_id, CoachTeamLink.user_id)
     )
     mapping: dict[int, tuple[int | None, str | None]] = {}
     for team_id, user_id, full_name in session.exec(statement):
