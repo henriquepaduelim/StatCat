@@ -24,6 +24,7 @@ from app.models.event_participant import EventParticipant
 from app.models.group import GroupMembership
 from app.models.match_stat import MatchStat
 from app.models.session_result import SessionResult
+from app.models.team_post import TeamPost
 from app.models.team import CoachTeamLink, Team
 from app.models.user import User, UserRole, UserAthleteApprovalStatus
 from app.models.password_setup_code import PasswordSetupCode
@@ -382,6 +383,12 @@ def _cascade_delete_athlete(session: Session, athlete_id: int) -> None:
     )
     session.exec(delete(AthletePayment).where(AthletePayment.athlete_id == athlete_id))
     session.exec(delete(AthleteDetail).where(AthleteDetail.athlete_id == athlete_id))
+    user_ids = [
+        row[0] if isinstance(row, tuple) else row
+        for row in session.exec(select(User.id).where(User.athlete_id == athlete_id)).all()
+    ]
+    if user_ids:
+        session.exec(delete(TeamPost).where(TeamPost.author_id.in_(tuple(user_ids))))
     session.exec(delete(User).where(User.athlete_id == athlete_id))
 
 
